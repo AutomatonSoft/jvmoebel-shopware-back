@@ -15,6 +15,17 @@ Project-wide architecture, infrastructure, migration and cross-repository decisi
 
 These documents are mandatory. Do not replace their rules with personal conventions. New code must follow the established style and patterns of the surrounding project code. If existing code conflicts with the documentation, follow the documentation and report the conflict.
 
+## Mandatory preflight
+
+Before a non-mechanical change:
+
+1. Classify the decision as backend-local or project-wide.
+2. Identify the exact documents and sections governing the change. Backend structure and code placement come from this repository; platform architecture, environments, migration and cross-repository behavior come from `jvmoebel-shopware-docs`.
+3. Read those sources and inspect the affected project or framework files before editing.
+4. Search for conflicting statements when the change affects a directory boundary, plugin boundary, dependency, environment, data contract or public behavior.
+
+Do not implement an undocumented architectural assumption from memory or from a task summary. If a required source is unavailable, or two sources conflict, stop and report the missing decision. A task may intentionally change an established decision only when that change is explicit and the authoritative documentation is updated with it.
+
 ## Working approach
 
 - Inspect the affected plugin, related tests and specification before editing.
@@ -31,4 +42,4 @@ These documents are mandatory. Do not replace their rules with personal conventi
 - Run the checks required by [Backend workflow](docs/WORKFLOW.md) and any additional tests relevant to the changed behavior.
 - Treat a failing check as part of the task: diagnose it and fix failures caused by the change.
 - Never claim that a check passed if it was not executed. State the exact command and reason when a check cannot run.
-- At handoff, summarize the implemented behavior, changed files, executed checks and any remaining risks or decisions.
+- At handoff, summarize the governing sources checked, implemented behavior, changed files, exact commands and exit results, and any remaining risks or decisions.

@@ -1,0 +1,153 @@
+services:
+    web:
+        environment:
+            DATABASE_URL: mysql://root:root@database/shopware
+            MESSENGER_TRANSPORT_DSN: redis://redis:6379/messages
+            MESSENGER_TRANSPORT_LOW_PRIORITY_DSN: redis://redis:6379/low_priority
+            MESSENGER_TRANSPORT_FAILURE_DSN: redis://redis:6379/failed
+            PHP_IDE_CONFIG: serverName=jvmoebel-shopware-back
+        volumes:
+            - ./.docker/php/xdebug.ini:/usr/local/etc/php/conf.d/99-xdebug.ini:ro
+        ports: !override
+            - 127.0.0.1:8000:8000
+            - 127.0.0.1:8080:8080
+            - 127.0.0.1:9999:9999
+            - 127.0.0.1:9998:9998
+            - 127.0.0.1:5173:5173
+            - 127.0.0.1:5773:5773
+        depends_on:
+            redis:
+                condition: service_healthy
+
+    database:
+        image: mysql:8.4
+        environment:
+            MARIADB_DATABASE: !reset null
+            MARIADB_ROOT_PASSWORD: !reset null
+            MARIADB_USER: !reset null
+            MARIADB_PASSWORD: !reset null
+            MYSQL_DATABASE: shopware
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_USER: shopware
+            MYSQL_PASSWORD: shopware
+        command:
+            - --sql-mode=STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
+            - --log-bin-trust-function-creators=1
+            - --group-concat-max-len=320000
+            - --default-time-zone=+00:00
+        healthcheck:
+            test:
+                - CMD-SHELL
+                - mysqladmin ping -h localhost -proot --silent
+            start_period: 10s
+            interval: 5s
+            timeout: 3s
+            retries: 10
+
+    adminer:
+        ports: !override
+            - 127.0.0.1:9080:8080
+
+    mailer:
+        ports: !override
+            - 127.0.0.1:1025:1025
+            - 127.0.0.1:8025:8025
+
+    redis:
+        image: redis:7.4-alpine
+        command:
+            - redis-server
+            - --appendonly
+            - "yes"
+            - --appendfsync
+            - everysec
+            - --maxmemory-policy
+            - noeviction
+        volumes:
+            - redis-data:/data
+        healthcheck:
+            test:
+                - CMD
+                - redis-cli
+                - ping
+            interval: 5s
+            timeout: 3s
+            retries: 10
+
+    opensearch:
+        environment:
+            OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
+        ports: !override
+            - 127.0.0.1:9200:9200
+        healthcheck:
+            test:
+                - CMD-SHELL
+                - curl --fail --silent http://localhost:9200/_cluster/health > /dev/null
+            start_period: 20s
+            interval: 10s
+            timeout: 5s
+            retries: 10
+
+    worker:
+        image: ghcr.io/shopware/docker-dev:php8.5-node24-caddy
+        init: true
+        restart: unless-stopped
+        env_file:
+            - .env.local
+        environment:
+            DATABASE_URL: mysql://root:root@database/shopware
+            MAILER_DSN: smtp://mailer:1025
+            MESSENGER_TRANSPORT_DSN: redis://redis:6379/messages
+            MESSENGER_TRANSPORT_LOW_PRIORITY_DSN: redis://redis:6379/low_priority
+            MESSENGER_TRANSPORT_FAILURE_DSN: redis://redis:6379/failed
+            OPENSEARCH_URL: http://opensearch:9200
+            SHOPWARE_ES_ENABLED: "1"
+            SHOPWARE_ES_INDEXING_ENABLED: "1"
+            SHOPWARE_ES_INDEX_PREFIX: sw
+        command:
+            - php
+            - bin/console
+            - messenger:consume
+            - async
+            - low_priority
+            - --memory-limit=512M
+            - --time-limit=3600
+        stop_grace_period: 30s
+        volumes:
+            - .:/var/www/html
+        depends_on:
+            database:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+            opensearch:
+                condition: service_healthy
+
+    scheduler:
+        image: ghcr.io/shopware/docker-dev:php8.5-node24-caddy
+        init: true
+        restart: unless-stopped
+        env_file:
+            - .env.local
+        environment:
+            DATABASE_URL: mysql://root:root@database/shopware
+            MESSENGER_TRANSPORT_DSN: redis://redis:6379/messages
+            MESSENGER_TRANSPORT_LOW_PRIORITY_DSN: redis://redis:6379/low_priority
+            MESSENGER_TRANSPORT_FAILURE_DSN: redis://redis:6379/failed
+        command:
+            - php
+            - bin/console
+            - scheduled-task:run
+            - --memory-limit=512M
+            - --time-limit=3600
+        stop_grace_period: 30s
+        volumes:
+            - .:/var/www/html
+        depends_on:
+            database:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+
+volumes:
+    redis-data:
