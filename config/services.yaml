@@ -8,20 +8,3 @@ parameters:
     default_cdn_strategy: 'physical_filename'
     shopware.cdn.strategy: '%env(default:default_cdn_strategy:SHOPWARE_CDN_STRATEGY_DEFAULT)%'
     env(OPENSEARCH_URL): 'http://localhost:9200'
-
-services:
-    # default configuration for services in *this* file
-    _defaults:
-        autowire: true # Automatically injects dependencies in your services.
-        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
-        # Binding arguments by name or type
-        # https://symfony.com/doc/current/service_container.html#binding-arguments-by-name-or-type
-        #bind:
-        #    'bool $isDebug': '%kernel.debug%'
-
-    App\:
-        resource: '../src/'
-        exclude:
-            - '../src/DependencyInjection/'
-            - '../src/Entity/'
-            - '../src/Kernel.php'

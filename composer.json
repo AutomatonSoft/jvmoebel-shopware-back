@@ -42,11 +42,6 @@
             "url": "https://shopware.github.io/conflicts/"
         }
     ],
-    "autoload": {
-        "psr-4": {
-            "App\\": "src/"
-        }
-    },
     "prefer-stable": true,
     "config": {
         "allow-plugins": {
