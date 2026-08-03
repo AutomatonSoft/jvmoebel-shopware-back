@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1d5f2cad0944d63e2c5e5b4c95390498",
+    "content-hash": "352c0a3a058e22d2d1504ecd569d8c2e",
     "packages": [
         {
             "name": "async-aws/core",
@@ -2684,6 +2684,45 @@
                 "source": "https://github.com/jsonrainbow/json-schema/tree/6.10.0"
             },
             "time": "2026-06-16T20:50:26+00:00"
+        },
+        {
+            "name": "jvmoebel/market-configuration",
+            "version": "0.1.0",
+            "dist": {
+                "type": "path",
+                "url": "custom/static-plugins/JvMarketConfiguration",
+                "reference": "3bd6044fea165a0b48db7a18e5cef3b9cece578e"
+            },
+            "require": {
+                "php": "^8.4",
+                "shopware/core": "~6.7.0"
+            },
+            "type": "shopware-platform-plugin",
+            "extra": {
+                "shopware-plugin-class": "Jv\\MarketConfiguration\\JvMarketConfiguration",
+                "label": {
+                    "de-DE": "JVMöbel Marktkonfiguration",
+                    "en-GB": "JVMöbel market configuration"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Jv\\MarketConfiguration\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Jv\\MarketConfiguration\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "description": "JVMöbel market and sales channel configuration",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
         },
         {
             "name": "laminas/laminas-code",

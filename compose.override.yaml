@@ -1,6 +1,7 @@
 services:
     web:
         environment:
+            APP_ENV: dev
             DATABASE_URL: mysql://root:root@database/shopware
             MESSENGER_TRANSPORT_DSN: redis://redis:6379/messages
             MESSENGER_TRANSPORT_LOW_PRIORITY_DSN: redis://redis:6379/low_priority
@@ -95,6 +96,7 @@ services:
         env_file:
             - .env.local
         environment:
+            APP_ENV: dev
             DATABASE_URL: mysql://root:root@database/shopware
             MAILER_DSN: smtp://mailer:1025
             MESSENGER_TRANSPORT_DSN: redis://redis:6379/messages
@@ -130,6 +132,7 @@ services:
         env_file:
             - .env.local
         environment:
+            APP_ENV: dev
             DATABASE_URL: mysql://root:root@database/shopware
             MESSENGER_TRANSPORT_DSN: redis://redis:6379/messages
             MESSENGER_TRANSPORT_LOW_PRIORITY_DSN: redis://redis:6379/low_priority

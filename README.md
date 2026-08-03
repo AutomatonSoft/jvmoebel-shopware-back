@@ -17,29 +17,26 @@ Backend платформы JVMöbel на Shopware 6.
 
 ## Локальная подготовка
 
-Эта конфигурация предназначена только для локальной разработки. Все опубликованные порты сервисов привязаны к `127.0.0.1`. Запускайте проект обычной командой `docker compose`: файл `compose.override.yaml` является обязательной частью локальной конфигурации, поэтому `compose.yaml` отдельно не используется.
+Эта конфигурация предназначена только для локальной разработки. Нужны Docker с Compose v2. Все опубликованные порты привязаны к `127.0.0.1`; `compose.override.yaml` является обязательной частью локальной конфигурации.
+
+Первичная установка выполняется одной командой:
 
 ```bash
-cp .env.local.example .env.local
-docker compose up -d database redis mailer opensearch adminer
-docker compose run --rm web composer install
-docker compose run --rm web bin/console system:install --shop-locale=de-DE --shop-currency=EUR --skip-first-run-wizard
+./bin/setup-local
 ```
 
-Создайте администратора интерактивно; не передавайте и не сохраняйте пароль в репозитории:
+Скрипт создаёт `.env.local`, устанавливает Shopware без web installer, активирует `JvMarketConfiguration`, настраивает шесть Storefront-type sales channels, регистрирует scheduled tasks и инициализирует OpenSearch. Тип Storefront используется для стандартной SEO URL-механики и Store API; публичной витриной остаётся только Next.js. Повторный запуск не пересоздаёт базу, sales channels или их access key.
+
+Bootstrap не настраивает конвертацию валют: отсутствующие CHF и GBP создаются с нейтральным `factor = 1`. До публикации товаров нужно загрузить цены в этих валютах либо отдельно настроить курсы.
+
+Для новой базы создаётся локальный администратор `admin` с паролем `shopware`. Если он уже существует, его пароль не меняется. Эти учётные данные не используются в staging и production. Актуальные Store API access key хранятся в игнорируемом файле `var/bootstrap/sales-channels.json`.
+
+После первичной установки обычный запуск и остановка выполняются через Docker Compose:
 
 ```bash
-docker compose run --rm -it web bin/console user:create admin --admin
-```
-
-Затем создайте штатный headless sales channel. Команда использует тип API по умолчанию:
-
-```bash
-docker compose run --rm web bin/console sales-channel:create --name='JVMöbel Headless' --no-interaction
 docker compose up -d
+docker compose down
 ```
-
-Сохраните сгенерированный access key sales channel вне Git — например, в локальном env-файле витрины или одобренном хранилище секретов.
 
 Shopware: http://localhost:8000. Администрация: http://localhost:8000/admin. Adminer: http://localhost:9080. Mailpit: http://localhost:8025. OpenSearch: http://localhost:9200.
 
