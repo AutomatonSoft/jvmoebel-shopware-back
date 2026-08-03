@@ -13,10 +13,16 @@ if ! mkdir "$setup_lock" 2>/dev/null; then
 fi
 
 fresh_install_admin_marker="var/bootstrap/fresh-install-awaiting-admin"
+env_local_backup="var/bootstrap/env-local.before-refresh"
 access_key_tmp=''
+env_local_tmp=''
 cleanup() {
     if [[ -n "$access_key_tmp" && -f "$access_key_tmp" ]]; then
         rm -f -- "$access_key_tmp"
+    fi
+
+    if [[ -n "$env_local_tmp" && -f "$env_local_tmp" ]]; then
+        rm -f -- "$env_local_tmp"
     fi
 
     rmdir "$setup_lock" 2>/dev/null || true
@@ -33,6 +39,40 @@ trap cleanup EXIT
 trap handle_interrupt INT
 trap handle_terminate TERM
 
+env_value() {
+    local env_file="$1"
+    local expected_key="$2"
+    local env_line
+    local value=''
+
+    while IFS= read -r env_line || [[ -n "$env_line" ]]; do
+        if [[ "${env_line%%=*}" == "$expected_key" ]]; then
+            value="${env_line#*=}"
+        fi
+    done < "$env_file"
+
+    printf '%s' "$value"
+}
+
+generated_or_preserved_env_value() {
+    local current_value="$1"
+    local legacy_value="$2"
+    local byte_count="$3"
+
+    if [[ -n "$current_value" && "$current_value" != "$legacy_value" ]]; then
+        printf '%s' "$current_value"
+
+        return 0
+    fi
+
+    if ! command -v openssl >/dev/null 2>&1; then
+        echo "OpenSSL is required to generate local Shopware secrets." >&2
+        exit 1
+    fi
+
+    openssl rand -hex "$byte_count"
+}
+
 if ! command -v docker >/dev/null 2>&1; then
     echo "Docker is required to start the local environment." >&2
     exit 1
@@ -43,8 +83,37 @@ if ! docker compose version >/dev/null 2>&1; then
     exit 1
 fi
 
-if [[ ! -f .env.local ]]; then
-    cp .env.local.example .env.local
+existing_app_secret=''
+existing_instance_id=''
+env_local_existed=false
+if [[ -f .env.local ]]; then
+    env_local_existed=true
+    existing_app_secret="$(env_value .env.local APP_SECRET)"
+    existing_instance_id="$(env_value .env.local INSTANCE_ID)"
+
+    if [[ ! -f "$env_local_backup" ]]; then
+        mkdir -p var/bootstrap
+        chmod 700 var/bootstrap
+        install -m 600 .env.local "$env_local_backup"
+    fi
+fi
+
+app_secret="$(generated_or_preserved_env_value "$existing_app_secret" local-development-only-change-me 68)"
+instance_id="$(generated_or_preserved_env_value "$existing_instance_id" 00000000000000000000000000000000 16)"
+
+env_local_tmp="$(mktemp .env.local.tmp.XXXXXX)"
+awk -v app_secret="$app_secret" -v instance_id="$instance_id" '
+    index($0, "APP_SECRET=") == 1 { print "APP_SECRET=" app_secret; next }
+    index($0, "INSTANCE_ID=") == 1 { print "INSTANCE_ID=" instance_id; next }
+    { print }
+' .env.local.example > "$env_local_tmp"
+chmod 600 "$env_local_tmp"
+mv -f -- "$env_local_tmp" .env.local
+env_local_tmp=''
+
+if [[ "$env_local_existed" == true ]]; then
+    echo "Refreshed deterministic local settings in .env.local."
+else
     echo "Created .env.local from .env.local.example."
 fi
 

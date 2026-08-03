@@ -17,7 +17,7 @@ Backend платформы JVMöbel на Shopware 6.
 
 ## Локальная подготовка
 
-Эта конфигурация предназначена только для локальной разработки. Нужны Docker с Compose v2. Все опубликованные порты привязаны к `127.0.0.1`; `compose.override.yaml` является обязательной частью локальной конфигурации.
+Эта конфигурация предназначена только для локальной разработки. Нужны Docker с Compose v2. Все опубликованные порты привязаны к `127.0.0.1`; `compose.override.yaml` является обязательной частью локальной конфигурации. Единственный runtime env-файл — игнорируемый `.env.local`: bootstrap генерирует в нём `APP_SECRET` и `INSTANCE_ID` и добавляет локальные Docker-настройки, DSN и имена сервисов. В Git хранится только шаблон `.env.local.example`.
 
 Первичная установка выполняется одной командой:
 
@@ -25,7 +25,7 @@ Backend платформы JVMöbel на Shopware 6.
 ./bin/setup-local
 ```
 
-Скрипт создаёт `.env.local`, устанавливает Shopware без web installer, активирует `JvMarketConfiguration`, настраивает шесть Storefront-type sales channels, регистрирует scheduled tasks и инициализирует OpenSearch. Тип Storefront используется для стандартной SEO URL-механики и Store API; публичной витриной остаётся только Next.js. Повторный запуск не пересоздаёт базу, sales channels или их access key.
+Скрипт детерминированно пересобирает `.env.local` из шаблона, сохраняя только реальные `APP_SECRET` и `INSTANCE_ID`; перед первой нормализацией прежний файл сохраняется в `var/bootstrap/env-local.before-refresh`. Затем он устанавливает Shopware без web installer, активирует `JvMarketConfiguration`, настраивает шесть Storefront-type sales channels, регистрирует scheduled tasks и инициализирует OpenSearch. Тип Storefront используется для стандартной SEO URL-механики и Store API; публичной витриной остаётся только Next.js. Повторный запуск не пересоздаёт базу, sales channels или их access key.
 
 Bootstrap не настраивает конвертацию валют: отсутствующие CHF и GBP создаются с нейтральным `factor = 1`. До публикации товаров нужно загрузить цены в этих валютах либо отдельно настроить курсы.
 
@@ -38,6 +38,14 @@ docker compose up -d
 docker compose down
 ```
 
-Shopware: http://localhost:8000. Администрация: http://localhost:8000/admin. Adminer: http://localhost:9080. Mailpit: http://localhost:8025. OpenSearch: http://localhost:9200.
+Локальные адреса:
+
+- Shopware: http://localhost:8000; Administration: http://localhost:8000/admin;
+- MySQL: `127.0.0.1:3306`; Adminer: http://localhost:9080;
+- Redis: `127.0.0.1:6379`;
+- OpenSearch: http://localhost:9200;
+- SMTP: `127.0.0.1:1025`; Mailpit: http://localhost:8025.
+
+Стандартные dev-порты Shopware (`8080`, `5173`, `5773`, `9998`, `9999`) также опубликованы на `127.0.0.1` для Administration и Storefront watchers/hot reload. Само наличие mapping не запускает watcher: нужная dev-команда запускается отдельно во время работы над соответствующим интерфейсом.
 
 Xdebug доступен только в контейнере `web` и подключается к IDE по `host.docker.internal:9003`; отладка запускается по trigger (например, cookie, query-параметр или `XDEBUG_TRIGGER`). Порт 9003 наружу не публикуется.
