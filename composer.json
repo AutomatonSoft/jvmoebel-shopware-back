@@ -4,7 +4,7 @@
     "license": "MIT",
     "type": "project",
     "require": {
-        "php": "^8.4",
+        "php": "^8.5",
         "composer-runtime-api": "^2.0",
         "jvmoebel/market-configuration": "^0.1",
         "shopware/administration": "*",

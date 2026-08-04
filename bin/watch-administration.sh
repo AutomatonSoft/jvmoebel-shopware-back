@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
 CWD="$(cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 
 export PROJECT_ROOT="${PROJECT_ROOT:-"$(dirname "$CWD")"}"

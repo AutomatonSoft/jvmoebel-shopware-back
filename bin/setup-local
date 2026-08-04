@@ -13,12 +13,11 @@ if ! mkdir "$setup_lock" 2>/dev/null; then
 fi
 
 fresh_install_admin_marker="var/bootstrap/fresh-install-awaiting-admin"
-env_local_backup="var/bootstrap/env-local.before-refresh"
-access_key_tmp=''
+sales_channels_json_tmp=''
 env_local_tmp=''
 cleanup() {
-    if [[ -n "$access_key_tmp" && -f "$access_key_tmp" ]]; then
-        rm -f -- "$access_key_tmp"
+    if [[ -n "$sales_channels_json_tmp" && -f "$sales_channels_json_tmp" ]]; then
+        rm -f -- "$sales_channels_json_tmp"
     fi
 
     if [[ -n "$env_local_tmp" && -f "$env_local_tmp" ]]; then
@@ -73,6 +72,18 @@ generated_or_preserved_env_value() {
     openssl rand -hex "$byte_count"
 }
 
+mysql_root() {
+    local mysql_root_password
+    mysql_root_password="$(env_value .env.local MYSQL_ROOT_PASSWORD)"
+    if [[ -z "$mysql_root_password" ]]; then
+        echo "MYSQL_ROOT_PASSWORD is missing from .env.local." >&2
+        exit 1
+    fi
+
+    docker compose exec -T -e MYSQL_PWD="$mysql_root_password" database \
+        mysql -uroot "$@"
+}
+
 if ! command -v docker >/dev/null 2>&1; then
     echo "Docker is required to start the local environment." >&2
     exit 1
@@ -91,11 +102,9 @@ if [[ -f .env.local ]]; then
     existing_app_secret="$(env_value .env.local APP_SECRET)"
     existing_instance_id="$(env_value .env.local INSTANCE_ID)"
 
-    if [[ ! -f "$env_local_backup" ]]; then
-        mkdir -p var/bootstrap
-        chmod 700 var/bootstrap
-        install -m 600 .env.local "$env_local_backup"
-    fi
+    mkdir -p var/bootstrap
+    chmod 700 var/bootstrap
+    install -m 600 .env.local "var/bootstrap/env-local.before-refresh.$(date +%Y%m%d%H%M%S)"
 fi
 
 app_secret="$(generated_or_preserved_env_value "$existing_app_secret" local-development-only-change-me 68)"
@@ -123,16 +132,13 @@ docker compose up -d --wait database redis mailer opensearch adminer
 echo "Installing Composer dependencies..."
 docker compose run --rm web composer install --no-interaction
 
-docker compose exec -T -e MYSQL_PWD=root database \
-    mysql -uroot -e 'SELECT 1' >/dev/null
+mysql_root -e 'SELECT 1' >/dev/null
 
-table_count="$(docker compose exec -T -e MYSQL_PWD=root database \
-    mysql -uroot -N -B -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'shopware'")"
+table_count="$(mysql_root -N -B -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'shopware'")"
 
 shopware_installed=false
 if [[ "$table_count" != '0' ]]; then
-    required_table_count="$(docker compose exec -T -e MYSQL_PWD=root database \
-        mysql -uroot -N -B -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'shopware' AND table_name IN ('migration', 'plugin', 'sales_channel', 'system_config', 'user')")"
+    required_table_count="$(mysql_root -N -B -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'shopware' AND table_name IN ('migration', 'plugin', 'sales_channel', 'system_config', 'user')")"
 
     if [[ "$required_table_count" != '5' ]]; then
         echo "The shopware database is not empty and does not contain a completed installation." >&2
@@ -140,8 +146,7 @@ if [[ "$table_count" != '0' ]]; then
         exit 1
     fi
 
-    completed_install_count="$(docker compose exec -T -e MYSQL_PWD=root database \
-        mysql -uroot shopware -N -B -e "SELECT COUNT(*) FROM system_config WHERE configuration_key = 'core.frw.completedAt'")"
+    completed_install_count="$(mysql_root shopware -N -B -e "SELECT COUNT(*) FROM system_config WHERE configuration_key = 'core.frw.completedAt'")"
 
     if [[ "$completed_install_count" == '0' ]]; then
         echo "The shopware database is not empty and does not contain a completed installation." >&2
@@ -184,8 +189,7 @@ if [[ -L "$fresh_install_admin_marker" || ( -e "$fresh_install_admin_marker" && 
 fi
 
 if [[ -f "$fresh_install_admin_marker" ]]; then
-    administrator_count="$(docker compose exec -T -e MYSQL_PWD=root database \
-        mysql -uroot shopware -N -B -e 'SELECT COUNT(*) FROM user WHERE admin = 1')"
+    administrator_count="$(mysql_root shopware -N -B -e 'SELECT COUNT(*) FROM user WHERE admin = 1')"
 
     if [[ "$administrator_count" == '0' ]]; then
         docker compose run --rm web bin/console user:create admin \
@@ -213,19 +217,26 @@ docker compose run --rm web bin/console plugin:install \
     JvMarketConfiguration
 
 mkdir -p var/bootstrap
-access_key_tmp="$(mktemp var/bootstrap/sales-channels.json.tmp.XXXXXX)"
-chmod 600 "$access_key_tmp"
+sales_channels_json_tmp="$(mktemp var/bootstrap/sales-channels.json.tmp.XXXXXX)"
+chmod 600 "$sales_channels_json_tmp"
 docker compose run --rm web bin/console jv:markets:bootstrap --json \
-    > "$access_key_tmp"
-mv -f -- "$access_key_tmp" var/bootstrap/sales-channels.json
+    > "$sales_channels_json_tmp"
+mv -f -- "$sales_channels_json_tmp" var/bootstrap/sales-channels.json
 chmod 600 var/bootstrap/sales-channels.json
-access_key_tmp=''
+sales_channels_json_tmp=''
 
 docker compose run --rm web bin/console scheduled-task:register --no-interaction
 
 echo "Initializing OpenSearch indexes..."
-docker compose run --rm web bin/console es:index --no-queue --no-progress --no-interaction
+index_prefix="$(env_value .env.local SHOPWARE_ES_INDEX_PREFIX)"
+index_prefix="${index_prefix:-sw}"
+if curl --fail --silent "http://127.0.0.1:9200/_alias/${index_prefix}_product" >/dev/null 2>&1; then
+    echo "OpenSearch product alias already exists; skipping full reindex."
+else
+    docker compose run --rm web bin/console es:index --no-queue --no-progress --no-interaction
+fi
 docker compose run --rm web bin/console es:create:alias --no-interaction
+docker compose run --rm web bin/console es:index:cleanup --force --no-interaction
 
 docker compose up -d --wait
 

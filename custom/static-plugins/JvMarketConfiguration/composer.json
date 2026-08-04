@@ -5,7 +5,7 @@
     "license": "proprietary",
     "version": "0.1.0",
     "require": {
-        "php": "^8.4",
+        "php": "^8.5",
         "shopware/core": "~6.7.0"
     },
     "autoload": {

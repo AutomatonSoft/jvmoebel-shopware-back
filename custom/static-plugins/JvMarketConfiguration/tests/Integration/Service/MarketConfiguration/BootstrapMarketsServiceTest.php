@@ -32,35 +32,44 @@ final class BootstrapMarketsServiceTest extends TestCase
 {
     use IntegrationTestBehaviour;
 
-    public function testItCreatesMarketsAndPreservesMutableBusinessConfigurationOnRerun(): void
+    public function testItCreatesSixStorefrontChannels(): void
     {
         $context = Context::createDefaultContext();
-        $service = static::getContainer()->get(BootstrapMarketsService::class);
-        self::assertInstanceOf(BootstrapMarketsService::class, $service);
-
+        $service = $this->bootstrapService();
         $definitions = (new MarketDefinitions())->all();
-        $salesChannelIds = array_map(static fn ($market): string => $market->salesChannelId(), $definitions);
 
-        /** @var EntityRepository<SalesChannelCollection> $salesChannelRepository */
-        $salesChannelRepository = static::getContainer()->get('sales_channel.repository');
-        $existingIds = $salesChannelRepository->searchIds(new Criteria($salesChannelIds), $context)->getIds();
-        if ([] !== $existingIds) {
-            $salesChannelRepository->delete(array_map(static fn (string $id): array => ['id' => $id], $existingIds), $context);
-        }
+        $this->deleteProjectChannels($definitions, $context);
 
         $created = $service->execute($context);
         self::assertCount(6, $created);
         self::assertSame(['created'], array_values(array_unique(array_map(static fn ($result): string => $result->status(), $created))));
 
+        /** @var EntityRepository<SalesChannelCollection> $salesChannelRepository */
+        $salesChannelRepository = static::getContainer()->get('sales_channel.repository');
+        $salesChannelIds = array_map(static fn ($market): string => $market->salesChannelId(), $definitions);
+        self::assertCount(6, $salesChannelRepository->search(new Criteria($salesChannelIds), $context)->getEntities());
+
         foreach ($definitions as $definition) {
             $this->assertConfiguredStorefront($salesChannelRepository, $definition, $context);
         }
-        self::assertCount(6, $salesChannelRepository->search(new Criteria($salesChannelIds), $context)->getEntities());
+    }
+
+    public function testItPreservesMutableBusinessConfigurationOnRerun(): void
+    {
+        $context = Context::createDefaultContext();
+        $service = $this->bootstrapService();
+        $definitions = (new MarketDefinitions())->all();
+
+        $this->deleteProjectChannels($definitions, $context);
+        $created = $service->execute($context);
 
         $createdAccessKeys = [];
         foreach ($created as $result) {
             $createdAccessKeys[$result->salesChannelId] = $result->accessKey;
         }
+
+        /** @var EntityRepository<SalesChannelCollection> $salesChannelRepository */
+        $salesChannelRepository = static::getContainer()->get('sales_channel.repository');
 
         $germanChannelId = $definitions[0]->salesChannelId();
         $austrianChannelId = $definitions[1]->salesChannelId();
@@ -154,8 +163,24 @@ final class BootstrapMarketsServiceTest extends TestCase
             $this->salesChannelDomain($germanChannel, $additionalDomainId)->getUrl(),
         );
         $this->assertConfiguredStorefront($salesChannelRepository, $definitions[0], $context);
+    }
+
+    public function testItGeneratesSeoUrlsForStorefrontChannels(): void
+    {
+        $context = Context::createDefaultContext();
+        $service = $this->bootstrapService();
+        $definitions = (new MarketDefinitions())->all();
+
+        $this->deleteProjectChannels($definitions, $context);
+        $service->execute($context);
+
+        /** @var EntityRepository<SalesChannelCollection> $salesChannelRepository */
+        $salesChannelRepository = static::getContainer()->get('sales_channel.repository');
+        $austrianChannel = $this->salesChannel($salesChannelRepository, $definitions[1]->salesChannelId(), $context);
 
         $seoCategoryId = Uuid::randomHex();
+        /** @var EntityRepository<CategoryCollection> $categoryRepository */
+        $categoryRepository = static::getContainer()->get('category.repository');
         $categoryRepository->create([[
             'id' => $seoCategoryId,
             'parentId' => $austrianChannel->getNavigationCategoryId(),
@@ -168,7 +193,7 @@ final class BootstrapMarketsServiceTest extends TestCase
         $seoUrlUpdater->update(NavigationPageSeoUrlRoute::ROUTE_NAME, [$seoCategoryId]);
 
         $salesChannelContext = static::getContainer()->get(SalesChannelContextFactory::class)
-            ->create(Uuid::randomHex(), $austrianChannelId, []);
+            ->create(Uuid::randomHex(), $austrianChannel->getId(), []);
         /** @var SalesChannelRepository<SeoUrlCollection> $salesChannelSeoUrlRepository */
         $salesChannelSeoUrlRepository = static::getContainer()->get('sales_channel.seo_url.repository');
         $seoUrl = $salesChannelSeoUrlRepository->search(
@@ -176,12 +201,34 @@ final class BootstrapMarketsServiceTest extends TestCase
                 ->setLimit(1)
                 ->addFilter(new EqualsFilter('routeName', NavigationPageSeoUrlRoute::ROUTE_NAME))
                 ->addFilter(new EqualsFilter('foreignKey', $seoCategoryId))
-                ->addFilter(new EqualsFilter('salesChannelId', $austrianChannelId)),
+                ->addFilter(new EqualsFilter('salesChannelId', $austrianChannel->getId())),
             $salesChannelContext,
         )->first();
 
         self::assertInstanceOf(SeoUrlEntity::class, $seoUrl);
         self::assertNotSame('', $seoUrl->getSeoPathInfo());
+    }
+
+    private function bootstrapService(): BootstrapMarketsService
+    {
+        $service = static::getContainer()->get(BootstrapMarketsService::class);
+        self::assertInstanceOf(BootstrapMarketsService::class, $service);
+
+        return $service;
+    }
+
+    /**
+     * @param list<MarketDefinition> $definitions
+     */
+    private function deleteProjectChannels(array $definitions, Context $context): void
+    {
+        /** @var EntityRepository<SalesChannelCollection> $salesChannelRepository */
+        $salesChannelRepository = static::getContainer()->get('sales_channel.repository');
+        $salesChannelIds = array_map(static fn (MarketDefinition $market): string => $market->salesChannelId(), $definitions);
+        $existingIds = $salesChannelRepository->searchIds(new Criteria($salesChannelIds), $context)->getIds();
+        if ([] !== $existingIds) {
+            $salesChannelRepository->delete(array_map(static fn (string $id): array => ['id' => $id], $existingIds), $context);
+        }
     }
 
     /**

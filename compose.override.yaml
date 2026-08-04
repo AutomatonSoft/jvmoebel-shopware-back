@@ -44,7 +44,7 @@ services:
         healthcheck:
             test:
                 - CMD-SHELL
-                - mysqladmin ping -h localhost -proot --silent
+                - mysqladmin ping -h localhost -p$$MYSQL_ROOT_PASSWORD --silent
             start_period: 10s
             interval: 5s
             timeout: 3s

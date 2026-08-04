@@ -8,6 +8,8 @@
 
         <service id="Jv\MarketConfiguration\Service\MarketConfiguration\MarketDefinitions"/>
 
+        <service id="Jv\MarketConfiguration\Service\MarketConfiguration\ConfigureCustomerScopeService"/>
+
         <service id="Jv\MarketConfiguration\Service\MarketConfiguration\PrepareMarketReferenceDataService">
             <argument type="service" id="language.repository"/>
             <argument type="service" id="locale.repository"/>

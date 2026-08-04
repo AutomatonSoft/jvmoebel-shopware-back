@@ -19,7 +19,7 @@ Backend платформы JVMöbel на Shopware 6.
 
 Эта конфигурация предназначена только для локальной разработки. Нужны Docker с Compose v2 и OpenSSL. Все опубликованные порты привязаны к `127.0.0.1`; `compose.override.yaml` является обязательной частью локальной конфигурации.
 
-Runtime-окружение контейнеров задаёт игнорируемый `.env.local` (`env_file` в Compose): bootstrap генерирует в нём `APP_SECRET` и `INSTANCE_ID` и подставляет локальные Docker-настройки, DSN и имена сервисов. Шаблон — `.env.local.example`. Хостовые вызовы `bin/console` без `.env` / `.env.dist` / `.env.local.php` отключают Dotenv целиком (`bin/console` выставляет `disable_dotenv`), поэтому свежий клон без `.env.dist` остаётся без `DATABASE_URL` и `APP_SECRET` на хосте. Штатный механизм Shopware — отслеживаемый `.env.dist` с безопасными не-секретными значениями; секреты в Git не попадают.
+Runtime-окружение контейнеров задаёт игнорируемый `.env.local` (`env_file` в Compose): bootstrap генерирует в нём `APP_SECRET` и `INSTANCE_ID` и подставляет локальные Docker-настройки, DSN и имена сервисов. Шаблон — `.env.local.example`. Хостовые вызовы `bin/console` без `.env` / `.env.dist` / `.env.local.php` отключают Dotenv целиком (`bin/console` выставляет `disable_dotenv`), поэтому в Git хранится `.env.dist` с безопасными не-секретными значениями и host-адресами сервисов — штатный механизм Shopware. Секреты в Git не попадают.
 
 Домены sales channels в definitions — продакшн-адреса рынков. Локальная интеграция Next.js не резолвит эти host'ы: она читает `var/bootstrap/sales-channels.json` и обращается к Shopware по явному base URL (например `http://localhost:8000`) с access key нужного канала.
 
@@ -29,7 +29,7 @@ Runtime-окружение контейнеров задаёт игнориру�
 ./bin/setup-local
 ```
 
-Скрипт детерминированно пересобирает `.env.local` из шаблона, сохраняя только реальные `APP_SECRET` и `INSTANCE_ID`; перед первой нормализацией прежний файл сохраняется в `var/bootstrap/env-local.before-refresh`. Затем он устанавливает Shopware без web installer, активирует `JvMarketConfiguration`, настраивает шесть Storefront-type sales channels, регистрирует scheduled tasks и инициализирует OpenSearch. Тип Storefront используется для стандартной SEO URL-механики и Store API; публичной витриной остаётся только Next.js. Повторный запуск не пересоздаёт базу, sales channels или их access key. Поведение bootstrap зафиксировано в [SPEC-001](docs/specs/SPEC-001-market-bootstrap.md).
+Скрипт детерминированно пересобирает `.env.local` из шаблона, сохраняя только реальные `APP_SECRET` и `INSTANCE_ID`; перед каждой нормализацией прежний файл сохраняется в `var/bootstrap/env-local.before-refresh.<timestamp>`. Затем он устанавливает Shopware без web installer, активирует `JvMarketConfiguration`, настраивает шесть Storefront-type sales channels, регистрирует scheduled tasks и инициализирует OpenSearch. Тип Storefront используется для стандартной SEO URL-механики и Store API; публичной витриной остаётся только Next.js. Повторный запуск не пересоздаёт базу, sales channels или их access key. Поведение bootstrap зафиксировано в [SPEC-001](docs/specs/SPEC-001-market-bootstrap.md).
 
 Bootstrap не настраивает конвертацию валют: отсутствующие CHF и GBP создаются с нейтральным `factor = 1`. До публикации товаров нужно загрузить цены в этих валютах либо отдельно настроить курсы.
 

@@ -124,13 +124,7 @@ final readonly class BootstrapMarketsService
 
     private function findSalesChannel(string $id, Context $context): ?SalesChannelEntity
     {
-        $salesChannel = $this->salesChannelRepository->search(new Criteria([$id]), $context)->first();
-
-        if (null === $salesChannel) {
-            return null;
-        }
-
-        return $salesChannel;
+        return $this->salesChannelRepository->search(new Criteria([$id]), $context)->first();
     }
 
     private function countryId(string $isoCode, Context $context): string

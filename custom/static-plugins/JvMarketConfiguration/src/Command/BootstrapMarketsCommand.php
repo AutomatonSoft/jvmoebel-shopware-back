@@ -3,6 +3,7 @@
 namespace Jv\MarketConfiguration\Command;
 
 use Jv\MarketConfiguration\Service\MarketConfiguration\BootstrapMarketsService;
+use Jv\MarketConfiguration\Service\MarketConfiguration\ConfigureCustomerScopeService;
 use Shopware\Core\Framework\Context;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -18,6 +19,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 final class BootstrapMarketsCommand extends Command
 {
     public function __construct(
+        private readonly ConfigureCustomerScopeService $configureCustomerScopeService,
         private readonly BootstrapMarketsService $bootstrapMarketsService,
     ) {
         parent::__construct();
@@ -30,6 +32,7 @@ final class BootstrapMarketsCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $this->configureCustomerScopeService->execute();
         $results = $this->bootstrapMarketsService->execute(Context::createCLIContext());
 
         if ((bool) $input->getOption('json')) {

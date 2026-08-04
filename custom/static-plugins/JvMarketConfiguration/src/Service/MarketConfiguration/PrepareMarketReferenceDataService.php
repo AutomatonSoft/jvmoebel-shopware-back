@@ -62,6 +62,11 @@ final readonly class PrepareMarketReferenceDataService
         $languageId = $this->languageRepository->searchIds($criteria, $context)->firstId();
 
         if (null !== $languageId) {
+            $this->languageRepository->upsert([[
+                'id' => $languageId,
+                'active' => true,
+            ]], $context);
+
             return $languageId;
         }
 
@@ -82,7 +87,6 @@ final readonly class PrepareMarketReferenceDataService
                 'en-GB' => 'English',
                 default => $code,
             },
-            'active' => true,
             'localeId' => $localeId,
             'translationCodeId' => $localeId,
         ]], $context);
