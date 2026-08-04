@@ -26,6 +26,7 @@ jobs:
       MESSENGER_TRANSPORT_DSN: redis://127.0.0.1:6379/messages
       MESSENGER_TRANSPORT_LOW_PRIORITY_DSN: redis://127.0.0.1:6379/low_priority
       MESSENGER_TRANSPORT_FAILURE_DSN: redis://127.0.0.1:6379/failed
+      # Integration suite does not exercise OpenSearch paths; keep ES disabled and omit the service.
       OPENSEARCH_URL: http://127.0.0.1:9200
       ADMIN_OPENSEARCH_URL: http://127.0.0.1:9200
       SHOPWARE_ES_ENABLED: '0'
@@ -58,21 +59,6 @@ jobs:
           --health-interval=5s
           --health-timeout=3s
           --health-retries=10
-
-      opensearch:
-        image: opensearchproject/opensearch:2
-        env:
-          discovery.type: single-node
-          plugins.security.disabled: 'true'
-          DISABLE_INSTALL_DEMO_CONFIG: 'true'
-          OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
-        ports:
-          - 9200:9200
-        options: >-
-          --health-cmd="curl -f http://localhost:9200/_cluster/health || exit 1"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=20
 
     steps:
       - name: Checkout
