@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "352c0a3a058e22d2d1504ecd569d8c2e",
+    "content-hash": "a5d9becb584b53c59ffea3d34c05e55d",
     "packages": [
         {
             "name": "async-aws/core",
@@ -2691,10 +2691,10 @@
             "dist": {
                 "type": "path",
                 "url": "custom/static-plugins/JvMarketConfiguration",
-                "reference": "3bd6044fea165a0b48db7a18e5cef3b9cece578e"
+                "reference": "bfcaa317d295d42784475d6c4e894576c15e8517"
             },
             "require": {
-                "php": "^8.4",
+                "php": "^8.5",
                 "shopware/core": "~6.7.0"
             },
             "type": "shopware-platform-plugin",
@@ -15440,7 +15440,7 @@
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "php": "^8.4",
+        "php": "^8.5",
         "composer-runtime-api": "^2.0"
     },
     "platform-dev": {},
