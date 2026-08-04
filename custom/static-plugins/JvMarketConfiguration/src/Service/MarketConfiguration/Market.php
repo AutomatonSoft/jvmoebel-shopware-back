@@ -18,16 +18,9 @@ enum Market: string
         return $this->value;
     }
 
-    public function name(): string
+    public function displayName(): string
     {
-        return match ($this) {
-            self::Germany => 'JVMöbel Deutschland',
-            self::Austria => 'JVMöbel Österreich',
-            self::Switzerland => 'JVMöbel Schweiz',
-            self::UnitedKingdom => 'JV Furniture',
-            self::Italy => 'JVMöbel Italia',
-            self::Poland => 'JVMöbel Polska',
-        };
+        return $this->translatedNames()['de-DE'];
     }
 
     /**

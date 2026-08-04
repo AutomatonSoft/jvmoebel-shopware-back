@@ -79,7 +79,7 @@ final readonly class BootstrapMarketsService
             $payload = [
                 'id' => $salesChannelId,
                 'typeId' => Defaults::SALES_CHANNEL_TYPE_STOREFRONT,
-                'name' => $market->name(),
+                'name' => $market->displayName(),
                 'translations' => $this->translations($market, $referenceData),
                 'languageId' => $languageId,
                 'currencyId' => $currencyId,

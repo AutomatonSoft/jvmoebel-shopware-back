@@ -38,7 +38,7 @@
 
 Источник: `enum Market` (код плагина `JvMarketConfiguration`). Идентичность рынка — строка `domain` (backed value enum, семя UUID); отображаемое имя и URL — методы enum / шаблон среды.
 
-| domain | name | language | currency | country |
+| domain | displayName (de-DE) | language | currency | country |
 |---|---|---|---|---|
 | `jvmoebel.de` | JVMöbel Deutschland | `de-DE` | `EUR` | `DE` |
 | `jvmoebel.at` | JVMöbel Österreich | `de-DE` | `EUR` | `AT` |
@@ -47,7 +47,7 @@
 | `jvmobili.it` | JVMöbel Italia | `de-DE` | `EUR` | `IT` |
 | `jvmeble.pl` | JVMöbel Polska | `de-DE` | `EUR` | `PL` |
 
-Переводы имени канала пишутся для `de-DE` и `en-GB` (языки, используемые рынками).
+Переводы имени канала пишутся для `de-DE` и `en-GB`. `Market::displayName()` берётся из `translatedNames()['de-DE']` (единый источник).
 
 ### URL канала
 

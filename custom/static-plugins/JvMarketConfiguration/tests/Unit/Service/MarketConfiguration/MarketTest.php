@@ -23,7 +23,7 @@ final class MarketTest extends TestCase
             array_map(
                 static fn (Market $market): array => [
                     $market->domain(),
-                    $market->name(),
+                    $market->displayName(),
                     $market->languageCode(),
                     $market->currencyCode(),
                     $market->countryCode(),
