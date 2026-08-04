@@ -6,7 +6,9 @@
     <services>
         <defaults autowire="true" autoconfigure="true" public="false"/>
 
-        <service id="Jv\MarketConfiguration\Service\MarketConfiguration\MarketDefinitions"/>
+        <service id="Jv\MarketConfiguration\Service\MarketConfiguration\MarketDefinitions">
+            <argument>%jv_market_configuration.sales_channel_url_template%</argument>
+        </service>
 
         <service id="Jv\MarketConfiguration\Service\MarketConfiguration\ConfigureCustomerScopeService"/>
 

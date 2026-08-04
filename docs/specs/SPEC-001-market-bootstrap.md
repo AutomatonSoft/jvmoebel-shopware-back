@@ -36,16 +36,22 @@
 
 ### Рынки
 
-Источник: `MarketDefinitions` (код плагина `JvMarketConfiguration`).
+Источник: `MarketDefinitions` (код плагина `JvMarketConfiguration`). Идентичность рынка — строка `domain` (семя UUID); отображаемое имя и URL — отдельные поля.
 
-| domain | language | currency | country |
-|---|---|---|---|
-| `jvmoebel.de` | `de-DE` | `EUR` | `DE` |
-| `jvmoebel.at` | `de-DE` | `EUR` | `AT` |
-| `jvmoebel.ch` | `de-DE` | `CHF` | `CH` |
-| `jvfurniture.co.uk` | `en-GB` | `GBP` | `GB` |
-| `jvmobili.it` | `de-DE` | `EUR` | `IT` |
-| `jvmeble.pl` | `de-DE` | `EUR` | `PL` |
+| domain | name | language | currency | country |
+|---|---|---|---|---|
+| `jvmoebel.de` | JVMöbel Deutschland | `de-DE` | `EUR` | `DE` |
+| `jvmoebel.at` | JVMöbel Österreich | `de-DE` | `EUR` | `AT` |
+| `jvmoebel.ch` | JVMöbel Schweiz | `de-DE` | `CHF` | `CH` |
+| `jvfurniture.co.uk` | JV Furniture | `en-GB` | `GBP` | `GB` |
+| `jvmobili.it` | JVMöbel Italia | `de-DE` | `EUR` | `IT` |
+| `jvmeble.pl` | JVMöbel Polska | `de-DE` | `EUR` | `PL` |
+
+Переводы имени канала пишутся для `de-DE` и `en-GB` (языки, используемые рынками).
+
+### URL канала
+
+URL основного домена — единственная environment-specific часть. Шаблон задаётся параметром `jv_market_configuration.sales_channel_url_template` / env `JV_MARKET_SALES_CHANNEL_URL_TEMPLATE` (плейсхолдер `{domain}`), по умолчанию `https://{domain}`. Staging и local переопределяют шаблон; семена UUID от строки `domain` не меняются.
 
 ### Детерминированные идентификаторы
 
@@ -82,7 +88,7 @@
 
 ### Валюты CHF и GBP
 
-Если валюта отсутствует, bootstrap создаёт её с `factor = 1.0`. Это нейтральное значение: до публикации цен в этих валютах нужны актуальные курсы (источник и этап — отдельное решение).
+Если валюта отсутствует, bootstrap создаёт её с `factor = 1.0`. Реальные курсы **не** задаются bootstrap: они настраиваются отдельным шагом до публикации цен CH/UK (Administration или выделенная команда на этапе прайсинга/импорта). Источник курса фиксируется вместе с тем этапом.
 
 ## Правила
 
@@ -100,9 +106,9 @@
 Для существующего канала upsert **принудительно возвращает** к definitions:
 
 - `typeId` → Storefront;
-- `name`;
+- `name` и переводы имени;
 - `languageId`, `currencyId`, `countryId` и связанные collections;
-- URL, language, currency и snippet set **основного** домена (детерминированный domain id).
+- URL (из текущего URL-шаблона среды), language, currency и snippet set **основного** домена (детерминированный domain id).
 
 **Сохраняются** (не входят в payload повторного upsert):
 
@@ -135,6 +141,7 @@
 - Плагин: `JvMarketConfiguration` (`custom/static-plugins/JvMarketConfiguration`).
 - Команда: `jv:markets:bootstrap` (`--json` для контракта access key).
 - Use cases: `BootstrapMarketsService`, `PrepareMarketReferenceDataService`, `ConfigureCustomerScopeService`.
+- Конфигурация: `JV_MARKET_SALES_CHANNEL_URL_TEMPLATE` / `config/packages/jv_market_configuration.yaml`.
 - Миграции схемы плагина не используются для этих данных: изменения выполняются командой.
 - Локальный оркестратор: `bin/setup-local` (установка, плагин, bootstrap, OpenSearch).
 

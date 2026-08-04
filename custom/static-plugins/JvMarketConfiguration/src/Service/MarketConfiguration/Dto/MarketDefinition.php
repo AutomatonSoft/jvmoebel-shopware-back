@@ -6,11 +6,17 @@ use Shopware\Core\Framework\Uuid\Uuid;
 
 final readonly class MarketDefinition
 {
+    /**
+     * @param array<string, string> $translatedNames language code => display name
+     */
     public function __construct(
         public string $domain,
+        public string $name,
+        public array $translatedNames,
         public string $languageCode,
         public string $currencyCode,
         public string $countryCode,
+        private string $urlTemplate = 'https://{domain}',
     ) {
     }
 
@@ -26,6 +32,6 @@ final readonly class MarketDefinition
 
     public function url(): string
     {
-        return 'https://'.$this->domain;
+        return str_replace('{domain}', $this->domain, $this->urlTemplate);
     }
 }

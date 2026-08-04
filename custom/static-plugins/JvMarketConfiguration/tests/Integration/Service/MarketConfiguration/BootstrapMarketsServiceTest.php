@@ -148,7 +148,7 @@ final class BootstrapMarketsServiceTest extends TestCase
         }
 
         $germanChannel = $this->salesChannel($salesChannelRepository, $germanChannelId, $context);
-        self::assertSame('jvmoebel.de', $germanChannel->getName());
+        self::assertSame('JVMöbel Deutschland', $germanChannel->getName());
         self::assertSame(Defaults::SALES_CHANNEL_TYPE_STOREFRONT, $germanChannel->getTypeId());
         self::assertSame($germanChannelBeforeUpdate->getLanguageId(), $germanChannel->getLanguageId());
         self::assertSame($germanChannelBeforeUpdate->getCurrencyId(), $germanChannel->getCurrencyId());

@@ -37,7 +37,14 @@ final readonly class PrepareMarketReferenceDataService
     public function execute(array $markets, Context $context): PreparedMarketReferenceData
     {
         $languageIds = [];
-        foreach (array_unique(array_map(static fn (MarketDefinition $market): string => $market->languageCode, $markets)) as $code) {
+        $languageCodes = [];
+        foreach ($markets as $market) {
+            $languageCodes[] = $market->languageCode;
+            foreach (array_keys($market->translatedNames) as $translationLanguageCode) {
+                $languageCodes[] = $translationLanguageCode;
+            }
+        }
+        foreach (array_unique($languageCodes) as $code) {
             $languageIds[$code] = $this->ensureLanguage($code, $context);
         }
 

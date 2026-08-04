@@ -41,7 +41,14 @@ final class PrepareMarketReferenceDataServiceTest extends TestCase
         self::assertInstanceOf(PrepareMarketReferenceDataService::class, $service);
 
         $prepared = $service->execute([
-            new MarketDefinition('jvfurniture.co.uk', 'en-GB', 'GBP', 'GB'),
+            new MarketDefinition(
+                'jvfurniture.co.uk',
+                'JV Furniture',
+                ['de-DE' => 'JV Furniture', 'en-GB' => 'JV Furniture'],
+                'en-GB',
+                'GBP',
+                'GB',
+            ),
         ], $context);
 
         self::assertSame($languageId, $prepared->languageId('en-GB'));

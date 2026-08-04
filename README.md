@@ -21,7 +21,7 @@ Backend платформы JVMöbel на Shopware 6.
 
 Runtime-окружение контейнеров задаёт игнорируемый `.env.local` (`env_file` в Compose): bootstrap генерирует в нём `APP_SECRET` и `INSTANCE_ID` и подставляет локальные Docker-настройки, DSN и имена сервисов. Шаблон — `.env.local.example`. Хостовые вызовы `bin/console` без `.env` / `.env.dist` / `.env.local.php` отключают Dotenv целиком (`bin/console` выставляет `disable_dotenv`), поэтому в Git хранится `.env.dist` с безопасными не-секретными значениями и host-адресами сервисов — штатный механизм Shopware. Секреты в Git не попадают.
 
-Домены sales channels в definitions — продакшн-адреса рынков. Локальная интеграция Next.js не резолвит эти host'ы: она читает `var/bootstrap/sales-channels.json` и обращается к Shopware по явному base URL (например `http://localhost:8000`) с access key нужного канала.
+Домены sales channels в definitions задают идентичность рынка; URL основного домена строится из `JV_MARKET_SALES_CHANNEL_URL_TEMPLATE` (по умолчанию `https://{domain}`). Локальная интеграция Next.js не обязана резолвить эти host'ы: она читает `var/bootstrap/sales-channels.json` и обращается к Shopware по явному base URL (например `http://localhost:8000`) с access key нужного канала.
 
 Первичная установка выполняется одной командой:
 

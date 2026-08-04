@@ -4,6 +4,8 @@ namespace Jv\MarketConfiguration\Service\MarketConfiguration;
 
 use Doctrine\DBAL\Connection;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Dto\MarketBootstrapResult;
+use Jv\MarketConfiguration\Service\MarketConfiguration\Dto\MarketDefinition;
+use Jv\MarketConfiguration\Service\MarketConfiguration\Dto\PreparedMarketReferenceData;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Exception\ReferenceDataNotFoundException;
 use Shopware\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupCollection;
 use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
@@ -78,7 +80,8 @@ final readonly class BootstrapMarketsService
             $payload = [
                 'id' => $salesChannelId,
                 'typeId' => Defaults::SALES_CHANNEL_TYPE_STOREFRONT,
-                'name' => $market->domain,
+                'name' => $market->name,
+                'translations' => $this->translations($market, $referenceData),
                 'languageId' => $languageId,
                 'currencyId' => $currencyId,
                 'countryId' => $countryId,
@@ -125,6 +128,22 @@ final readonly class BootstrapMarketsService
     private function findSalesChannel(string $id, Context $context): ?SalesChannelEntity
     {
         return $this->salesChannelRepository->search(new Criteria([$id]), $context)->first();
+    }
+
+    /**
+     * @return list<array{languageId: string, name: string}>
+     */
+    private function translations(MarketDefinition $market, PreparedMarketReferenceData $referenceData): array
+    {
+        $translations = [];
+        foreach ($market->translatedNames as $languageCode => $name) {
+            $translations[] = [
+                'languageId' => $referenceData->languageId($languageCode),
+                'name' => $name,
+            ];
+        }
+
+        return $translations;
     }
 
     private function countryId(string $isoCode, Context $context): string
