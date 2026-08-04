@@ -2,14 +2,14 @@
 
 namespace Jv\MarketConfiguration\Tests\Unit\Service\MarketConfiguration;
 
-use Jv\MarketConfiguration\Service\MarketConfiguration\MarketDefinitions;
+use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use PHPUnit\Framework\TestCase;
 
-final class MarketDefinitionsTest extends TestCase
+final class MarketTest extends TestCase
 {
     public function testItDefinesEveryMarketExactlyOnce(): void
     {
-        $markets = (new MarketDefinitions())->all();
+        $markets = Market::cases();
 
         self::assertSame(
             [
@@ -21,33 +21,33 @@ final class MarketDefinitionsTest extends TestCase
                 ['jvmeble.pl', 'JVMöbel Polska', 'de-DE', 'EUR', 'PL'],
             ],
             array_map(
-                static fn ($market): array => [
-                    $market->domain,
-                    $market->name,
-                    $market->languageCode,
-                    $market->currencyCode,
-                    $market->countryCode,
+                static fn (Market $market): array => [
+                    $market->domain(),
+                    $market->name(),
+                    $market->languageCode(),
+                    $market->currencyCode(),
+                    $market->countryCode(),
                 ],
                 $markets,
             ),
         );
 
-        $ids = array_map(static fn ($market): string => $market->salesChannelId(), $markets);
+        $ids = array_map(static fn (Market $market): string => $market->salesChannelId(), $markets);
         self::assertCount(6, array_unique($ids));
-        self::assertSame($ids, array_map(static fn ($market): string => $market->salesChannelId(), (new MarketDefinitions())->all()));
+        self::assertSame($ids, array_map(static fn (Market $market): string => $market->salesChannelId(), Market::cases()));
 
-        $domainIds = array_map(static fn ($market): string => $market->salesChannelDomainId(), $markets);
+        $domainIds = array_map(static fn (Market $market): string => $market->salesChannelDomainId(), $markets);
         self::assertCount(6, array_unique($domainIds));
-        self::assertSame($domainIds, array_map(static fn ($market): string => $market->salesChannelDomainId(), (new MarketDefinitions())->all()));
+        self::assertSame($domainIds, array_map(static fn (Market $market): string => $market->salesChannelDomainId(), Market::cases()));
         self::assertSame(
-            array_map(static fn ($market): string => 'https://'.$market->domain, $markets),
-            array_map(static fn ($market): string => $market->url(), $markets),
+            array_map(static fn (Market $market): string => 'https://'.$market->domain(), $markets),
+            array_map(static fn (Market $market): string => $market->url(), $markets),
         );
     }
 
     public function testSalesChannelUrlTemplateIsEnvironmentSpecific(): void
     {
-        $markets = (new MarketDefinitions('http://{domain}.localhost'))->all();
+        $template = 'http://{domain}.localhost';
 
         self::assertSame(
             [
@@ -58,11 +58,15 @@ final class MarketDefinitionsTest extends TestCase
                 'http://jvmobili.it.localhost',
                 'http://jvmeble.pl.localhost',
             ],
-            array_map(static fn ($market): string => $market->url(), $markets),
+            array_map(static fn (Market $market): string => $market->url($template), Market::cases()),
         );
         self::assertSame(
-            (new MarketDefinitions())->all()[0]->salesChannelId(),
-            $markets[0]->salesChannelId(),
+            Market::Germany->salesChannelId(),
+            Market::Germany->salesChannelId(),
+        );
+        self::assertSame(
+            Market::from('jvmoebel.de')->salesChannelId(),
+            Market::Germany->salesChannelId(),
         );
     }
 }

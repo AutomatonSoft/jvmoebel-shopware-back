@@ -4,7 +4,6 @@ namespace Jv\MarketConfiguration\Service\MarketConfiguration;
 
 use Doctrine\DBAL\Connection;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Dto\MarketBootstrapResult;
-use Jv\MarketConfiguration\Service\MarketConfiguration\Dto\MarketDefinition;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Dto\PreparedMarketReferenceData;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Exception\ReferenceDataNotFoundException;
 use Shopware\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupCollection;
@@ -46,8 +45,8 @@ final readonly class BootstrapMarketsService
         private EntityRepository $categoryRepository,
         private EntityRepository $customerGroupRepository,
         private Connection $connection,
-        private MarketDefinitions $marketDefinitions,
         private PrepareMarketReferenceDataService $prepareMarketReferenceDataService,
+        private string $salesChannelUrlTemplate,
     ) {
     }
 
@@ -64,7 +63,7 @@ final readonly class BootstrapMarketsService
      */
     private function executeAtomically(Context $context): array
     {
-        $markets = $this->marketDefinitions->all();
+        $markets = Market::cases();
         $referenceData = $this->prepareMarketReferenceDataService->execute($markets, $context);
         $results = [];
 
@@ -72,15 +71,15 @@ final readonly class BootstrapMarketsService
             $salesChannelId = $market->salesChannelId();
             $existingSalesChannel = $this->findSalesChannel($salesChannelId, $context);
             $accessKey = $existingSalesChannel?->getAccessKey() ?? AccessKeyHelper::generateAccessKey('sales-channel');
-            $languageId = $referenceData->languageId($market->languageCode);
-            $currencyId = $referenceData->currencyId($market->currencyCode);
-            $countryId = $this->countryId($market->countryCode, $context);
-            $snippetSetId = $referenceData->snippetSetId($market->languageCode);
+            $languageId = $referenceData->languageId($market->languageCode());
+            $currencyId = $referenceData->currencyId($market->currencyCode());
+            $countryId = $this->countryId($market->countryCode(), $context);
+            $snippetSetId = $referenceData->snippetSetId($market->languageCode());
 
             $payload = [
                 'id' => $salesChannelId,
                 'typeId' => Defaults::SALES_CHANNEL_TYPE_STOREFRONT,
-                'name' => $market->name,
+                'name' => $market->name(),
                 'translations' => $this->translations($market, $referenceData),
                 'languageId' => $languageId,
                 'currencyId' => $currencyId,
@@ -90,7 +89,7 @@ final readonly class BootstrapMarketsService
                 'countries' => [['id' => $countryId]],
                 'domains' => [[
                     'id' => $market->salesChannelDomainId(),
-                    'url' => $market->url(),
+                    'url' => $market->url($this->salesChannelUrlTemplate),
                     'languageId' => $languageId,
                     'currencyId' => $currencyId,
                     'snippetSetId' => $snippetSetId,
@@ -115,7 +114,7 @@ final readonly class BootstrapMarketsService
 
             $this->salesChannelRepository->upsert([$payload], $context);
             $results[] = new MarketBootstrapResult(
-                $market->domain,
+                $market->domain(),
                 $salesChannelId,
                 $accessKey,
                 null === $existingSalesChannel,
@@ -133,10 +132,10 @@ final readonly class BootstrapMarketsService
     /**
      * @return list<array{languageId: string, name: string}>
      */
-    private function translations(MarketDefinition $market, PreparedMarketReferenceData $referenceData): array
+    private function translations(Market $market, PreparedMarketReferenceData $referenceData): array
     {
         $translations = [];
-        foreach ($market->translatedNames as $languageCode => $name) {
+        foreach ($market->translatedNames() as $languageCode => $name) {
             $translations[] = [
                 'languageId' => $referenceData->languageId($languageCode),
                 'name' => $name,

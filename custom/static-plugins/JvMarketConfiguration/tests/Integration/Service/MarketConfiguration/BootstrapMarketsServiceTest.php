@@ -3,8 +3,7 @@
 namespace Jv\MarketConfiguration\Tests\Integration\Service\MarketConfiguration;
 
 use Jv\MarketConfiguration\Service\MarketConfiguration\BootstrapMarketsService;
-use Jv\MarketConfiguration\Service\MarketConfiguration\Dto\MarketDefinition;
-use Jv\MarketConfiguration\Service\MarketConfiguration\MarketDefinitions;
+use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Customer\Aggregate\CustomerGroup\CustomerGroupCollection;
 use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
@@ -36,9 +35,9 @@ final class BootstrapMarketsServiceTest extends TestCase
     {
         $context = Context::createDefaultContext();
         $service = $this->bootstrapService();
-        $definitions = (new MarketDefinitions())->all();
+        $markets = Market::cases();
 
-        $this->deleteProjectChannels($definitions, $context);
+        $this->deleteProjectChannels($markets, $context);
 
         $created = $service->execute($context);
         self::assertCount(6, $created);
@@ -46,11 +45,11 @@ final class BootstrapMarketsServiceTest extends TestCase
 
         /** @var EntityRepository<SalesChannelCollection> $salesChannelRepository */
         $salesChannelRepository = static::getContainer()->get('sales_channel.repository');
-        $salesChannelIds = array_map(static fn ($market): string => $market->salesChannelId(), $definitions);
+        $salesChannelIds = array_map(static fn (Market $market): string => $market->salesChannelId(), $markets);
         self::assertCount(6, $salesChannelRepository->search(new Criteria($salesChannelIds), $context)->getEntities());
 
-        foreach ($definitions as $definition) {
-            $this->assertConfiguredStorefront($salesChannelRepository, $definition, $context);
+        foreach ($markets as $market) {
+            $this->assertConfiguredStorefront($salesChannelRepository, $market, $context);
         }
     }
 
@@ -58,9 +57,9 @@ final class BootstrapMarketsServiceTest extends TestCase
     {
         $context = Context::createDefaultContext();
         $service = $this->bootstrapService();
-        $definitions = (new MarketDefinitions())->all();
+        $markets = Market::cases();
 
-        $this->deleteProjectChannels($definitions, $context);
+        $this->deleteProjectChannels($markets, $context);
         $created = $service->execute($context);
 
         $createdAccessKeys = [];
@@ -71,15 +70,15 @@ final class BootstrapMarketsServiceTest extends TestCase
         /** @var EntityRepository<SalesChannelCollection> $salesChannelRepository */
         $salesChannelRepository = static::getContainer()->get('sales_channel.repository');
 
-        $germanChannelId = $definitions[0]->salesChannelId();
-        $austrianChannelId = $definitions[1]->salesChannelId();
-        $swissChannelId = $definitions[2]->salesChannelId();
-        $britishChannelId = $definitions[3]->salesChannelId();
+        $germanChannelId = Market::Germany->salesChannelId();
+        $austrianChannelId = Market::Austria->salesChannelId();
+        $swissChannelId = Market::Switzerland->salesChannelId();
+        $britishChannelId = Market::UnitedKingdom->salesChannelId();
         $germanChannelBeforeUpdate = $this->salesChannel($salesChannelRepository, $germanChannelId, $context);
         $austrianChannel = $this->salesChannel($salesChannelRepository, $austrianChannelId, $context);
         $swissChannel = $this->salesChannel($salesChannelRepository, $swissChannelId, $context);
         $britishChannel = $this->salesChannel($salesChannelRepository, $britishChannelId, $context);
-        $germanProjectDomain = $this->salesChannelDomain($germanChannelBeforeUpdate, $definitions[0]->salesChannelDomainId());
+        $germanProjectDomain = $this->salesChannelDomain($germanChannelBeforeUpdate, Market::Germany->salesChannelDomainId());
         $customNavigationCategoryId = Uuid::randomHex();
         $customCustomerGroupId = Uuid::randomHex();
         $additionalDomainId = Uuid::randomHex();
@@ -110,9 +109,9 @@ final class BootstrapMarketsServiceTest extends TestCase
             'currencyId' => $germanProjectDomain->getCurrencyId(),
             'snippetSetId' => $germanProjectDomain->getSnippetSetId(),
         ]], $context);
-        $britishProjectDomain = $this->salesChannelDomain($britishChannel, $definitions[3]->salesChannelDomainId());
+        $britishProjectDomain = $this->salesChannelDomain($britishChannel, Market::UnitedKingdom->salesChannelDomainId());
         $salesChannelDomainRepository->update([[
-            'id' => $definitions[0]->salesChannelDomainId(),
+            'id' => Market::Germany->salesChannelDomainId(),
             'url' => 'https://wrong-market.test',
             'languageId' => $britishChannel->getLanguageId(),
             'currencyId' => $swissChannel->getCurrencyId(),
@@ -162,21 +161,20 @@ final class BootstrapMarketsServiceTest extends TestCase
             'https://local.jvmoebel.test',
             $this->salesChannelDomain($germanChannel, $additionalDomainId)->getUrl(),
         );
-        $this->assertConfiguredStorefront($salesChannelRepository, $definitions[0], $context);
+        $this->assertConfiguredStorefront($salesChannelRepository, Market::Germany, $context);
     }
 
     public function testItGeneratesSeoUrlsForStorefrontChannels(): void
     {
         $context = Context::createDefaultContext();
         $service = $this->bootstrapService();
-        $definitions = (new MarketDefinitions())->all();
 
-        $this->deleteProjectChannels($definitions, $context);
+        $this->deleteProjectChannels(Market::cases(), $context);
         $service->execute($context);
 
         /** @var EntityRepository<SalesChannelCollection> $salesChannelRepository */
         $salesChannelRepository = static::getContainer()->get('sales_channel.repository');
-        $austrianChannel = $this->salesChannel($salesChannelRepository, $definitions[1]->salesChannelId(), $context);
+        $austrianChannel = $this->salesChannel($salesChannelRepository, Market::Austria->salesChannelId(), $context);
 
         $seoCategoryId = Uuid::randomHex();
         /** @var EntityRepository<CategoryCollection> $categoryRepository */
@@ -218,13 +216,13 @@ final class BootstrapMarketsServiceTest extends TestCase
     }
 
     /**
-     * @param list<MarketDefinition> $definitions
+     * @param list<Market> $markets
      */
-    private function deleteProjectChannels(array $definitions, Context $context): void
+    private function deleteProjectChannels(array $markets, Context $context): void
     {
         /** @var EntityRepository<SalesChannelCollection> $salesChannelRepository */
         $salesChannelRepository = static::getContainer()->get('sales_channel.repository');
-        $salesChannelIds = array_map(static fn (MarketDefinition $market): string => $market->salesChannelId(), $definitions);
+        $salesChannelIds = array_map(static fn (Market $market): string => $market->salesChannelId(), $markets);
         $existingIds = $salesChannelRepository->searchIds(new Criteria($salesChannelIds), $context)->getIds();
         if ([] !== $existingIds) {
             $salesChannelRepository->delete(array_map(static fn (string $id): array => ['id' => $id], $existingIds), $context);
@@ -269,18 +267,18 @@ final class BootstrapMarketsServiceTest extends TestCase
     /**
      * @param EntityRepository<SalesChannelCollection> $repository
      */
-    private function assertConfiguredStorefront(EntityRepository $repository, MarketDefinition $definition, Context $context): void
+    private function assertConfiguredStorefront(EntityRepository $repository, Market $market, Context $context): void
     {
-        $salesChannel = $this->salesChannel($repository, $definition->salesChannelId(), $context);
+        $salesChannel = $this->salesChannel($repository, $market->salesChannelId(), $context);
         self::assertSame(Defaults::SALES_CHANNEL_TYPE_STOREFRONT, $salesChannel->getTypeId());
-        self::assertSame($definition->languageCode, $salesChannel->getLanguage()?->getLocale()?->getCode());
-        self::assertSame($definition->currencyCode, $salesChannel->getCurrency()?->getIsoCode());
+        self::assertSame($market->languageCode(), $salesChannel->getLanguage()?->getLocale()?->getCode());
+        self::assertSame($market->currencyCode(), $salesChannel->getCurrency()?->getIsoCode());
 
-        $domain = $this->salesChannelDomain($salesChannel, $definition->salesChannelDomainId());
-        self::assertSame($definition->url(), $domain->getUrl());
+        $domain = $this->salesChannelDomain($salesChannel, $market->salesChannelDomainId());
+        self::assertSame($market->url(), $domain->getUrl());
         self::assertSame($salesChannel->getLanguageId(), $domain->getLanguageId());
         self::assertSame($salesChannel->getCurrencyId(), $domain->getCurrencyId());
-        self::assertSame($definition->languageCode, $domain->getSnippetSet()?->getIso());
+        self::assertSame($market->languageCode(), $domain->getSnippetSet()?->getIso());
     }
 
     private function salesChannelDomain(SalesChannelEntity $salesChannel, string $id): SalesChannelDomainEntity

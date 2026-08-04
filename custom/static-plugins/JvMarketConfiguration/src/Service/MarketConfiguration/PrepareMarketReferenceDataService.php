@@ -2,7 +2,6 @@
 
 namespace Jv\MarketConfiguration\Service\MarketConfiguration;
 
-use Jv\MarketConfiguration\Service\MarketConfiguration\Dto\MarketDefinition;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Dto\PreparedMarketReferenceData;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Exception\ReferenceDataNotFoundException;
 use Shopware\Core\Framework\Context;
@@ -32,15 +31,15 @@ final readonly class PrepareMarketReferenceDataService
     }
 
     /**
-     * @param list<MarketDefinition> $markets
+     * @param list<Market> $markets
      */
     public function execute(array $markets, Context $context): PreparedMarketReferenceData
     {
         $languageIds = [];
         $languageCodes = [];
         foreach ($markets as $market) {
-            $languageCodes[] = $market->languageCode;
-            foreach (array_keys($market->translatedNames) as $translationLanguageCode) {
+            $languageCodes[] = $market->languageCode();
+            foreach (array_keys($market->translatedNames()) as $translationLanguageCode) {
                 $languageCodes[] = $translationLanguageCode;
             }
         }
@@ -49,7 +48,7 @@ final readonly class PrepareMarketReferenceDataService
         }
 
         $currencyIds = [];
-        foreach (array_unique(array_map(static fn (MarketDefinition $market): string => $market->currencyCode, $markets)) as $code) {
+        foreach (array_unique(array_map(static fn (Market $market): string => $market->currencyCode(), $markets)) as $code) {
             $currencyIds[$code] = $this->ensureCurrency($code, $languageIds, $context);
         }
 

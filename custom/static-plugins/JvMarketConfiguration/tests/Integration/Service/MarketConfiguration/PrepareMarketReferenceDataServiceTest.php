@@ -2,7 +2,7 @@
 
 namespace Jv\MarketConfiguration\Tests\Integration\Service\MarketConfiguration;
 
-use Jv\MarketConfiguration\Service\MarketConfiguration\Dto\MarketDefinition;
+use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use Jv\MarketConfiguration\Service\MarketConfiguration\PrepareMarketReferenceDataService;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\Context;
@@ -40,16 +40,7 @@ final class PrepareMarketReferenceDataServiceTest extends TestCase
         $service = static::getContainer()->get(PrepareMarketReferenceDataService::class);
         self::assertInstanceOf(PrepareMarketReferenceDataService::class, $service);
 
-        $prepared = $service->execute([
-            new MarketDefinition(
-                'jvfurniture.co.uk',
-                'JV Furniture',
-                ['de-DE' => 'JV Furniture', 'en-GB' => 'JV Furniture'],
-                'en-GB',
-                'GBP',
-                'GB',
-            ),
-        ], $context);
+        $prepared = $service->execute([Market::UnitedKingdom], $context);
 
         self::assertSame($languageId, $prepared->languageId('en-GB'));
         self::assertTrue($this->language($languageRepository, $languageId, $context)->isActive());
