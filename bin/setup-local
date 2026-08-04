@@ -1,0 +1,249 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$project_dir"
+
+mkdir -p var
+setup_lock="var/setup-local.lock"
+if ! mkdir "$setup_lock" 2>/dev/null; then
+    echo "Another local setup is running, or $setup_lock was left after an interrupted run." >&2
+    exit 1
+fi
+
+fresh_install_admin_marker="var/bootstrap/fresh-install-awaiting-admin"
+sales_channels_json_tmp=''
+env_local_tmp=''
+cleanup() {
+    if [[ -n "$sales_channels_json_tmp" && -f "$sales_channels_json_tmp" ]]; then
+        rm -f -- "$sales_channels_json_tmp"
+    fi
+
+    if [[ -n "$env_local_tmp" && -f "$env_local_tmp" ]]; then
+        rm -f -- "$env_local_tmp"
+    fi
+
+    rmdir "$setup_lock" 2>/dev/null || true
+}
+handle_interrupt() {
+    exit 130
+}
+
+handle_terminate() {
+    exit 143
+}
+
+trap cleanup EXIT
+trap handle_interrupt INT
+trap handle_terminate TERM
+
+env_value() {
+    local env_file="$1"
+    local expected_key="$2"
+    local env_line
+    local value=''
+
+    while IFS= read -r env_line || [[ -n "$env_line" ]]; do
+        if [[ "${env_line%%=*}" == "$expected_key" ]]; then
+            value="${env_line#*=}"
+        fi
+    done < "$env_file"
+
+    printf '%s' "$value"
+}
+
+generated_or_preserved_env_value() {
+    local current_value="$1"
+    local legacy_value="$2"
+    local byte_count="$3"
+
+    if [[ -n "$current_value" && "$current_value" != "$legacy_value" ]]; then
+        printf '%s' "$current_value"
+
+        return 0
+    fi
+
+    if ! command -v openssl >/dev/null 2>&1; then
+        echo "OpenSSL is required to generate local Shopware secrets." >&2
+        exit 1
+    fi
+
+    openssl rand -hex "$byte_count"
+}
+
+mysql_root() {
+    local mysql_root_password
+    mysql_root_password="$(env_value .env.local MYSQL_ROOT_PASSWORD)"
+    if [[ -z "$mysql_root_password" ]]; then
+        echo "MYSQL_ROOT_PASSWORD is missing from .env.local." >&2
+        exit 1
+    fi
+
+    docker compose exec -T -e MYSQL_PWD="$mysql_root_password" database \
+        mysql -uroot "$@"
+}
+
+if ! command -v docker >/dev/null 2>&1; then
+    echo "Docker is required to start the local environment." >&2
+    exit 1
+fi
+
+if ! docker compose version >/dev/null 2>&1; then
+    echo "Docker Compose v2 is required to start the local environment." >&2
+    exit 1
+fi
+
+existing_app_secret=''
+existing_instance_id=''
+env_local_existed=false
+if [[ -f .env.local ]]; then
+    env_local_existed=true
+    existing_app_secret="$(env_value .env.local APP_SECRET)"
+    existing_instance_id="$(env_value .env.local INSTANCE_ID)"
+
+    mkdir -p var/bootstrap
+    chmod 700 var/bootstrap
+    install -m 600 .env.local "var/bootstrap/env-local.before-refresh.$(date +%Y%m%d%H%M%S)"
+fi
+
+app_secret="$(generated_or_preserved_env_value "$existing_app_secret" local-development-only-change-me 68)"
+instance_id="$(generated_or_preserved_env_value "$existing_instance_id" 00000000000000000000000000000000 16)"
+
+env_local_tmp="$(mktemp .env.local.tmp.XXXXXX)"
+awk -v app_secret="$app_secret" -v instance_id="$instance_id" '
+    index($0, "APP_SECRET=") == 1 { print "APP_SECRET=" app_secret; next }
+    index($0, "INSTANCE_ID=") == 1 { print "INSTANCE_ID=" instance_id; next }
+    { print }
+' .env.local.example > "$env_local_tmp"
+chmod 600 "$env_local_tmp"
+mv -f -- "$env_local_tmp" .env.local
+env_local_tmp=''
+
+if [[ "$env_local_existed" == true ]]; then
+    echo "Refreshed deterministic local settings in .env.local."
+else
+    echo "Created .env.local from .env.local.example."
+fi
+
+echo "Starting local infrastructure..."
+docker compose up -d --wait database redis mailer opensearch adminer
+
+echo "Installing Composer dependencies..."
+docker compose run --rm web composer install --no-interaction
+
+mysql_root -e 'SELECT 1' >/dev/null
+
+table_count="$(mysql_root -N -B -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'shopware'")"
+
+shopware_installed=false
+if [[ "$table_count" != '0' ]]; then
+    required_table_count="$(mysql_root -N -B -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'shopware' AND table_name IN ('migration', 'plugin', 'sales_channel', 'system_config', 'user')")"
+
+    if [[ "$required_table_count" != '5' ]]; then
+        echo "The shopware database is not empty and does not contain a completed installation." >&2
+        echo "Resolve the partial installation manually; setup-local will not run system:install --force on it." >&2
+        exit 1
+    fi
+
+    completed_install_count="$(mysql_root shopware -N -B -e "SELECT COUNT(*) FROM system_config WHERE configuration_key = 'core.frw.completedAt'")"
+
+    if [[ "$completed_install_count" == '0' ]]; then
+        echo "The shopware database is not empty and does not contain a completed installation." >&2
+        echo "Resolve the partial installation manually; setup-local will not run system:install --force on it." >&2
+        exit 1
+    fi
+
+    shopware_installed=true
+fi
+
+if [[ -L "$fresh_install_admin_marker" || ( -e "$fresh_install_admin_marker" && ! -f "$fresh_install_admin_marker" ) ]]; then
+    echo "The fresh-install admin marker is not a regular file: $fresh_install_admin_marker" >&2
+    exit 1
+fi
+
+if [[ "$shopware_installed" == false ]]; then
+    mkdir -p var/bootstrap
+    chmod 700 var/bootstrap
+    : > "$fresh_install_admin_marker"
+    chmod 600 "$fresh_install_admin_marker"
+
+    echo "Installing Shopware..."
+    docker compose run --rm web bin/console system:install \
+        --force \
+        --shop-name='JVMöbel Local' \
+        --shop-email='admin@localhost.invalid' \
+        --shop-locale=de-DE \
+        --shop-currency=EUR \
+        --skip-first-run-wizard \
+        --no-interaction
+
+else
+    echo "Shopware is already installed; preserving the existing database."
+fi
+
+local_admin_created=false
+if [[ -L "$fresh_install_admin_marker" || ( -e "$fresh_install_admin_marker" && ! -f "$fresh_install_admin_marker" ) ]]; then
+    echo "The fresh-install admin marker is not a regular file: $fresh_install_admin_marker" >&2
+    exit 1
+fi
+
+if [[ -f "$fresh_install_admin_marker" ]]; then
+    administrator_count="$(mysql_root shopware -N -B -e 'SELECT COUNT(*) FROM user WHERE admin = 1')"
+
+    if [[ "$administrator_count" == '0' ]]; then
+        docker compose run --rm web bin/console user:create admin \
+            --admin \
+            --password=shopware \
+            --firstName=Local \
+            --lastName=Admin \
+            --email=admin@localhost.invalid \
+            --no-interaction
+        local_admin_created=true
+    else
+        echo "An administrator already exists; preserving existing administrator accounts."
+    fi
+
+    rm -f -- "$fresh_install_admin_marker"
+else
+    echo "Shopware is already installed; preserving existing administrator accounts."
+fi
+
+echo "Installing project plugins..."
+docker compose run --rm web bin/console plugin:refresh
+docker compose run --rm web bin/console plugin:install \
+    --activate \
+    --clearCache \
+    JvMarketConfiguration
+
+mkdir -p var/bootstrap
+sales_channels_json_tmp="$(mktemp var/bootstrap/sales-channels.json.tmp.XXXXXX)"
+chmod 600 "$sales_channels_json_tmp"
+docker compose run --rm web bin/console jv:markets:bootstrap --json \
+    > "$sales_channels_json_tmp"
+mv -f -- "$sales_channels_json_tmp" var/bootstrap/sales-channels.json
+chmod 600 var/bootstrap/sales-channels.json
+sales_channels_json_tmp=''
+
+docker compose run --rm web bin/console scheduled-task:register --no-interaction
+
+echo "Initializing OpenSearch indexes..."
+index_prefix="$(env_value .env.local SHOPWARE_ES_INDEX_PREFIX)"
+index_prefix="${index_prefix:-sw}"
+if curl --fail --silent "http://127.0.0.1:9200/_alias/${index_prefix}_product" >/dev/null 2>&1; then
+    echo "OpenSearch product alias already exists; skipping full reindex."
+else
+    docker compose run --rm web bin/console es:index --no-queue --no-progress --no-interaction
+fi
+docker compose run --rm web bin/console es:create:alias --no-interaction
+docker compose run --rm web bin/console es:index:cleanup --force --no-interaction
+
+docker compose up -d --wait
+
+echo
+echo "Local Shopware is ready."
+echo "Administration: http://localhost:8000/admin"
+if [[ "$local_admin_created" == true ]]; then
+    echo "Fresh-install login: admin / shopware"
+fi
+echo "Sales channel access keys: var/bootstrap/sales-channels.json"

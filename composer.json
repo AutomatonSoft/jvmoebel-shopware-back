@@ -4,8 +4,9 @@
     "license": "MIT",
     "type": "project",
     "require": {
-        "php": "^8.4",
+        "php": "^8.5",
         "composer-runtime-api": "^2.0",
+        "jvmoebel/market-configuration": "^0.1",
         "shopware/administration": "*",
         "shopware/core": "6.7.12.2",
         "shopware/deployment-helper": "*",
@@ -41,11 +42,6 @@
             "url": "https://shopware.github.io/conflicts/"
         }
     ],
-    "autoload": {
-        "psr-4": {
-            "App\\": "src/"
-        }
-    },
     "prefer-stable": true,
     "config": {
         "allow-plugins": {

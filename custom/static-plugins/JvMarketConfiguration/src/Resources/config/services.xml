@@ -1,0 +1,32 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services https://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <defaults autowire="true" autoconfigure="true" public="false"/>
+
+        <service id="Jv\MarketConfiguration\Service\MarketConfiguration\ConfigureCustomerScopeService"/>
+
+        <service id="Jv\MarketConfiguration\Service\MarketConfiguration\PrepareMarketReferenceDataService">
+            <argument type="service" id="language.repository"/>
+            <argument type="service" id="locale.repository"/>
+            <argument type="service" id="currency.repository"/>
+            <argument type="service" id="snippet_set.repository"/>
+        </service>
+
+        <service id="Jv\MarketConfiguration\Service\MarketConfiguration\BootstrapMarketsService">
+            <argument type="service" id="sales_channel.repository"/>
+            <argument type="service" id="country.repository"/>
+            <argument type="service" id="payment_method.repository"/>
+            <argument type="service" id="shipping_method.repository"/>
+            <argument type="service" id="category.repository"/>
+            <argument type="service" id="customer_group.repository"/>
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="Jv\MarketConfiguration\Service\MarketConfiguration\PrepareMarketReferenceDataService"/>
+            <argument>%jv_market_configuration.sales_channel_url_template%</argument>
+        </service>
+
+        <service id="Jv\MarketConfiguration\Command\BootstrapMarketsCommand"/>
+    </services>
+</container>

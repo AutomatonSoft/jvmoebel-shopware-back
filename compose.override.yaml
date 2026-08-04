@@ -1,11 +1,17 @@
 services:
     web:
+        env_file: !override
+            - .env.local
         environment:
-            DATABASE_URL: mysql://root:root@database/shopware
-            MESSENGER_TRANSPORT_DSN: redis://redis:6379/messages
-            MESSENGER_TRANSPORT_LOW_PRIORITY_DSN: redis://redis:6379/low_priority
-            MESSENGER_TRANSPORT_FAILURE_DSN: redis://redis:6379/failed
-            PHP_IDE_CONFIG: serverName=jvmoebel-shopware-back
+            HOST: !reset null
+            DATABASE_URL: !reset null
+            MAILER_DSN: !reset null
+            TRUSTED_PROXIES: !reset null
+            SYMFONY_TRUSTED_PROXIES: !reset null
+            OPENSEARCH_URL: !reset null
+            SHOPWARE_ES_ENABLED: !reset null
+            SHOPWARE_ES_INDEXING_ENABLED: !reset null
+            SHOPWARE_ES_INDEX_PREFIX: !reset null
         volumes:
             - ./.docker/php/xdebug.ini:/usr/local/etc/php/conf.d/99-xdebug.ini:ro
         ports: !override
@@ -21,15 +27,15 @@ services:
 
     database:
         image: mysql:8.4
+        env_file:
+            - .env.local
         environment:
             MARIADB_DATABASE: !reset null
             MARIADB_ROOT_PASSWORD: !reset null
             MARIADB_USER: !reset null
             MARIADB_PASSWORD: !reset null
-            MYSQL_DATABASE: shopware
-            MYSQL_ROOT_PASSWORD: root
-            MYSQL_USER: shopware
-            MYSQL_PASSWORD: shopware
+        ports:
+            - 127.0.0.1:3306:3306
         command:
             - --sql-mode=STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION
             - --log-bin-trust-function-creators=1
@@ -38,7 +44,7 @@ services:
         healthcheck:
             test:
                 - CMD-SHELL
-                - mysqladmin ping -h localhost -proot --silent
+                - mysqladmin ping -h localhost -p"$$MYSQL_ROOT_PASSWORD" --silent
             start_period: 10s
             interval: 5s
             timeout: 3s
@@ -65,6 +71,8 @@ services:
             - noeviction
         volumes:
             - redis-data:/data
+        ports:
+            - 127.0.0.1:6379:6379
         healthcheck:
             test:
                 - CMD
@@ -94,16 +102,6 @@ services:
         restart: unless-stopped
         env_file:
             - .env.local
-        environment:
-            DATABASE_URL: mysql://root:root@database/shopware
-            MAILER_DSN: smtp://mailer:1025
-            MESSENGER_TRANSPORT_DSN: redis://redis:6379/messages
-            MESSENGER_TRANSPORT_LOW_PRIORITY_DSN: redis://redis:6379/low_priority
-            MESSENGER_TRANSPORT_FAILURE_DSN: redis://redis:6379/failed
-            OPENSEARCH_URL: http://opensearch:9200
-            SHOPWARE_ES_ENABLED: "1"
-            SHOPWARE_ES_INDEXING_ENABLED: "1"
-            SHOPWARE_ES_INDEX_PREFIX: sw
         command:
             - php
             - bin/console
@@ -129,11 +127,6 @@ services:
         restart: unless-stopped
         env_file:
             - .env.local
-        environment:
-            DATABASE_URL: mysql://root:root@database/shopware
-            MESSENGER_TRANSPORT_DSN: redis://redis:6379/messages
-            MESSENGER_TRANSPORT_LOW_PRIORITY_DSN: redis://redis:6379/low_priority
-            MESSENGER_TRANSPORT_FAILURE_DSN: redis://redis:6379/failed
         command:
             - php
             - bin/console
