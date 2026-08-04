@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: lint / analyse / test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    env:
+      APP_ENV: test
+      APP_URL: http://localhost:8000
+      APP_SECRET: local-ci-only-not-a-production-secret
+      INSTANCE_ID: '00000000000000000000000000000000'
+      DATABASE_URL: mysql://root:root@127.0.0.1:3306/shopware
+      MAILER_DSN: 'null://null'
+      MESSENGER_TRANSPORT_DSN: redis://127.0.0.1:6379/messages
+      MESSENGER_TRANSPORT_LOW_PRIORITY_DSN: redis://127.0.0.1:6379/low_priority
+      MESSENGER_TRANSPORT_FAILURE_DSN: redis://127.0.0.1:6379/failed
+      OPENSEARCH_URL: http://127.0.0.1:9200
+      ADMIN_OPENSEARCH_URL: http://127.0.0.1:9200
+      SHOPWARE_ES_ENABLED: '0'
+      SHOPWARE_ES_INDEXING_ENABLED: '0'
+      SHOPWARE_ES_INDEX_PREFIX: sw
+      LOCK_DSN: flock
+      BLUE_GREEN_DEPLOYMENT: '0'
+      JV_MARKET_SALES_CHANNEL_URL_TEMPLATE: 'https://{domain}'
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: shopware
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -proot --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+      redis:
+        image: redis:7.4-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=10
+
+      opensearch:
+        image: opensearchproject/opensearch:2
+        env:
+          discovery.type: single-node
+          plugins.security.disabled: 'true'
+          DISABLE_INSTALL_DEMO_CONFIG: 'true'
+          OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
+        ports:
+          - 9200:9200
+        options: >-
+          --health-cmd="curl -f http://localhost:9200/_cluster/health || exit 1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.5
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: gd, intl, pdo_mysql, zip, xml, curl, mbstring, sodium
+          coverage: none
+          tools: composer:v2
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Lint
+        run: composer lint
+
+      - name: Analyse
+        run: composer analyse
+
+      - name: Test
+        run: composer test -- --testdox

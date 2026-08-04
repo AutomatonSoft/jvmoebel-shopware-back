@@ -38,7 +38,7 @@ docker compose exec -T web composer analyse
 docker compose exec -T web composer test
 ```
 
-`composer format` (также в контейнере) используется для исправления форматирования перед повторным запуском `composer lint`. Эти же команды используются локально и в CI.
+`composer format` (также в контейнере) используется для исправления форматирования перед повторным запуском `composer lint`. Эти же команды используются локально и в CI (GitHub Actions workflow `.github/workflows/ci.yml` на pull request в `develop` и `main`).
 
 Для изменения Store API, Administration или фонового процесса дополнительно выполняется ручной сценарий на локальном окружении либо staging с подходящими тестовыми данными.
 
