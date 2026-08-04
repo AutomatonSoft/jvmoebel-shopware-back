@@ -30,15 +30,15 @@ Specification создаётся или обновляется до реализ
 
 ## Локальная проверка
 
-Перед открытием или обновлением pull request выполняются:
+Перед открытием или обновлением pull request обязательные проверки запускаются **в контейнере** `web`: на хосте им нужны PHP 8.5, MySQL и OpenSearch, которых в свежем окружении обычно нет.
 
 ```bash
-composer lint
-composer analyse
-composer test
+docker compose exec -T web composer lint
+docker compose exec -T web composer analyse
+docker compose exec -T web composer test
 ```
 
-`composer format` используется для исправления форматирования перед повторным запуском `composer lint`.
+`composer format` (также в контейнере) используется для исправления форматирования перед повторным запуском `composer lint`. Эти же команды используются локально и в CI.
 
 Для изменения Store API, Administration или фонового процесса дополнительно выполняется ручной сценарий на локальном окружении либо staging с подходящими тестовыми данными.
 
