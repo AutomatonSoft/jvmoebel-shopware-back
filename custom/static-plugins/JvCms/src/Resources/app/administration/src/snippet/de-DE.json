@@ -1,0 +1,50 @@
+{
+    "cms": {
+        "elements": {
+            "jv-button": {
+                "label": "Button",
+                "config": {
+                    "label": {
+                        "label": "Beschriftung",
+                        "placeholder": "Zum Angebot"
+                    },
+                    "url": {
+                        "label": "Link",
+                        "placeholder": "https://jvmoebel.de/..."
+                    },
+                    "variant": {
+                        "label": "Variante",
+                        "primary": "Primary",
+                        "secondary": "Secondary",
+                        "link": "Link"
+                    },
+                    "openInNewTab": {
+                        "label": "In neuem Tab öffnen"
+                    }
+                }
+            }
+        },
+        "blocks": {
+            "jv-button-primary": {
+                "label": "Button · Primary"
+            },
+            "jv-button-secondary": {
+                "label": "Button · Secondary"
+            },
+            "jv-button-link": {
+                "label": "Button · Link"
+            }
+        }
+    },
+    "apps": {
+        "sw-cms": {
+            "detail": {
+                "label": {
+                    "blockCategory": {
+                        "button": "Button"
+                    }
+                }
+            }
+        }
+    }
+}

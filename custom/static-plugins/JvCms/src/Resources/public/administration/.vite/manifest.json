@@ -1,0 +1,54 @@
+{
+  "main.js": {
+    "file": "assets/jv-cms-C6def2oR.js",
+    "name": "jv-cms",
+    "src": "main.js",
+    "isEntry": true,
+    "dynamicImports": [
+      "module/sw-cms/elements/jv-button/preview/index.js",
+      "module/sw-cms/elements/jv-button/config/index.js",
+      "module/sw-cms/elements/jv-button/component/index.js",
+      "module/sw-cms/blocks/jv-button-primary/preview/index.js",
+      "module/sw-cms/blocks/jv-button-primary/component/index.js"
+    ]
+  },
+  "module/sw-cms/blocks/jv-button-primary/component/index.js": {
+    "file": "assets/index-DLDOJRol.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-button-primary/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-button-primary/preview/index.js": {
+    "file": "assets/index-Bk2QTkQn.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-button-primary/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DgPnFv4b.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-button/component/index.js": {
+    "file": "assets/index-BrzD2l7m.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-button/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CRB0531x.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-button/config/index.js": {
+    "file": "assets/index-CgBpReOW.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-button/config/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/elements/jv-button/preview/index.js": {
+    "file": "assets/index-BG8c_r_5.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-button/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-D4IckMm7.css"
+    ]
+  }
+}

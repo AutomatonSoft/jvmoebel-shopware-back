@@ -1,0 +1,2 @@
+const e=`{% block sw_cms_element_jv_button %} <div class="sw-cms-el-jv-button" :class="'is-' + element.config.variant.value"> <span class="sw-cms-el-jv-button__label"> {{ element.config.label.value || 'Button' }} </span> </div> {% endblock %}`,{Mixin:t}=Shopware,n={template:e,mixins:[t.getByName("cms-element")],created(){this.initElementConfig("jv-button")}};export{n as default};
+//# sourceMappingURL=index-BrzD2l7m.js.map

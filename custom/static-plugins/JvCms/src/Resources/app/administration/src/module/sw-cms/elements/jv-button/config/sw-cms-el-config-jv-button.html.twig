@@ -1,0 +1,11 @@
+{% block sw_cms_el_config_jv_button %}
+	<div class="sw-cms-el-config-jv-button">
+		<mt-text-field v-model:model-value="element.config.label.value" :label="$t('cms.elements.jv-button.config.label.label')" :placeholder="$t('cms.elements.jv-button.config.label.placeholder')" @update:model-value="onUpdate"/>
+
+		<mt-text-field v-model:model-value="element.config.url.value" :label="$t('cms.elements.jv-button.config.url.label')" :placeholder="$t('cms.elements.jv-button.config.url.placeholder')" class="sw-cms-el-config-jv-button__field" @update:model-value="onUpdate"/>
+
+		<mt-select v-model:model-value="element.config.variant.value" :label="$t('cms.elements.jv-button.config.variant.label')" :options="variantOptions" class="sw-cms-el-config-jv-button__field" @update:model-value="onUpdate"/>
+
+		<mt-switch v-model:model-value="element.config.openInNewTab.value" :label="$t('cms.elements.jv-button.config.openInNewTab.label')" class="sw-cms-el-config-jv-button__field" @update:model-value="onUpdate"/>
+	</div>
+{% endblock %}

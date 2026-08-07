@@ -123,10 +123,10 @@ custom/static-plugins/JvCms/
 │           │   ├── preview/
 │           │   ├── config/
 │           │   └── component/
-│           └── blocks/
-│               ├── jv-button-primary/       # category: 'button'
-│               ├── jv-button-secondary/     # category: 'button'
-│               └── jv-button-link/          # category: 'button'
+│           └── blocks/jv-button/            # category folder (палитра button)
+│               ├── jv-button-primary/
+│               ├── jv-button-secondary/
+│               └── jv-button-link/
 └── tests/
 ```
 
