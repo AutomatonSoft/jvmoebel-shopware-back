@@ -6,6 +6,8 @@
     <services>
         <defaults autowire="true" autoconfigure="true" public="false"/>
 
-        <service id="Jv\Cms\DataResolver\Element\ButtonCmsElementResolver"/>
+        <service id="Jv\Cms\DataResolver\Element\ButtonCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
     </services>
 </container>

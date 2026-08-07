@@ -1,8 +1,5 @@
-<?php declare(strict_types=1);
+<?php
 
-use Shopware\Core\TestBootstrapper;
+declare(strict_types=1);
 
-(new TestBootstrapper())
-    ->setPlatformEmbedded(false)
-    ->addCallingPlugin()
-    ->bootstrap();
+require dirname(__DIR__, 4) . '/tests/TestBootstrap.php';

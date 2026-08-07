@@ -1,0 +1,2 @@
+const o='{% block sw_cms_block_jv_button_secondary %} <div class="sw-cms-block-jv-button-secondary"> <slot name="content"> {% block sw_cms_block_jv_button_secondary_slot_content %}{% endblock %} </slot> </div> {% endblock %}',t={template:o};export{t as default};
+//# sourceMappingURL=index-ObOHta0Z.js.map

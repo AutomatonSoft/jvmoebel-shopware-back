@@ -1,6 +1,6 @@
 {
   "main.js": {
-    "file": "assets/jv-cms-C6def2oR.js",
+    "file": "assets/jv-cms-Bi0Ke1kA.js",
     "name": "jv-cms",
     "src": "main.js",
     "isEntry": true,
@@ -8,23 +8,57 @@
       "module/sw-cms/elements/jv-button/preview/index.js",
       "module/sw-cms/elements/jv-button/config/index.js",
       "module/sw-cms/elements/jv-button/component/index.js",
-      "module/sw-cms/blocks/jv-button-primary/preview/index.js",
-      "module/sw-cms/blocks/jv-button-primary/component/index.js"
+      "module/sw-cms/blocks/jv-button/jv-button-primary/preview/index.js",
+      "module/sw-cms/blocks/jv-button/jv-button-primary/component/index.js",
+      "module/sw-cms/blocks/jv-button/jv-button-secondary/preview/index.js",
+      "module/sw-cms/blocks/jv-button/jv-button-secondary/component/index.js",
+      "module/sw-cms/blocks/jv-button/jv-button-link/preview/index.js",
+      "module/sw-cms/blocks/jv-button/jv-button-link/component/index.js"
     ]
   },
-  "module/sw-cms/blocks/jv-button-primary/component/index.js": {
-    "file": "assets/index-DLDOJRol.js",
+  "module/sw-cms/blocks/jv-button/jv-button-link/component/index.js": {
+    "file": "assets/index-Dkq-YXWg.js",
     "name": "index",
-    "src": "module/sw-cms/blocks/jv-button-primary/component/index.js",
+    "src": "module/sw-cms/blocks/jv-button/jv-button-link/component/index.js",
     "isDynamicEntry": true
   },
-  "module/sw-cms/blocks/jv-button-primary/preview/index.js": {
-    "file": "assets/index-Bk2QTkQn.js",
+  "module/sw-cms/blocks/jv-button/jv-button-link/preview/index.js": {
+    "file": "assets/index-CnQI0VhM.js",
     "name": "index",
-    "src": "module/sw-cms/blocks/jv-button-primary/preview/index.js",
+    "src": "module/sw-cms/blocks/jv-button/jv-button-link/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-oa01MR05.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-button/jv-button-primary/component/index.js": {
+    "file": "assets/index-CEyP9olc.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-button/jv-button-primary/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-button/jv-button-primary/preview/index.js": {
+    "file": "assets/index-i4eM4r5p.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-button/jv-button-primary/preview/index.js",
     "isDynamicEntry": true,
     "css": [
       "assets/index-DgPnFv4b.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-button/jv-button-secondary/component/index.js": {
+    "file": "assets/index-ObOHta0Z.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-button/jv-button-secondary/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-button/jv-button-secondary/preview/index.js": {
+    "file": "assets/index-nJxTJg3t.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-button/jv-button-secondary/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DKrLRM_7.css"
     ]
   },
   "module/sw-cms/elements/jv-button/component/index.js": {

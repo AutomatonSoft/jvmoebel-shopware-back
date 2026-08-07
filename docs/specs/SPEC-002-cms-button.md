@@ -40,21 +40,21 @@
 
 Контракт полей — в platform SPEC-001. В PHP backend:
 
-| артефакт | роль |
-|---|---|
-| `ButtonVariant` | enum `primary` \| `secondary` \| `link`; неизвестное → `primary` |
-| `ButtonStruct` | struct слота; `getApiAlias()` = `cms_jv_button` |
+| артефакт                         | роль                                                                         |
+| -------------------------------- | ---------------------------------------------------------------------------- |
+| `ButtonVariant`                  | enum `primary` \| `secondary` \| `link`; неизвестное → `primary`             |
+| `ButtonStruct`                   | struct слота; `getApiAlias()` = `cms_jv_button`                              |
 | `ButtonCmsElementResolver::TYPE` | строка `jv-button` — **обязана** совпадать с `name` element в Administration |
 
 ### Administration: element vs blocks vs category
 
 Shopware разделяет три понятия:
 
-| понятие | что это | куда попадает |
-|---|---|---|
-| **Element** | тип содержимого слота + config + PHP resolver | `cms_slot.type`, Store API `type` / `data` |
-| **Block** | макет с именованными слотами (часто один слот) | `cms_block.type`; в Store API видны слоты внутри |
-| **Category** | вкладка палитры Blocks в админке | только UI; в API не уходит |
+| понятие      | что это                                        | куда попадает                                    |
+| ------------ | ---------------------------------------------- | ------------------------------------------------ |
+| **Element**  | тип содержимого слота + config + PHP resolver  | `cms_slot.type`, Store API `type` / `data`       |
+| **Block**    | макет с именованными слотами (часто один слот) | `cms_block.type`; в Store API видны слоты внутри |
+| **Category** | вкладка палитры Blocks в админке               | только UI; в API не уходит                       |
 
 **Правильное решение для вариантов primary/secondary/link:**
 
@@ -92,7 +92,7 @@ Shopware разделяет три понятия:
 - Composer name: `jvmoebel/cms`
 - Plugin class: `Jv\Cms\JvCms`
 - Подключение: path repository в корневом `composer.json` + `composer require jvmoebel/cms`
-- Активация: `bin/console plugin:refresh && plugin:install --activate JvCms` (или через `bin/setup-local`, когда bootstrap это включит)
+- Активация: `bin/console plugin:refresh && plugin:install --activate JvCms` (или через `bin/setup-local`, bootstrap это включил)
 
 ### PHP
 
@@ -140,11 +140,11 @@ Snippets: ключи вида `cms.elements.jv-button.*`, `cms.blocks.jv-button-
 
 ### Что уходит наружу
 
-| слой | результат |
-|---|---|
-| Admin save | `cms_block`, `cms_slot` (+ translation config) в MySQL |
-| Store API | слот с `type: jv-button` и `data` после resolver |
-| Next.js | рендер по `type` + `data` (отдельный репозиторий, отдельная задача) |
+| слой       | результат                                                           |
+| ---------- | ------------------------------------------------------------------- |
+| Admin save | `cms_block`, `cms_slot` (+ translation config) в MySQL              |
+| Store API  | слот с `type: jv-button` и `data` после resolver                    |
+| Next.js    | рендер по `type` + `data` (отдельный репозиторий, отдельная задача) |
 
 Twig Storefront для кнопки **не** публикуется (headless, ADR-007).
 
