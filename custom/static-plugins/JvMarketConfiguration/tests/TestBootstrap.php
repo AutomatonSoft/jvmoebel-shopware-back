@@ -5,4 +5,5 @@ use Shopware\Core\TestBootstrapper;
 (new TestBootstrapper())
     ->setPlatformEmbedded(false)
     ->addCallingPlugin()
+    ->addActivePlugins('JvImport')
     ->bootstrap();

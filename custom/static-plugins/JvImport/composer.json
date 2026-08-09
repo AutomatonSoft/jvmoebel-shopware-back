@@ -1,0 +1,30 @@
+{
+    "name": "jvmoebel/import",
+    "description": "JVMöbel import integrations",
+    "type": "shopware-platform-plugin",
+    "license": "proprietary",
+    "version": "0.1.0",
+    "require": {
+        "jvmoebel/market-configuration": "^0.1",
+        "php": "^8.5",
+        "shopware/core": "~6.7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Jv\\Import\\": "src/",
+            "Jv\\CatalogImport\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Jv\\CatalogImport\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "shopware-plugin-class": "Jv\\Import\\JvImport",
+        "label": {
+            "de-DE": "JVMöbel Import",
+            "en-GB": "JVMöbel import"
+        }
+    }
+}

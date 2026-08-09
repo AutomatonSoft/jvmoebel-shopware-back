@@ -1,0 +1,46 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services https://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <defaults autowire="true" autoconfigure="true" public="false"/>
+
+        <service id="Jv\CatalogImport\Subscriber\CosmoShopProductImportSubscriber">
+            <argument type="service" id="Jv\CatalogImport\Service\ProductImport\PrepareCosmoShopProductImportRecordService"/>
+        </service>
+
+        <service id="Jv\CatalogImport\Service\ProductImport\ResolveDefaultProductTaxService">
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+            <argument type="service" id="tax.repository"/>
+        </service>
+
+        <service id="Jv\CatalogImport\Integration\CosmoShop\Normalizer\CosmoShopProductImportDataNormalizer"/>
+        <service id="Jv\CatalogImport\Service\ProductImport\Validation\CosmoShopProductImportDataValidator"/>
+        <service id="Jv\CatalogImport\Service\ProductImport\BuildShopwareProductImportRecordService"/>
+
+        <service id="Jv\CatalogImport\Service\ProductImport\PrepareCosmoShopProductImportRecordService">
+            <argument type="service" id="Jv\CatalogImport\Integration\CosmoShop\Normalizer\CosmoShopProductImportDataNormalizer"/>
+            <argument type="service" id="Jv\CatalogImport\Service\ProductImport\Validation\CosmoShopProductImportDataValidator"/>
+            <argument type="service" id="Jv\CatalogImport\Service\ProductImport\ResolveDefaultProductTaxService"/>
+            <argument type="service" id="Jv\CatalogImport\Service\ProductImport\BuildShopwareProductImportRecordService"/>
+        </service>
+
+        <service id="Jv\CatalogImport\Integration\CosmoShop\Normalizer\CosmoShopReferenceDataNormalizer"/>
+
+        <service id="Jv\CatalogImport\Service\ProductImport\LookupData\UpsertProductImportLookupDataService">
+            <argument type="service" id="delivery_time.repository"/>
+            <argument type="service" id="unit.repository"/>
+        </service>
+
+        <service id="Jv\CatalogImport\Command\BootstrapCosmoShopProfilesCommand">
+            <argument type="service" id="import_export_profile.repository"/>
+        </service>
+
+        <service id="Jv\CatalogImport\Command\UpsertCosmoShopReferencesCommand"/>
+
+        <service id="Jv\CatalogImport\Integration\CosmoShop\Reader\CosmoShopCsvPreflightReaderFactory">
+            <tag name="shopware.import_export.reader_factory" priority="100"/>
+        </service>
+    </services>
+</container>
