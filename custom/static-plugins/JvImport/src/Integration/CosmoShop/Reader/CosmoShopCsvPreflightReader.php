@@ -1,25 +1,48 @@
 <?php declare(strict_types=1);
 
-namespace Jv\CatalogImport\Integration\CosmoShop\Reader;
+namespace Jv\Import\Integration\CosmoShop\Reader;
 
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Content\ImportExport\ImportExportException;
 use Shopware\Core\Content\ImportExport\Processing\Reader\AbstractReader;
 use Shopware\Core\Content\ImportExport\Processing\Reader\CsvReader;
 use Shopware\Core\Content\ImportExport\Struct\Config;
+use Shopware\Core\Framework\ShopwareHttpException;
 
 final class CosmoShopCsvPreflightReader extends AbstractReader
 {
     private bool $preflighted = false;
 
-    public function __construct(private readonly CsvReader $inner = new CsvReader())
-    {
+    public function __construct(
+        private readonly CsvReader $inner,
+        private readonly LoggerInterface $logger,
+        private readonly CosmoShopPreflightFailureRegistry $failureRegistry,
+        private readonly string $importLogId,
+        private readonly string $profileName,
+        private readonly string $environment,
+        private readonly bool $isDryRun,
+    ) {
     }
 
     public function read(Config $config, $resource, int $offset): iterable
     {
         if (!$this->preflighted && 0 === $offset) {
-            $this->preflight($config, $resource);
+            $this->logger->info('CosmoShop product import preflight started.', $this->logContext());
+
+            try {
+                $this->preflight($config, $resource);
+            } catch (ShopwareHttpException $exception) {
+                $this->logger->info('CosmoShop product import preflight rejected.', [
+                    ...$this->logContext(),
+                    'reason' => $exception->getMessage(),
+                ]);
+                $this->failureRegistry->recordPreflightRejected($this->importLogId, $this->isDryRun);
+
+                throw $exception;
+            }
+
             $this->preflighted = true;
+            $this->logger->info('CosmoShop product import preflight passed.', $this->logContext());
         }
 
         yield from $this->inner->read($config, $resource, $offset);
@@ -99,5 +122,16 @@ final class CosmoShopCsvPreflightReader extends AbstractReader
         }
 
         return null;
+    }
+
+    /** @return array{operation: string, importLogId: string, profile: string, environment: string} */
+    private function logContext(): array
+    {
+        return [
+            'operation' => 'cosmoshop_product_import_preflight',
+            'importLogId' => $this->importLogId,
+            'profile' => $this->profileName,
+            'environment' => $this->environment,
+        ];
     }
 }

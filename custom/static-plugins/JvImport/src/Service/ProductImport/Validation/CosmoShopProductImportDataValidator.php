@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace Jv\CatalogImport\Service\ProductImport\Validation;
+namespace Jv\Import\Service\ProductImport\Validation;
 
-use Jv\CatalogImport\Service\ProductImport\Dto\CosmoShopProductImportData;
-use Jv\CatalogImport\Service\ProductImport\Exception\InvalidCosmoShopProductImportDataException;
+use Jv\Import\Service\ProductImport\Dto\CosmoShopProductImportData;
+use Jv\Import\Service\ProductImport\Exception\InvalidCosmoShopProductImportDataException;
 
 final class CosmoShopProductImportDataValidator
 {

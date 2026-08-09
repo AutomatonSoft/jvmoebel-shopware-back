@@ -1,14 +1,14 @@
 <?php declare(strict_types=1);
 
-namespace Jv\CatalogImport\Tests\Integration\ImportExport;
+namespace Jv\Import\Tests\Integration\ImportExport;
 
-use Jv\CatalogImport\Integration\CosmoShop\CosmoShopProductIdentity;
-use Jv\CatalogImport\Integration\CosmoShop\CosmoShopReferenceIdentity;
-use Jv\CatalogImport\Integration\CosmoShop\Profile\MarketImportProfile;
-use Jv\CatalogImport\Integration\CosmoShop\Reader\CosmoShopCsvPreflightReader;
-use Jv\CatalogImport\Service\ProductImport\LookupData\Dto\ProductImportLookupData;
-use Jv\CatalogImport\Service\ProductImport\LookupData\Dto\ProductImportLookupItemData;
-use Jv\CatalogImport\Service\ProductImport\LookupData\UpsertProductImportLookupDataService;
+use Jv\Import\Integration\CosmoShop\CosmoShopProductIdentity;
+use Jv\Import\Integration\CosmoShop\CosmoShopReferenceIdentity;
+use Jv\Import\Integration\CosmoShop\Profile\MarketImportProfile;
+use Jv\Import\Integration\CosmoShop\Reader\CosmoShopCsvPreflightReader;
+use Jv\Import\Service\ProductImport\LookupData\Dto\ProductImportLookupData;
+use Jv\Import\Service\ProductImport\LookupData\Dto\ProductImportLookupItemData;
+use Jv\Import\Service\ProductImport\LookupData\UpsertProductImportLookupDataService;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use League\Flysystem\FilesystemOperator;
 use PHPUnit\Framework\TestCase;

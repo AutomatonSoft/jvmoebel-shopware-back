@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace Jv\CatalogImport\Service\ProductImport;
+namespace Jv\Import\Service\ProductImport;
 
-use Jv\CatalogImport\Service\ProductImport\Dto\ResolvedProductTax;
-use Jv\CatalogImport\Service\ProductImport\Exception\DefaultProductTaxException;
+use Jv\Import\Service\ProductImport\Dto\ResolvedProductTax;
+use Jv\Import\Service\ProductImport\Exception\DefaultProductTaxException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;

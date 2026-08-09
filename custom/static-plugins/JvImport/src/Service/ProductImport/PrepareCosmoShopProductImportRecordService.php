@@ -1,10 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace Jv\CatalogImport\Service\ProductImport;
+namespace Jv\Import\Service\ProductImport;
 
-use Jv\CatalogImport\Integration\CosmoShop\Normalizer\CosmoShopProductImportDataNormalizer;
-use Jv\CatalogImport\Service\ProductImport\Contract\ProductImportRecordPreparer;
-use Jv\CatalogImport\Service\ProductImport\Validation\CosmoShopProductImportDataValidator;
+use Jv\Import\Integration\CosmoShop\Normalizer\CosmoShopProductImportDataNormalizer;
+use Jv\Import\Service\ProductImport\Contract\ProductImportRecordPreparer;
+use Jv\Import\Service\ProductImport\Validation\CosmoShopProductImportDataValidator;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 
 final readonly class PrepareCosmoShopProductImportRecordService implements ProductImportRecordPreparer

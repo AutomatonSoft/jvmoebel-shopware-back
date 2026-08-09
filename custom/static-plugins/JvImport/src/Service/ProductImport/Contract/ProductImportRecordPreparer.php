@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Jv\CatalogImport\Service\ProductImport\Contract;
+namespace Jv\Import\Service\ProductImport\Contract;
 
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 

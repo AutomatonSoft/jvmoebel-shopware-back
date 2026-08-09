@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Jv\CatalogImport\Tests\Unit\Integration\CosmoShop;
+namespace Jv\Import\Tests\Unit\Integration\CosmoShop;
 
-use Jv\CatalogImport\Integration\CosmoShop\CosmoShopReferenceIdentity;
+use Jv\Import\Integration\CosmoShop\CosmoShopReferenceIdentity;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\Uuid\Uuid;
 

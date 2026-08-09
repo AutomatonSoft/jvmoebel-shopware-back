@@ -1,11 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace Jv\CatalogImport\Tests\Integration\Service\ProductImport\LookupData;
+namespace Jv\Import\Tests\Integration\Service\ProductImport\LookupData;
 
-use Jv\CatalogImport\Integration\CosmoShop\CosmoShopReferenceIdentity;
-use Jv\CatalogImport\Service\ProductImport\LookupData\Dto\ProductImportLookupData;
-use Jv\CatalogImport\Service\ProductImport\LookupData\Dto\ProductImportLookupItemData;
-use Jv\CatalogImport\Service\ProductImport\LookupData\UpsertProductImportLookupDataService;
+use Jv\Import\Integration\CosmoShop\CosmoShopReferenceIdentity;
+use Jv\Import\Service\ProductImport\LookupData\Dto\ProductImportLookupData;
+use Jv\Import\Service\ProductImport\LookupData\Dto\ProductImportLookupItemData;
+use Jv\Import\Service\ProductImport\LookupData\UpsertProductImportLookupDataService;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;

@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Jv\CatalogImport\Service\ProductImport\Dto;
+namespace Jv\Import\Service\ProductImport\Dto;
 
 /**
  * Raw CosmoShop values normalized from one CSV row before business validation.

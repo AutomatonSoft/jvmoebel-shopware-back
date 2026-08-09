@@ -1,9 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace Jv\CatalogImport\Command;
+namespace Jv\Import\Command;
 
-use Jv\CatalogImport\Integration\CosmoShop\Normalizer\CosmoShopReferenceDataNormalizer;
-use Jv\CatalogImport\Service\ProductImport\LookupData\UpsertProductImportLookupDataService;
+use Jv\Import\Integration\CosmoShop\Normalizer\CosmoShopReferenceDataNormalizer;
+use Jv\Import\Service\ProductImport\LookupData\UpsertProductImportLookupDataService;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -18,6 +19,8 @@ final class UpsertCosmoShopReferencesCommand extends Command
     public function __construct(
         private readonly CosmoShopReferenceDataNormalizer $normalizer,
         private readonly UpsertProductImportLookupDataService $service,
+        private readonly LoggerInterface $logger,
+        private readonly string $environment,
     ) {
         parent::__construct();
     }
@@ -30,17 +33,37 @@ final class UpsertCosmoShopReferencesCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $file = (string) $input->getArgument('file');
-        $contents = file_get_contents($file);
-        if (false === $contents) {
-            throw new \InvalidArgumentException(sprintf('CosmoShop references file "%s" cannot be read.', $file));
+        $context = [
+            'operation' => 'cosmoshop_product_import_reference_upsert',
+            'environment' => $this->environment,
+        ];
+        $this->logger->info('CosmoShop reference upsert started.', $context);
+
+        try {
+            $contents = file_get_contents($file);
+            if (false === $contents) {
+                throw new \InvalidArgumentException(sprintf('CosmoShop references file "%s" cannot be read.', $file));
+            }
+            $references = $this->normalizer->normalize(json_decode($contents, true, 512, \JSON_THROW_ON_ERROR));
+
+            $this->service->execute($references, Context::createCLIContext());
+
+            $this->logger->info('CosmoShop reference upsert completed.', [
+                ...$context,
+                'deliveryTimes' => count($references->deliveryTimes),
+                'units' => count($references->units),
+            ]);
+            (new SymfonyStyle($input, $output))->success(sprintf('Upserted %d delivery times and %d units.', count($references->deliveryTimes), count($references->units)));
+
+            return self::SUCCESS;
+        } catch (\InvalidArgumentException|\JsonException $exception) {
+            $this->logger->info('CosmoShop reference upsert rejected.', [...$context, 'reason' => $exception->getMessage()]);
+
+            throw $exception;
+        } catch (\Throwable $exception) {
+            $this->logger->error('CosmoShop reference upsert failed.', [...$context, 'exception' => $exception]);
+
+            throw $exception;
         }
-        $references = $this->normalizer->normalize(json_decode($contents, true, 512, \JSON_THROW_ON_ERROR));
-
-        $context = Context::createCLIContext();
-        $this->service->execute($references, $context);
-
-        (new SymfonyStyle($input, $output))->success(sprintf('Upserted %d delivery times and %d units.', count($references->deliveryTimes), count($references->units)));
-
-        return self::SUCCESS;
     }
 }

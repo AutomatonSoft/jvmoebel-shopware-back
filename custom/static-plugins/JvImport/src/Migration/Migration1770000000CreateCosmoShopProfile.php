@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Jv\CatalogImport\Migration;
+namespace Jv\Import\Migration;
 
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Migration\MigrationStep;

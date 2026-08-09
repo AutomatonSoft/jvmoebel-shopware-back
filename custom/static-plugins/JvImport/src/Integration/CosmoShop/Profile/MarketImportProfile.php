@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Jv\CatalogImport\Integration\CosmoShop\Profile;
+namespace Jv\Import\Integration\CosmoShop\Profile;
 
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 

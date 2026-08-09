@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Jv\CatalogImport\Integration\CosmoShop\Normalizer;
+namespace Jv\Import\Integration\CosmoShop\Normalizer;
 
-use Jv\CatalogImport\Service\ProductImport\Dto\CosmoShopProductImportData;
+use Jv\Import\Service\ProductImport\Dto\CosmoShopProductImportData;
 
 final class CosmoShopProductImportDataNormalizer
 {

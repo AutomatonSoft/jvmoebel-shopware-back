@@ -6,41 +6,51 @@
     <services>
         <defaults autowire="true" autoconfigure="true" public="false"/>
 
-        <service id="Jv\CatalogImport\Subscriber\CosmoShopProductImportSubscriber">
-            <argument type="service" id="Jv\CatalogImport\Service\ProductImport\PrepareCosmoShopProductImportRecordService"/>
+        <service id="Jv\Import\Subscriber\CosmoShopProductImportSubscriber">
+            <argument type="service" id="Jv\Import\Service\ProductImport\PrepareCosmoShopProductImportRecordService"/>
         </service>
 
-        <service id="Jv\CatalogImport\Service\ProductImport\ResolveDefaultProductTaxService">
+        <service id="Jv\Import\Service\ProductImport\ResolveDefaultProductTaxService">
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
             <argument type="service" id="tax.repository"/>
         </service>
 
-        <service id="Jv\CatalogImport\Integration\CosmoShop\Normalizer\CosmoShopProductImportDataNormalizer"/>
-        <service id="Jv\CatalogImport\Service\ProductImport\Validation\CosmoShopProductImportDataValidator"/>
-        <service id="Jv\CatalogImport\Service\ProductImport\BuildShopwareProductImportRecordService"/>
+        <service id="Jv\Import\Integration\CosmoShop\Normalizer\CosmoShopProductImportDataNormalizer"/>
+        <service id="Jv\Import\Service\ProductImport\Validation\CosmoShopProductImportDataValidator"/>
+        <service id="Jv\Import\Service\ProductImport\BuildShopwareProductImportRecordService"/>
 
-        <service id="Jv\CatalogImport\Service\ProductImport\PrepareCosmoShopProductImportRecordService">
-            <argument type="service" id="Jv\CatalogImport\Integration\CosmoShop\Normalizer\CosmoShopProductImportDataNormalizer"/>
-            <argument type="service" id="Jv\CatalogImport\Service\ProductImport\Validation\CosmoShopProductImportDataValidator"/>
-            <argument type="service" id="Jv\CatalogImport\Service\ProductImport\ResolveDefaultProductTaxService"/>
-            <argument type="service" id="Jv\CatalogImport\Service\ProductImport\BuildShopwareProductImportRecordService"/>
+        <service id="Jv\Import\Service\ProductImport\PrepareCosmoShopProductImportRecordService">
+            <argument type="service" id="Jv\Import\Integration\CosmoShop\Normalizer\CosmoShopProductImportDataNormalizer"/>
+            <argument type="service" id="Jv\Import\Service\ProductImport\Validation\CosmoShopProductImportDataValidator"/>
+            <argument type="service" id="Jv\Import\Service\ProductImport\ResolveDefaultProductTaxService"/>
+            <argument type="service" id="Jv\Import\Service\ProductImport\BuildShopwareProductImportRecordService"/>
         </service>
 
-        <service id="Jv\CatalogImport\Integration\CosmoShop\Normalizer\CosmoShopReferenceDataNormalizer"/>
+        <service id="Jv\Import\Integration\CosmoShop\Normalizer\CosmoShopReferenceDataNormalizer"/>
 
-        <service id="Jv\CatalogImport\Service\ProductImport\LookupData\UpsertProductImportLookupDataService">
+        <service id="Jv\Import\Service\ProductImport\LookupData\UpsertProductImportLookupDataService">
             <argument type="service" id="delivery_time.repository"/>
             <argument type="service" id="unit.repository"/>
         </service>
 
-        <service id="Jv\CatalogImport\Command\BootstrapCosmoShopProfilesCommand">
+        <service id="Jv\Import\Command\BootstrapCosmoShopProfilesCommand">
             <argument type="service" id="import_export_profile.repository"/>
+            <argument key="$environment">%kernel.environment%</argument>
         </service>
 
-        <service id="Jv\CatalogImport\Command\UpsertCosmoShopReferencesCommand"/>
+        <service id="Jv\Import\Command\UpsertCosmoShopReferencesCommand">
+            <argument key="$environment">%kernel.environment%</argument>
+        </service>
 
-        <service id="Jv\CatalogImport\Integration\CosmoShop\Reader\CosmoShopCsvPreflightReaderFactory">
+        <service id="Jv\Import\Integration\CosmoShop\Reader\CosmoShopCsvPreflightReaderFactory">
+            <argument key="$environment">%kernel.environment%</argument>
             <tag name="shopware.import_export.reader_factory" priority="100"/>
+        </service>
+
+        <service id="Jv\Import\Integration\CosmoShop\Reader\CosmoShopPreflightFailureRegistry"/>
+        <service id="Jv\Import\Subscriber\CompleteFailedCosmoShopDryRunSubscriber"/>
+        <service id="Jv\Import\Subscriber\CosmoShopImportProcessLoggingSubscriber">
+            <argument key="$environment">%kernel.environment%</argument>
         </service>
     </services>
 </container>

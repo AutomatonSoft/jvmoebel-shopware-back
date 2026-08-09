@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Jv\CatalogImport\Integration\CosmoShop;
+namespace Jv\Import\Integration\CosmoShop;
 
 final class CosmoShopDeliveryTime
 {

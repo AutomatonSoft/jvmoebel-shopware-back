@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Jv\CatalogImport\Tests\Unit\Integration\CosmoShop\Profile;
+namespace Jv\Import\Tests\Unit\Integration\CosmoShop\Profile;
 
-use Jv\CatalogImport\Integration\CosmoShop\Profile\MarketImportProfile;
+use Jv\Import\Integration\CosmoShop\Profile\MarketImportProfile;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;

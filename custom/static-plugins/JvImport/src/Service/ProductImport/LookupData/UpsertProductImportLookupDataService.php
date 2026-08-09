@@ -1,12 +1,12 @@
 <?php declare(strict_types=1);
 
-namespace Jv\CatalogImport\Service\ProductImport\LookupData;
+namespace Jv\Import\Service\ProductImport\LookupData;
 
-use Jv\CatalogImport\Integration\CosmoShop\CosmoShopDeliveryTime;
-use Jv\CatalogImport\Integration\CosmoShop\CosmoShopReferenceIdentity;
-use Jv\CatalogImport\Service\ProductImport\LookupData\Dto\ProductImportLookupData;
-use Jv\CatalogImport\Service\ProductImport\LookupData\Dto\ProductImportLookupItemData;
-use Jv\CatalogImport\Service\ProductImport\LookupData\Exception\InvalidProductImportLookupDataException;
+use Jv\Import\Integration\CosmoShop\CosmoShopDeliveryTime;
+use Jv\Import\Integration\CosmoShop\CosmoShopReferenceIdentity;
+use Jv\Import\Service\ProductImport\LookupData\Dto\ProductImportLookupData;
+use Jv\Import\Service\ProductImport\LookupData\Dto\ProductImportLookupItemData;
+use Jv\Import\Service\ProductImport\LookupData\Exception\InvalidProductImportLookupDataException;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;

@@ -1,9 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace Jv\CatalogImport\Command;
+namespace Jv\Import\Command;
 
-use Jv\CatalogImport\Integration\CosmoShop\Profile\MarketImportProfile;
+use Jv\Import\Integration\CosmoShop\Profile\MarketImportProfile;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
+use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -21,34 +22,50 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 final class BootstrapCosmoShopProfilesCommand extends Command
 {
     /** @param EntityRepository<EntityCollection<\Shopware\Core\Content\ImportExport\ImportExportProfileEntity>> $profileRepository */
-    public function __construct(private readonly EntityRepository $profileRepository)
-    {
+    public function __construct(
+        private readonly EntityRepository $profileRepository,
+        private readonly LoggerInterface $logger,
+        private readonly string $environment,
+    ) {
         parent::__construct();
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $profiles = array_map(static function (Market $market): array {
-            $technicalName = MarketImportProfile::technicalName($market);
+        $context = [
+            'operation' => 'cosmoshop_product_import_profile_bootstrap',
+            'environment' => $this->environment,
+        ];
+        $this->logger->info('CosmoShop import profile bootstrap started.', $context);
 
-            return [
-                'id' => Uuid::fromStringToHex('jvmoebel.import-profile.'.$technicalName),
-                'technicalName' => $technicalName,
-                'type' => 'import',
-                'sourceEntity' => 'product',
-                'fileType' => 'text/csv',
-                'delimiter' => ';',
-                'enclosure' => '"',
-                'mapping' => MarketImportProfile::mapping($market),
-                'updateBy' => ['id'],
-                'config' => [],
-            ];
-        }, Market::cases());
+        try {
+            $profiles = array_map(static function (Market $market): array {
+                $technicalName = MarketImportProfile::technicalName($market);
 
-        $this->profileRepository->upsert($profiles, Context::createCLIContext());
+                return [
+                    'id' => Uuid::fromStringToHex('jvmoebel.import-profile.'.$technicalName),
+                    'technicalName' => $technicalName,
+                    'type' => 'import',
+                    'sourceEntity' => 'product',
+                    'fileType' => 'text/csv',
+                    'delimiter' => ';',
+                    'enclosure' => '"',
+                    'mapping' => MarketImportProfile::mapping($market),
+                    'updateBy' => ['id'],
+                    'config' => [],
+                ];
+            }, Market::cases());
 
-        (new SymfonyStyle($input, $output))->success(sprintf('Configured %d CosmoShop import profile(s).', count($profiles)));
+            $this->profileRepository->upsert($profiles, Context::createCLIContext());
 
-        return self::SUCCESS;
+            $this->logger->info('CosmoShop import profile bootstrap completed.', [...$context, 'profiles' => count($profiles)]);
+            (new SymfonyStyle($input, $output))->success(sprintf('Configured %d CosmoShop import profile(s).', count($profiles)));
+
+            return self::SUCCESS;
+        } catch (\Throwable $exception) {
+            $this->logger->error('CosmoShop import profile bootstrap failed.', [...$context, 'exception' => $exception]);
+
+            throw $exception;
+        }
     }
 }

@@ -1,10 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace Jv\CatalogImport\Integration\CosmoShop\Normalizer;
+namespace Jv\Import\Integration\CosmoShop\Normalizer;
 
-use Jv\CatalogImport\Service\ProductImport\LookupData\Dto\ProductImportLookupData;
-use Jv\CatalogImport\Service\ProductImport\LookupData\Dto\ProductImportLookupItemData;
-use Jv\CatalogImport\Service\ProductImport\LookupData\Exception\InvalidProductImportLookupDataException;
+use Jv\Import\Service\ProductImport\LookupData\Dto\ProductImportLookupData;
+use Jv\Import\Service\ProductImport\LookupData\Dto\ProductImportLookupItemData;
+use Jv\Import\Service\ProductImport\LookupData\Exception\InvalidProductImportLookupDataException;
 
 final class CosmoShopReferenceDataNormalizer
 {

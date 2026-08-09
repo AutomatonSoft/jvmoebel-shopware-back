@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace Jv\CatalogImport\Subscriber;
+namespace Jv\Import\Subscriber;
 
-use Jv\CatalogImport\Integration\CosmoShop\Profile\MarketImportProfile;
-use Jv\CatalogImport\Service\ProductImport\Contract\ProductImportRecordPreparer;
+use Jv\Import\Integration\CosmoShop\Profile\MarketImportProfile;
+use Jv\Import\Service\ProductImport\Contract\ProductImportRecordPreparer;
 use Shopware\Core\Content\ImportExport\Event\ImportExportBeforeImportRecordEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 

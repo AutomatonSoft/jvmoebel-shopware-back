@@ -1,18 +1,18 @@
 <?php declare(strict_types=1);
 
-namespace Jv\CatalogImport\Tests\Unit\Subscriber;
+namespace Jv\Import\Tests\Unit\Subscriber;
 
-use Jv\CatalogImport\Integration\CosmoShop\CosmoShopManufacturerIdentity;
-use Jv\CatalogImport\Integration\CosmoShop\CosmoShopProductIdentity;
-use Jv\CatalogImport\Integration\CosmoShop\CosmoShopReferenceIdentity;
-use Jv\CatalogImport\Integration\CosmoShop\Normalizer\CosmoShopProductImportDataNormalizer;
-use Jv\CatalogImport\Integration\CosmoShop\Profile\MarketImportProfile;
-use Jv\CatalogImport\Service\ProductImport\BuildShopwareProductImportRecordService;
-use Jv\CatalogImport\Service\ProductImport\Contract\ProductImportRecordPreparer;
-use Jv\CatalogImport\Service\ProductImport\PrepareCosmoShopProductImportRecordService;
-use Jv\CatalogImport\Service\ProductImport\ResolveDefaultProductTaxService;
-use Jv\CatalogImport\Service\ProductImport\Validation\CosmoShopProductImportDataValidator;
-use Jv\CatalogImport\Subscriber\CosmoShopProductImportSubscriber;
+use Jv\Import\Integration\CosmoShop\CosmoShopManufacturerIdentity;
+use Jv\Import\Integration\CosmoShop\CosmoShopProductIdentity;
+use Jv\Import\Integration\CosmoShop\CosmoShopReferenceIdentity;
+use Jv\Import\Integration\CosmoShop\Normalizer\CosmoShopProductImportDataNormalizer;
+use Jv\Import\Integration\CosmoShop\Profile\MarketImportProfile;
+use Jv\Import\Service\ProductImport\BuildShopwareProductImportRecordService;
+use Jv\Import\Service\ProductImport\Contract\ProductImportRecordPreparer;
+use Jv\Import\Service\ProductImport\PrepareCosmoShopProductImportRecordService;
+use Jv\Import\Service\ProductImport\ResolveDefaultProductTaxService;
+use Jv\Import\Service\ProductImport\Validation\CosmoShopProductImportDataValidator;
+use Jv\Import\Subscriber\CosmoShopProductImportSubscriber;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;

@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Jv\CatalogImport\Service\ProductImport\LookupData\Dto;
+namespace Jv\Import\Service\ProductImport\LookupData\Dto;
 
 final readonly class ProductImportLookupItemData
 {

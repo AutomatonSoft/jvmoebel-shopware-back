@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Jv\CatalogImport\Tests\Unit\Integration\CosmoShop;
+namespace Jv\Import\Tests\Unit\Integration\CosmoShop;
 
-use Jv\CatalogImport\Integration\CosmoShop\CosmoShopDeliveryTime;
+use Jv\Import\Integration\CosmoShop\CosmoShopDeliveryTime;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

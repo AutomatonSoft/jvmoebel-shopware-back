@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace Jv\CatalogImport\Tests\Unit\Integration\CosmoShop\Normalizer;
+namespace Jv\Import\Tests\Unit\Integration\CosmoShop\Normalizer;
 
-use Jv\CatalogImport\Integration\CosmoShop\Normalizer\CosmoShopReferenceDataNormalizer;
-use Jv\CatalogImport\Service\ProductImport\LookupData\Exception\InvalidProductImportLookupDataException;
+use Jv\Import\Integration\CosmoShop\Normalizer\CosmoShopReferenceDataNormalizer;
+use Jv\Import\Service\ProductImport\LookupData\Exception\InvalidProductImportLookupDataException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

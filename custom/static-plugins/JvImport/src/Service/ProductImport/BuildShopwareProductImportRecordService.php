@@ -1,13 +1,13 @@
 <?php declare(strict_types=1);
 
-namespace Jv\CatalogImport\Service\ProductImport;
+namespace Jv\Import\Service\ProductImport;
 
-use Jv\CatalogImport\Integration\CosmoShop\CosmoShopManufacturerIdentity;
-use Jv\CatalogImport\Integration\CosmoShop\CosmoShopProductIdentity;
-use Jv\CatalogImport\Integration\CosmoShop\CosmoShopReferenceIdentity;
-use Jv\CatalogImport\Service\ProductImport\Dto\CosmoShopProductImportData;
-use Jv\CatalogImport\Service\ProductImport\Dto\ResolvedProductTax;
-use Jv\CatalogImport\Service\ProductImport\Exception\InvalidCosmoShopProductImportDataException;
+use Jv\Import\Integration\CosmoShop\CosmoShopManufacturerIdentity;
+use Jv\Import\Integration\CosmoShop\CosmoShopProductIdentity;
+use Jv\Import\Integration\CosmoShop\CosmoShopReferenceIdentity;
+use Jv\Import\Service\ProductImport\Dto\CosmoShopProductImportData;
+use Jv\Import\Service\ProductImport\Dto\ResolvedProductTax;
+use Jv\Import\Service\ProductImport\Exception\InvalidCosmoShopProductImportDataException;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
 use Shopware\Core\Defaults;
