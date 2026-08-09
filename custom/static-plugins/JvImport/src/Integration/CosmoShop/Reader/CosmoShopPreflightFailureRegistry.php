@@ -4,7 +4,7 @@ namespace Jv\Import\Integration\CosmoShop\Reader;
 
 final class CosmoShopPreflightFailureRegistry
 {
-    private ?string $failedDryRunLogId = null;
+    private ?string $failedConsoleImportLogId = null;
 
     /** @var array<string, true> */
     private array $rejectedImportLogIds = [];
@@ -13,15 +13,13 @@ final class CosmoShopPreflightFailureRegistry
     {
         $this->rejectedImportLogIds[$importLogId] = true;
 
-        if ($isDryRun) {
-            $this->failedDryRunLogId = $importLogId;
-        }
+        $this->failedConsoleImportLogId = $importLogId;
     }
 
-    public function consumeFailedDryRunLogId(): ?string
+    public function consumeFailedConsoleImportLogId(): ?string
     {
-        $importLogId = $this->failedDryRunLogId;
-        $this->failedDryRunLogId = null;
+        $importLogId = $this->failedConsoleImportLogId;
+        $this->failedConsoleImportLogId = null;
 
         return $importLogId;
     }

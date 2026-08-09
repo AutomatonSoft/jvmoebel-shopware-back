@@ -24,6 +24,8 @@
             <argument type="service" id="Jv\Import\Service\ProductImport\Validation\CosmoShopProductImportDataValidator"/>
             <argument type="service" id="Jv\Import\Service\ProductImport\ResolveDefaultProductTaxService"/>
             <argument type="service" id="Jv\Import\Service\ProductImport\BuildShopwareProductImportRecordService"/>
+            <argument type="service" id="product.repository"/>
+            <argument type="service" id="currency.repository"/>
         </service>
 
         <service id="Jv\Import\Integration\CosmoShop\Normalizer\CosmoShopReferenceDataNormalizer"/>

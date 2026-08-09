@@ -54,6 +54,8 @@ final readonly class CosmoShopImportProcessLoggingSubscriber implements EventSub
 
         $importLogId = $event->getMessage()->getLogId();
         if ($this->preflightFailureRegistry->consumePreflightRejection($importLogId)) {
+            $this->importExportService->saveProgress(new \Shopware\Core\Content\ImportExport\Struct\Progress($importLogId, \Shopware\Core\Content\ImportExport\Struct\Progress::STATE_FAILED));
+
             return;
         }
 
@@ -75,7 +77,7 @@ final readonly class CosmoShopImportProcessLoggingSubscriber implements EventSub
 
     private function isCosmoShopProductImport(ImportExportLogEntity $log): bool
     {
-        return $log->getActivity() === ImportExportLogEntity::ACTIVITY_IMPORT
+        return ImportExportLogEntity::ACTIVITY_IMPORT === $log->getActivity()
             && null !== MarketImportProfile::marketForTechnicalName($log->getProfile()?->getTechnicalName());
     }
 

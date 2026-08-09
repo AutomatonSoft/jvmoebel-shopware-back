@@ -27,6 +27,9 @@ final class CosmoShopDeliveryTimeTest extends TestCase
 
     public function testItDoesNotInventADeliveryTimeForAnUnavailableProduct(): void
     {
-        self::assertNull(CosmoShopDeliveryTime::fromLabel('derzeit nicht lieferbar!'));
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('marks the product as unavailable');
+
+        CosmoShopDeliveryTime::fromLabel('derzeit nicht lieferbar!');
     }
 }

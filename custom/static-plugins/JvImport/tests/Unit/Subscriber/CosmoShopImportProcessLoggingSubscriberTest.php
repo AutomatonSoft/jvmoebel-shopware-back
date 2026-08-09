@@ -39,7 +39,7 @@ final class CosmoShopImportProcessLoggingSubscriberTest extends TestCase
 
         $subscriber = new CosmoShopImportProcessLoggingSubscriber(
             $logger,
-            $this->createStub(ImportExportService::class),
+            self::createStub(ImportExportService::class),
             new CosmoShopPreflightFailureRegistry(),
             'test',
         );
@@ -63,7 +63,7 @@ final class CosmoShopImportProcessLoggingSubscriberTest extends TestCase
             ->with(
                 'CosmoShop product import failed.',
                 self::callback(static fn (array $context): bool => $context['importLogId'] === $log->getId()
-                    && $context['profile'] === 'jv_cosmoshop_product_jvmoebel_de'
+                    && 'jv_cosmoshop_product_jvmoebel_de' === $context['profile']
                     && $context['exception'] instanceof \RuntimeException),
             );
 

@@ -27,6 +27,8 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\System\Currency\CurrencyCollection;
+use Shopware\Core\System\Language\LanguageCollection;
 use Shopware\Core\System\SalesChannel\SalesChannelCollection;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -100,6 +102,34 @@ final class CosmoShopImportExportTest extends TestCase
         self::assertStringContainsString('ean is set to required by the user but has no value', $this->importResult($progress));
     }
 
+    public function testItCreatesAnInvalidRecordForAMalformedRowInTheMiddleOfTheCsv(): void
+    {
+        $context = Context::createDefaultContext();
+        $profileId = $this->configureGermanyProfile($context);
+        [$header, $firstRow] = explode("\n", $this->csv(), 2);
+        $malformedRow = 'MALFORMED-ROW;0;1;4260174423463;0;0;0;0;1;0;119.00';
+        $csv = $header."\n".$firstRow."\n".$malformedRow."\n".str_replace('TEST-100034', 'LAST-ROW', $firstRow);
+
+        $progress = $this->dryRun($profileId, $csv);
+
+        self::assertSame(Progress::STATE_FAILED, $progress->getState());
+        self::assertStringContainsString('CosmoShop CSV product row has 11 columns; expected 23.', $this->importResult($progress));
+    }
+
+    public function testItContinuesAfterAMalformedFirstProductRow(): void
+    {
+        $context = Context::createDefaultContext();
+        $profileId = $this->configureGermanyProfile($context);
+        [$header, $validRow] = explode("\n", $this->csv(productNumber: 'VALID-AFTER-MALFORMED-001'), 2);
+        $malformedRow = 'MALFORMED-FIRST;0;1;4260174423463;0;0;0;0;1;0;119.00';
+
+        $progress = $this->dryRun($profileId, $header."\n".$malformedRow."\n".$validRow);
+
+        self::assertSame(Progress::STATE_FAILED, $progress->getState());
+        self::assertSame(1, $progress->getProcessedRecords());
+        self::assertStringContainsString('CosmoShop CSV product row has 11 columns; expected 23.', $this->importResult($progress));
+    }
+
     public function testItUsesTheLastRowForTheSameSkuInOneCsv(): void
     {
         $context = Context::createDefaultContext();
@@ -144,14 +174,85 @@ final class CosmoShopImportExportTest extends TestCase
 
             /** @var EntityRepository<ProductCollection> $repository */
             $repository = static::getContainer()->get('product.repository');
-            $product = $repository->search((new Criteria([$productId]))->addAssociation('translations')->addAssociation('visibilities')->addAssociation('manufacturer')->addAssociation('seoUrls'), $context)->first();
+            $product = $repository->search((new Criteria([$productId]))->addAssociation('translations')->addAssociation('visibilities')->addAssociation('manufacturer')->addAssociation('seoUrls')->addAssociation('price'), $context)->first();
             self::assertInstanceOf(ProductEntity::class, $product);
             self::assertSame('SHARED-987654', $product->getProductNumber());
             self::assertSame('JVMOEBEL', $product->getManufacturer()?->getName());
             self::assertContains('Deutscher Produktname', array_map(static fn ($translation): ?string => $translation->getName(), $product->getTranslations()->getElements()));
             self::assertContains('English product name', array_map(static fn ($translation): ?string => $translation->getName(), $product->getTranslations()->getElements()));
             self::assertCount(2, $product->getVisibilities());
+            self::assertCount(2, $product->getPrice(), json_encode($product->getPrice()->jsonSerialize(), JSON_THROW_ON_ERROR));
             self::assertContains('test-product', array_map(static fn ($seoUrl): string => $seoUrl->getSeoPathInfo(), $product->getSeoUrls()->getElements()));
+        } finally {
+            /** @var EntityRepository<ProductCollection> $repository */
+            $repository = static::getContainer()->get('product.repository');
+            $repository->delete([['id' => $productId]], $context);
+        }
+    }
+
+    public function testItKeepsDistinctGermanTranslationsForGermanyAndAustria(): void
+    {
+        $context = Context::createDefaultContext();
+        $productId = CosmoShopProductIdentity::fromProductNumber('DE-AT-TRANSLATIONS-001');
+
+        try {
+            $this->import($this->configureMarketProfile(Market::Germany, $context), $this->csv(productNumber: 'DE-AT-TRANSLATIONS-001', name: 'Deutscher Name'));
+            $this->import($this->configureMarketProfile(Market::Austria, $context), $this->csv(productNumber: 'DE-AT-TRANSLATIONS-001', name: 'Österreichischer Name'));
+
+            /** @var EntityRepository<ProductCollection> $repository */
+            $repository = static::getContainer()->get('product.repository');
+            $product = $repository->search((new Criteria([$productId]))->addAssociation('translations'), $context)->first();
+            self::assertInstanceOf(ProductEntity::class, $product);
+            self::assertSame('Deutscher Name', $product->getTranslations()->filterByLanguageId(Market::Germany->languageId())->first()?->getName());
+            self::assertSame('Österreichischer Name', $product->getTranslations()->filterByLanguageId(Market::Austria->languageId())->first()?->getName());
+        } finally {
+            /** @var EntityRepository<ProductCollection> $repository */
+            $repository = static::getContainer()->get('product.repository');
+            $repository->delete([['id' => $productId]], $context);
+        }
+    }
+
+    public function testItPreservesBritishPriceWhenEuroIsImportedAfterwards(): void
+    {
+        $context = Context::createDefaultContext();
+        $productId = CosmoShopProductIdentity::fromProductNumber('GBP-EUR-PRICES-001');
+
+        try {
+            $british = $this->import($this->configureMarketProfile(Market::UnitedKingdom, $context), $this->csv(productNumber: 'GBP-EUR-PRICES-001', priceGross: '149.00', urlKey: 'gbp-eur-prices-001'));
+            self::assertSame(Progress::STATE_SUCCEEDED, $british->getState(), $this->importResult($british));
+            $this->import($this->configureMarketProfile(Market::Germany, $context), $this->csv(productNumber: 'GBP-EUR-PRICES-001', priceGross: '119.00', urlKey: 'gbp-eur-prices-001'));
+
+            /** @var EntityRepository<ProductCollection> $repository */
+            $repository = static::getContainer()->get('product.repository');
+            $product = $repository->search((new Criteria([$productId]))->addAssociation('price'), $context)->first();
+            self::assertInstanceOf(ProductEntity::class, $product);
+            self::assertCount(2, $product->getPrice(), json_encode($product->getPrice()->jsonSerialize(), JSON_THROW_ON_ERROR));
+            self::assertSame(149.0, $this->priceForCurrency($product, 'GBP', $context)->getGross());
+            self::assertSame(119.0, $this->priceForCurrency($product, 'EUR', $context)->getGross());
+        } finally {
+            /** @var EntityRepository<ProductCollection> $repository */
+            $repository = static::getContainer()->get('product.repository');
+            $repository->delete([['id' => $productId]], $context);
+        }
+    }
+
+    public function testItUpdatesOneCurrencyWithoutCreatingDuplicatesAndKeepsItsListPrice(): void
+    {
+        $context = Context::createDefaultContext();
+        $productId = CosmoShopProductIdentity::fromProductNumber('GBP-REPEAT-PRICE-001');
+
+        try {
+            $this->import($this->configureMarketProfile(Market::UnitedKingdom, $context), $this->csv(productNumber: 'GBP-REPEAT-PRICE-001', priceGross: '149.00', listPriceGross: '199.00', urlKey: 'gbp-repeat-price-001'));
+            $this->import($this->configureMarketProfile(Market::UnitedKingdom, $context), $this->csv(productNumber: 'GBP-REPEAT-PRICE-001', priceGross: '159.00', listPriceGross: '209.00', urlKey: 'gbp-repeat-price-001'));
+
+            /** @var EntityRepository<ProductCollection> $repository */
+            $repository = static::getContainer()->get('product.repository');
+            $product = $repository->search((new Criteria([$productId]))->addAssociation('price'), $context)->first();
+            self::assertInstanceOf(ProductEntity::class, $product);
+            self::assertCount(2, $product->getPrice());
+            $price = $this->priceForCurrency($product, 'GBP', $context);
+            self::assertSame(159.0, $price->getGross());
+            self::assertSame(209.0, $price->getListPrice()?->getGross());
         } finally {
             /** @var EntityRepository<ProductCollection> $repository */
             $repository = static::getContainer()->get('product.repository');
@@ -163,16 +264,17 @@ final class CosmoShopImportExportTest extends TestCase
     {
         $context = Context::createDefaultContext();
         $productId = CosmoShopProductIdentity::fromProductNumber('CORE-FIELDS-001');
+        $profileId = $this->configureGermanyProfile($context);
         $references = static::getContainer()->get(UpsertProductImportLookupDataService::class);
         self::assertInstanceOf(UpsertProductImportLookupDataService::class, $references);
-        $references->execute(new ProductImportLookupData(
+        $references->execute(Market::Germany, new ProductImportLookupData(
             [new ProductImportLookupItemData('2', ['de' => 'Lieferzeit: 4-8 Wochen'])],
             [new ProductImportLookupItemData('6', ['de' => 'Stück'])],
         ), $context);
 
         try {
             $progress = $this->import(
-                $this->configureGermanyProfile($context),
+                $profileId,
                 $this->csv(
                     productNumber: 'CORE-FIELDS-001',
                     name: 'Produkt mit allen Kernfeldern',
@@ -207,8 +309,8 @@ final class CosmoShopImportExportTest extends TestCase
             self::assertSame(1.5, $product->getPurchaseUnit());
             self::assertSame(1.0, $product->getReferenceUnit());
             self::assertSame('2', $product->getPackUnit());
-            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(2), $product->getDeliveryTimeId());
-            self::assertSame(CosmoShopReferenceIdentity::unitId(6), $product->getUnitId());
+            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::Germany, 2), $product->getDeliveryTimeId());
+            self::assertSame(CosmoShopReferenceIdentity::unitId(Market::Germany, 6), $product->getUnitId());
             $price = $product->getPrice()->first();
             self::assertNotNull($price);
             self::assertSame(119.0, $price->getGross());
@@ -301,6 +403,7 @@ final class CosmoShopImportExportTest extends TestCase
     private function configureMarketProfile(Market $market, Context $context): string
     {
         $this->ensureMarketSalesChannel($market, $context);
+        $this->ensureMarketCurrency($market, $context);
         $technicalName = MarketImportProfile::technicalName($market);
         $profileId = Uuid::fromStringToHex('jvmoebel.import-profile.'.$technicalName);
 
@@ -322,6 +425,27 @@ final class CosmoShopImportExportTest extends TestCase
         return $profileId;
     }
 
+    private function ensureMarketCurrency(Market $market, Context $context): void
+    {
+        /** @var EntityRepository<CurrencyCollection> $repository */
+        $repository = static::getContainer()->get('currency.repository');
+        if (null !== $repository->searchIds((new Criteria())->addFilter(new EqualsFilter('isoCode', $market->currencyCode())), $context)->firstId()) {
+            return;
+        }
+
+        $rounding = ['decimals' => 2, 'interval' => 0.01, 'roundForNet' => true];
+        $repository->create([[
+            'id' => Uuid::fromStringToHex('jv-cosmoshop-import-test-currency-'.$market->currencyCode()),
+            'isoCode' => $market->currencyCode(),
+            'factor' => 1.0,
+            'symbol' => Market::UnitedKingdom === $market ? '£' : $market->currencyCode(),
+            'shortName' => $market->currencyCode(),
+            'name' => $market->currencyCode(),
+            'itemRounding' => $rounding,
+            'totalRounding' => $rounding,
+        ]], $context);
+    }
+
     private function ensureMarketSalesChannel(Market $market, Context $context): void
     {
         /** @var EntityRepository<SalesChannelCollection> $repository */
@@ -329,17 +453,30 @@ final class CosmoShopImportExportTest extends TestCase
         $existing = $repository->search((new Criteria())->setLimit(1), $context)->first();
         self::assertInstanceOf(SalesChannelEntity::class, $existing);
 
+        /** @var EntityRepository<LanguageCollection> $languageRepository */
+        $languageRepository = static::getContainer()->get('language.repository');
+        $rootLanguage = $languageRepository->search((new Criteria([$existing->getLanguageId()]))->addAssociation('locale'), $context)->first();
+        self::assertNotNull($rootLanguage);
+        $languageRepository->upsert([[
+            'id' => $market->languageId(),
+            'parentId' => $rootLanguage->getId(),
+            'name' => 'CosmoShop '.$market->domain(),
+            'localeId' => $rootLanguage->getLocaleId(),
+            'translationCodeId' => $rootLanguage->getLocaleId(),
+            'active' => true,
+        ]], $context);
+
         $repository->upsert([[
             'id' => $market->salesChannelId(),
             'typeId' => $existing->getTypeId(),
-            'languageId' => $existing->getLanguageId(),
+            'languageId' => $market->languageId(),
             'customerGroupId' => $existing->getCustomerGroupId(),
             'currencyId' => $existing->getCurrencyId(),
             'paymentMethodId' => $existing->getPaymentMethodId(),
             'shippingMethodId' => $existing->getShippingMethodId(),
             'countryId' => $existing->getCountryId(),
             'navigationCategoryId' => $existing->getNavigationCategoryId(),
-            'languages' => [['id' => $existing->getLanguageId()]],
+            'languages' => [['id' => $market->languageId()]],
             'accessKey' => 'jv-cosmoshop-import-test-'.$market->domain(),
             'name' => 'CosmoShop import test',
             'active' => true,
@@ -359,13 +496,33 @@ final class CosmoShopImportExportTest extends TestCase
             return $result;
         }
 
+        return $result.' '.$this->invalidRecordsCsv($progress);
+    }
+
+    private function invalidRecordsCsv(Progress $progress): string
+    {
+        $invalidRecordsLogId = $progress->getInvalidRecordsLogId();
+        self::assertNotNull($invalidRecordsLogId);
+        $service = static::getContainer()->get(ImportExportService::class);
+        self::assertInstanceOf(ImportExportService::class, $service);
         $invalidLog = $service->findLog(Context::createDefaultContext(), $invalidRecordsLogId);
         self::assertNotNull($invalidLog->getFile());
-
         $filesystem = static::getContainer()->get('shopware.filesystem.private');
         self::assertInstanceOf(FilesystemOperator::class, $filesystem);
 
-        return $result.' '.$filesystem->read($invalidLog->getFile()->getPath());
+        return $filesystem->read($invalidLog->getFile()->getPath());
+    }
+
+    private function priceForCurrency(ProductEntity $product, string $isoCode, Context $context): \Shopware\Core\Framework\DataAbstractionLayer\Pricing\Price
+    {
+        /** @var EntityRepository<CurrencyCollection> $repository */
+        $repository = static::getContainer()->get('currency.repository');
+        $currencyId = $repository->searchIds((new Criteria())->addFilter(new EqualsFilter('isoCode', $isoCode)), $context)->firstId();
+        self::assertNotNull($currencyId);
+        $price = $product->getPrice()?->getCurrencyPrice($currencyId, false);
+        self::assertNotNull($price);
+
+        return $price;
     }
 
     private function csv(
@@ -386,10 +543,12 @@ final class CosmoShopImportExportTest extends TestCase
         string $referenceUnit = '1',
         string $packUnit = 'Stück',
         string $manufacturerName = 'JVMOEBEL',
+        string $priceGross = '119.00',
+        string $urlKey = 'test-product',
     ): string {
         return implode("\n", [
             'product_number;source_inactive;stock;ean;weight;length;width;height;min_purchase;max_purchase;price_gross;name;description;short_description;keywords;manufacturer_name;list_price_gross;delivery_time_id;unit_id;contents;reference_unit;pack_unit;urlkey',
-            $productNumber.';0;'.$stock.';'.$ean.';'.$weight.';'.$length.';'.$width.';'.$height.';'.$minPurchase.';'.$maxPurchase.';119.00;'.$name.';<p>description</p>;Short description;keyword;'.$manufacturerName.';'.$listPriceGross.';'.$deliveryTimeId.';'.$unitId.';'.$contents.';'.$referenceUnit.';'.$packUnit.';test-product',
+            $productNumber.';0;'.$stock.';'.$ean.';'.$weight.';'.$length.';'.$width.';'.$height.';'.$minPurchase.';'.$maxPurchase.';'.$priceGross.';'.$name.';<p>description</p>;Short description;keyword;'.$manufacturerName.';'.$listPriceGross.';'.$deliveryTimeId.';'.$unitId.';'.$contents.';'.$referenceUnit.';'.$packUnit.';'.$urlKey,
         ]);
     }
 }

@@ -47,10 +47,10 @@ final class MarketImportProfileTest extends TestCase
     }
 
     #[DataProvider('marketLocales')]
-    public function testItMapsTranslationsToTheMarketLocale(Market $market, string $locale): void
+    public function testItMapsTranslationsToTheMarketLanguage(Market $market, string $locale): void
     {
         self::assertContains(
-            ['key' => 'translations.'.$locale.'.name', 'mappedKey' => 'name', 'position' => 13, 'requiredByUser' => true],
+            ['key' => 'translations.'.$market->languageId().'.name', 'mappedKey' => 'name', 'position' => 13, 'requiredByUser' => true],
             MarketImportProfile::mapping($market),
         );
         self::assertSame($market, MarketImportProfile::marketForTechnicalName(MarketImportProfile::technicalName($market)));
@@ -69,9 +69,12 @@ final class MarketImportProfileTest extends TestCase
         self::assertNotContains('tax_rate', array_column(MarketImportProfile::mapping(Market::Germany), 'mappedKey'));
     }
 
-    public function testItLeavesCosmoShopUvpToTheSubscriber(): void
+    public function testItMapsEanDirectlyToTheProduct(): void
     {
-        self::assertNotContains('list_price_gross', array_column(MarketImportProfile::mapping(Market::Germany), 'mappedKey'));
+        self::assertContains(
+            ['key' => 'ean', 'mappedKey' => 'ean', 'position' => 4, 'requiredByUser' => true],
+            MarketImportProfile::mapping(Market::Germany),
+        );
     }
 
     #[DataProvider('marketLocales')]

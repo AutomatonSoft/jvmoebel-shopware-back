@@ -24,12 +24,17 @@ final readonly class CosmoShopProductImportSubscriber implements EventSubscriber
         if (null === $market) {
             return;
         }
+        $name = $event->getRow()['name'] ?? null;
+        if (is_string($name) && str_starts_with($name, '__cosmoshop_csv_row_error__:')) {
+            throw new \InvalidArgumentException(substr($name, strlen('__cosmoshop_csv_row_error__:')));
+        }
 
         $event->setRecord($this->prepareRecord->execute(
             $market,
             $event->getRow(),
             $event->getRecord(),
-            $event->getContext()->getLanguageId(),
+            $market->languageId(),
+            $event->getContext(),
         ));
     }
 }

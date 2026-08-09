@@ -4,12 +4,14 @@ namespace Jv\Import\Command;
 
 use Jv\Import\Integration\CosmoShop\Normalizer\CosmoShopReferenceDataNormalizer;
 use Jv\Import\Service\ProductImport\LookupData\UpsertProductImportLookupDataService;
+use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
@@ -28,6 +30,7 @@ final class UpsertCosmoShopReferencesCommand extends Command
     protected function configure(): void
     {
         $this->addArgument('file', InputArgument::REQUIRED, 'Path to the CosmoShop references JSON file.');
+        $this->addOption('market', null, InputOption::VALUE_REQUIRED, 'CosmoShop market domain.');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -40,13 +43,17 @@ final class UpsertCosmoShopReferencesCommand extends Command
         $this->logger->info('CosmoShop reference upsert started.', $context);
 
         try {
+            $market = Market::tryFrom((string) $input->getOption('market'));
+            if (null === $market) {
+                throw new \InvalidArgumentException('CosmoShop reference upsert requires a known --market domain.');
+            }
             $contents = file_get_contents($file);
             if (false === $contents) {
                 throw new \InvalidArgumentException(sprintf('CosmoShop references file "%s" cannot be read.', $file));
             }
             $references = $this->normalizer->normalize(json_decode($contents, true, 512, \JSON_THROW_ON_ERROR));
 
-            $this->service->execute($references, Context::createCLIContext());
+            $this->service->execute($market, $references, Context::createCLIContext());
 
             $this->logger->info('CosmoShop reference upsert completed.', [
                 ...$context,

@@ -18,12 +18,11 @@ final class CosmoShopCsvPreflightReaderTest extends TestCase
         $resource = $this->resource("product_number;ean;price_gross;name\nSKU-001;4260174423463;119.00;Product\n");
 
         try {
-            self::assertSame([[
-                'product_number' => 'SKU-001',
-                'ean' => '4260174423463',
-                'price_gross' => '119.00',
-                'name' => 'Product',
-            ]], iterator_to_array($reader->read($this->config(), $resource, 0)));
+            $rows = iterator_to_array($reader->read($this->config(), $resource, 0));
+            self::assertSame('SKU-001', $rows[0]['product_number']);
+            self::assertSame('4260174423463', $rows[0]['ean']);
+            self::assertSame('119.00', $rows[0]['price_gross']);
+            self::assertSame('Product', $rows[0]['name']);
         } finally {
             fclose($resource);
         }
@@ -52,7 +51,6 @@ final class CosmoShopCsvPreflightReaderTest extends TestCase
         yield 'duplicate header' => ["product_number;ean;ean;price_gross;name\nSKU-001;4260174423463;4260174423463;119.00;Product\n", 'CosmoShop CSV header contains duplicate column(s): ean.'];
         yield 'missing required header' => ["product_number;price_gross;name\nSKU-001;119.00;Product\n", 'CosmoShop CSV header is missing required column(s): ean.'];
         yield 'header only' => ["product_number;ean;price_gross;name\n", 'CosmoShop CSV file contains no product rows.'];
-        yield 'wrong product column count' => ["product_number;ean;price_gross;name\nSKU-001;4260174423463;119.00;Product;extra\n", 'CosmoShop CSV product row has 5 columns; expected 4.'];
     }
 
     public function testItRecordsAndLogsTheRejectedDryRunPreflight(): void
@@ -83,7 +81,37 @@ final class CosmoShopCsvPreflightReaderTest extends TestCase
             fclose($resource);
         }
 
-        self::assertSame('019fe627a3b371759aac22afeae59c7e', $failureRegistry->consumeFailedDryRunLogId());
+        self::assertSame('019fe627a3b371759aac22afeae59c7e', $failureRegistry->consumeFailedConsoleImportLogId());
+    }
+
+    public function testItMarksAMalformedRowInTheMiddleOfTheStream(): void
+    {
+        $reader = $this->reader();
+        $resource = $this->resource("product_number;ean;price_gross;name\nSKU-001;4260174423463;119.00;First\nSKU-002;4260174423464;119.00\nSKU-003;4260174423465;119.00;Last\n");
+
+        try {
+            $rows = iterator_to_array($reader->read($this->config(), $resource, 0));
+        } finally {
+            fclose($resource);
+        }
+
+        self::assertCount(3, $rows);
+        self::assertSame('CosmoShop CSV product row has 3 columns; expected 4.', $rows[1]['__cosmoshop_csv_row_error']);
+        self::assertSame('SKU-003', $rows[2]['product_number']);
+    }
+
+    public function testItAcceptsUtf8BomBeforeTheFirstHeader(): void
+    {
+        $reader = $this->reader();
+        $resource = $this->resource("\xEF\xBB\xBFproduct_number;ean;price_gross;name\nSKU-001;4260174423463;119.00;Product\n");
+
+        try {
+            $rows = iterator_to_array($reader->read($this->config(), $resource, 0));
+        } finally {
+            fclose($resource);
+        }
+
+        self::assertSame('SKU-001', $rows[0]['product_number']);
     }
 
     /** @return resource */
@@ -110,8 +138,7 @@ final class CosmoShopCsvPreflightReaderTest extends TestCase
     private function reader(?LoggerInterface $logger = null, ?CosmoShopPreflightFailureRegistry $failureRegistry = null): CosmoShopCsvPreflightReader
     {
         return new CosmoShopCsvPreflightReader(
-            new \Shopware\Core\Content\ImportExport\Processing\Reader\CsvReader(),
-            $logger ?? $this->createStub(LoggerInterface::class),
+            $logger ?? self::createStub(LoggerInterface::class),
             $failureRegistry ?? new CosmoShopPreflightFailureRegistry(),
             '019fe627a3b371759aac22afeae59c7e',
             'jv_cosmoshop_product_jvmoebel_de',

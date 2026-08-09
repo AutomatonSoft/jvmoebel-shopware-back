@@ -29,7 +29,7 @@ final class MarketImportProfile
     /** @return list<array{key: string, mappedKey: string, position: int, requiredByUser?: bool, useDefaultValue?: bool, defaultValue?: string}> */
     public static function mapping(Market $market): array
     {
-        $locale = $market->languageCode();
+        $languageId = $market->languageId();
 
         return [
             ['key' => 'productNumber', 'mappedKey' => 'product_number', 'position' => 1, 'requiredByUser' => true],
@@ -44,10 +44,10 @@ final class MarketImportProfile
             ['key' => 'maxPurchase', 'mappedKey' => 'max_purchase', 'position' => 10],
             ['key' => 'price.'.$market->currencyCode().'.gross', 'mappedKey' => 'price_gross', 'position' => 11, 'requiredByUser' => true],
             ['key' => 'price.'.$market->currencyCode().'.net', 'mappedKey' => 'price_net', 'position' => 12],
-            ['key' => 'translations.'.$locale.'.name', 'mappedKey' => 'name', 'position' => 13, 'requiredByUser' => true],
-            ['key' => 'translations.'.$locale.'.description', 'mappedKey' => 'description', 'position' => 14],
-            ['key' => 'translations.'.$locale.'.metaDescription', 'mappedKey' => 'short_description', 'position' => 15],
-            ['key' => 'translations.'.$locale.'.keywords', 'mappedKey' => 'keywords', 'position' => 16],
+            ['key' => 'translations.'.$languageId.'.name', 'mappedKey' => 'name', 'position' => 13, 'requiredByUser' => true],
+            ['key' => 'translations.'.$languageId.'.description', 'mappedKey' => 'description', 'position' => 14],
+            ['key' => 'translations.'.$languageId.'.metaDescription', 'mappedKey' => 'short_description', 'position' => 15],
+            ['key' => 'translations.'.$languageId.'.keywords', 'mappedKey' => 'keywords', 'position' => 16],
             ['key' => 'manufacturer.translations.DEFAULT.name', 'mappedKey' => 'manufacturer_name', 'position' => 17],
             ['key' => 'deliveryTimeId', 'mappedKey' => 'delivery_time_id', 'position' => 18],
             ['key' => 'unitId', 'mappedKey' => 'unit_id', 'position' => 19],

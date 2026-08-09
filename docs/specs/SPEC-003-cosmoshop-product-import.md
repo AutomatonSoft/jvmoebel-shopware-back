@@ -1,10 +1,10 @@
-# SPEC-002 — Импорт товаров CosmoShop
+# SPEC-003 — Импорт товаров CosmoShop
 
 ## Цель
 
 Импортировать товарные данные CosmoShop в общую product model одной Shopware без создания дубликатов при повторном запуске. Product CSV обрабатывается штатным Shopware Import/Export; subscriber только принимает событие и передаёт его application use case. Нормализация формата CosmoShop находится в integration-слое, а проверка и построение Shopware record — в application-слое. Внешний экспортёр читает CosmoShop DB напрямую и создаёт этот CSV-контракт; он не является частью этого репозитория.
 
-Первый проверенный рынок — `jvmoebel.de`.
+Первый проверенный рынок — `jvmoebel.de`; импорт остаётся market-aware для всех шести источников.
 
 ## Границы
 
@@ -28,7 +28,7 @@ price_gross;list_price_gross;stock;delivery_time_id;unit_id;contents;reference_u
 
 `product_number`, `ean`, `price_gross` и `name` обязательны на уровне mapping профиля. SKU — единственная идентичность товара; EAN обязателен как проверка полноты карточки. `stock` не использует штатный `requiredByUser`: Shopware считает строку `0` пустой, хотя это допустимый остаток. `min_purchase` получает CSV default `'1'`.
 
-До обработки строк reader проверяет структуру файла: непустой файл, header, отсутствие пустых и повторяющихся названий колонок, все обязательные колонки, хотя бы одну товарную строку и совпадение числа колонок в первой товарной строке с header. EAN не уникален: source CosmoShop содержит повторяющиеся EAN у разных SKU, поэтому его уникальность не навязывается импортом. SKU уникален глобально; SEO `urlkey` уникален только в пределах language и sales channel, что обеспечивает штатный unique index Shopware.
+До обработки строк reader проверяет структуру файла: непустой файл, header, отсутствие пустых и повторяющихся названий колонок, все обязательные колонки и хотя бы одну товарную строку. При потоковом чтении каждая product row должна иметь ровно столько же CSV-колонок, сколько header; malformed row становится invalid-record без сдвига значений. EAN не уникален: source CosmoShop содержит повторяющиеся EAN у разных SKU, поэтому его уникальность не навязывается импортом. SKU уникален глобально; SEO `urlkey` уникален только в пределах language и sales channel, что обеспечивает штатный unique index Shopware.
 
 Идентичность товара определяется только `product_number` (SKU). Внутренний CosmoShop `artikelid` может сохраняться export-аудитом, но не передаётся в Shopware product profile и не участвует в UUID. Производитель получает отдельный детерминированный ID по нормализованному `manufacturer_name`, чтобы повтор не создавал дубль производителя. Application validator проверяет `stock` как неотрицательное целое, положительную gross-цену и отсутствие literal CSV escape `\\"` в description. Ошибочная строка попадает в invalid-records и не создаёт товар.
 
@@ -46,7 +46,9 @@ Uuid::fromStringToHex('jvmoebel.product.cosmoshop.' . product_number)
 
 Налоги CosmoShop в этой итерации не переносятся. Каждый товар получает штатный default tax Shopware из `core.tax.defaultTaxRate` (сейчас `Standard rate`); net-цена и UVP net вычисляются по его базовой ставке. Country rules этого tax, настроенные в Admin, Shopware применяет при расчёте налогов для страны покупателя. Непрозрачный CosmoShop `mwstid` остаётся вне контракта и может быть обработан отдельной итерацией, когда появится источник его ставки.
 
-Visibility создаётся для sales channel профиля со значением `VISIBILITY_ALL`. Переводы записываются в отдельный language соответствующего Market; locale равен `de-DE` для DE/AT/CH/IT/PL и `en-GB` для UK. Цена записывается в валюту Market. Непустой `urlkey` создаёт canonical SEO URL sales channel; домен не передаётся в CSV.
+Visibility создаётся для sales channel профиля со значением `VISIBILITY_ALL`. Переводы и SEO URL получают детерминированный `Market::languageId()`, а не locale. Первый импорт любого рынка технически инициализирует обязательный system fallback; последующий DE импорт заменяет его немецким содержимым, другие рынки существующий fallback не перезаписывают. Цена обновляет или добавляет только валюту рынка и сохраняет остальные existing currency prices. Если первый рынок не использует default currency Shopware, его цена также технически инициализирует default currency до поступления EUR. Непустой `urlkey` создаёт canonical SEO URL sales channel; домен не передаётся в CSV.
+
+Числовые delivery time и unit ID локальны для базы конкретного CosmoShop. Их deterministic UUID включает `market.domain()`. Reference upsert получает обязательный `--market=<domain>`. Метка `nicht lieferbar`/`not on stock` не создаёт delivery time `0–0 days`: reference import отклоняется до записи.
 
 ## Cross-sell contract
 
@@ -66,7 +68,10 @@ Visibility создаётся для sales channel профиля со знач�
 # 1. Сначала reference data: это небольшой JSON для команды справочников,
 #    не JSONL и не промежуточный product export.
 python3 var/import/export_cosmoshop_references.py --output var/import/cosmoshop-references.json
-bin/console jv:catalog:upsert-cosmoshop-references var/import/cosmoshop-references.json --no-interaction
+bin/console jv:catalog:upsert-cosmoshop-references \
+  var/import/cosmoshop-references.json \
+  --market=jvmoebel.de \
+  --no-interaction
 
 bin/console jv:catalog:bootstrap-import-profiles --no-interaction
 python3 var/import/export_cosmoshop_product_contract_csv.py var/import/cosmoshop-products-de.csv --language de --currency EUR

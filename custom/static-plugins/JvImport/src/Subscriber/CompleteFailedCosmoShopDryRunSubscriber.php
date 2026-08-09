@@ -26,7 +26,7 @@ final readonly class CompleteFailedCosmoShopDryRunSubscriber
             return;
         }
 
-        $importLogId = $this->failureRegistry->consumeFailedDryRunLogId();
+        $importLogId = $this->failureRegistry->consumeFailedConsoleImportLogId();
         if (null === $importLogId) {
             return;
         }

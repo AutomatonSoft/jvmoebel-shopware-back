@@ -3,6 +3,7 @@
 namespace Jv\Import\Service\ProductImport\Contract;
 
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
+use Shopware\Core\Framework\Context;
 
 interface ProductImportRecordPreparer
 {
@@ -12,5 +13,5 @@ interface ProductImportRecordPreparer
      *
      * @return array<string, mixed>
      */
-    public function execute(Market $market, array $row, array $mappedRecord, string $languageId): array;
+    public function execute(Market $market, array $row, array $mappedRecord, string $languageId, Context $context): array;
 }

@@ -7,7 +7,6 @@ use Psr\Log\LoggerInterface;
 use Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogEntity;
 use Shopware\Core\Content\ImportExport\Processing\Reader\AbstractReader;
 use Shopware\Core\Content\ImportExport\Processing\Reader\AbstractReaderFactory;
-use Shopware\Core\Content\ImportExport\Processing\Reader\CsvReader;
 
 final class CosmoShopCsvPreflightReaderFactory extends AbstractReaderFactory
 {
@@ -21,7 +20,6 @@ final class CosmoShopCsvPreflightReaderFactory extends AbstractReaderFactory
     public function create(ImportExportLogEntity $logEntity): AbstractReader
     {
         return new CosmoShopCsvPreflightReader(
-            new CsvReader(),
             $this->logger,
             $this->failureRegistry,
             $logEntity->getId(),

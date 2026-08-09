@@ -7,7 +7,7 @@ use Jv\Import\Integration\CosmoShop\CosmoShopReferenceIdentity;
 use Jv\Import\Service\ProductImport\LookupData\Dto\ProductImportLookupData;
 use Jv\Import\Service\ProductImport\LookupData\Dto\ProductImportLookupItemData;
 use Jv\Import\Service\ProductImport\LookupData\Exception\InvalidProductImportLookupDataException;
-use Shopware\Core\Defaults;
+use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -24,29 +24,25 @@ final readonly class UpsertProductImportLookupDataService
     ) {
     }
 
-    public function execute(ProductImportLookupData $references, Context $context): void
+    public function execute(Market $market, ProductImportLookupData $references, Context $context): void
     {
-        $this->upsertDeliveryTimes($references->deliveryTimes, $context);
-        $this->upsertUnits($references->units, $context);
+        $this->upsertDeliveryTimes($market, $references->deliveryTimes, $context);
+        $this->upsertUnits($market, $references->units, $context);
     }
 
     /** @param list<ProductImportLookupItemData> $deliveryTimes */
-    private function upsertDeliveryTimes(array $deliveryTimes, Context $context): void
+    private function upsertDeliveryTimes(Market $market, array $deliveryTimes, Context $context): void
     {
         $records = [];
         foreach ($deliveryTimes as $deliveryTime) {
-            $labels = $deliveryTime->labels;
-            $label = $labels['de'] ?? reset($labels);
-            if (!is_string($label)) {
-                throw new InvalidProductImportLookupDataException('CosmoShop delivery time is missing a label.');
-            }
+            $label = $this->labelForMarket($deliveryTime->labels, $market);
             $parsed = CosmoShopDeliveryTime::fromLabel($label);
             $records[] = [
-                'id' => CosmoShopReferenceIdentity::deliveryTimeId($deliveryTime->sourceId),
-                'min' => $parsed['min'] ?? 0,
-                'max' => $parsed['max'] ?? 0,
-                'unit' => $parsed['unit'] ?? 'day',
-                'translations' => $this->translations($labels),
+                'id' => CosmoShopReferenceIdentity::deliveryTimeId($market, $deliveryTime->sourceId),
+                'min' => $parsed['min'],
+                'max' => $parsed['max'],
+                'unit' => $parsed['unit'],
+                'translations' => $this->translations($label, $market),
             ];
         }
 
@@ -54,13 +50,13 @@ final readonly class UpsertProductImportLookupDataService
     }
 
     /** @param list<ProductImportLookupItemData> $units */
-    private function upsertUnits(array $units, Context $context): void
+    private function upsertUnits(Market $market, array $units, Context $context): void
     {
         $records = [];
         foreach ($units as $unit) {
             $records[] = [
-                'id' => CosmoShopReferenceIdentity::unitId($unit->sourceId),
-                'translations' => $this->unitTranslations($unit->labels),
+                'id' => CosmoShopReferenceIdentity::unitId($market, $unit->sourceId),
+                'translations' => $this->unitTranslations($this->labelForMarket($unit->labels, $market), $market),
             ];
         }
 
@@ -68,34 +64,36 @@ final readonly class UpsertProductImportLookupDataService
     }
 
     /**
-     * @param array<string, string> $labels
-     *
      * @return array<string, array{name: string}>
      */
-    private function translations(array $labels): array
+    private function translations(string $label, Market $market): array
     {
-        $translations = [];
-        $label = $labels['de'] ?? reset($labels);
-        if (!is_string($label)) {
-            throw new InvalidProductImportLookupDataException('CosmoShop reference is missing a label.');
-        }
-        $translations[Defaults::LANGUAGE_SYSTEM] = ['name' => $label];
-
-        return $translations;
+        return [
+            $market->languageId() => ['name' => $label],
+            \Shopware\Core\Defaults::LANGUAGE_SYSTEM => ['name' => $label],
+        ];
     }
 
     /**
-     * @param array<string, string> $labels
-     *
      * @return array<string, array{name: string, shortCode: string}>
      */
-    private function unitTranslations(array $labels): array
+    private function unitTranslations(string $label, Market $market): array
     {
-        $label = $labels['de'] ?? reset($labels);
+        return [
+            $market->languageId() => ['name' => $label, 'shortCode' => $label],
+            \Shopware\Core\Defaults::LANGUAGE_SYSTEM => ['name' => $label, 'shortCode' => $label],
+        ];
+    }
+
+    /** @param array<string, string> $labels */
+    private function labelForMarket(array $labels, Market $market): string
+    {
+        $locale = Market::UnitedKingdom === $market ? 'en' : 'de';
+        $label = $labels[$locale] ?? reset($labels);
         if (!is_string($label)) {
-            throw new InvalidProductImportLookupDataException('CosmoShop unit is missing a label.');
+            throw new InvalidProductImportLookupDataException('CosmoShop reference is missing a label.');
         }
 
-        return [Defaults::LANGUAGE_SYSTEM => ['name' => $label, 'shortCode' => $label]];
+        return $label;
     }
 }

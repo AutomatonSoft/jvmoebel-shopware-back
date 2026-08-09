@@ -16,6 +16,9 @@ use Shopware\Core\Framework\Uuid\Uuid;
 final class BuildShopwareProductImportRecordService
 {
     /**
+     * @param list<array<string, mixed>>          $existingPrices
+     * @param array<string, array<string, mixed>> $existingTranslations
+     *
      * @return array<string, mixed>
      */
     public function execute(
@@ -23,31 +26,41 @@ final class BuildShopwareProductImportRecordService
         Market $market,
         string $languageId,
         ResolvedProductTax $tax,
+        array $existingPrices,
+        array $existingTranslations,
+        string $marketCurrencyId,
     ): array {
         $record = $data->mappedRecord;
         $id = CosmoShopProductIdentity::fromProductNumber($data->productNumber);
         $record['id'] = $id;
         $record['active'] = 0 === (int) $data->sourceInactive;
+        $record['ean'] = $data->ean;
         $record['stock'] = (int) $data->stock;
-        $record['minPurchase'] = max(1, (int) ($data->minPurchase ?? '1'));
-        $record['purchaseUnit'] = max(1.0, (float) ($data->contents ?? '1'));
-        $record['referenceUnit'] = max(1.0, (float) ($data->referenceUnit ?? '1'));
+        $record['minPurchase'] = (int) $data->minPurchase;
+        $record['purchaseUnit'] = (float) $data->contents;
+        $record['referenceUnit'] = (float) $data->referenceUnit;
         $record['packUnit'] = $data->packUnit ?? 'Stück';
         $record['taxId'] = $tax->id;
+
+        if (null === $data->maxPurchase || $this->isZero($data->maxPurchase)) {
+            unset($record['maxPurchase']);
+        } else {
+            $record['maxPurchase'] = (int) $data->maxPurchase;
+        }
 
         if (null !== $data->manufacturerName) {
             $record['manufacturer'] ??= [];
             $record['manufacturer']['id'] = CosmoShopManufacturerIdentity::fromName($data->manufacturerName);
         }
         if (null !== $data->deliveryTimeId) {
-            $record['deliveryTimeId'] = CosmoShopReferenceIdentity::deliveryTimeId($data->deliveryTimeId);
+            $record['deliveryTimeId'] = CosmoShopReferenceIdentity::deliveryTimeId($market, $data->deliveryTimeId);
         }
         if (null !== $data->unitId && 0 < (int) $data->unitId) {
-            $record['unitId'] = CosmoShopReferenceIdentity::unitId($data->unitId);
+            $record['unitId'] = CosmoShopReferenceIdentity::unitId($market, $data->unitId);
         }
 
-        $record['price'] = $this->prices($record['price'] ?? [], $data, $tax);
-        $record['translations'] = $this->translations($record['translations'] ?? []);
+        $record['price'] = $this->prices($record['price'] ?? [], $data, $tax, $existingPrices, $marketCurrencyId);
+        $record['translations'] = $this->translations($record['translations'] ?? [], $market, $existingTranslations);
         $record['visibilities'] = [[
             'id' => Uuid::fromStringToHex('jvmoebel.product-visibility.'.$market->salesChannelId().$id),
             'salesChannelId' => $market->salesChannelId(),
@@ -73,63 +86,66 @@ final class BuildShopwareProductImportRecordService
     /**
      * @return list<array<string, mixed>>
      */
-    private function prices(mixed $prices, CosmoShopProductImportData $data, ResolvedProductTax $tax): array
+    /** @param list<array<string, mixed>> $existingPrices
+     * @return list<array<string, mixed>>
+     */
+    private function prices(mixed $prices, CosmoShopProductImportData $data, ResolvedProductTax $tax, array $existingPrices, string $marketCurrencyId): array
     {
-        if (!is_array($prices) || [] === $prices) {
-            $prices = [['currencyId' => Defaults::CURRENCY, 'gross' => (float) $data->priceGross]];
+        $gross = (float) $data->priceGross;
+        if ($gross <= 0) {
+            throw new InvalidCosmoShopProductImportDataException('CosmoShop mapped price must be positive.');
         }
-
-        foreach ($prices as $index => $price) {
-            if (!is_array($price)) {
-                throw new InvalidCosmoShopProductImportDataException('CosmoShop price mapping is invalid.');
-            }
-
-            $gross = (float) ($price['gross'] ?? $data->priceGross);
-            if ($gross <= 0) {
-                throw new InvalidCosmoShopProductImportDataException('CosmoShop mapped price must be positive.');
-            }
-
-            $normalized = [
-                'currencyId' => $price['currencyId'] ?? Defaults::CURRENCY,
-                'net' => $this->net($gross, $tax->rate),
-                'gross' => $gross,
+        $normalizedPrices = [$marketCurrencyId => [
+            'currencyId' => $marketCurrencyId,
+            'net' => $this->net($gross, $tax->rate),
+            'gross' => $gross,
+            'linked' => false,
+        ]];
+        $listPriceGross = (float) ($data->listPriceGross ?? 0);
+        if ($listPriceGross > $gross) {
+            $normalizedPrices[$marketCurrencyId]['listPrice'] = [
+                'gross' => $listPriceGross,
+                'net' => $this->net($listPriceGross, $tax->rate),
                 'linked' => false,
             ];
-            $listPriceGross = (float) ($data->listPriceGross ?? (is_array($price['listPrice'] ?? null) ? ($price['listPrice']['gross'] ?? 0) : 0));
-            if ($listPriceGross > $gross) {
-                $normalized['listPrice'] = [
-                    'gross' => $listPriceGross,
-                    'net' => $this->net($listPriceGross, $tax->rate),
-                    'linked' => false,
-                ];
-            }
-            $prices[$index] = $normalized;
         }
 
-        /* @var list<array<string, mixed>> $prices */
-        return $prices;
+        foreach ($existingPrices as $existingPrice) {
+            if (!is_string($existingPrice['currencyId'] ?? null)) {
+                continue;
+            }
+            $normalizedPrices[$existingPrice['currencyId']] ??= $existingPrice;
+        }
+        if (!isset($normalizedPrices[Defaults::CURRENCY])) {
+            $normalizedPrices[Defaults::CURRENCY] = $normalizedPrices[$marketCurrencyId];
+            $normalizedPrices[Defaults::CURRENCY]['currencyId'] = Defaults::CURRENCY;
+        }
+
+        return array_values($normalizedPrices);
     }
 
     /**
      * @return array<string, array<string, mixed>>
      */
-    private function translations(mixed $translations): array
+    /** @param array<string, array<string, mixed>> $existingTranslations
+     * @return array<string, array<string, mixed>>
+     */
+    private function translations(mixed $translations, Market $market, array $existingTranslations): array
     {
         if (!is_array($translations)) {
-            return [];
+            return $existingTranslations;
         }
 
-        $systemTranslation = null;
         foreach ($translations as $languageId => $translation) {
             if (!is_array($translation)) {
                 continue;
             }
             $translation['metaDescription'] = mb_substr(trim(strip_tags((string) ($translation['metaDescription'] ?? ''))), 0, 255);
             $translations[$languageId] = $translation;
-            $systemTranslation ??= $translation;
         }
-        if (is_array($systemTranslation) && !isset($translations[Defaults::LANGUAGE_SYSTEM])) {
-            $translations[Defaults::LANGUAGE_SYSTEM] = $systemTranslation;
+        $translations = array_replace($existingTranslations, $translations);
+        if ((Market::Germany === $market || !isset($translations[Defaults::LANGUAGE_SYSTEM])) && isset($translations[$market->languageId()])) {
+            $translations[Defaults::LANGUAGE_SYSTEM] = $translations[$market->languageId()];
         }
 
         /* @var array<string, array<string, mixed>> $translations */
@@ -139,5 +155,10 @@ final class BuildShopwareProductImportRecordService
     private function net(float $gross, float $taxRate): float
     {
         return round($gross / (1 + ($taxRate / 100)), 2);
+    }
+
+    private function isZero(string $value): bool
+    {
+        return (bool) preg_match('/^0+(?:\.0+)?$/', $value);
     }
 }
