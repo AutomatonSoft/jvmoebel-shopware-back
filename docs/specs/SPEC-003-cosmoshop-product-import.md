@@ -63,24 +63,23 @@ Reference upsert требует label выбранного рынка: `en` дл
 
 ## Запуск product-итерации
 
-Оба export-скрипта подключаются к конкретной CosmoShop DB через одинаковые `COSMOSHOP_DB_HOST`, `COSMOSHOP_DB_PORT`, `COSMOSHOP_DB_NAME`, `COSMOSHOP_DB_USER`, `COSMOSHOP_DB_PASSWORD`; поэтому ими можно выгрузить другой CosmoShop без смены кода. Нужен только пакет `pymysql`.
+`JvImport` устанавливается и активируется через `bin/setup-local`. Exporter к CosmoShop — внешний инструмент и не входит в backend-репозиторий. До запуска команд ниже он должен получить доступ к нужной CosmoShop DB и сформировать два локальных входных файла: JSON справочников и product CSV по этому контракту. Путь к ним выбирает оператор; файлы не хранятся в Git.
 
 ```bash
-# 1. Сначала reference data: это небольшой JSON для команды справочников,
-#    не JSONL и не промежуточный product export.
-python3 var/import/export_cosmoshop_references.py --output var/import/cosmoshop-references.json
+# 1. Сначала reference data: внешний exporter сформировал JSON справочников
+#    для выбранного рынка. Это не JSONL и не промежуточный product export.
 bin/console jv:catalog:upsert-cosmoshop-references \
-  var/import/cosmoshop-references.json \
+  /path/to/cosmoshop-references.json \
   --market=jvmoebel.de \
   --no-interaction
 
 bin/console jv:catalog:bootstrap-import-profiles --no-interaction
-python3 var/import/export_cosmoshop_product_contract_csv.py var/import/cosmoshop-products-de.csv --language de --currency EUR
 
-# 3. Проверка, затем реальный запуск и его повтор тем же файлом.
-bin/console import:entity var/import/cosmoshop-products-de.csv '+1 day' --profile-technical-name jv_cosmoshop_product_jvmoebel_de --dryRun --printErrors --no-interaction
-bin/console import:entity var/import/cosmoshop-products-de.csv '+1 day' --profile-technical-name jv_cosmoshop_product_jvmoebel_de --printErrors --no-interaction
-bin/console import:entity var/import/cosmoshop-products-de.csv '+1 day' --profile-technical-name jv_cosmoshop_product_jvmoebel_de --printErrors --no-interaction
+# 2. Внешний exporter сформировал product CSV для того же рынка.
+#    Проверка, затем реальный запуск и его повтор тем же файлом.
+bin/console import:entity /path/to/cosmoshop-products-de.csv '+1 day' --profile-technical-name jv_cosmoshop_product_jvmoebel_de --dryRun --printErrors --no-interaction
+bin/console import:entity /path/to/cosmoshop-products-de.csv '+1 day' --profile-technical-name jv_cosmoshop_product_jvmoebel_de --printErrors --no-interaction
+bin/console import:entity /path/to/cosmoshop-products-de.csv '+1 day' --profile-technical-name jv_cosmoshop_product_jvmoebel_de --printErrors --no-interaction
 ```
 
 ## Аудит DE-источника
