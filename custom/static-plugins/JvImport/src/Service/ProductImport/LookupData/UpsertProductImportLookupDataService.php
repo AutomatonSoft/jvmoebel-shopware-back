@@ -35,7 +35,7 @@ final readonly class UpsertProductImportLookupDataService
     {
         $records = [];
         foreach ($deliveryTimes as $deliveryTime) {
-            $label = $this->labelForMarket($deliveryTime->labels, $market);
+            $label = $this->labelForMarket($deliveryTime->labels, $market, 'delivery time');
             $parsed = CosmoShopDeliveryTime::fromLabel($label);
             $records[] = [
                 'id' => CosmoShopReferenceIdentity::deliveryTimeId($market, $deliveryTime->sourceId),
@@ -56,7 +56,7 @@ final readonly class UpsertProductImportLookupDataService
         foreach ($units as $unit) {
             $records[] = [
                 'id' => CosmoShopReferenceIdentity::unitId($market, $unit->sourceId),
-                'translations' => $this->unitTranslations($this->labelForMarket($unit->labels, $market), $market),
+                'translations' => $this->unitTranslations($this->labelForMarket($unit->labels, $market, 'unit'), $market),
             ];
         }
 
@@ -86,14 +86,14 @@ final readonly class UpsertProductImportLookupDataService
     }
 
     /** @param array<string, string> $labels */
-    private function labelForMarket(array $labels, Market $market): string
+    private function labelForMarket(array $labels, Market $market, string $referenceType): string
     {
         $locale = Market::UnitedKingdom === $market ? 'en' : 'de';
-        $label = $labels[$locale] ?? reset($labels);
-        if (!is_string($label)) {
-            throw new InvalidProductImportLookupDataException('CosmoShop reference is missing a label.');
+        $label = $labels[$locale] ?? null;
+        if (!is_string($label) || '' === trim($label)) {
+            throw new InvalidProductImportLookupDataException(sprintf('CosmoShop %s is missing required "%s" label.', $referenceType, $locale));
         }
 
-        return $label;
+        return trim($label);
     }
 }

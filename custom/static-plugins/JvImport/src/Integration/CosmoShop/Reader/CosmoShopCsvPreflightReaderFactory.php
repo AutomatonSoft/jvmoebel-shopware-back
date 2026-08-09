@@ -25,7 +25,6 @@ final class CosmoShopCsvPreflightReaderFactory extends AbstractReaderFactory
             $logEntity->getId(),
             $logEntity->getProfile()->getTechnicalName(),
             $this->environment,
-            ImportExportLogEntity::ACTIVITY_DRYRUN === $logEntity->getActivity(),
         );
     }
 

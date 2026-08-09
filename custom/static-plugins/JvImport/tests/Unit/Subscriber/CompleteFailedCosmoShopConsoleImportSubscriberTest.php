@@ -4,7 +4,7 @@ namespace Jv\Import\Tests\Unit\Subscriber;
 
 use Doctrine\DBAL\Connection;
 use Jv\Import\Integration\CosmoShop\Reader\CosmoShopPreflightFailureRegistry;
-use Jv\Import\Subscriber\CompleteFailedCosmoShopDryRunSubscriber;
+use Jv\Import\Subscriber\CompleteFailedCosmoShopConsoleImportSubscriber;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\ImportExport\Service\ImportExportService;
 use Shopware\Core\Content\ImportExport\Struct\Progress;
@@ -13,9 +13,9 @@ use Symfony\Component\Console\Event\ConsoleErrorEvent;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 
-final class CompleteFailedCosmoShopDryRunSubscriberTest extends TestCase
+final class CompleteFailedCosmoShopConsoleImportSubscriberTest extends TestCase
 {
-    public function testItCompletesARejectedCosmoShopDryRunAsFailed(): void
+    public function testItCompletesARejectedCosmoShopConsoleImportAsFailed(): void
     {
         $connection = $this->createMock(Connection::class);
         $connection->expects(self::once())->method('isTransactionActive')->willReturn(true);
@@ -29,9 +29,9 @@ final class CompleteFailedCosmoShopDryRunSubscriberTest extends TestCase
                 && Progress::STATE_FAILED === $progress->getState()));
 
         $failureRegistry = new CosmoShopPreflightFailureRegistry();
-        $failureRegistry->recordPreflightRejected('019fe6386ca771b29f5a8412a8cc3d95', true);
+        $failureRegistry->recordPreflightRejected('019fe6386ca771b29f5a8412a8cc3d95');
 
-        $subscriber = new CompleteFailedCosmoShopDryRunSubscriber($connection, $importExportService, $failureRegistry);
+        $subscriber = new CompleteFailedCosmoShopConsoleImportSubscriber($connection, $importExportService, $failureRegistry);
         $event = new ConsoleErrorEvent(
             new ArrayInput([]),
             new BufferedOutput(),

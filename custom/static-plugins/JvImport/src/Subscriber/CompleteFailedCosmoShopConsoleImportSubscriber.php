@@ -11,7 +11,7 @@ use Symfony\Component\Console\Event\ConsoleErrorEvent;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
 #[AsEventListener(event: ConsoleEvents::ERROR)]
-final readonly class CompleteFailedCosmoShopDryRunSubscriber
+final readonly class CompleteFailedCosmoShopConsoleImportSubscriber
 {
     public function __construct(
         private Connection $connection,

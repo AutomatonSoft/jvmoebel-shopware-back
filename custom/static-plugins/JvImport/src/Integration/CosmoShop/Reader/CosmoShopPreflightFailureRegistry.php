@@ -9,7 +9,7 @@ final class CosmoShopPreflightFailureRegistry
     /** @var array<string, true> */
     private array $rejectedImportLogIds = [];
 
-    public function recordPreflightRejected(string $importLogId, bool $isDryRun): void
+    public function recordPreflightRejected(string $importLogId): void
     {
         $this->rejectedImportLogIds[$importLogId] = true;
 

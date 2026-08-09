@@ -143,7 +143,6 @@ final class CosmoShopCsvPreflightReaderTest extends TestCase
             '019fe627a3b371759aac22afeae59c7e',
             'jv_cosmoshop_product_jvmoebel_de',
             'test',
-            true,
         );
     }
 }

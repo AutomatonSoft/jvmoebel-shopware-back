@@ -49,6 +49,7 @@ Uuid::fromStringToHex('jvmoebel.product.cosmoshop.' . product_number)
 Visibility создаётся для sales channel профиля со значением `VISIBILITY_ALL`. Переводы и SEO URL получают детерминированный `Market::languageId()`, а не locale. Первый импорт любого рынка технически инициализирует обязательный system fallback; последующий DE импорт заменяет его немецким содержимым, другие рынки существующий fallback не перезаписывают. Цена обновляет или добавляет только валюту рынка и сохраняет остальные existing currency prices. Если первый рынок не использует default currency Shopware, его цена также технически инициализирует default currency до поступления EUR. Непустой `urlkey` создаёт canonical SEO URL sales channel; домен не передаётся в CSV.
 
 Числовые delivery time и unit ID локальны для базы конкретного CosmoShop. Их deterministic UUID включает `market.domain()`. Reference upsert получает обязательный `--market=<domain>`. Метка `nicht lieferbar`/`not on stock` не создаёт delivery time `0–0 days`: reference import отклоняется до записи.
+Reference upsert требует label выбранного рынка: `en` для `jvfurniture.co.uk`, `de` для остальных текущих рынков. Отсутствующий или пустой выбранный label отклоняет справочник; label другой локали не используется как fallback.
 
 ## Cross-sell contract
 

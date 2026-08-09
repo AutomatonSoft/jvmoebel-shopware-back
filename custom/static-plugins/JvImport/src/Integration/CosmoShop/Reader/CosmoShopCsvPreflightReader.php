@@ -23,7 +23,6 @@ final class CosmoShopCsvPreflightReader extends AbstractReader
         private readonly string $importLogId,
         private readonly string $profileName,
         private readonly string $environment,
-        private readonly bool $isDryRun,
     ) {
     }
 
@@ -39,7 +38,7 @@ final class CosmoShopCsvPreflightReader extends AbstractReader
                     ...$this->logContext(),
                     'reason' => $exception->getMessage(),
                 ]);
-                $this->failureRegistry->recordPreflightRejected($this->importLogId, $this->isDryRun);
+                $this->failureRegistry->recordPreflightRejected($this->importLogId);
 
                 throw $exception;
             }
