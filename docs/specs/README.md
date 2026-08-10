@@ -70,3 +70,10 @@ SPEC-NNN-short-name.md
 Если функция предоставляет API, сообщение очереди или принимает внешний файл, specification фиксирует его контракт: поля, типы, обязательность, формат ошибок и правила совместимости. Интерфейсы и DTO в коде должны соответствовать этому описанию.
 
 Изменение контракта и обновление specification входят в один pull request. Несовместимое изменение дополнительно описывает миграцию потребителей и данных.
+
+## Список
+
+| Specification | Содержание |
+|---|---|
+| [SPEC-001-market-bootstrap](SPEC-001-market-bootstrap.md) | Bootstrap sales channels и локальный `setup-local` |
+| [SPEC-002-cms-button](SPEC-002-cms-button.md) | Backend CMS element/blocks `jv-button` (плагин `JvCms`); контракт Store API — platform SPEC-001 |

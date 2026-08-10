@@ -1,0 +1,50 @@
+{
+    "cms": {
+        "elements": {
+            "jv-button": {
+                "label": "Button",
+                "config": {
+                    "label": {
+                        "label": "Label",
+                        "placeholder": "Shop now"
+                    },
+                    "url": {
+                        "label": "Link",
+                        "placeholder": "https://jvmoebel.de/..."
+                    },
+                    "variant": {
+                        "label": "Variant",
+                        "primary": "Primary",
+                        "secondary": "Secondary",
+                        "link": "Link"
+                    },
+                    "openInNewTab": {
+                        "label": "Open in new tab"
+                    }
+                }
+            }
+        },
+        "blocks": {
+            "jv-button-primary": {
+                "label": "Button · Primary"
+            },
+            "jv-button-secondary": {
+                "label": "Button · Secondary"
+            },
+            "jv-button-link": {
+                "label": "Button · Link"
+            }
+        }
+    },
+    "apps": {
+        "sw-cms": {
+            "detail": {
+                "label": {
+                    "blockCategory": {
+                        "button": "Button"
+                    }
+                }
+            }
+        }
+    }
+}

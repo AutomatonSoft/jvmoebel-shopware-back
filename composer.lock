@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b925bafd5b004eb2cfa976c80deebb61",
+    "content-hash": "a56ad30754c979bb1af83c49bdfa7bc4",
     "packages": [
         {
             "name": "async-aws/core",
@@ -2686,41 +2686,39 @@
             "time": "2026-06-16T20:50:26+00:00"
         },
         {
-            "name": "jvmoebel/import",
+            "name": "jvmoebel/cms",
             "version": "0.1.0",
             "dist": {
                 "type": "path",
-                "url": "custom/static-plugins/JvImport",
-                "reference": "e5f8394438eb59803e6e74ef8b01738b51163c68"
+                "url": "custom/static-plugins/JvCms",
+                "reference": "018b9ae8630fda3bf4dbe39bb6bcaaf6730bd7d9"
             },
             "require": {
-                "jvmoebel/market-configuration": "^0.1",
                 "php": "^8.5",
                 "shopware/core": "~6.7.0"
             },
             "type": "shopware-platform-plugin",
             "extra": {
-                "shopware-plugin-class": "Jv\\Import\\JvImport",
+                "shopware-plugin-class": "Jv\\Cms\\JvCms",
                 "label": {
-                    "de-DE": "JVMöbel Import",
-                    "en-GB": "JVMöbel import"
+                    "de-DE": "JVMöbel CMS",
+                    "en-GB": "JVMöbel CMS"
                 }
             },
             "autoload": {
                 "psr-4": {
-                    "Jv\\Import\\": "src/",
-                    "Jv\\CatalogImport\\": "src/"
+                    "Jv\\Cms\\": "src/"
                 }
             },
             "autoload-dev": {
                 "psr-4": {
-                    "Jv\\CatalogImport\\Tests\\": "tests/"
+                    "Jv\\Cms\\Tests\\": "tests/"
                 }
             },
             "license": [
                 "proprietary"
             ],
-            "description": "JVMöbel import integrations",
+            "description": "JVMöbel CMS elements and blocks",
             "transport-options": {
                 "symlink": true,
                 "relative": true

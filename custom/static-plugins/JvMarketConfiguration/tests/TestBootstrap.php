@@ -1,9 +1,3 @@
 <?php declare(strict_types=1);
 
-use Shopware\Core\TestBootstrapper;
-
-(new TestBootstrapper())
-    ->setPlatformEmbedded(false)
-    ->addCallingPlugin()
-    ->addActivePlugins('JvImport')
-    ->bootstrap();
+require dirname(__DIR__, 4).'/tests/TestBootstrap.php';

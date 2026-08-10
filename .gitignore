@@ -38,3 +38,6 @@ phpstan.neon
 /phpunit.xml
 /.phpunit.cache/
 ###< phpunit/phpunit ###
+
+# Shopware Administration build temp
+custom/static-plugins/*/src/Resources/app/administration/.tmp/

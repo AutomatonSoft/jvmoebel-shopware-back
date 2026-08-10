@@ -214,10 +214,9 @@ docker compose run --rm web bin/console plugin:refresh
 docker compose run --rm web bin/console plugin:install \
     --activate \
     --clearCache \
-    JvMarketConfiguration
-docker compose run --rm web bin/console plugin:install \
-    --activate \
-    --clearCache \
+    --no-interaction \
+    JvMarketConfiguration \
+    JvCms
     JvImport
 
 mkdir -p var/bootstrap
