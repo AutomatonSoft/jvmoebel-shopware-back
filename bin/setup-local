@@ -216,7 +216,7 @@ docker compose run --rm web bin/console plugin:install \
     --clearCache \
     --no-interaction \
     JvMarketConfiguration \
-    JvCms
+    JvCms \
     JvImport
 
 mkdir -p var/bootstrap

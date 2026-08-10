@@ -64,6 +64,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate setup script syntax
+        run: bash -n bin/setup-local
+
       - name: Setup PHP 8.5
         uses: shivammathur/setup-php@v2
         with:
