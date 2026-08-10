@@ -7,11 +7,11 @@ use Jv\Import\Integration\CosmoShop\Profile\MarketImportProfile;
 use Shopware\Core\Framework\Migration\MigrationStep;
 use Shopware\Core\Framework\Uuid\Uuid;
 
-final class Migration1770000000CreateCosmoShopProfile extends MigrationStep
+final class Migration1770000006SynchronizeCosmoShopProfiles extends MigrationStep
 {
     public function getCreationTimestamp(): int
     {
-        return 1770000000;
+        return 1770000006;
     }
 
     public function update(Connection $connection): void

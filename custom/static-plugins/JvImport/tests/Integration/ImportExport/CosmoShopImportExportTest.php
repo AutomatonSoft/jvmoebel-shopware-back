@@ -31,6 +31,7 @@ use Shopware\Core\System\Currency\CurrencyCollection;
 use Shopware\Core\System\Language\LanguageCollection;
 use Shopware\Core\System\SalesChannel\SalesChannelCollection;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
+use Shopware\Core\System\Tax\TaxCollection;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 final class CosmoShopImportExportTest extends TestCase
@@ -355,6 +356,72 @@ final class CosmoShopImportExportTest extends TestCase
                     $context,
                 )->getTotal(),
             );
+        } finally {
+            /** @var EntityRepository<ProductCollection> $repository */
+            $repository = static::getContainer()->get('product.repository');
+            $repository->delete([['id' => $productId]], $context);
+        }
+    }
+
+    public function testItUpdatesAnExistingProductBySkuWhenItsIdIsNotCosmoShopDeterministic(): void
+    {
+        $context = Context::createDefaultContext();
+        $productNumber = 'EXISTING-RANDOM-ID-001';
+        $productId = Uuid::randomHex();
+
+        /** @var EntityRepository<TaxCollection> $taxRepository */
+        $taxRepository = static::getContainer()->get('tax.repository');
+        $taxId = $taxRepository->searchIds((new Criteria())->setLimit(1), $context)->firstId();
+        self::assertNotNull($taxId);
+
+        /** @var EntityRepository<ProductCollection> $repository */
+        $repository = static::getContainer()->get('product.repository');
+        $repository->create([[
+            'id' => $productId,
+            'productNumber' => $productNumber,
+            'name' => 'Existing product',
+            'stock' => 1,
+            'taxId' => $taxId,
+            'price' => [[
+                'currencyId' => \Shopware\Core\Defaults::CURRENCY,
+                'net' => 1.0,
+                'gross' => 1.19,
+                'linked' => false,
+            ]],
+        ]], $context);
+
+        try {
+            $progress = $this->import(
+                $this->configureGermanyProfile($context),
+                $this->csv(productNumber: $productNumber, name: 'Updated by SKU'),
+            );
+
+            self::assertSame(Progress::STATE_SUCCEEDED, $progress->getState(), $this->importResult($progress));
+            $product = $repository->search((new Criteria())->addFilter(new EqualsFilter('productNumber', $productNumber)), $context)->first();
+            self::assertInstanceOf(ProductEntity::class, $product);
+            self::assertSame($productId, $product->getId());
+            self::assertSame('Updated by SKU', $product->getName());
+        } finally {
+            $repository->delete([['id' => $productId]], $context);
+        }
+    }
+
+    public function testItUsesOneAsTheDefaultMinPurchaseWhenTheCsvValueIsEmpty(): void
+    {
+        $context = Context::createDefaultContext();
+        $productNumber = 'DEFAULT-MIN-PURCHASE-001';
+        $productId = CosmoShopProductIdentity::fromProductNumber($productNumber);
+
+        try {
+            $progress = $this->import(
+                $this->configureGermanyProfile($context),
+                $this->csv(productNumber: $productNumber, minPurchase: ''),
+            );
+
+            self::assertSame(Progress::STATE_SUCCEEDED, $progress->getState(), $this->importResult($progress));
+            /** @var EntityRepository<ProductCollection> $repository */
+            $repository = static::getContainer()->get('product.repository');
+            self::assertSame(1, $repository->search(new Criteria([$productId]), $context)->first()?->getMinPurchase());
         } finally {
             /** @var EntityRepository<ProductCollection> $repository */
             $repository = static::getContainer()->get('product.repository');

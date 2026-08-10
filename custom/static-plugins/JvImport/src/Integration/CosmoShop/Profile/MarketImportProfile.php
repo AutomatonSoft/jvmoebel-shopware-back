@@ -3,6 +3,7 @@
 namespace Jv\Import\Integration\CosmoShop\Profile;
 
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
+use Shopware\Core\Framework\Uuid\Uuid;
 
 final class MarketImportProfile
 {
@@ -24,6 +25,35 @@ final class MarketImportProfile
         }
 
         return null;
+    }
+
+    /**
+     * @return array{id: string, technicalName: string, type: string, sourceEntity: string, fileType: string, delimiter: string, enclosure: string, mapping: list<array{key: string, mappedKey: string, position: int, requiredByUser?: bool, useDefaultValue?: bool, defaultValue?: string}>, updateBy: list<string>, config: array<never, never>}
+     */
+    public static function definition(Market $market): array
+    {
+        $technicalName = self::technicalName($market);
+
+        return [
+            'id' => Uuid::fromStringToHex('jvmoebel.import-profile.'.$technicalName),
+            'technicalName' => $technicalName,
+            'type' => 'import',
+            'sourceEntity' => 'product',
+            'fileType' => 'text/csv',
+            'delimiter' => ';',
+            'enclosure' => '"',
+            'mapping' => self::mapping($market),
+            'updateBy' => ['id'],
+            'config' => [],
+        ];
+    }
+
+    /**
+     * @return list<array{id: string, technicalName: string, type: string, sourceEntity: string, fileType: string, delimiter: string, enclosure: string, mapping: list<array{key: string, mappedKey: string, position: int, requiredByUser?: bool, useDefaultValue?: bool, defaultValue?: string}>, updateBy: list<string>, config: array<never, never>}>
+     */
+    public static function definitions(): array
+    {
+        return array_map(self::definition(...), Market::cases());
     }
 
     /** @return list<array{key: string, mappedKey: string, position: int, requiredByUser?: bool, useDefaultValue?: bool, defaultValue?: string}> */

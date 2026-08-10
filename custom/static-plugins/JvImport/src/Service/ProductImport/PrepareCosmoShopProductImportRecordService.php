@@ -2,7 +2,6 @@
 
 namespace Jv\Import\Service\ProductImport;
 
-use Jv\Import\Integration\CosmoShop\CosmoShopProductIdentity;
 use Jv\Import\Integration\CosmoShop\Normalizer\CosmoShopProductImportDataNormalizer;
 use Jv\Import\Service\ProductImport\Contract\ProductImportRecordPreparer;
 use Jv\Import\Service\ProductImport\Validation\CosmoShopProductImportDataValidator;
@@ -43,25 +42,33 @@ final class PrepareCosmoShopProductImportRecordService implements ProductImportR
         $data = $this->normalizer->normalize($row, $mappedRecord);
         $this->validator->validate($data);
 
-        [$existingPrices, $existingTranslations] = $this->existingProductData($data->productNumber, $context);
+        [$existingProductId, $existingPrices, $existingTranslations] = $this->existingProductData($data->productNumber, $context);
 
         return $this->recordBuilder->execute(
             $data,
             $market,
             $languageId,
             $this->defaultTaxResolver->execute(),
+            $existingProductId,
             $existingPrices,
             $existingTranslations,
             $this->marketCurrencyId($market, $context),
         );
     }
 
-    /** @return array{0: list<array<string, mixed>>, 1: array<string, array<string, mixed>>} */
+    /** @return array{0: ?string, 1: list<array<string, mixed>>, 2: array<string, array<string, mixed>>} */
     private function existingProductData(string $productNumber, Context $context): array
     {
-        $product = $this->productRepository->search((new Criteria([CosmoShopProductIdentity::fromProductNumber($productNumber)]))->addAssociation('price')->addAssociation('translations'), $context)->first();
+        $product = $this->productRepository->search(
+            (new Criteria())
+                ->addFilter(new EqualsFilter('productNumber', $productNumber))
+                ->addAssociation('price')
+                ->addAssociation('translations')
+                ->setLimit(1),
+            $context,
+        )->first();
         if (null === $product) {
-            return [[], []];
+            return [null, [], []];
         }
 
         $prices = array_map(static function (Price $price): array {
@@ -91,7 +98,7 @@ final class PrepareCosmoShopProductImportRecordService implements ProductImportR
             ], static fn (?string $value): bool => null !== $value);
         }
 
-        return [$prices, $translations];
+        return [$product->getId(), $prices, $translations];
     }
 
     private function marketCurrencyId(Market $market, Context $context): string

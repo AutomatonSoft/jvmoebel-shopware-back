@@ -2725,6 +2725,46 @@
             }
         },
         {
+            "name": "jvmoebel/import",
+            "version": "0.1.0",
+            "dist": {
+                "type": "path",
+                "url": "custom/static-plugins/JvImport",
+                "reference": "2513fb29866f61296ae7ab2874e38ac3b235c15b"
+            },
+            "require": {
+                "jvmoebel/market-configuration": "^0.1",
+                "php": "^8.5",
+                "shopware/core": "~6.7.0"
+            },
+            "type": "shopware-platform-plugin",
+            "extra": {
+                "shopware-plugin-class": "Jv\\Import\\JvImport",
+                "label": {
+                    "de-DE": "JVMöbel Import",
+                    "en-GB": "JVMöbel import"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Jv\\Import\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Jv\\Import\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "description": "JVMöbel import integrations",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
             "name": "jvmoebel/market-configuration",
             "version": "0.1.0",
             "dist": {

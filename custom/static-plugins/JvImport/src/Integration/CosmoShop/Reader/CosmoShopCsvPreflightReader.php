@@ -119,14 +119,24 @@ final class CosmoShopCsvPreflightReader extends AbstractReader
                 throw ImportExportException::processingError(sprintf('CosmoShop CSV header contains duplicate column(s): %s.', implode(', ', $duplicates)));
             }
 
-            $required = [];
+            $required = [
+                'source_inactive',
+                'stock',
+                'weight',
+                'length',
+                'width',
+                'height',
+                'min_purchase',
+                'contents',
+                'reference_unit',
+            ];
             foreach ($config->getMapping()->getElements() as $mapping) {
                 if ($mapping->isRequiredByUser()) {
                     $required[] = $mapping->getMappedKey();
                 }
             }
 
-            $missing = array_values(array_diff($required, $headers));
+            $missing = array_values(array_diff(array_unique($required), $headers));
             if ([] !== $missing) {
                 throw ImportExportException::processingError(sprintf('CosmoShop CSV header is missing required column(s): %s.', implode(', ', $missing)));
             }

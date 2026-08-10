@@ -46,6 +46,16 @@ final class MarketImportProfileTest extends TestCase
         );
     }
 
+    public function testItUsesTheSameCanonicalDefinitionForEveryMarket(): void
+    {
+        $definitions = MarketImportProfile::definitions();
+
+        self::assertCount(count(Market::cases()), $definitions);
+        foreach (Market::cases() as $market) {
+            self::assertContains(MarketImportProfile::definition($market), $definitions);
+        }
+    }
+
     #[DataProvider('marketLocales')]
     public function testItMapsTranslationsToTheMarketLanguage(Market $market, string $locale): void
     {

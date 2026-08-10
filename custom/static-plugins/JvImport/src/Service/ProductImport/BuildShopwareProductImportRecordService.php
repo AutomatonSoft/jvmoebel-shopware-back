@@ -26,12 +26,13 @@ final class BuildShopwareProductImportRecordService
         Market $market,
         string $languageId,
         ResolvedProductTax $tax,
+        ?string $existingProductId,
         array $existingPrices,
         array $existingTranslations,
         string $marketCurrencyId,
     ): array {
         $record = $data->mappedRecord;
-        $id = CosmoShopProductIdentity::fromProductNumber($data->productNumber);
+        $id = $existingProductId ?? CosmoShopProductIdentity::fromProductNumber($data->productNumber);
         $record['id'] = $id;
         $record['active'] = 0 === (int) $data->sourceInactive;
         $record['ean'] = $data->ean;

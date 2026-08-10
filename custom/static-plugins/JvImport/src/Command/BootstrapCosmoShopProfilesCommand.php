@@ -3,12 +3,10 @@
 namespace Jv\Import\Command;
 
 use Jv\Import\Integration\CosmoShop\Profile\MarketImportProfile;
-use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -39,22 +37,7 @@ final class BootstrapCosmoShopProfilesCommand extends Command
         $this->logger->info('CosmoShop import profile bootstrap started.', $context);
 
         try {
-            $profiles = array_map(static function (Market $market): array {
-                $technicalName = MarketImportProfile::technicalName($market);
-
-                return [
-                    'id' => Uuid::fromStringToHex('jvmoebel.import-profile.'.$technicalName),
-                    'technicalName' => $technicalName,
-                    'type' => 'import',
-                    'sourceEntity' => 'product',
-                    'fileType' => 'text/csv',
-                    'delimiter' => ';',
-                    'enclosure' => '"',
-                    'mapping' => MarketImportProfile::mapping($market),
-                    'updateBy' => ['id'],
-                    'config' => [],
-                ];
-            }, Market::cases());
+            $profiles = MarketImportProfile::definitions();
 
             $this->profileRepository->upsert($profiles, Context::createCLIContext());
 

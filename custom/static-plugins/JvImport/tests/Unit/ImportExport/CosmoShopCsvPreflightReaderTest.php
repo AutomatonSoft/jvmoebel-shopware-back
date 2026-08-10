@@ -15,7 +15,7 @@ final class CosmoShopCsvPreflightReaderTest extends TestCase
     public function testItReadsAValidCsvAfterPreflight(): void
     {
         $reader = $this->reader();
-        $resource = $this->resource("product_number;ean;price_gross;name\nSKU-001;4260174423463;119.00;Product\n");
+        $resource = $this->resource($this->header()."\nSKU-001;4260174423463;119.00;Product;0;1;0;0;0;0;1;1;1\n");
 
         try {
             $rows = iterator_to_array($reader->read($this->config(), $resource, 0));
@@ -47,10 +47,10 @@ final class CosmoShopCsvPreflightReaderTest extends TestCase
     public static function invalidCsvFiles(): iterable
     {
         yield 'empty file' => ['', 'CosmoShop CSV file is empty or has no header row.'];
-        yield 'no expected header' => ["SKU-001;4260174423463;119.00;Product\n", 'CosmoShop CSV header is missing required column(s): product_number, ean, price_gross, name.'];
-        yield 'duplicate header' => ["product_number;ean;ean;price_gross;name\nSKU-001;4260174423463;4260174423463;119.00;Product\n", 'CosmoShop CSV header contains duplicate column(s): ean.'];
-        yield 'missing required header' => ["product_number;price_gross;name\nSKU-001;119.00;Product\n", 'CosmoShop CSV header is missing required column(s): ean.'];
-        yield 'header only' => ["product_number;ean;price_gross;name\n", 'CosmoShop CSV file contains no product rows.'];
+        yield 'no expected header' => ["SKU-001;4260174423463;119.00;Product\n", 'CosmoShop CSV header is missing required column(s): source_inactive, stock, weight, length, width, height, min_purchase, contents, reference_unit, product_number, ean, price_gross, name.'];
+        yield 'duplicate header' => ["product_number;ean;ean;price_gross;name;source_inactive;stock;weight;length;width;height;min_purchase;contents;reference_unit\nSKU-001;4260174423463;4260174423463;119.00;Product;0;1;0;0;0;0;1;1;1\n", 'CosmoShop CSV header contains duplicate column(s): ean.'];
+        yield 'missing required header' => ["product_number;price_gross;name;source_inactive;stock;weight;length;width;height;min_purchase;contents;reference_unit\nSKU-001;119.00;Product;0;1;0;0;0;0;1;1;1\n", 'CosmoShop CSV header is missing required column(s): ean.'];
+        yield 'header only' => ["product_number;ean;price_gross;name;source_inactive;stock;weight;length;width;height;min_purchase;contents;reference_unit\n", 'CosmoShop CSV file contains no product rows.'];
     }
 
     public function testItRecordsAndLogsTheRejectedDryRunPreflight(): void
@@ -70,7 +70,7 @@ final class CosmoShopCsvPreflightReaderTest extends TestCase
             );
 
         $reader = $this->reader($logger, $failureRegistry);
-        $resource = $this->resource("product_number;price_gross;name\nSKU-001;119.00;Product\n");
+        $resource = $this->resource("product_number;price_gross;name;source_inactive;stock;weight;length;width;height;min_purchase;contents;reference_unit\nSKU-001;119.00;Product;0;1;0;0;0;0;1;1;1\n");
 
         try {
             iterator_to_array($reader->read($this->config(), $resource, 0));
@@ -84,10 +84,24 @@ final class CosmoShopCsvPreflightReaderTest extends TestCase
         self::assertSame('019fe627a3b371759aac22afeae59c7e', $failureRegistry->consumeFailedConsoleImportLogId());
     }
 
+    public function testItRejectsAHeaderWithoutRequiredRawProductData(): void
+    {
+        $reader = $this->reader();
+        $resource = $this->resource("product_number;ean;price_gross;name;source_inactive;weight;length;width;height;min_purchase;contents;reference_unit\nSKU-001;4260174423463;119.00;Product;0;0;0;0;0;1;1;1\n");
+
+        try {
+            $this->expectException(ShopwareHttpException::class);
+            $this->expectExceptionMessage('CosmoShop CSV header is missing required column(s): stock.');
+            iterator_to_array($reader->read($this->config(), $resource, 0));
+        } finally {
+            fclose($resource);
+        }
+    }
+
     public function testItMarksAMalformedRowInTheMiddleOfTheStream(): void
     {
         $reader = $this->reader();
-        $resource = $this->resource("product_number;ean;price_gross;name\nSKU-001;4260174423463;119.00;First\nSKU-002;4260174423464;119.00\nSKU-003;4260174423465;119.00;Last\n");
+        $resource = $this->resource($this->header()."\nSKU-001;4260174423463;119.00;First;0;1;0;0;0;0;1;1;1\nSKU-002;4260174423464;119.00\nSKU-003;4260174423465;119.00;Last;0;1;0;0;0;0;1;1;1\n");
 
         try {
             $rows = iterator_to_array($reader->read($this->config(), $resource, 0));
@@ -96,14 +110,14 @@ final class CosmoShopCsvPreflightReaderTest extends TestCase
         }
 
         self::assertCount(3, $rows);
-        self::assertSame('CosmoShop CSV product row has 3 columns; expected 4.', $rows[1]['__cosmoshop_csv_row_error']);
+        self::assertSame('CosmoShop CSV product row has 3 columns; expected 13.', $rows[1]['__cosmoshop_csv_row_error']);
         self::assertSame('SKU-003', $rows[2]['product_number']);
     }
 
     public function testItAcceptsUtf8BomBeforeTheFirstHeader(): void
     {
         $reader = $this->reader();
-        $resource = $this->resource("\xEF\xBB\xBFproduct_number;ean;price_gross;name\nSKU-001;4260174423463;119.00;Product\n");
+        $resource = $this->resource("\xEF\xBB\xBF".$this->header()."\nSKU-001;4260174423463;119.00;Product;0;1;0;0;0;0;1;1;1\n");
 
         try {
             $rows = iterator_to_array($reader->read($this->config(), $resource, 0));
@@ -133,6 +147,11 @@ final class CosmoShopCsvPreflightReaderTest extends TestCase
             ['key' => 'price.DEFAULT.gross', 'mappedKey' => 'price_gross', 'requiredByUser' => true],
             ['key' => 'translations.de-DE.name', 'mappedKey' => 'name', 'requiredByUser' => true],
         ], [], []);
+    }
+
+    private function header(): string
+    {
+        return 'product_number;ean;price_gross;name;source_inactive;stock;weight;length;width;height;min_purchase;contents;reference_unit';
     }
 
     private function reader(?LoggerInterface $logger = null, ?CosmoShopPreflightFailureRegistry $failureRegistry = null): CosmoShopCsvPreflightReader
