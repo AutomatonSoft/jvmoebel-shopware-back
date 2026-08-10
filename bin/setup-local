@@ -214,7 +214,9 @@ docker compose run --rm web bin/console plugin:refresh
 docker compose run --rm web bin/console plugin:install \
     --activate \
     --clearCache \
-    JvMarketConfiguration
+    --no-interaction \
+    JvMarketConfiguration \
+    JvCms
 
 mkdir -p var/bootstrap
 sales_channels_json_tmp="$(mktemp var/bootstrap/sales-channels.json.tmp.XXXXXX)"

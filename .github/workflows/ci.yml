@@ -20,21 +20,21 @@ jobs:
       APP_ENV: test
       APP_URL: http://localhost:8000
       APP_SECRET: local-ci-only-not-a-production-secret
-      INSTANCE_ID: '00000000000000000000000000000000'
+      INSTANCE_ID: "00000000000000000000000000000000"
       DATABASE_URL: mysql://root:root@127.0.0.1:3306/shopware
-      MAILER_DSN: 'null://null'
+      MAILER_DSN: "null://null"
       MESSENGER_TRANSPORT_DSN: redis://127.0.0.1:6379/messages
       MESSENGER_TRANSPORT_LOW_PRIORITY_DSN: redis://127.0.0.1:6379/low_priority
       MESSENGER_TRANSPORT_FAILURE_DSN: redis://127.0.0.1:6379/failed
       # Integration suite does not exercise OpenSearch paths; keep ES disabled and omit the service.
       OPENSEARCH_URL: http://127.0.0.1:9200
       ADMIN_OPENSEARCH_URL: http://127.0.0.1:9200
-      SHOPWARE_ES_ENABLED: '0'
-      SHOPWARE_ES_INDEXING_ENABLED: '0'
+      SHOPWARE_ES_ENABLED: "0"
+      SHOPWARE_ES_INDEXING_ENABLED: "0"
       SHOPWARE_ES_INDEX_PREFIX: sw
       LOCK_DSN: flock
-      BLUE_GREEN_DEPLOYMENT: '0'
-      JV_MARKET_SALES_CHANNEL_URL_TEMPLATE: 'https://{domain}'
+      BLUE_GREEN_DEPLOYMENT: "0"
+      JV_MARKET_SALES_CHANNEL_URL_TEMPLATE: "https://{domain}"
 
     services:
       mysql:
@@ -67,7 +67,7 @@ jobs:
       - name: Setup PHP 8.5
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.5'
+          php-version: "8.5"
           extensions: gd, intl, pdo_mysql, zip, xml, curl, mbstring, sodium
           coverage: none
           tools: composer:v2
@@ -95,3 +95,57 @@ jobs:
 
       - name: Test
         run: composer test -- --testdox
+
+  administration:
+    name: administration build / assets sync
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    env:
+      APP_ENV: prod
+      APP_URL: http://localhost:8000
+      APP_SECRET: local-ci-only-not-a-production-secret
+      INSTANCE_ID: "00000000000000000000000000000000"
+      # bin/ci can run without a real DB for bundle dump
+      DATABASE_URL: "mysql://_placeholder.test"
+      CI: "1"
+      SHOPWARE_SKIP_ENTITY_SCHEMA_DUMP: "1"
+      SHOPWARE_SKIP_ASSET_COPY: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.5
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          extensions: gd, intl, pdo_mysql, zip, xml, curl, mbstring, sodium
+          coverage: none
+          tools: composer:v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Build Administration
+        run: bash bin/build-administration.sh
+
+      - name: Fail if Administration assets are stale
+        run: |
+          git diff --exit-code -- \
+            custom/static-plugins/JvCms/src/Resources/public/administration \
+            || {
+              echo "Administration source and committed production assets differ."
+              echo "Run: docker compose exec web bash bin/build-administration.sh"
+              echo "Then commit updated Resources/public/administration."
+              git status --short -- custom/static-plugins/JvCms/src/Resources/public/administration
+              exit 1
+            }

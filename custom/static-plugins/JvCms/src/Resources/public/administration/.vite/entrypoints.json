@@ -1,0 +1,33 @@
+{
+  "base": "/bundles/jvcms/administration/",
+  "entryPoints": {
+    "jv-cms": {
+      "css": [],
+      "dynamic": [
+        "/bundles/jvcms/administration/assets/index-BG8c_r_5.js",
+        "/bundles/jvcms/administration/assets/index-CgBpReOW.js",
+        "/bundles/jvcms/administration/assets/index-BrzD2l7m.js",
+        "/bundles/jvcms/administration/assets/index-i4eM4r5p.js",
+        "/bundles/jvcms/administration/assets/index-CEyP9olc.js",
+        "/bundles/jvcms/administration/assets/index-nJxTJg3t.js",
+        "/bundles/jvcms/administration/assets/index-ObOHta0Z.js",
+        "/bundles/jvcms/administration/assets/index-CnQI0VhM.js",
+        "/bundles/jvcms/administration/assets/index-Dkq-YXWg.js"
+      ],
+      "js": [
+        "/bundles/jvcms/administration/assets/jv-cms-BhK4WGJu.js"
+      ],
+      "legacy": false,
+      "preload": []
+    }
+  },
+  "legacy": false,
+  "metadatas": {},
+  "version": [
+    "7.1.0",
+    7,
+    1,
+    0
+  ],
+  "viteServer": null
+}

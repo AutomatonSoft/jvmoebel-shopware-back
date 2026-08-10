@@ -1,0 +1,30 @@
+.sw-cms-el-jv-button {
+    align-items: center;
+    display: flex;
+    min-height: 48px;
+}
+
+.sw-cms-el-jv-button__label {
+    border-radius: 2px;
+    display: inline-block;
+    font-size: 14px;
+    padding: 10px 16px;
+}
+
+.sw-cms-el-jv-button.is-primary .sw-cms-el-jv-button__label {
+    background: #354044;
+    color: #fff;
+}
+
+.sw-cms-el-jv-button.is-secondary .sw-cms-el-jv-button__label {
+    background: #fff;
+    border: 1px solid #354044;
+    color: #354044;
+}
+
+.sw-cms-el-jv-button.is-link .sw-cms-el-jv-button__label {
+    background: transparent;
+    color: #257e9e;
+    padding-left: 0;
+    text-decoration: underline;
+}
