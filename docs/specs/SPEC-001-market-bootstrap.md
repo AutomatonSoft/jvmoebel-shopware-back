@@ -127,7 +127,7 @@ URL основного домена — единственная environment-spe
 
 ### Язык
 
-`ensureLanguage` выбирает только root language с тем же `locale.code` и `parentId = null`, гарантирует его пригодность (`active = true`) и не принимает market child как locale fallback. Для каждого Market bootstrap создаёт или обновляет отдельный детерминированный child language с `Market::languageId()` и parent root language. Sales channel и его основной domain используют этот exact market language ID. Неактивный язык не должен молча попадать в sales channel.
+`ensureLanguage` гарантирует не только существование языка по `locale.code`, но и его пригодность (`active = true`). Неактивный язык не должен молча попадать в sales channel.
 
 ## Ошибки и повтор
 

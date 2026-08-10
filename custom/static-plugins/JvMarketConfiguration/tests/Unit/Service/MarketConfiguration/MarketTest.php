@@ -36,10 +36,6 @@ final class MarketTest extends TestCase
         self::assertCount(6, array_unique($ids));
         self::assertSame($ids, array_map(static fn (Market $market): string => $market->salesChannelId(), Market::cases()));
 
-        $languageIds = array_map(static fn (Market $market): string => $market->languageId(), $markets);
-        self::assertCount(6, array_unique($languageIds));
-        self::assertSame($languageIds, array_map(static fn (Market $market): string => $market->languageId(), Market::cases()));
-
         $domainIds = array_map(static fn (Market $market): string => $market->salesChannelDomainId(), $markets);
         self::assertCount(6, array_unique($domainIds));
         self::assertSame($domainIds, array_map(static fn (Market $market): string => $market->salesChannelDomainId(), Market::cases()));

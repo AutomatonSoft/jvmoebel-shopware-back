@@ -47,15 +47,6 @@ final readonly class PrepareMarketReferenceDataService
             $languageIds[$code] = $this->ensureLanguage($code, $context);
         }
 
-        $marketLanguageIds = [];
-        foreach ($markets as $market) {
-            $marketLanguageIds[$market->domain()] = $this->ensureMarketLanguage(
-                $market,
-                $languageIds[$market->languageCode()],
-                $context,
-            );
-        }
-
         $currencyIds = [];
         foreach (array_unique(array_map(static fn (Market $market): string => $market->currencyCode(), $markets)) as $code) {
             $currencyIds[$code] = $this->ensureCurrency($code, $languageIds, $context);
@@ -66,39 +57,14 @@ final readonly class PrepareMarketReferenceDataService
             $snippetSetIds[$code] = $this->snippetSetId($code, $context);
         }
 
-        return new PreparedMarketReferenceData($languageIds, $marketLanguageIds, $currencyIds, $snippetSetIds);
-    }
-
-    private function ensureMarketLanguage(Market $market, string $parentId, Context $context): string
-    {
-        $localeCriteria = (new Criteria())
-            ->setLimit(1)
-            ->addFilter(new EqualsFilter('code', $market->languageCode()));
-        $localeId = $this->localeRepository->searchIds($localeCriteria, $context)->firstId();
-
-        if (null === $localeId) {
-            throw ReferenceDataNotFoundException::forValue('locale', 'code', $market->languageCode());
-        }
-
-        $languageId = $market->languageId();
-        $this->languageRepository->upsert([[
-            'id' => $languageId,
-            'parentId' => $parentId,
-            'name' => $market->displayName(),
-            'localeId' => $localeId,
-            'translationCodeId' => $localeId,
-            'active' => true,
-        ]], $context);
-
-        return $languageId;
+        return new PreparedMarketReferenceData($languageIds, $currencyIds, $snippetSetIds);
     }
 
     private function ensureLanguage(string $code, Context $context): string
     {
         $criteria = (new Criteria())
             ->setLimit(1)
-            ->addFilter(new EqualsFilter('locale.code', $code))
-            ->addFilter(new EqualsFilter('parentId', null));
+            ->addFilter(new EqualsFilter('locale.code', $code));
         $languageId = $this->languageRepository->searchIds($criteria, $context)->firstId();
 
         if (null !== $languageId) {
