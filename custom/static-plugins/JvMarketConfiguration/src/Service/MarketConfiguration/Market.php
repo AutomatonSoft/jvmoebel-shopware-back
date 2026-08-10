@@ -72,11 +72,6 @@ enum Market: string
         return Uuid::fromStringToHex('jvmoebel.sales-channel.'.$this->domain());
     }
 
-    public function languageId(): string
-    {
-        return Uuid::fromStringToHex('jvmoebel.language.market.'.$this->domain());
-    }
-
     public function salesChannelDomainId(): string
     {
         return Uuid::fromStringToHex('jvmoebel.sales-channel-domain.'.$this->domain());

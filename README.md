@@ -29,7 +29,7 @@ Runtime-окружение контейнеров задаёт игнориру�
 ./bin/setup-local
 ```
 
-Скрипт детерминированно пересобирает `.env.local` из шаблона, сохраняя только реальные `APP_SECRET` и `INSTANCE_ID`; перед каждой нормализацией прежний файл сохраняется в `var/bootstrap/env-local.before-refresh.<timestamp>`. Затем он устанавливает Shopware без web installer, активирует `JvMarketConfiguration` и `JvImport`, настраивает шесть Storefront-type sales channels, регистрирует scheduled tasks и инициализирует OpenSearch. Тип Storefront используется для стандартной SEO URL-механики и Store API; публичной витриной остаётся только Next.js. Повторный запуск не пересоздаёт базу, sales channels или их access key. Поведение bootstrap зафиксировано в [SPEC-001](docs/specs/SPEC-001-market-bootstrap.md).
+Скрипт детерминированно пересобирает `.env.local` из шаблона, сохраняя только реальные `APP_SECRET` и `INSTANCE_ID`; перед каждой нормализацией прежний файл сохраняется в `var/bootstrap/env-local.before-refresh.<timestamp>`. Затем он устанавливает Shopware без web installer, активирует `JvMarketConfiguration`, настраивает шесть Storefront-type sales channels, регистрирует scheduled tasks и инициализирует OpenSearch. Тип Storefront используется для стандартной SEO URL-механики и Store API; публичной витриной остаётся только Next.js. Повторный запуск не пересоздаёт базу, sales channels или их access key. Поведение bootstrap зафиксировано в [SPEC-001](docs/specs/SPEC-001-market-bootstrap.md).
 
 Bootstrap не настраивает конвертацию валют: отсутствующие CHF и GBP создаются с нейтральным `factor = 1`. До публикации товаров нужно загрузить цены в этих валютах либо отдельно настроить курсы.
 
