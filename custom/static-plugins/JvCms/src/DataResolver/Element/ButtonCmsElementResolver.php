@@ -49,12 +49,22 @@ final class ButtonCmsElementResolver extends AbstractCmsElementResolver
             return null;
         }
 
-        if (1 !== preg_match('#^https?://#i', $url)) {
+        if (false === filter_var($url, \FILTER_VALIDATE_URL)) {
             return null;
         }
 
-        $scheme = parse_url($url, \PHP_URL_SCHEME);
-        if (!\is_string($scheme) || !\in_array(strtolower($scheme), ['http', 'https'], true)) {
+        $parts = parse_url($url);
+        if (!\is_array($parts)) {
+            return null;
+        }
+
+        $scheme = strtolower($parts['scheme'] ?? '');
+        if (!\in_array($scheme, ['http', 'https'], true)) {
+            return null;
+        }
+
+        $host = $parts['host'] ?? null;
+        if (!\is_string($host) || '' === $host) {
             return null;
         }
 

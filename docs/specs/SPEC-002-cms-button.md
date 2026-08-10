@@ -1,15 +1,15 @@
-# SPEC-002 — CMS button element (backend)
+# **SPEC-002 — CMS button element (backend)**
 
-## Цель
+## **Цель**
 
 Реализовать в плагине `JvCms` пользовательский Shopping Experiences element `jv-button` и связанные Administration blocks так, чтобы редактор мог собирать кнопку в CMS, а штатная CMS-выдача Store API отдавала нормализованный `data` для Next.js.
 
 Межрепозиторный контракт (тип слота, поля `config`/`data`, правила URL и variant):  
-`jvmoebel-shopware-docs` / [`docs/specs/SPEC-001-cms-button.md`](https://github.com/AutomatonSoft/jvmoebel-shopware-docs/blob/main/docs/specs/SPEC-001-cms-button.md).
+`jvmoebel-shopware-docs` / `docs/specs/SPEC-001-cms-button.md`.
 
 Эта specification описывает **только backend**: плагин, Administration, resolver, тесты и проверки. Вёрстка Next.js сюда не входит.
 
-## Границы
+## **Границы**
 
 Входит:
 
@@ -27,30 +27,30 @@
 - изменение Shopware core / `vendor/`;
 - другие CMS-элементы главной.
 
-## Сценарий
+## **Сценарий**
 
 1. Редактор открывает Shopping Experiences.
 2. В палитре Blocks выбирает категорию **Button** (рядом с Favourites, Text, Images…).
 3. Перетаскивает один из блоков-пресетов (Primary / Secondary / Link) на секцию — либо добавляет element `jv-button` в существующий слот.
 4. В config задаёт `label`, `url`, при необходимости меняет `variant` и `openInNewTab`, сохраняет страницу.
 5. Store API страницы/категории отдаёт слот `type: jv-button` с заполненным `data`.
-6. Next.js (отдельный репозиторий) сопоставляет `type === 'jv-button'` → UI-компонент и читает **`data`**, не сырой `config`.
+6. Next.js (отдельный репозиторий) сопоставляет `type === 'jv-button'` → UI-компонент и читает `data`, не сырой `config`.
 
-## Данные
+## **Данные**
 
 Контракт полей — в platform SPEC-001. В PHP backend:
 
-| артефакт                         | роль                                                                         |
-| -------------------------------- | ---------------------------------------------------------------------------- |
-| `ButtonVariant`                  | enum `primary` \| `secondary` \| `link`; неизвестное → `primary`             |
+| **артефакт**                     | **роль**                                                                     |
+| -------------------------------- | ---------------------------------------------------------------------------- | ----------- | ------------------------------- |
+| `ButtonVariant`                  | enum `primary`                                                               | `secondary` | `link`; неизвестное → `primary` |
 | `ButtonStruct`                   | struct слота; `getApiAlias()` = `cms_jv_button`                              |
 | `ButtonCmsElementResolver::TYPE` | строка `jv-button` — **обязана** совпадать с `name` element в Administration |
 
-### Administration: element vs blocks vs category
+### **Administration: element vs blocks vs category**
 
 Shopware разделяет три понятия:
 
-| понятие      | что это                                        | куда попадает                                    |
+| **понятие**  | **что это**                                    | **куда попадает**                                |
 | ------------ | ---------------------------------------------- | ------------------------------------------------ |
 | **Element**  | тип содержимого слота + config + PHP resolver  | `cms_slot.type`, Store API `type` / `data`       |
 | **Block**    | макет с именованными слотами (часто один слот) | `cms_block.type`; в Store API видны слоты внутри |
@@ -70,23 +70,29 @@ Shopware разделяет три понятия:
 
 Категория `text` для кнопки **не используется**: она для текстовых блоков core Shopware.
 
-## Правила
+## **Правила**
 
 - `getType()` resolver = `jv-button` = Administration `registerCmsElement({ name: 'jv-button', ... })`.
 - `collect()` возвращает `null` (нет DAL criteria).
-- URL без схемы `http`/`https` или со схемой `javascript`/`data` → `data.url = null`.
+- URL нормализуется через `safeUrl()`:
+- trim по краям;
+- пустой URL (в том числе только whitespace) → `data.url = null`;
+- allowlist схем только `http` и `https`;
+- URL должен проходить базовую URL-валидацию и иметь непустой host;
+- иначе (relative path, `javascript:`, `data:`, `ftp:`, `https://` без host, и т.п.) → `data.url = null`.
+
 - Неизвестный `variant` → `primary`.
-- Label и URL обрезаются по краям (`trim`).
+- Label обрезается по краям (`trim`).
 - Небезопасные/пустые значения не валят CMS-страницу: безопасный fallback.
 
-## Ошибки и повтор
+## **Ошибки и повтор**
 
 Некорректный config не приводит к 500 на Store API: resolver нормализует данные.  
 Повторное сохранение страницы идемпотентно с точки зрения контракта `data`.
 
-## Изменения Shopware
+## **Изменения Shopware**
 
-### Плагин
+### **Плагин**
 
 - Путь: `custom/static-plugins/JvCms`
 - Composer name: `jvmoebel/cms`
@@ -94,16 +100,16 @@ Shopware разделяет три понятия:
 - Подключение: path repository в корневом `composer.json` + `composer require jvmoebel/cms`
 - Активация: `bin/console plugin:refresh && plugin:install --activate JvCms` (или через `bin/setup-local`, bootstrap это включил)
 
-### PHP
+### **PHP**
 
 - `Jv\Cms\DataResolver\Element\ButtonCmsElementResolver` — tag `shopware.cms.data_resolver` (autoconfigure)
 - `ButtonStruct`, `ButtonVariant`
 - Регистрация в `Resources/config/services.xml`
 - Миграций схемы нет
 
-### Administration (ориентир структуры файлов)
+### **Administration (ориентир структуры файлов)**
 
-```text
+```
 custom/static-plugins/JvCms/
 ├── composer.json
 ├── src/
@@ -128,6 +134,7 @@ custom/static-plugins/JvCms/
 │               ├── jv-button-secondary/
 │               └── jv-button-link/
 └── tests/
+
 ```
 
 Каждый block: `index.js` (`registerCmsBlock`), `preview/` (миниатюра в палитре), `component/` (обёртка `<slot name="content">`).
@@ -138,9 +145,9 @@ Snippets: ключи вида `cms.elements.jv-button.*`, `cms.blocks.jv-button-
 Сборка: `docker compose exec web bash bin/build-administration.sh`, затем hard refresh `/admin`.  
 Для итераций — `bin/watch-administration.sh` и понимание, что `/admin` без подключённого Vite берёт собранные ассеты из `public/bundles/...`.
 
-### Что уходит наружу
+### **Что уходит наружу**
 
-| слой       | результат                                                           |
+| **слой**   | **результат**                                                       |
 | ---------- | ------------------------------------------------------------------- |
 | Admin save | `cms_block`, `cms_slot` (+ translation config) в MySQL              |
 | Store API  | слот с `type: jv-button` и `data` после resolver                    |
@@ -148,7 +155,7 @@ Snippets: ключи вида `cms.elements.jv-button.*`, `cms.blocks.jv-button-
 
 Twig Storefront для кнопки **не** публикуется (headless, ADR-007).
 
-## Проверка
+## **Проверка**
 
 Автоматические:
 
@@ -165,14 +172,8 @@ Twig Storefront для кнопки **не** публикуется (headless, A
 
 Команды перед PR (в контейнере `web`):
 
-```bash
+```
 docker compose exec -T web composer lint
 docker compose exec -T web composer analyse
 docker compose exec -T web composer test
 ```
-
-## Связь с прошлыми попытками (для обучения)
-
-Ранее element/block ошибочно регистрировали как `button` и клали block в `category: 'text'`.  
-Platform SPEC-001 требует type **`jv-button`**. Категория палитры для кнопки — **`button`**, не Text.  
-Код тех попыток сброшен; ориентир — эта specification и SPEC-001 в `jvmoebel-shopware-docs`.

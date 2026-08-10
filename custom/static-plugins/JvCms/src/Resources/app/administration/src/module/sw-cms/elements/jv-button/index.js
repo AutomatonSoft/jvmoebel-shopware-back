@@ -15,7 +15,7 @@ Shopware.Service('cmsService').registerCmsElement({
         },
         url: {
             source: 'static',
-            value: 'https://jvmoebel.de/',
+            value: '',
         },
         variant: {
             source: 'static',
