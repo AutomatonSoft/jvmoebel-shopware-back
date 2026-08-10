@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a5d9becb584b53c59ffea3d34c05e55d",
+    "content-hash": "b925bafd5b004eb2cfa976c80deebb61",
     "packages": [
         {
             "name": "async-aws/core",
@@ -2684,6 +2684,47 @@
                 "source": "https://github.com/jsonrainbow/json-schema/tree/6.10.0"
             },
             "time": "2026-06-16T20:50:26+00:00"
+        },
+        {
+            "name": "jvmoebel/import",
+            "version": "0.1.0",
+            "dist": {
+                "type": "path",
+                "url": "custom/static-plugins/JvImport",
+                "reference": "e5f8394438eb59803e6e74ef8b01738b51163c68"
+            },
+            "require": {
+                "jvmoebel/market-configuration": "^0.1",
+                "php": "^8.5",
+                "shopware/core": "~6.7.0"
+            },
+            "type": "shopware-platform-plugin",
+            "extra": {
+                "shopware-plugin-class": "Jv\\Import\\JvImport",
+                "label": {
+                    "de-DE": "JVMöbel Import",
+                    "en-GB": "JVMöbel import"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Jv\\Import\\": "src/",
+                    "Jv\\CatalogImport\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Jv\\CatalogImport\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "description": "JVMöbel import integrations",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
         },
         {
             "name": "jvmoebel/market-configuration",

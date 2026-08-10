@@ -1,0 +1,58 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services https://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <defaults autowire="true" autoconfigure="true" public="false"/>
+
+        <service id="Jv\Import\Subscriber\CosmoShopProductImportSubscriber">
+            <argument type="service" id="Jv\Import\Service\ProductImport\PrepareCosmoShopProductImportRecordService"/>
+        </service>
+
+        <service id="Jv\Import\Service\ProductImport\ResolveDefaultProductTaxService">
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+            <argument type="service" id="tax.repository"/>
+        </service>
+
+        <service id="Jv\Import\Integration\CosmoShop\Normalizer\CosmoShopProductImportDataNormalizer"/>
+        <service id="Jv\Import\Service\ProductImport\Validation\CosmoShopProductImportDataValidator"/>
+        <service id="Jv\Import\Service\ProductImport\BuildShopwareProductImportRecordService"/>
+
+        <service id="Jv\Import\Service\ProductImport\PrepareCosmoShopProductImportRecordService">
+            <argument type="service" id="Jv\Import\Integration\CosmoShop\Normalizer\CosmoShopProductImportDataNormalizer"/>
+            <argument type="service" id="Jv\Import\Service\ProductImport\Validation\CosmoShopProductImportDataValidator"/>
+            <argument type="service" id="Jv\Import\Service\ProductImport\ResolveDefaultProductTaxService"/>
+            <argument type="service" id="Jv\Import\Service\ProductImport\BuildShopwareProductImportRecordService"/>
+            <argument type="service" id="product.repository"/>
+            <argument type="service" id="currency.repository"/>
+        </service>
+
+        <service id="Jv\Import\Integration\CosmoShop\Normalizer\CosmoShopReferenceDataNormalizer"/>
+
+        <service id="Jv\Import\Service\ProductImport\LookupData\UpsertProductImportLookupDataService">
+            <argument type="service" id="delivery_time.repository"/>
+            <argument type="service" id="unit.repository"/>
+        </service>
+
+        <service id="Jv\Import\Command\BootstrapCosmoShopProfilesCommand">
+            <argument type="service" id="import_export_profile.repository"/>
+            <argument key="$environment">%kernel.environment%</argument>
+        </service>
+
+        <service id="Jv\Import\Command\UpsertCosmoShopReferencesCommand">
+            <argument key="$environment">%kernel.environment%</argument>
+        </service>
+
+        <service id="Jv\Import\Integration\CosmoShop\Reader\CosmoShopCsvPreflightReaderFactory">
+            <argument key="$environment">%kernel.environment%</argument>
+            <tag name="shopware.import_export.reader_factory" priority="100"/>
+        </service>
+
+        <service id="Jv\Import\Integration\CosmoShop\Reader\CosmoShopPreflightFailureRegistry"/>
+        <service id="Jv\Import\Subscriber\CompleteFailedCosmoShopConsoleImportSubscriber"/>
+        <service id="Jv\Import\Subscriber\CosmoShopImportProcessLoggingSubscriber">
+            <argument key="$environment">%kernel.environment%</argument>
+        </service>
+    </services>
+</container>

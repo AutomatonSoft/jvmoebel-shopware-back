@@ -71,7 +71,7 @@ final readonly class BootstrapMarketsService
             $salesChannelId = $market->salesChannelId();
             $existingSalesChannel = $this->findSalesChannel($salesChannelId, $context);
             $accessKey = $existingSalesChannel?->getAccessKey() ?? AccessKeyHelper::generateAccessKey('sales-channel');
-            $languageId = $referenceData->languageId($market->languageCode());
+            $languageId = $referenceData->marketLanguageId($market);
             $currencyId = $referenceData->currencyId($market->currencyCode());
             $countryId = $this->countryId($market->countryCode(), $context);
             $snippetSetId = $referenceData->snippetSetId($market->languageCode());
