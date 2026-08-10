@@ -32,6 +32,7 @@ Do not implement an undocumented architectural assumption from memory or from a 
 - Keep each change limited to the requested behavior. Do not combine it with unrelated refactoring, dependency updates or repository-wide formatting.
 - Preserve existing user changes and do not overwrite code outside the task scope.
 - Reuse existing project patterns before introducing a new abstraction, dependency, plugin or directory structure.
+- For a structural refactoring, first identify the existing pattern that resolves the placement. If no applicable pattern exists, stop before editing and present the concrete alternatives, their affected paths and trade-offs to the user; implement only the option the user chooses. Do not introduce a new architectural layer or directory merely because it seems cleaner.
 - Do not modify Shopware core, `vendor/`, generated files or third-party plugins unless the task explicitly requires a reviewed exception.
 - Update the relevant specification and documentation when behavior, data, API, messages or architectural boundaries change.
 - Ask for a decision when an unresolved choice changes public behavior, data compatibility or architecture. For local implementation details, follow the existing project conventions and continue.

@@ -46,12 +46,38 @@ final class PrepareMarketReferenceDataServiceTest extends TestCase
         self::assertTrue($this->language($languageRepository, $languageId, $context)->isActive());
     }
 
+    public function testItCreatesStableMarketLanguagesWithLocaleFallbacks(): void
+    {
+        $context = Context::createDefaultContext();
+
+        /** @var EntityRepository<LanguageCollection> $languageRepository */
+        $languageRepository = static::getContainer()->get('language.repository');
+        $service = static::getContainer()->get(PrepareMarketReferenceDataService::class);
+        self::assertInstanceOf(PrepareMarketReferenceDataService::class, $service);
+
+        $first = $service->execute(Market::cases(), $context);
+        $second = $service->execute(Market::cases(), $context);
+        $marketLanguageIds = [];
+
+        foreach (Market::cases() as $market) {
+            $languageId = $first->marketLanguageId($market);
+            $marketLanguageIds[] = $languageId;
+            self::assertSame($languageId, $second->marketLanguageId($market));
+
+            $language = $this->language($languageRepository, $languageId, $context);
+            self::assertSame($market->languageCode(), $language->getLocale()?->getCode());
+            self::assertSame($first->languageId($market->languageCode()), $language->getParentId());
+        }
+
+        self::assertCount(6, array_unique($marketLanguageIds));
+    }
+
     /**
      * @param EntityRepository<LanguageCollection> $repository
      */
     private function language(EntityRepository $repository, string $id, Context $context): LanguageEntity
     {
-        $language = $repository->search(new Criteria([$id]), $context)->first();
+        $language = $repository->search((new Criteria([$id]))->addAssociation('locale'), $context)->first();
         self::assertInstanceOf(LanguageEntity::class, $language);
 
         return $language;

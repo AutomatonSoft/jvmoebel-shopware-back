@@ -64,6 +64,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate setup script syntax
+        run: bash -n bin/setup-local
+
       - name: Setup PHP 8.5
         uses: shivammathur/setup-php@v2
         with:
@@ -142,10 +145,13 @@ jobs:
         run: |
           git diff --exit-code -- \
             custom/static-plugins/JvCms/src/Resources/public/administration \
+            custom/static-plugins/JvImport/src/Resources/public/administration \
             || {
               echo "Administration source and committed production assets differ."
               echo "Run: docker compose exec web bash bin/build-administration.sh"
               echo "Then commit updated Resources/public/administration."
-              git status --short -- custom/static-plugins/JvCms/src/Resources/public/administration
+              git status --short -- \
+                custom/static-plugins/JvCms/src/Resources/public/administration \
+                custom/static-plugins/JvImport/src/Resources/public/administration
               exit 1
             }

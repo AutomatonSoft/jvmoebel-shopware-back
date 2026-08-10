@@ -6,6 +6,5 @@ use Shopware\Core\TestBootstrapper;
 
 (new TestBootstrapper())
     ->setPlatformEmbedded(false)
-    ->setForceInstallPlugins(true)
-    ->addActivePlugins('JvMarketConfiguration', 'JvCms')
+    ->addActivePlugins('JvMarketConfiguration', 'JvCms', 'JvImport')
     ->bootstrap();
