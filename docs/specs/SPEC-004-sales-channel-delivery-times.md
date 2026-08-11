@@ -10,7 +10,8 @@ sales channel, не перетирая значение другого рынк�
 Плагин `JvImport` владеет DAL-сущностью связи
 `jv_import_product_sales_channel_delivery_time`:
 `product_id`, `product_version_id`, `sales_channel_id`, `delivery_time_id`.
-Пара product и sales channel уникальна.
+Пара live product и sales channel уникальна. Storefront и импорт работают только
+с live product version; Administration сохраняет override туда же.
 
 ## Правила
 

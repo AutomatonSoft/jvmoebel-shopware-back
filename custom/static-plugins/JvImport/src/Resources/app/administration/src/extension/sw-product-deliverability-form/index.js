@@ -95,7 +95,7 @@ Shopware.Component.override('sw-product-deliverability-form', {
 
             const linkCriteria = new Criteria(1, 1);
             linkCriteria.addFilter(Criteria.equals('productId', productId));
-            linkCriteria.addFilter(Criteria.equals('productVersionId', this.product.versionId));
+            linkCriteria.addFilter(Criteria.equals('productVersionId', Shopware.Defaults.versionId));
             linkCriteria.addFilter(Criteria.equals('salesChannelId', salesChannel.id));
             const link = (await this.jvImportDeliveryTimeLinkRepository.search(linkCriteria, Shopware.Context.api)).first() ?? null;
             if (request !== this.jvImportLoadRequest || languageId !== this.jvImportLanguageId || productId !== this.product.id) {
@@ -113,7 +113,7 @@ Shopware.Component.override('sw-product-deliverability-form', {
             stageDeliveryTimeChange({
                 id: this.jvImportDeliveryTimeLink?.id,
                 productId: this.product.id,
-                productVersionId: this.product.versionId,
+                productVersionId: Shopware.Defaults.versionId,
                 salesChannelId: this.jvImportMarketSalesChannelId,
                 deliveryTimeId: deliveryTimeId || null,
             });
