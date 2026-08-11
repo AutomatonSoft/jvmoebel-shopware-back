@@ -1,21 +1,23 @@
 <?php declare(strict_types=1);
 
-namespace Jv\Import;
+namespace Jv\Import\Tests\Unit;
 
-use Shopware\Core\Framework\Plugin;
+use Jv\Import\JvImport;
+use PHPUnit\Framework\TestCase;
 
-final class JvImport extends Plugin
+final class JvImportTest extends TestCase
 {
-    /** @return array<string, list<string>> */
-    public function enrichPrivileges(): array
+    public function testItGrantsDeliveryTimeRelationPermissionsToProductEditors(): void
     {
-        return [
+        $plugin = new JvImport(true, dirname(__DIR__, 2));
+
+        self::assertSame([
             'product.editor' => [
                 'jv_import_product_sales_channel_delivery_time:read',
                 'jv_import_product_sales_channel_delivery_time:create',
                 'jv_import_product_sales_channel_delivery_time:update',
                 'jv_import_product_sales_channel_delivery_time:delete',
             ],
-        ];
+        ], $plugin->enrichPrivileges());
     }
 }

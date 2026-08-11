@@ -1,4 +1,9 @@
 import template from './sw-product-deliverability-form.html.twig';
+import {
+    discardDeliveryTimeChanges,
+    pendingDeliveryTimeChange,
+    stageDeliveryTimeChange,
+} from './pending-delivery-time-changes';
 
 const { Criteria } = Shopware.Data;
 
@@ -13,6 +18,7 @@ Shopware.Component.override('sw-product-deliverability-form', {
         return {
             jvImportMarketSalesChannelId: null,
             jvImportDeliveryTimeLink: null,
+            jvImportLoadRequest: 0,
         };
     },
 
@@ -22,7 +28,11 @@ Shopware.Component.override('sw-product-deliverability-form', {
         },
 
         jvImportDeliveryTimeId() {
-            return this.jvImportDeliveryTimeLink?.deliveryTimeId ?? this.product.deliveryTimeId;
+            const pendingChange = this.jvImportMarketSalesChannelId
+                ? pendingDeliveryTimeChange(this.product.id, this.jvImportMarketSalesChannelId)
+                : null;
+
+            return pendingChange?.deliveryTimeId ?? this.jvImportDeliveryTimeLink?.deliveryTimeId ?? this.product.deliveryTimeId;
         },
 
         jvImportSalesChannelRepository() {
@@ -53,17 +63,26 @@ Shopware.Component.override('sw-product-deliverability-form', {
 
     methods: {
         async jvImportLoadDeliveryTimeLink() {
+            const request = ++this.jvImportLoadRequest;
+            const languageId = this.jvImportLanguageId;
+            const productId = this.product.id;
             this.jvImportMarketSalesChannelId = null;
             this.jvImportDeliveryTimeLink = null;
 
-            const language = await this.jvImportLanguageRepository.get(this.jvImportLanguageId, Shopware.Context.api);
+            const language = await this.jvImportLanguageRepository.get(languageId, Shopware.Context.api);
+            if (request !== this.jvImportLoadRequest || languageId !== this.jvImportLanguageId || productId !== this.product.id) {
+                return;
+            }
             if (!language.parentId) {
                 return;
             }
 
             const salesChannelCriteria = new Criteria(1, 2);
-            salesChannelCriteria.addFilter(Criteria.equals('languageId', this.jvImportLanguageId));
+            salesChannelCriteria.addFilter(Criteria.equals('languageId', languageId));
             const salesChannels = await this.jvImportSalesChannelRepository.search(salesChannelCriteria, Shopware.Context.api);
+            if (request !== this.jvImportLoadRequest || languageId !== this.jvImportLanguageId || productId !== this.product.id) {
+                return;
+            }
             const salesChannel = salesChannels.first();
             if (!salesChannel) {
                 return;
@@ -75,35 +94,33 @@ Shopware.Component.override('sw-product-deliverability-form', {
             }
 
             const linkCriteria = new Criteria(1, 1);
-            linkCriteria.addFilter(Criteria.equals('productId', this.product.id));
+            linkCriteria.addFilter(Criteria.equals('productId', productId));
+            linkCriteria.addFilter(Criteria.equals('productVersionId', this.product.versionId));
             linkCriteria.addFilter(Criteria.equals('salesChannelId', salesChannel.id));
-            this.jvImportDeliveryTimeLink = (await this.jvImportDeliveryTimeLinkRepository.search(linkCriteria, Shopware.Context.api)).first() ?? null;
-        },
-
-        async jvImportUpdateDeliveryTime(deliveryTimeId) {
-            if (!this.jvImportMarketSalesChannelId) {
+            const link = (await this.jvImportDeliveryTimeLinkRepository.search(linkCriteria, Shopware.Context.api)).first() ?? null;
+            if (request !== this.jvImportLoadRequest || languageId !== this.jvImportLanguageId || productId !== this.product.id) {
                 return;
             }
 
-            if (!deliveryTimeId && this.jvImportDeliveryTimeLink) {
-                await this.jvImportDeliveryTimeLinkRepository.delete([this.jvImportDeliveryTimeLink.id], Shopware.Context.api);
-                this.jvImportDeliveryTimeLink = null;
-
-                return;
-            }
-
-            if (!deliveryTimeId || !this.product.id) {
-                return;
-            }
-
-            const link = this.jvImportDeliveryTimeLink ?? this.jvImportDeliveryTimeLinkRepository.create(Shopware.Context.api);
-            Object.assign(link, {
-                productId: this.product.id,
-                salesChannelId: this.jvImportMarketSalesChannelId,
-                deliveryTimeId,
-            });
-            await this.jvImportDeliveryTimeLinkRepository.save(link, Shopware.Context.api);
             this.jvImportDeliveryTimeLink = link;
         },
+
+        jvImportUpdateDeliveryTime(deliveryTimeId) {
+            if (!this.jvImportMarketSalesChannelId || !this.product.id) {
+                return;
+            }
+
+            stageDeliveryTimeChange({
+                id: this.jvImportDeliveryTimeLink?.id,
+                productId: this.product.id,
+                productVersionId: this.product.versionId,
+                salesChannelId: this.jvImportMarketSalesChannelId,
+                deliveryTimeId: deliveryTimeId || null,
+            });
+        },
+    },
+
+    beforeUnmount() {
+        discardDeliveryTimeChanges(this.product.id);
     },
 });

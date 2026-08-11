@@ -13,6 +13,8 @@ use Jv\Import\Service\ProductImport\LookupData\UpsertProductImportLookupDataServ
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use League\Flysystem\FilesystemOperator;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Checkout\Cart\LineItem\LineItem;
+use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Content\ImportExport\ImportExport;
 use Shopware\Core\Content\ImportExport\ImportExportFactory;
 use Shopware\Core\Content\ImportExport\ImportExportProfileEntity;
@@ -23,6 +25,10 @@ use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Content\Product\SalesChannel\Detail\AbstractProductDetailRoute;
 use Shopware\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute;
+use Shopware\Core\Content\Product\SalesChannel\Listing\AbstractProductListingRoute;
+use Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingRoute;
+use Shopware\Core\Content\Product\SalesChannel\Search\AbstractProductSearchRoute;
+use Shopware\Core\Content\Product\SalesChannel\Search\ProductSearchRoute;
 use Shopware\Core\Framework\Api\Util\AccessKeyHelper;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
@@ -287,6 +293,8 @@ final class CosmoShopImportExportTest extends TestCase
             self::assertInstanceOf(ProductSalesChannelDeliveryTimeCollection::class, $britishDeliveryTimeLinks);
             self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::Germany, 2), $germanDeliveryTimeLinks->first()?->getDeliveryTimeId());
             self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::UnitedKingdom, 2), $britishDeliveryTimeLinks->first()?->getDeliveryTimeId());
+            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::Germany, 2), $germanProduct->getDeliveryTimeId());
+            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::UnitedKingdom, 2), $britishProduct->getDeliveryTimeId());
             self::assertSame(
                 CosmoShopReferenceIdentity::deliveryTimeId(Market::Germany, 2),
                 $this->storeApiDeliveryTimeId($productId, Market::Germany),
@@ -295,6 +303,51 @@ final class CosmoShopImportExportTest extends TestCase
                 CosmoShopReferenceIdentity::deliveryTimeId(Market::UnitedKingdom, 2),
                 $this->storeApiDeliveryTimeId($productId, Market::UnitedKingdom),
             );
+
+            $searchRoute = static::getContainer()->get(ProductSearchRoute::class);
+            self::assertInstanceOf(AbstractProductSearchRoute::class, $searchRoute);
+            $britishSearchResult = $searchRoute->load(
+                new Request(),
+                $contextFactory->create(Uuid::randomHex(), Market::UnitedKingdom->salesChannelId()),
+                new Criteria([$productId]),
+            )->getListingResult()->first();
+            self::assertInstanceOf(ProductEntity::class, $britishSearchResult);
+            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::UnitedKingdom, 2), $britishSearchResult->getDeliveryTimeId());
+
+            /** @var EntityRepository<SalesChannelCollection> $salesChannelRepository */
+            $salesChannelRepository = static::getContainer()->get('sales_channel.repository');
+            $britishSalesChannel = $salesChannelRepository->search(new Criteria([Market::UnitedKingdom->salesChannelId()]), $context)->first();
+            self::assertInstanceOf(SalesChannelEntity::class, $britishSalesChannel);
+            /** @var EntityRepository<ProductCollection> $productRepository */
+            $productRepository = static::getContainer()->get('product.repository');
+            $productRepository->update([[
+                'id' => $productId,
+                'categories' => [['id' => $britishSalesChannel->getNavigationCategoryId()]],
+            ]], $context);
+            $listingRoute = static::getContainer()->get(ProductListingRoute::class);
+            self::assertInstanceOf(AbstractProductListingRoute::class, $listingRoute);
+            $britishListingResult = $listingRoute->load(
+                $britishSalesChannel->getNavigationCategoryId(),
+                new Request(),
+                $contextFactory->create(Uuid::randomHex(), Market::UnitedKingdom->salesChannelId()),
+                new Criteria(),
+            )->getResult()->get($productId);
+            self::assertInstanceOf(ProductEntity::class, $britishListingResult);
+            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::UnitedKingdom, 2), $britishListingResult->getDeliveryTimeId());
+
+            $cartService = static::getContainer()->get(CartService::class);
+            self::assertInstanceOf(CartService::class, $cartService);
+            $britishCartContext = $contextFactory->create(Uuid::randomHex(), Market::UnitedKingdom->salesChannelId());
+            $britishCart = $cartService->createNew($britishCartContext->getToken());
+            $britishCart = $cartService->add(
+                $britishCart,
+                new LineItem($productId, LineItem::PRODUCT_LINE_ITEM_TYPE, $productId),
+                $britishCartContext,
+            );
+            $britishDeliveryTime = $britishCart->getLineItems()->first()?->getDeliveryInformation()?->getDeliveryTime();
+            self::assertNotNull($britishDeliveryTime);
+            self::assertSame(6, $britishDeliveryTime->getMin());
+            self::assertSame(10, $britishDeliveryTime->getMax());
 
             $britishLink = $links->filterByProperty('salesChannelId', Market::UnitedKingdom->salesChannelId())->first();
             $repository->delete([['id' => $britishLink->getId()]], $context);
@@ -583,7 +636,7 @@ final class CosmoShopImportExportTest extends TestCase
             json_encode($response, JSON_THROW_ON_ERROR),
         );
 
-        return $response['product']['extensions']['jvImportDeliveryTimes'][0]['deliveryTime']['id'] ?? null;
+        return $response['product']['deliveryTime']['id'] ?? null;
     }
 
     /** @return array<string, mixed> */

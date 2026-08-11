@@ -13,6 +13,7 @@ final class ProductSalesChannelDeliveryTimeEntity extends Entity
     use EntityIdTrait;
 
     protected string $productId;
+    protected string $productVersionId;
     protected string $salesChannelId;
     protected string $deliveryTimeId;
     protected ?ProductEntity $product = null;
@@ -27,6 +28,16 @@ final class ProductSalesChannelDeliveryTimeEntity extends Entity
     public function setProductId(string $productId): void
     {
         $this->productId = $productId;
+    }
+
+    public function getProductVersionId(): string
+    {
+        return $this->productVersionId;
+    }
+
+    public function setProductVersionId(string $productVersionId): void
+    {
+        $this->productVersionId = $productVersionId;
     }
 
     public function getSalesChannelId(): string

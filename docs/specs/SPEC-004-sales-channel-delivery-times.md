@@ -7,7 +7,8 @@ sales channel, не перетирая значение другого рынк�
 
 ## Данные
 
-Плагин `JvImport` владеет DAL-сущностью связи `jv_import_product_delivery_time`:
+Плагин `JvImport` владеет DAL-сущностью связи
+`jv_import_product_sales_channel_delivery_time`:
 `product_id`, `product_version_id`, `sales_channel_id`, `delivery_time_id`.
 Пара product и sales channel уникальна.
 
@@ -17,14 +18,19 @@ sales channel, не перетирая значение другого рынк�
 - Пустой `delivery_time_id` не изменяет ранее сохранённую связь.
 - Глобальный `product.deliveryTimeId` остаётся fallback для ручных товаров и
   обратной совместимости.
-- Product detail Store API возвращает выбранную market relation в
-  `jvImportDeliveryTimes` (один item с `deliveryTime`). Если relation нет,
-  Next.js использует глобальный fallback товара.
+- Product detail, listing и search Store API подменяют штатный
+  `product.deliveryTime` выбранным market сроком и дополнительно возвращают
+  relation в `jvImportDeliveryTimes` (один item с `deliveryTime`). Если relation
+  нет, остаётся глобальный fallback товара.
+- Cart processor применяет relation до построения deliveries. Поэтому cart,
+  delivery date и order snapshot получают срок текущего sales channel.
 - Administration использует выбранный market language для определения sales
   channel и редактирует его связь в существующем поле delivery time.
 
 ## Проверка
 
 Integration-тесты проверяют импорт разных значений DE/UK, повторное обновление
-одного рынка и Store API resolution. Administration behaviour покрывается
-unit-тестом расширения.
+одного рынка, Store API resolution и cart delivery date. Для Administration
+выполняется ручная проверка: product editor меняет срок выбранного market
+language, нажимает общий Save, затем обновляет карточку и видит сохранённое
+значение.
