@@ -22,7 +22,7 @@ Shopware.Component.override('sw-product-deliverability-form', {
         },
 
         jvImportDeliveryTimeId() {
-            return this.jvImportDeliveryTimeLink?.deliveryTimeId ?? null;
+            return this.jvImportDeliveryTimeLink?.deliveryTimeId ?? this.product.deliveryTimeId;
         },
 
         jvImportSalesChannelRepository() {

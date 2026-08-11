@@ -295,6 +295,25 @@ final class CosmoShopImportExportTest extends TestCase
                 CosmoShopReferenceIdentity::deliveryTimeId(Market::UnitedKingdom, 2),
                 $this->storeApiDeliveryTimeId($productId, Market::UnitedKingdom),
             );
+
+            $britishLink = $links->filterByProperty('salesChannelId', Market::UnitedKingdom->salesChannelId())->first();
+            $repository->delete([['id' => $britishLink->getId()]], $context);
+
+            $britishFallbackProduct = $route->load(
+                $productId,
+                new Request(),
+                $contextFactory->create(Uuid::randomHex(), Market::UnitedKingdom->salesChannelId()),
+                new Criteria(),
+            )->getProduct();
+            self::assertNull($britishFallbackProduct->getExtension('jvImportDeliveryTimes'));
+            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::Germany, 2), $britishFallbackProduct->getDeliveryTimeId());
+
+            $britishFallbackResponse = $this->storeApiProduct($productId, Market::UnitedKingdom);
+            self::assertArrayNotHasKey('jvImportDeliveryTimes', $britishFallbackResponse['product']['extensions'] ?? []);
+            self::assertSame(
+                CosmoShopReferenceIdentity::deliveryTimeId(Market::Germany, 2),
+                $britishFallbackResponse['product']['deliveryTime']['id'] ?? null,
+            );
         } finally {
             /** @var EntityRepository<ProductCollection> $repository */
             $repository = static::getContainer()->get('product.repository');
@@ -557,6 +576,23 @@ final class CosmoShopImportExportTest extends TestCase
         $salesChannelRepository = static::getContainer()->get('sales_channel.repository');
         $salesChannel = $salesChannelRepository->search(new Criteria([$market->salesChannelId()]), Context::createDefaultContext())->first();
         self::assertInstanceOf(SalesChannelEntity::class, $salesChannel);
+        $response = $this->storeApiProduct($productId, $market);
+        self::assertArrayHasKey(
+            'jvImportDeliveryTimes',
+            $response['product']['extensions'] ?? [],
+            json_encode($response, JSON_THROW_ON_ERROR),
+        );
+
+        return $response['product']['extensions']['jvImportDeliveryTimes'][0]['deliveryTime']['id'] ?? null;
+    }
+
+    /** @return array<string, mixed> */
+    private function storeApiProduct(string $productId, Market $market): array
+    {
+        /** @var EntityRepository<SalesChannelCollection> $salesChannelRepository */
+        $salesChannelRepository = static::getContainer()->get('sales_channel.repository');
+        $salesChannel = $salesChannelRepository->search(new Criteria([$market->salesChannelId()]), Context::createDefaultContext())->first();
+        self::assertInstanceOf(SalesChannelEntity::class, $salesChannel);
         $browser = KernelLifecycleManager::createBrowser(static::getKernel());
         $browser->setServerParameters([
             'HTTP_ACCEPT' => 'application/json',
@@ -565,14 +601,8 @@ final class CosmoShopImportExportTest extends TestCase
         $browser->request('GET', '/store-api/product/'.$productId);
 
         self::assertTrue($browser->getResponse()->isSuccessful(), $browser->getResponse()->getContent());
-        $response = json_decode((string) $browser->getResponse()->getContent(), true, 512, JSON_THROW_ON_ERROR);
-        self::assertArrayHasKey(
-            'jvImportDeliveryTimes',
-            $response['product']['extensions'] ?? [],
-            json_encode($response, JSON_THROW_ON_ERROR),
-        );
 
-        return $response['product']['extensions']['jvImportDeliveryTimes'][0]['deliveryTime']['id'] ?? null;
+        return json_decode((string) $browser->getResponse()->getContent(), true, 512, JSON_THROW_ON_ERROR);
     }
 
     private function configureGermanyProfile(Context $context): string
