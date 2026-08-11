@@ -1,0 +1,18 @@
+{% block sw_product_deliverability_form_delivery_time_field %}
+<template v-if="jvImportMarketSalesChannelId">
+    <sw-entity-single-select
+        id="deliveryTimeId"
+        :value="jvImportDeliveryTimeId"
+        entity="delivery_time"
+        :disabled="!allowEdit || !product.id"
+        class="product-deliverability-form__delivery-time"
+        :label="$t('sw-product.settingsForm.labelDeliveryTime')"
+        :placeholder="$t('sw-product.settingsForm.placeholderDeliveryTime')"
+        show-clearable-button
+        @update:value="jvImportUpdateDeliveryTime"
+    />
+</template>
+<template v-else>
+    {% parent %}
+</template>
+{% endblock %}

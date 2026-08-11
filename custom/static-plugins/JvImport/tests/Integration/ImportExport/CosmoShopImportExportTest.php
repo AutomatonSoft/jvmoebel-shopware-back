@@ -2,6 +2,7 @@
 
 namespace Jv\Import\Tests\Integration\ImportExport;
 
+use Jv\Import\Core\Content\ProductSalesChannelDeliveryTime\ProductSalesChannelDeliveryTimeCollection;
 use Jv\Import\Integration\CosmoShop\CosmoShopProductIdentity;
 use Jv\Import\Integration\CosmoShop\CosmoShopReferenceIdentity;
 use Jv\Import\Integration\CosmoShop\Profile\MarketImportProfile;
@@ -20,6 +21,8 @@ use Shopware\Core\Content\ImportExport\Struct\Progress;
 use Shopware\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufacturerCollection;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
+use Shopware\Core\Content\Product\SalesChannel\Detail\AbstractProductDetailRoute;
+use Shopware\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -28,11 +31,15 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\Currency\CurrencyCollection;
+use Shopware\Core\System\DeliveryTime\DeliveryTimeEntity;
 use Shopware\Core\System\Language\LanguageCollection;
+use Shopware\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
+use Shopware\Core\System\SalesChannel\Context\CachedSalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\SalesChannelCollection;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 use Shopware\Core\System\Tax\TaxCollection;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\HttpFoundation\Request;
 
 final class CosmoShopImportExportTest extends TestCase
 {
@@ -206,6 +213,79 @@ final class CosmoShopImportExportTest extends TestCase
             self::assertInstanceOf(ProductEntity::class, $product);
             self::assertSame('Deutscher Name', $product->getTranslations()->filterByLanguageId(Market::Germany->languageId())->first()?->getName());
             self::assertSame('Österreichischer Name', $product->getTranslations()->filterByLanguageId(Market::Austria->languageId())->first()?->getName());
+        } finally {
+            /** @var EntityRepository<ProductCollection> $repository */
+            $repository = static::getContainer()->get('product.repository');
+            $repository->delete([['id' => $productId]], $context);
+        }
+    }
+
+    public function testItStoresDifferentDeliveryTimesForTheSameSkuPerMarket(): void
+    {
+        $context = Context::createDefaultContext();
+        $productNumber = 'MARKET-DELIVERY-TIME-001';
+        $productId = CosmoShopProductIdentity::fromProductNumber($productNumber);
+        $references = static::getContainer()->get(UpsertProductImportLookupDataService::class);
+        self::assertInstanceOf(UpsertProductImportLookupDataService::class, $references);
+        $germanyProfileId = $this->configureMarketProfile(Market::Germany, $context);
+        $unitedKingdomProfileId = $this->configureMarketProfile(Market::UnitedKingdom, $context);
+
+        $references->execute(Market::Germany, new ProductImportLookupData(
+            [new ProductImportLookupItemData('2', ['de' => 'Lieferzeit: 4-8 Wochen'])],
+            [],
+        ), $context);
+        $references->execute(Market::UnitedKingdom, new ProductImportLookupData(
+            [new ProductImportLookupItemData('2', ['en' => 'Delivery time: 6-10 weeks'])],
+            [],
+        ), $context);
+
+        try {
+            self::assertSame(Progress::STATE_SUCCEEDED, $this->import(
+                $germanyProfileId,
+                $this->csv(productNumber: $productNumber, deliveryTimeId: '2'),
+            )->getState());
+            self::assertSame(Progress::STATE_SUCCEEDED, $this->import(
+                $unitedKingdomProfileId,
+                $this->csv(productNumber: $productNumber, deliveryTimeId: '2'),
+            )->getState());
+
+            /** @var EntityRepository<ProductSalesChannelDeliveryTimeCollection> $repository */
+            $repository = static::getContainer()->get('jv_import_product_sales_channel_delivery_time.repository');
+            $links = $repository->search((new Criteria())->addFilter(new EqualsFilter('productId', $productId)), $context);
+
+            self::assertSame(2, $links->getTotal());
+            self::assertSame(
+                CosmoShopReferenceIdentity::deliveryTimeId(Market::Germany, 2),
+                $links->filterByProperty('salesChannelId', Market::Germany->salesChannelId())->first()?->getDeliveryTimeId(),
+            );
+            self::assertSame(
+                CosmoShopReferenceIdentity::deliveryTimeId(Market::UnitedKingdom, 2),
+                $links->filterByProperty('salesChannelId', Market::UnitedKingdom->salesChannelId())->first()?->getDeliveryTimeId(),
+            );
+            $route = static::getContainer()->get(ProductDetailRoute::class);
+            self::assertInstanceOf(AbstractProductDetailRoute::class, $route);
+            $contextFactory = static::getContainer()->get(CachedSalesChannelContextFactory::class);
+            self::assertInstanceOf(AbstractSalesChannelContextFactory::class, $contextFactory);
+
+            $germanProduct = $route->load(
+                $productId,
+                new Request(),
+                $contextFactory->create(Uuid::randomHex(), Market::Germany->salesChannelId()),
+                new Criteria(),
+            )->getProduct();
+            $britishProduct = $route->load(
+                $productId,
+                new Request(),
+                $contextFactory->create(Uuid::randomHex(), Market::UnitedKingdom->salesChannelId()),
+                new Criteria(),
+            )->getProduct();
+
+            $germanDeliveryTime = $germanProduct->getExtension('jvImportDeliveryTime');
+            self::assertInstanceOf(DeliveryTimeEntity::class, $germanDeliveryTime);
+            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::Germany, 2), $germanDeliveryTime->getId());
+            $britishDeliveryTime = $britishProduct->getExtension('jvImportDeliveryTime');
+            self::assertInstanceOf(DeliveryTimeEntity::class, $britishDeliveryTime);
+            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::UnitedKingdom, 2), $britishDeliveryTime->getId());
         } finally {
             /** @var EntityRepository<ProductCollection> $repository */
             $repository = static::getContainer()->get('product.repository');
