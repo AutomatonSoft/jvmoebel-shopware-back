@@ -23,15 +23,16 @@ use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Content\Product\SalesChannel\Detail\AbstractProductDetailRoute;
 use Shopware\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute;
+use Shopware\Core\Framework\Api\Util\AccessKeyHelper;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopware\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\Currency\CurrencyCollection;
-use Shopware\Core\System\DeliveryTime\DeliveryTimeEntity;
 use Shopware\Core\System\Language\LanguageCollection;
 use Shopware\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\CachedSalesChannelContextFactory;
@@ -280,12 +281,20 @@ final class CosmoShopImportExportTest extends TestCase
                 new Criteria(),
             )->getProduct();
 
-            $germanDeliveryTime = $germanProduct->getExtension('jvImportDeliveryTime');
-            self::assertInstanceOf(DeliveryTimeEntity::class, $germanDeliveryTime);
-            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::Germany, 2), $germanDeliveryTime->getId());
-            $britishDeliveryTime = $britishProduct->getExtension('jvImportDeliveryTime');
-            self::assertInstanceOf(DeliveryTimeEntity::class, $britishDeliveryTime);
-            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::UnitedKingdom, 2), $britishDeliveryTime->getId());
+            $germanDeliveryTimeLinks = $germanProduct->getExtension('jvImportDeliveryTimes');
+            $britishDeliveryTimeLinks = $britishProduct->getExtension('jvImportDeliveryTimes');
+            self::assertInstanceOf(ProductSalesChannelDeliveryTimeCollection::class, $germanDeliveryTimeLinks);
+            self::assertInstanceOf(ProductSalesChannelDeliveryTimeCollection::class, $britishDeliveryTimeLinks);
+            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::Germany, 2), $germanDeliveryTimeLinks->first()?->getDeliveryTimeId());
+            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::UnitedKingdom, 2), $britishDeliveryTimeLinks->first()?->getDeliveryTimeId());
+            self::assertSame(
+                CosmoShopReferenceIdentity::deliveryTimeId(Market::Germany, 2),
+                $this->storeApiDeliveryTimeId($productId, Market::Germany),
+            );
+            self::assertSame(
+                CosmoShopReferenceIdentity::deliveryTimeId(Market::UnitedKingdom, 2),
+                $this->storeApiDeliveryTimeId($productId, Market::UnitedKingdom),
+            );
         } finally {
             /** @var EntityRepository<ProductCollection> $repository */
             $repository = static::getContainer()->get('product.repository');
@@ -542,6 +551,30 @@ final class CosmoShopImportExportTest extends TestCase
         return $factory->create($log->getId(), 50, 50)->import($context);
     }
 
+    private function storeApiDeliveryTimeId(string $productId, Market $market): ?string
+    {
+        /** @var EntityRepository<SalesChannelCollection> $salesChannelRepository */
+        $salesChannelRepository = static::getContainer()->get('sales_channel.repository');
+        $salesChannel = $salesChannelRepository->search(new Criteria([$market->salesChannelId()]), Context::createDefaultContext())->first();
+        self::assertInstanceOf(SalesChannelEntity::class, $salesChannel);
+        $browser = KernelLifecycleManager::createBrowser(static::getKernel());
+        $browser->setServerParameters([
+            'HTTP_ACCEPT' => 'application/json',
+            'HTTP_SW_ACCESS_KEY' => $salesChannel->getAccessKey(),
+        ]);
+        $browser->request('GET', '/store-api/product/'.$productId);
+
+        self::assertTrue($browser->getResponse()->isSuccessful(), $browser->getResponse()->getContent());
+        $response = json_decode((string) $browser->getResponse()->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertArrayHasKey(
+            'jvImportDeliveryTimes',
+            $response['product']['extensions'] ?? [],
+            json_encode($response, JSON_THROW_ON_ERROR),
+        );
+
+        return $response['product']['extensions']['jvImportDeliveryTimes'][0]['deliveryTime']['id'] ?? null;
+    }
+
     private function configureGermanyProfile(Context $context): string
     {
         return $this->configureMarketProfile(Market::Germany, $context);
@@ -624,7 +657,7 @@ final class CosmoShopImportExportTest extends TestCase
             'countryId' => $existing->getCountryId(),
             'navigationCategoryId' => $existing->getNavigationCategoryId(),
             'languages' => [['id' => $market->languageId()]],
-            'accessKey' => 'jv-cosmoshop-import-test-'.$market->domain(),
+            'accessKey' => AccessKeyHelper::generateAccessKey('sales-channel'),
             'name' => 'CosmoShop import test',
             'active' => true,
         ]], $context);

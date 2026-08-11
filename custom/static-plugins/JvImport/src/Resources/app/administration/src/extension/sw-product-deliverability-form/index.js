@@ -5,6 +5,10 @@ const { Criteria } = Shopware.Data;
 Shopware.Component.override('sw-product-deliverability-form', {
     template,
 
+    inject: [
+        'repositoryFactory',
+    ],
+
     data() {
         return {
             jvImportMarketSalesChannelId: null,
@@ -14,7 +18,7 @@ Shopware.Component.override('sw-product-deliverability-form', {
 
     computed: {
         jvImportLanguageId() {
-            return Shopware.Context.api.languageId;
+            return Shopware.Store.get('context').api.languageId;
         },
 
         jvImportDeliveryTimeId() {

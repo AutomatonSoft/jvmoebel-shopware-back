@@ -17,8 +17,9 @@ sales channel, не перетирая значение другого рынк�
 - Пустой `delivery_time_id` не изменяет ранее сохранённую связь.
 - Глобальный `product.deliveryTimeId` остаётся fallback для ручных товаров и
   обратной совместимости.
-- Product detail Store API возвращает effective delivery time в extension
-  `jvImportDeliveryTime`: override текущего sales channel или fallback.
+- Product detail Store API возвращает выбранную market relation в
+  `jvImportDeliveryTimes` (один item с `deliveryTime`). Если relation нет,
+  Next.js использует глобальный fallback товара.
 - Administration использует выбранный market language для определения sales
   channel и редактирует его связь в существующем поле delivery time.
 

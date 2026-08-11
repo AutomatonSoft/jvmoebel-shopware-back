@@ -3,6 +3,7 @@
 namespace Jv\Import\Subscriber\StoreApi;
 
 use Jv\Import\Core\Content\ProductSalesChannelDeliveryTime\ProductSalesChannelDeliveryTimeCollection;
+use Jv\Import\Core\Content\ProductSalesChannelDeliveryTime\ProductSalesChannelDeliveryTimeEntity;
 use Shopware\Core\Content\Product\SalesChannel\Detail\AbstractProductDetailRoute;
 use Shopware\Core\Content\Product\SalesChannel\Detail\ProductDetailRouteResponse;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -29,17 +30,17 @@ final class ProductDeliveryTimeSubscriber extends AbstractProductDetailRoute
     {
         $response = $this->decorated->load($productId, $request, $context, $criteria);
         $product = $response->getProduct();
-        $deliveryTime = $this->deliveryTimeRepository->search(
+        $deliveryTimeLink = $this->deliveryTimeRepository->search(
             (new Criteria())
                 ->addFilter(new EqualsFilter('productId', $product->getId()))
                 ->addFilter(new EqualsFilter('salesChannelId', $context->getSalesChannelId()))
                 ->addAssociation('deliveryTime')
                 ->setLimit(1),
             $context->getContext(),
-        )->first()?->getDeliveryTime() ?? $product->getDeliveryTime();
+        )->first();
 
-        if (null !== $deliveryTime) {
-            $product->addExtension('jvImportDeliveryTime', $deliveryTime);
+        if ($deliveryTimeLink instanceof ProductSalesChannelDeliveryTimeEntity) {
+            $product->addExtension('jvImportDeliveryTimes', new ProductSalesChannelDeliveryTimeCollection([$deliveryTimeLink]));
         }
 
         return $response;
