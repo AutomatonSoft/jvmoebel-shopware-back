@@ -11,8 +11,14 @@ use Jv\Import\Service\ProductImport\LookupData\Dto\ProductImportLookupData;
 use Jv\Import\Service\ProductImport\LookupData\Dto\ProductImportLookupItemData;
 use Jv\Import\Service\ProductImport\LookupData\UpsertProductImportLookupDataService;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
+use Shopware\Core\Checkout\Cart\Delivery\Struct\Delivery;
+use Shopware\Core\Checkout\Cart\Delivery\Struct\DeliveryCollection;
+use Shopware\Core\Checkout\Cart\Delivery\Struct\ShippingLocation;
 use Shopware\Core\Checkout\Cart\LineItem\LineItem;
+use Shopware\Core\Checkout\Cart\Order\OrderConversionContext;
+use Shopware\Core\Checkout\Cart\Order\OrderConverter;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
+use Shopware\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressEntity;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockEntity;
 use Shopware\Core\Content\Cms\Aggregate\CmsSection\CmsSectionCollection;
@@ -312,6 +318,38 @@ final class CosmoShopMarketImportTest extends AbstractCosmoShopImportExportTestC
             self::assertNotNull($britishDeliveryTime);
             self::assertSame(6, $britishDeliveryTime->getMin());
             self::assertSame(10, $britishDeliveryTime->getMax());
+
+            $delivery = $britishCart->getDeliveries()->first();
+            self::assertNotNull($delivery);
+            $address = new CustomerAddressEntity();
+            $address->setId(Uuid::randomHex());
+            $address->setCountryId($britishCartContext->getShippingLocation()->getCountry()->getId());
+            $address->setCountry($britishCartContext->getShippingLocation()->getCountry());
+            $address->setFirstName('Test');
+            $address->setLastName('Customer');
+            $address->setStreet('Test street 1');
+            $address->setCity('Test city');
+            $britishCart->setDeliveries(new DeliveryCollection([new Delivery(
+                $delivery->getPositions(),
+                $delivery->getDeliveryDate(),
+                $delivery->getShippingMethod(),
+                ShippingLocation::createFromAddress($address),
+                $delivery->getShippingCosts(),
+            )]));
+            $orderConverter = static::getContainer()->get(OrderConverter::class);
+            self::assertInstanceOf(OrderConverter::class, $orderConverter);
+            $orderData = $orderConverter->convertToOrder(
+                $britishCart,
+                $britishCartContext,
+                (new OrderConversionContext())
+                    ->setIncludeCustomer(false)
+                    ->setIncludeBillingAddress(false)
+                    ->setIncludeTransactions(false),
+            );
+            self::assertSame(
+                $britishCart->getDeliveries()->first()?->getDeliveryDate()->getEarliest()->format('Y-m-d H:i:s.v'),
+                $orderData['deliveries'][0]['shippingDateEarliest'] ?? null,
+            );
 
             $britishLink = $links->filterByProperty('salesChannelId', Market::UnitedKingdom->salesChannelId())->first();
             $repository->delete([['id' => $britishLink->getId()]], $context);
