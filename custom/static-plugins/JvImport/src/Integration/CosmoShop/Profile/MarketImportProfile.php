@@ -79,7 +79,6 @@ final class MarketImportProfile
             ['key' => 'translations.'.$languageId.'.metaDescription', 'mappedKey' => 'short_description', 'position' => 15],
             ['key' => 'translations.'.$languageId.'.keywords', 'mappedKey' => 'keywords', 'position' => 16],
             ['key' => 'manufacturer.translations.DEFAULT.name', 'mappedKey' => 'manufacturer_name', 'position' => 17],
-            ['key' => 'deliveryTimeId', 'mappedKey' => 'delivery_time_id', 'position' => 18],
             ['key' => 'unitId', 'mappedKey' => 'unit_id', 'position' => 19],
             ['key' => 'purchaseUnit', 'mappedKey' => 'contents', 'position' => 20],
             ['key' => 'referenceUnit', 'mappedKey' => 'reference_unit', 'position' => 21],

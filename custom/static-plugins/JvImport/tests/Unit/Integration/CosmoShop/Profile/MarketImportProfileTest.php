@@ -87,6 +87,11 @@ final class MarketImportProfileTest extends TestCase
         );
     }
 
+    public function testItDoesNotMapDeliveryTimeToTheGlobalProductField(): void
+    {
+        self::assertNotContains('delivery_time_id', array_column(MarketImportProfile::mapping(Market::Germany), 'mappedKey'));
+    }
+
     #[DataProvider('marketLocales')]
     public function testItMapsThePriceToTheMarketCurrency(Market $market, string $locale): void
     {

@@ -9,6 +9,36 @@
         <service id="Jv\Import\Subscriber\CosmoShopProductImportSubscriber">
             <argument type="service" id="Jv\Import\Service\ProductImport\PrepareCosmoShopProductImportRecordService"/>
         </service>
+        <service id="Jv\Import\Subscriber\ProductDeliveryTimeCacheInvalidationSubscriber"/>
+        <service id="Jv\Import\Subscriber\CmsPageProductDeliveryTimeSubscriber"/>
+
+        <service id="Jv\Import\Subscriber\StoreApi\ProductDeliveryTimeSubscriber" decorates="Shopware\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute">
+            <argument type="service" id="Jv\Import\Subscriber\StoreApi\ProductDeliveryTimeSubscriber.inner"/>
+        </service>
+
+        <service id="Jv\Import\Subscriber\StoreApi\ProductListingDeliveryTimeSubscriber" decorates="Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingRoute">
+            <argument type="service" id="Jv\Import\Subscriber\StoreApi\ProductListingDeliveryTimeSubscriber.inner"/>
+        </service>
+
+        <service id="Jv\Import\Subscriber\StoreApi\ProductSearchDeliveryTimeSubscriber" decorates="Shopware\Core\Content\Product\SalesChannel\Search\ProductSearchRoute">
+            <argument type="service" id="Jv\Import\Subscriber\StoreApi\ProductSearchDeliveryTimeSubscriber.inner"/>
+        </service>
+
+        <service id="Jv\Import\Subscriber\StoreApi\ProductListDeliveryTimeSubscriber" decorates="Shopware\Core\Content\Product\SalesChannel\ProductListRoute">
+            <argument type="service" id="Jv\Import\Subscriber\StoreApi\ProductListDeliveryTimeSubscriber.inner"/>
+        </service>
+
+        <service id="Jv\Import\Subscriber\StoreApi\ProductSuggestDeliveryTimeSubscriber" decorates="Shopware\Core\Content\Product\SalesChannel\Suggest\ProductSuggestRoute">
+            <argument type="service" id="Jv\Import\Subscriber\StoreApi\ProductSuggestDeliveryTimeSubscriber.inner"/>
+        </service>
+
+        <service id="Jv\Import\Subscriber\StoreApi\ProductCrossSellingDeliveryTimeSubscriber" decorates="Shopware\Core\Content\Product\SalesChannel\CrossSelling\ProductCrossSellingRoute">
+            <argument type="service" id="Jv\Import\Subscriber\StoreApi\ProductCrossSellingDeliveryTimeSubscriber.inner"/>
+        </service>
+
+        <service id="Jv\Import\Service\ProductDeliveryTime\SalesChannelProductDeliveryTimeCartProcessor">
+            <tag name="shopware.cart.processor" priority="4900"/>
+        </service>
 
         <service id="Jv\Import\Service\ProductImport\ResolveDefaultProductTaxService">
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
@@ -18,6 +48,17 @@
         <service id="Jv\Import\Integration\CosmoShop\Normalizer\CosmoShopProductImportDataNormalizer"/>
         <service id="Jv\Import\Service\ProductImport\Validation\CosmoShopProductImportDataValidator"/>
         <service id="Jv\Import\Service\ProductImport\BuildShopwareProductImportRecordService"/>
+        <service id="Jv\Import\Service\ProductDeliveryTime\ResolveSalesChannelProductDeliveryTimesService">
+            <argument type="service" id="jv_import_product_sales_channel_delivery_time.repository"/>
+        </service>
+        <service id="Jv\Import\Service\ProductDeliveryTime\AttachSalesChannelProductDeliveryTimesToStoreApiProductsService"/>
+        <service id="Jv\Import\Service\ProductDeliveryTime\ApplySalesChannelProductDeliveryTimesToCartService"/>
+        <service id="Jv\Import\Core\Content\ProductSalesChannelDeliveryTime\ProductSalesChannelDeliveryTimeDefinition">
+            <tag name="shopware.entity.definition" entity="jv_import_product_sales_channel_delivery_time"/>
+        </service>
+        <service id="Jv\Import\Core\Content\ProductSalesChannelDeliveryTime\ProductDeliveryTimeExtension">
+            <tag name="shopware.entity.extension"/>
+        </service>
 
         <service id="Jv\Import\Service\ProductImport\PrepareCosmoShopProductImportRecordService">
             <argument type="service" id="Jv\Import\Integration\CosmoShop\Normalizer\CosmoShopProductImportDataNormalizer"/>

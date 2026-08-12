@@ -54,7 +54,16 @@ final class BuildShopwareProductImportRecordService
             $record['manufacturer']['id'] = CosmoShopManufacturerIdentity::fromName($data->manufacturerName);
         }
         if (null !== $data->deliveryTimeId) {
-            $record['deliveryTimeId'] = CosmoShopReferenceIdentity::deliveryTimeId($market, $data->deliveryTimeId);
+            $deliveryTimeId = CosmoShopReferenceIdentity::deliveryTimeId($market, $data->deliveryTimeId);
+            $record['extensions']['jvImportDeliveryTimes'] = [[
+                'id' => Uuid::fromStringToHex('jvmoebel.product-delivery-time.'.$id.$market->salesChannelId()),
+                'salesChannelId' => $market->salesChannelId(),
+                'deliveryTimeId' => $deliveryTimeId,
+            ]];
+
+            if (Market::Germany === $market) {
+                $record['deliveryTimeId'] = $deliveryTimeId;
+            }
         }
         if (null !== $data->unitId && 0 < (int) $data->unitId) {
             $record['unitId'] = CosmoShopReferenceIdentity::unitId($market, $data->unitId);
