@@ -18,6 +18,7 @@ Shopware.Component.override('sw-product-deliverability-form', {
         return {
             jvImportMarketSalesChannelId: null,
             jvImportDeliveryTimeLink: null,
+            jvImportPendingDeliveryTimeId: undefined,
             jvImportDeliveryTimeLoading: false,
             jvImportLoadRequest: 0,
         };
@@ -32,6 +33,10 @@ Shopware.Component.override('sw-product-deliverability-form', {
             const pendingChange = this.jvImportMarketSalesChannelId
                 ? pendingDeliveryTimeChange(this.product.id, this.jvImportMarketSalesChannelId)
                 : null;
+
+            if (this.jvImportPendingDeliveryTimeId !== undefined) {
+                return this.jvImportPendingDeliveryTimeId;
+            }
 
             return pendingChange?.deliveryTimeId ?? this.jvImportDeliveryTimeLink?.deliveryTimeId ?? this.product.deliveryTimeId;
         },
@@ -69,6 +74,7 @@ Shopware.Component.override('sw-product-deliverability-form', {
             const productId = this.product.id;
             this.jvImportMarketSalesChannelId = null;
             this.jvImportDeliveryTimeLink = null;
+            this.jvImportPendingDeliveryTimeId = undefined;
             this.jvImportDeliveryTimeLoading = true;
 
             const language = await this.jvImportLanguageRepository.get(languageId, Shopware.Context.api);
@@ -119,6 +125,7 @@ Shopware.Component.override('sw-product-deliverability-form', {
                 return;
             }
 
+            this.jvImportPendingDeliveryTimeId = deliveryTimeId || null;
             stageDeliveryTimeChange({
                 id: this.jvImportDeliveryTimeLink?.id,
                 productId: this.product.id,

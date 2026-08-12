@@ -22,12 +22,12 @@ Shopware.Component.override('sw-product-detail', {
         },
 
         async saveProduct() {
+            const changes = pendingDeliveryTimeChanges(this.product.id);
             const response = await this.$super('saveProduct');
             if (response !== 'success' && response !== 'empty') {
                 return response;
             }
 
-            const changes = pendingDeliveryTimeChanges(this.product.id);
             if (changes.length === 0) {
                 return response;
             }
@@ -43,11 +43,17 @@ Shopware.Component.override('sw-product-detail', {
                         continue;
                     }
 
-                    const entity = repository.create(this.productApiContext);
+                    const entity = change.id
+                        ? await repository.get(change.id, this.productApiContext)
+                        : repository.create(this.productApiContext);
                     Object.assign(entity, change);
                     await repository.save(entity, this.productApiContext);
                 }
             } catch (error) {
+                this.createNotificationError({
+                    message: error.message ?? this.$t('global.notification.unspecifiedSaveErrorMessage'),
+                });
+
                 return error;
             }
 
@@ -58,7 +64,7 @@ Shopware.Component.override('sw-product-detail', {
         },
     },
 
-    beforeUnmount() {
+    beforeRouteLeave() {
         discardDeliveryTimeChanges(this.product.id);
     },
 });
