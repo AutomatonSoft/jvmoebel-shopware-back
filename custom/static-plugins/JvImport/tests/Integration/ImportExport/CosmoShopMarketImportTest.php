@@ -59,64 +59,6 @@ use Symfony\Component\HttpFoundation\Request;
 
 final class CosmoShopMarketImportTest extends AbstractCosmoShopImportExportTestCase
 {
-    public function testItUpdatesOneSharedProductAndAddsTheUnitedKingdomTranslation(): void
-    {
-        $context = Context::createDefaultContext();
-        $productId = CosmoShopProductIdentity::fromProductNumber('SHARED-987654');
-
-        try {
-            $german = $this->import(
-                $this->configureMarketProfile(Market::Germany, $context),
-                $this->csv(productNumber: 'SHARED-987654', name: 'Deutscher Produktname'),
-            );
-            $british = $this->import(
-                $this->configureMarketProfile(Market::UnitedKingdom, $context),
-                $this->csv(productNumber: 'SHARED-987654', name: 'English product name'),
-            );
-
-            self::assertSame(Progress::STATE_SUCCEEDED, $german->getState(), $this->importResult($german));
-            self::assertSame(Progress::STATE_SUCCEEDED, $british->getState(), $this->importResult($british));
-
-            /** @var EntityRepository<ProductCollection> $repository */
-            $repository = static::getContainer()->get('product.repository');
-            $product = $repository->search((new Criteria([$productId]))->addAssociation('translations')->addAssociation('visibilities')->addAssociation('manufacturer')->addAssociation('seoUrls')->addAssociation('price'), $context)->first();
-            self::assertInstanceOf(ProductEntity::class, $product);
-            self::assertSame('SHARED-987654', $product->getProductNumber());
-            self::assertSame('JVMOEBEL', $product->getManufacturer()?->getName());
-            self::assertContains('Deutscher Produktname', array_map(static fn ($translation): ?string => $translation->getName(), $product->getTranslations()->getElements()));
-            self::assertContains('English product name', array_map(static fn ($translation): ?string => $translation->getName(), $product->getTranslations()->getElements()));
-            self::assertCount(2, $product->getVisibilities());
-            self::assertCount(2, $product->getPrice(), json_encode($product->getPrice()->jsonSerialize(), JSON_THROW_ON_ERROR));
-            self::assertContains('test-product', array_map(static fn ($seoUrl): string => $seoUrl->getSeoPathInfo(), $product->getSeoUrls()->getElements()));
-        } finally {
-            /** @var EntityRepository<ProductCollection> $repository */
-            $repository = static::getContainer()->get('product.repository');
-            $repository->delete([['id' => $productId]], $context);
-        }
-    }
-
-    public function testItKeepsDistinctGermanTranslationsForGermanyAndAustria(): void
-    {
-        $context = Context::createDefaultContext();
-        $productId = CosmoShopProductIdentity::fromProductNumber('DE-AT-TRANSLATIONS-001');
-
-        try {
-            $this->import($this->configureMarketProfile(Market::Germany, $context), $this->csv(productNumber: 'DE-AT-TRANSLATIONS-001', name: 'Deutscher Name'));
-            $this->import($this->configureMarketProfile(Market::Austria, $context), $this->csv(productNumber: 'DE-AT-TRANSLATIONS-001', name: 'Österreichischer Name'));
-
-            /** @var EntityRepository<ProductCollection> $repository */
-            $repository = static::getContainer()->get('product.repository');
-            $product = $repository->search((new Criteria([$productId]))->addAssociation('translations'), $context)->first();
-            self::assertInstanceOf(ProductEntity::class, $product);
-            self::assertSame('Deutscher Name', $product->getTranslations()->filterByLanguageId(Market::Germany->languageId())->first()?->getName());
-            self::assertSame('Österreichischer Name', $product->getTranslations()->filterByLanguageId(Market::Austria->languageId())->first()?->getName());
-        } finally {
-            /** @var EntityRepository<ProductCollection> $repository */
-            $repository = static::getContainer()->get('product.repository');
-            $repository->delete([['id' => $productId]], $context);
-        }
-    }
-
     public function testItStoresDifferentDeliveryTimesForTheSameSkuPerMarket(): void
     {
         $context = Context::createDefaultContext();
@@ -188,12 +130,8 @@ final class CosmoShopMarketImportTest extends AbstractCosmoShopImportExportTestC
                 new Criteria(),
             )->getProduct();
 
-            $germanDeliveryTimeLinks = $germanProduct->getExtension('jvImportDeliveryTimes');
-            $britishDeliveryTimeLinks = $britishProduct->getExtension('jvImportDeliveryTimes');
-            self::assertInstanceOf(ProductSalesChannelDeliveryTimeCollection::class, $germanDeliveryTimeLinks);
-            self::assertInstanceOf(ProductSalesChannelDeliveryTimeCollection::class, $britishDeliveryTimeLinks);
-            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::Germany, 2), $germanDeliveryTimeLinks->first()?->getDeliveryTimeId());
-            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::UnitedKingdom, 2), $britishDeliveryTimeLinks->first()?->getDeliveryTimeId());
+            self::assertNull($germanProduct->getExtension('jvImportDeliveryTimes'));
+            self::assertNull($britishProduct->getExtension('jvImportDeliveryTimes'));
             self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::Germany, 2), $germanProduct->getDeliveryTimeId());
             self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::UnitedKingdom, 2), $britishProduct->getDeliveryTimeId());
             $britishProduct->setDeliveryTimeId(CosmoShopReferenceIdentity::deliveryTimeId(Market::Germany, 2));

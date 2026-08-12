@@ -53,8 +53,7 @@ delivery_time_id
 
 Перед сериализацией товара backend пакетно разрешает связи для набора product
 IDs и текущего sales channel. При наличии override он подменяет штатные
-`product.deliveryTimeId` и `product.deliveryTime`, а также добавляет выбранную
-связь в extension `jvImportDeliveryTimes`.
+`product.deliveryTimeId` и `product.deliveryTime`.
 
 Подмена применяется к следующим product flows:
 
@@ -66,12 +65,13 @@ IDs и текущего sales channel. При наличии override он по�
 - CMS elements `product-slider`, `product-box`, `buy-box` и
   `product-description-reviews`.
 
-Если override отсутствует, товар и его глобальный fallback не изменяются, а
-extension не добавляется. Resolver обрабатывает коллекцию одним DAL-запросом, а
-не отдельным запросом для каждого товара.
+Если override отсутствует, товар и его глобальный fallback не изменяются.
+Resolver обрабатывает коллекцию одним DAL-запросом, а не отдельным запросом для
+каждого товара.
 
-Extension `jvImportDeliveryTimes` служит внутренним представлением выбранной
-связи. Публичным frontend-контрактом остаётся стандартный
+Extension `jvImportDeliveryTimes` и DAL-сущность связи доступны только через
+Admin API для импорта и Administration. Они не сериализуются Store API.
+Публичным frontend-контрактом остаётся только стандартный
 `product.deliveryTime`.
 
 ## Корзина и заказ
@@ -111,6 +111,7 @@ Integration-тесты проверяют:
 
 - разные DE/UK значения одного SKU и повторное обновление одного рынка;
 - глобальный fallback при отсутствии market relation;
+- Store API не раскрывает внутреннее `jvImportDeliveryTimes` extension;
 - product detail, category listing, product list, search, search suggest и
   cross-selling;
 - товар в CMS product slider;

@@ -70,11 +70,7 @@ abstract class AbstractCosmoShopImportExportTestCase extends TestCase
         $salesChannel = $salesChannelRepository->search(new Criteria([$market->salesChannelId()]), Context::createDefaultContext())->first();
         self::assertInstanceOf(SalesChannelEntity::class, $salesChannel);
         $response = $this->storeApiProduct($productId, $market);
-        self::assertArrayHasKey(
-            'jvImportDeliveryTimes',
-            $response['product']['extensions'] ?? [],
-            json_encode($response, JSON_THROW_ON_ERROR),
-        );
+        self::assertArrayNotHasKey('jvImportDeliveryTimes', $response['product']['extensions'] ?? []);
 
         return $response['product']['deliveryTime']['id'] ?? null;
     }

@@ -3,7 +3,6 @@
 namespace Jv\Import\Service\ProductDeliveryTime;
 
 use Jv\Import\Core\Content\ProductSalesChannelDeliveryTime\ProductSalesChannelDeliveryTimeCacheTag;
-use Jv\Import\Core\Content\ProductSalesChannelDeliveryTime\ProductSalesChannelDeliveryTimeCollection;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Framework\Adapter\Cache\CacheTagCollector;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -39,10 +38,6 @@ final readonly class AttachSalesChannelProductDeliveryTimesToStoreApiProductsSer
 
             $product->setDeliveryTimeId($marketDeliveryTime->getId());
             $product->setDeliveryTime($marketDeliveryTime);
-            $product->addExtension(
-                'jvImportDeliveryTimes',
-                new ProductSalesChannelDeliveryTimeCollection([$deliveryTime]),
-            );
             $this->cacheTagCollector->addTag(ProductSalesChannelDeliveryTimeCacheTag::forLink($deliveryTime->getId()));
         }
     }

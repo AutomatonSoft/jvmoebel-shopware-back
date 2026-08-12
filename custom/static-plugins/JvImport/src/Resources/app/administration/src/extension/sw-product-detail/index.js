@@ -35,10 +35,10 @@ Shopware.Component.override('sw-product-detail', {
             const repository = this.repositoryFactory.create('jv_import_product_sales_channel_delivery_time');
             try {
                 for (const change of changes) {
-                        if (change.deliveryTimeId === null) {
-                            if (change.id) {
-                                await repository.delete(change.id, this.productApiContext);
-                            }
+                    if (change.deliveryTimeId === null) {
+                        if (change.id) {
+                            await repository.delete(change.id, this.productApiContext);
+                        }
 
                         continue;
                     }

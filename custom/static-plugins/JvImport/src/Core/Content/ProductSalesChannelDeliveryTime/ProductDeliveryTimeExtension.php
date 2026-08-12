@@ -3,6 +3,7 @@
 namespace Jv\Import\Core\Content\ProductSalesChannelDeliveryTime;
 
 use Shopware\Core\Content\Product\ProductDefinition;
+use Shopware\Core\Framework\Api\Context\AdminApiSource;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityExtension;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Extension;
@@ -23,7 +24,7 @@ final class ProductDeliveryTimeExtension extends EntityExtension
                 'jvImportDeliveryTimes',
                 ProductSalesChannelDeliveryTimeDefinition::class,
                 'product_id',
-            ))->addFlags(new ApiAware(), new Extension()),
+            ))->addFlags(new ApiAware(AdminApiSource::class), new Extension()),
         );
     }
 }
