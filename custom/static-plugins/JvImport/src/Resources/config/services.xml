@@ -23,6 +23,18 @@
             <argument type="service" id="Jv\Import\Subscriber\StoreApi\ProductSearchDeliveryTimeSubscriber.inner"/>
         </service>
 
+        <service id="Jv\Import\Subscriber\StoreApi\ProductListDeliveryTimeSubscriber" decorates="Shopware\Core\Content\Product\SalesChannel\ProductListRoute">
+            <argument type="service" id="Jv\Import\Subscriber\StoreApi\ProductListDeliveryTimeSubscriber.inner"/>
+        </service>
+
+        <service id="Jv\Import\Subscriber\StoreApi\ProductSuggestDeliveryTimeSubscriber" decorates="Shopware\Core\Content\Product\SalesChannel\Suggest\ProductSuggestRoute">
+            <argument type="service" id="Jv\Import\Subscriber\StoreApi\ProductSuggestDeliveryTimeSubscriber.inner"/>
+        </service>
+
+        <service id="Jv\Import\Subscriber\StoreApi\ProductCrossSellingDeliveryTimeSubscriber" decorates="Shopware\Core\Content\Product\SalesChannel\CrossSelling\ProductCrossSellingRoute">
+            <argument type="service" id="Jv\Import\Subscriber\StoreApi\ProductCrossSellingDeliveryTimeSubscriber.inner"/>
+        </service>
+
         <service id="Jv\Import\Service\ProductDeliveryTime\SalesChannelProductDeliveryTimeCartProcessor">
             <tag name="shopware.cart.processor" priority="4900"/>
         </service>

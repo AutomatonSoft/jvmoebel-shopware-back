@@ -18,6 +18,7 @@ Shopware.Component.override('sw-product-deliverability-form', {
         return {
             jvImportMarketSalesChannelId: null,
             jvImportDeliveryTimeLink: null,
+            jvImportDeliveryTimeLoading: false,
             jvImportLoadRequest: 0,
         };
     },
@@ -68,12 +69,15 @@ Shopware.Component.override('sw-product-deliverability-form', {
             const productId = this.product.id;
             this.jvImportMarketSalesChannelId = null;
             this.jvImportDeliveryTimeLink = null;
+            this.jvImportDeliveryTimeLoading = true;
 
             const language = await this.jvImportLanguageRepository.get(languageId, Shopware.Context.api);
             if (request !== this.jvImportLoadRequest || languageId !== this.jvImportLanguageId || productId !== this.product.id) {
                 return;
             }
             if (!language.parentId) {
+                this.jvImportDeliveryTimeLoading = false;
+
                 return;
             }
 
@@ -85,11 +89,15 @@ Shopware.Component.override('sw-product-deliverability-form', {
             }
             const salesChannel = salesChannels.first();
             if (!salesChannel) {
+                this.jvImportDeliveryTimeLoading = false;
+
                 return;
             }
 
             this.jvImportMarketSalesChannelId = salesChannel.id;
             if (!this.product.id) {
+                this.jvImportDeliveryTimeLoading = false;
+
                 return;
             }
 
@@ -103,6 +111,7 @@ Shopware.Component.override('sw-product-deliverability-form', {
             }
 
             this.jvImportDeliveryTimeLink = link;
+            this.jvImportDeliveryTimeLoading = false;
         },
 
         jvImportUpdateDeliveryTime(deliveryTimeId) {
@@ -120,7 +129,4 @@ Shopware.Component.override('sw-product-deliverability-form', {
         },
     },
 
-    beforeUnmount() {
-        discardDeliveryTimeChanges(this.product.id);
-    },
 });

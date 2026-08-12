@@ -4,7 +4,7 @@
         id="deliveryTimeId"
         :value="jvImportDeliveryTimeId"
         entity="delivery_time"
-        :disabled="!allowEdit || !product.id"
+        :disabled="!allowEdit || !product.id || jvImportDeliveryTimeLoading"
         class="product-deliverability-form__delivery-time"
         :label="$t('sw-product.settingsForm.labelDeliveryTime')"
         :placeholder="$t('sw-product.settingsForm.placeholderDeliveryTime')"

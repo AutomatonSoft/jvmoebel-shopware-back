@@ -57,4 +57,8 @@ Shopware.Component.override('sw-product-detail', {
             return 'success';
         },
     },
+
+    beforeUnmount() {
+        discardDeliveryTimeChanges(this.product.id);
+    },
 });

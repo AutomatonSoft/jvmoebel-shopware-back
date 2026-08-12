@@ -10,6 +10,9 @@ final class JvImport extends Plugin
     public function enrichPrivileges(): array
     {
         return [
+            'product.viewer' => [
+                'jv_import_product_sales_channel_delivery_time:read',
+            ],
             'product.editor' => [
                 'jv_import_product_sales_channel_delivery_time:read',
                 'jv_import_product_sales_channel_delivery_time:create',

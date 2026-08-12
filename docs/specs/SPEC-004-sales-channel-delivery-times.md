@@ -19,19 +19,22 @@ sales channel, не перетирая значение другого рынк�
 - Пустой `delivery_time_id` не изменяет ранее сохранённую связь.
 - Глобальный `product.deliveryTimeId` остаётся fallback для ручных товаров и
   обратной совместимости.
-- Product detail, listing и search Store API подменяют штатный
-  `product.deliveryTime` выбранным market сроком и дополнительно возвращают
-  relation в `jvImportDeliveryTimes` (один item с `deliveryTime`). Если relation
-  нет, остаётся глобальный fallback товара.
+- Product detail, category listing, product list, search, search suggest и
+  cross-selling Store API подменяют штатный `product.deliveryTime` выбранным
+  market сроком и дополнительно возвращают relation в
+  `jvImportDeliveryTimes` (один item с `deliveryTime`). Если relation нет,
+  остаётся глобальный fallback товара.
 - Cart processor применяет relation до построения deliveries. Поэтому cart,
   delivery date и order snapshot получают срок текущего sales channel.
 - Administration использует выбранный market language для определения sales
-  channel и редактирует его связь в существующем поле delivery time.
+  channel и редактирует его связь в существующем поле delivery time. Изменение
+  staged до общей кнопки Save: Cancel, смена языка и уход со страницы его
+  отбрасывают. Поле заблокировано до загрузки текущей relation.
 
 ## Проверка
 
 Integration-тесты проверяют импорт разных значений DE/UK, повторное обновление
-одного рынка, Store API resolution и cart delivery date. Для Administration
-выполняется ручная проверка: product editor меняет срок выбранного market
-language, нажимает общий Save, затем обновляет карточку и видит сохранённое
-значение.
+одного рынка, все Store API product routes и cart delivery date. Для
+Administration выполняется ручная проверка: product editor меняет срок и
+обычное поле товара, нажимает общий Save, затем обновляет карточку и видит
+сохранённое значение; Cancel и смена языка не сохраняют staged изменение.

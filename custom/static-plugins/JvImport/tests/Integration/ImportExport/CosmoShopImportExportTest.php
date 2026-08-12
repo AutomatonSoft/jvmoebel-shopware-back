@@ -20,15 +20,23 @@ use Shopware\Core\Content\ImportExport\ImportExportFactory;
 use Shopware\Core\Content\ImportExport\ImportExportProfileEntity;
 use Shopware\Core\Content\ImportExport\Service\ImportExportService;
 use Shopware\Core\Content\ImportExport\Struct\Progress;
+use Shopware\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSellingCollection;
 use Shopware\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufacturerCollection;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
+use Shopware\Core\Content\Product\SalesChannel\AbstractProductListRoute;
+use Shopware\Core\Content\Product\SalesChannel\CrossSelling\AbstractProductCrossSellingRoute;
+use Shopware\Core\Content\Product\SalesChannel\CrossSelling\ProductCrossSellingRoute;
 use Shopware\Core\Content\Product\SalesChannel\Detail\AbstractProductDetailRoute;
 use Shopware\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute;
 use Shopware\Core\Content\Product\SalesChannel\Listing\AbstractProductListingRoute;
 use Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingRoute;
+use Shopware\Core\Content\Product\SalesChannel\ProductListRoute;
 use Shopware\Core\Content\Product\SalesChannel\Search\AbstractProductSearchRoute;
 use Shopware\Core\Content\Product\SalesChannel\Search\ProductSearchRoute;
+use Shopware\Core\Content\Product\SalesChannel\Suggest\AbstractProductSuggestRoute;
+use Shopware\Core\Content\Product\SalesChannel\Suggest\ProductSuggestRoute;
+use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Api\Util\AccessKeyHelper;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
@@ -232,6 +240,8 @@ final class CosmoShopImportExportTest extends TestCase
         $context = Context::createDefaultContext();
         $productNumber = 'MARKET-DELIVERY-TIME-001';
         $productId = CosmoShopProductIdentity::fromProductNumber($productNumber);
+        $crossSellingProductNumber = 'MARKET-DELIVERY-TIME-002';
+        $crossSellingProductId = CosmoShopProductIdentity::fromProductNumber($crossSellingProductNumber);
         $references = static::getContainer()->get(UpsertProductImportLookupDataService::class);
         self::assertInstanceOf(UpsertProductImportLookupDataService::class, $references);
         $germanyProfileId = $this->configureMarketProfile(Market::Germany, $context);
@@ -254,6 +264,15 @@ final class CosmoShopImportExportTest extends TestCase
             self::assertSame(Progress::STATE_SUCCEEDED, $this->import(
                 $unitedKingdomProfileId,
                 $this->csv(productNumber: $productNumber, deliveryTimeId: '2'),
+            )->getState());
+            self::assertSame(Progress::STATE_SUCCEEDED, $this->import(
+                $unitedKingdomProfileId,
+                $this->csv(
+                    productNumber: $crossSellingProductNumber,
+                    ean: '4260174423464',
+                    deliveryTimeId: '2',
+                    urlKey: 'market-delivery-time-002',
+                ),
             )->getState());
 
             /** @var EntityRepository<ProductSalesChannelDeliveryTimeCollection> $repository */
@@ -314,6 +333,55 @@ final class CosmoShopImportExportTest extends TestCase
             self::assertInstanceOf(ProductEntity::class, $britishSearchResult);
             self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::UnitedKingdom, 2), $britishSearchResult->getDeliveryTimeId());
 
+            $productListRoute = static::getContainer()->get(ProductListRoute::class);
+            self::assertInstanceOf(AbstractProductListRoute::class, $productListRoute);
+            $britishProductListResult = $productListRoute->load(
+                new Criteria([$productId]),
+                $contextFactory->create(Uuid::randomHex(), Market::UnitedKingdom->salesChannelId()),
+            )->getProducts()->first();
+            self::assertInstanceOf(ProductEntity::class, $britishProductListResult);
+            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::UnitedKingdom, 2), $britishProductListResult->getDeliveryTimeId());
+
+            $suggestRoute = static::getContainer()->get(ProductSuggestRoute::class);
+            self::assertInstanceOf(AbstractProductSuggestRoute::class, $suggestRoute);
+            $britishSuggestResult = $suggestRoute->load(
+                new Request(['search' => $productNumber]),
+                $contextFactory->create(Uuid::randomHex(), Market::UnitedKingdom->salesChannelId()),
+                new Criteria([$productId]),
+            )->getListingResult()->first();
+            self::assertInstanceOf(ProductEntity::class, $britishSuggestResult);
+            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::UnitedKingdom, 2), $britishSuggestResult->getDeliveryTimeId());
+
+            /** @var EntityRepository<ProductCrossSellingCollection> $crossSellingRepository */
+            $crossSellingRepository = static::getContainer()->get('product_cross_selling.repository');
+            $crossSellingRepository->create([[
+                'id' => Uuid::randomHex(),
+                'productId' => $productId,
+                'productVersionId' => Defaults::LIVE_VERSION,
+                'name' => 'Related products',
+                'active' => true,
+                'type' => 'productList',
+                'position' => 1,
+                'limit' => 1,
+                'assignedProducts' => [[
+                    'id' => Uuid::randomHex(),
+                    'productId' => $crossSellingProductId,
+                    'productVersionId' => Defaults::LIVE_VERSION,
+                    'position' => 1,
+                ]],
+            ]], $context);
+            $crossSellingRoute = static::getContainer()->get(ProductCrossSellingRoute::class);
+            self::assertInstanceOf(AbstractProductCrossSellingRoute::class, $crossSellingRoute);
+            $britishCrossSellingProduct = $crossSellingRoute->load(
+                $productId,
+                new Request(),
+                $contextFactory->create(Uuid::randomHex(), Market::UnitedKingdom->salesChannelId()),
+                new Criteria(),
+            )->getResult()->first()?->getProducts()->first();
+            self::assertInstanceOf(ProductEntity::class, $britishCrossSellingProduct);
+            self::assertSame($crossSellingProductId, $britishCrossSellingProduct->getId());
+            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::UnitedKingdom, 2), $britishCrossSellingProduct->getDeliveryTimeId());
+
             /** @var EntityRepository<SalesChannelCollection> $salesChannelRepository */
             $salesChannelRepository = static::getContainer()->get('sales_channel.repository');
             $britishSalesChannel = $salesChannelRepository->search(new Criteria([Market::UnitedKingdom->salesChannelId()]), $context)->first();
@@ -370,7 +438,7 @@ final class CosmoShopImportExportTest extends TestCase
         } finally {
             /** @var EntityRepository<ProductCollection> $repository */
             $repository = static::getContainer()->get('product.repository');
-            $repository->delete([['id' => $productId]], $context);
+            $repository->delete([['id' => $productId], ['id' => $crossSellingProductId]], $context);
         }
     }
 
@@ -544,7 +612,7 @@ final class CosmoShopImportExportTest extends TestCase
             'stock' => 1,
             'taxId' => $taxId,
             'price' => [[
-                'currencyId' => \Shopware\Core\Defaults::CURRENCY,
+                'currencyId' => Defaults::CURRENCY,
                 'net' => 1.0,
                 'gross' => 1.19,
                 'linked' => false,
