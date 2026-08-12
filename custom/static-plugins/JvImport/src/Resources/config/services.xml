@@ -10,6 +10,7 @@
             <argument type="service" id="Jv\Import\Service\ProductImport\PrepareCosmoShopProductImportRecordService"/>
         </service>
         <service id="Jv\Import\Subscriber\ProductDeliveryTimeCacheInvalidationSubscriber"/>
+        <service id="Jv\Import\Subscriber\CmsPageProductDeliveryTimeSubscriber"/>
 
         <service id="Jv\Import\Subscriber\StoreApi\ProductDeliveryTimeSubscriber" decorates="Shopware\Core\Content\Product\SalesChannel\Detail\ProductDetailRoute">
             <argument type="service" id="Jv\Import\Subscriber\StoreApi\ProductDeliveryTimeSubscriber.inner"/>
