@@ -22,6 +22,171 @@
                         "label": "Open in new tab"
                     }
                 }
+            },
+            "jv-side-navigation": {
+                "label": "Side navigation",
+                "component": {
+                    "summary": "{tabs} tabs · {sections} sections · {footer} footer",
+                    "previewHint": "Interactive preview — click a row with › to open the next level. Category trees come from Catalog → Categories; here you only pick the root. Edit structure in the element settings.",
+                    "logoOn": "Logo set",
+                    "logoOff": "No logo",
+                    "logoLoading": "Loading logo…",
+                    "defaultBadge": "Default",
+                    "untitledTab": "Untitled tab",
+                    "noTabs": "No tabs configured",
+                    "noSections": "No sections in this tab",
+                    "noFooter": "No footer entries",
+                    "noRoot": "No root category selected",
+                    "noManualLinks": "No manual links in this section",
+                    "noChildLinks": "No child links",
+                    "loadingCategories": "Loading categories…",
+                    "emptyCategoryTree": "No child categories under this root (check Catalog → Categories)",
+                    "allLinkFallback": "",
+                    "allLinkForCategory": "All {name}",
+                    "sectionCount": "{count} sections",
+                    "footerCount": "{count} entries",
+                    "categoryDetail": "depth {depth} · root {root}",
+                    "manualDetail": "{count} links",
+                    "moreItems": "+{count} more",
+                    "dividerDetail": "Visual separator",
+                    "promoEmpty": "No promo title",
+                    "visibility": {
+                        "always": "always",
+                        "guest": "guest",
+                        "customer": "customer"
+                    }
+                },
+                "config": {
+                    "logoMedia": {
+                        "label": "Logo",
+                        "caption": "Upload logo for side navigation"
+                    },
+                    "logoLink": {
+                        "label": "Logo link",
+                        "placeholder": ""
+                    },
+                    "defaultTabId": {
+                        "label": "Default tab id",
+                        "placeholder": ""
+                    },
+                    "tabs": {
+                        "title": "Tabs",
+                        "add": "Add tab",
+                        "remove": "Remove tab",
+                        "id": {
+                            "label": "Tab-ID"
+                        },
+                        "label": {
+                            "label": "Tab label"
+                        }
+                    },
+                    "footer": {
+                        "title": "Footer",
+                        "add": "Add a footer entry",
+                        "remove": "Remove entry",
+                        "id": {
+                            "label": "ID"
+                        },
+                        "label": {
+                            "label": "Label"
+                        },
+                        "href": {
+                            "label": "Link"
+                        },
+                        "icon": {
+                            "label": "Icon",
+                            "placeholder": "",
+                            "none": "No icon",
+                            "helpText": "Named icon key for the Next.js icon set (login, user, orders…). Not a media upload — use manual-link iconMediaId for images from the media library."
+                        },
+                        "visibility": {
+                            "label": "Visibility"
+                        }
+                    },
+                    "sections": {
+                        "title": "Sections",
+                        "add": "Add section",
+                        "remove": "Remove section",
+                        "id": {
+                            "label": "Section ID"
+                        },
+                        "type": {
+                            "label": "Type"
+                        },
+                        "types": {
+                            "categoryTree": "Category tree",
+                            "manualLinks": "Manual links",
+                            "divider": "Divider",
+                            "promo": "Promo"
+                        },
+                        "categoryTree": {
+                            "rootCategoryId": {
+                                "label": "Root category",
+                                "placeholder": "Select category"
+                            },
+                            "maxDepth": {
+                                "label": "Max. depth"
+                            },
+                            "showIcons": {
+                                "label": "Show category icons"
+                            },
+                            "includeRootAsAllLink": {
+                                "label": "Show “all” link for root",
+                                "helpText": "Like home24 “Alle Möbel”: a link above the root’s children that opens the root category page. Deeper levels get “All {category}” automatically when you drill down in the preview."
+                            },
+                            "allLinkLabel": {
+                                "label": "All link label",
+                                "placeholder": "",
+                                "helpText": "Label for the root “all” link only (e.g. “All Living Room”). Leave empty to use the root name. Subcategory columns use “All {name}” automatically."
+                            }
+                        },
+                        "manualLinks": {
+                            "style": {
+                                "label": "Style",
+                                "default": "Default",
+                                "uppercase": "Uppercase"
+                            },
+                            "items": {
+                                "title": "Links",
+                                "add": "Add link",
+                                "remove": "Remove link",
+                                "id": {
+                                    "label": "ID"
+                                },
+                                "label": {
+                                    "label": "Label"
+                                },
+                                "url": {
+                                    "label": "URL"
+                                },
+                                "openInNewTab": {
+                                    "label": "Open in new tab"
+                                },
+                                "iconMediaId": {
+                                    "label": "Icon"
+                                },
+                                "children": {
+                                    "title": "Child links",
+                                    "add": "Add child link"
+                                }
+                            }
+                        },
+                        "promo": {
+                            "mediaId": {
+                                "label": "Media"
+                            },
+                            "title": {
+                                "label": "Title"
+                            },
+                            "url": {
+                                "label": "Link"
+                            },
+                            "alt": {
+                                "label": "Alt text"
+                            }
+                        }
+                    }
+                }
             }
         },
         "blocks": {
@@ -33,6 +198,9 @@
             },
             "jv-button-link": {
                 "label": "Button · Link"
+            },
+            "jv-side-navigation": {
+                "label": "Side navigation"
             }
         }
     },
@@ -41,7 +209,8 @@
             "detail": {
                 "label": {
                     "blockCategory": {
-                        "button": "Button"
+                        "button": "Button",
+                        "navigation": "Navigation"
                     }
                 }
             }

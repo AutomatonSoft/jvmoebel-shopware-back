@@ -1,0 +1,339 @@
+/**
+ * Styles for the jv-side-navigation CMS canvas preview (Administration only).
+ *
+ * Layout mirrors a simplified home24 drawer:
+ * hint → chrome (logo) → tabs → optional back → horizontal columns → footer.
+ * Not used on the public Next.js storefront.
+ */
+
+.sw-cms-el-jv-side-navigation {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    min-height: 280px;
+    color: #222222;
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+/* Editor-only tip above the drawer mock */
+.sw-cms-el-jv-side-navigation__hint {
+    margin: 0;
+    color: #6b7280;
+    font-size: 11px;
+}
+
+/* Outer frame of the preview drawer */
+.sw-cms-el-jv-side-navigation__drawer {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    background: #ffffff;
+}
+
+/* Top bar: logo (+ link). Close “×” intentionally omitted in this preview. */
+.sw-cms-el-jv-side-navigation__chrome {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 12px 14px 8px;
+}
+
+.sw-cms-el-jv-side-navigation__logo-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.sw-cms-el-jv-side-navigation__logo-img {
+    display: block;
+    width: auto;
+    max-width: 140px;
+    height: 36px;
+    object-fit: contain;
+    object-position: left center;
+}
+
+.sw-cms-el-jv-side-navigation__logo-fallback {
+    color: #9ca3af;
+    font-size: 12px;
+    font-style: italic;
+}
+
+.sw-cms-el-jv-side-navigation__logo-link {
+    max-width: 220px;
+    overflow: hidden;
+    color: #6b7280;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Tab strip under the logo (Catalog / Angebote / …) */
+.sw-cms-el-jv-side-navigation__tablist {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    padding: 0 14px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.sw-cms-el-jv-side-navigation__tab {
+    margin: 0;
+    padding: 10px 0 8px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: #4b5563;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 500;
+
+    &.is-active {
+        border-bottom-color: #e85d04;
+        color: #111827;
+        font-weight: 600;
+    }
+}
+
+.sw-cms-el-jv-side-navigation__back-bar {
+    padding: 8px 10px 0;
+}
+
+.sw-cms-el-jv-side-navigation__back {
+    margin: 0;
+    padding: 6px 8px;
+    border: 0;
+    border-radius: 3px;
+    background: #f3f4f6;
+    color: #111827;
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/**
+ * Horizontal scroller for deep trees (levels 4–5).
+ * Each column scrolls vertically on its own (see __column).
+ */
+.sw-cms-el-jv-side-navigation__columns {
+    display: flex;
+    flex-wrap: nowrap;
+    flex: 1 1 auto;
+    gap: 0;
+    width: 0;
+    min-width: 100%;
+    max-width: 100%;
+    max-height: 420px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-bottom: 1px solid #e5e7eb;
+    scroll-behavior: smooth;
+
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: #9ca3af #f3f4f6;
+
+    &::-webkit-scrollbar {
+        height: 10px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: #f3f4f6;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #9ca3af;
+        border-radius: 6px;
+    }
+}
+
+.sw-cms-el-jv-side-navigation__column {
+    flex: 0 0 220px;
+    width: 220px;
+    min-width: 220px;
+    max-height: 420px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border-right: 1px solid #e5e7eb;
+
+    &:last-child {
+        border-right: 0;
+    }
+}
+
+.sw-cms-el-jv-side-navigation__list {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 6px 0;
+    list-style: none;
+}
+
+/* Row state modifiers come from the twig :class binding */
+.sw-cms-el-jv-side-navigation__row {
+
+    /* Path highlight: this row owns the next open column */
+    &.is-active .sw-cms-el-jv-side-navigation__link {
+        background: #f3f4f6;
+    }
+
+    /* Inactive Shopware categories still shown in Admin preview */
+    &.is-inactive .sw-cms-el-jv-side-navigation__link {
+        opacity: 0.55;
+    }
+
+    &.is-divider {
+        padding: 8px 14px;
+    }
+
+    &.is-promo,
+    &.is-empty,
+    &.is-tree-root,
+    &.is-all-link {
+        padding: 8px 14px;
+    }
+}
+
+/* Small caption for which root the category-tree section uses */
+.sw-cms-el-jv-side-navigation__tree-root {
+    display: block;
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.sw-cms-el-jv-side-navigation__divider {
+    display: block;
+    height: 1px;
+    background: #e5e7eb;
+}
+
+.sw-cms-el-jv-side-navigation__promo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px;
+    border-radius: 4px;
+    background: #fff7ed;
+    color: #9a3412;
+
+    strong {
+        font-size: 12px;
+    }
+
+    span {
+        font-size: 12px;
+    }
+}
+
+.sw-cms-el-jv-side-navigation__empty-label {
+    color: #9ca3af;
+    font-size: 12px;
+    font-style: italic;
+}
+
+/* “Alle Möbel” / “All Sofas” style entry */
+.sw-cms-el-jv-side-navigation__all-link {
+    color: #111827;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+/* Standard nav row: icon | label | chevron */
+.sw-cms-el-jv-side-navigation__link {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr) 16px;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    margin: 0;
+    padding: 8px 12px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+
+    &:hover {
+        background: #f9fafb;
+    }
+}
+
+.sw-cms-el-jv-side-navigation__link-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    overflow: hidden;
+    border-radius: 4px;
+    background: #f3f4f6;
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+}
+
+.sw-cms-el-jv-side-navigation__link-label {
+    overflow: hidden;
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sw-cms-el-jv-side-navigation__chevron {
+    color: #9ca3af;
+    font-size: 18px;
+    line-height: 1;
+    text-align: right;
+}
+
+/* Shared footer (same for every tab / depth) */
+.sw-cms-el-jv-side-navigation__footer {
+    padding: 8px 12px 12px;
+    background: #fafafa;
+}
+
+.sw-cms-el-jv-side-navigation__footer-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.sw-cms-el-jv-side-navigation__footer-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    color: #111827;
+    font-size: 12px;
+
+    small {
+        color: #6b7280;
+        font-size: 10px;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+    }
+}

@@ -1,0 +1,20 @@
+.sw-cms-preview-jv-side-navigation {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    justify-content: center;
+    min-height: 60px;
+    padding: 8px;
+}
+
+.sw-cms-preview-jv-side-navigation__title {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.sw-cms-preview-jv-side-navigation__line {
+    background: #d1d9de;
+    display: block;
+    height: 6px;
+    width: 100%;
+}

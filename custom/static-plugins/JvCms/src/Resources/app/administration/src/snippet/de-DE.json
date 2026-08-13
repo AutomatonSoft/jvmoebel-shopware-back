@@ -22,6 +22,171 @@
                         "label": "In neuem Tab öffnen"
                     }
                 }
+            },
+            "jv-side-navigation": {
+                "label": "Seitennavigation",
+                "component": {
+                    "summary": "{tabs} Tabs · {sections} Bereiche · {footer} Footer",
+                    "previewHint": "Interaktive Vorschau — Zeile mit › öffnet die nächste Ebene. Kategoriebäume kommen aus Katalog → Kategorien; hier nur die Root wählen. Struktur in den Element-Einstellungen bearbeiten.",
+                    "logoOn": "Logo gesetzt",
+                    "logoOff": "Kein Logo",
+                    "logoLoading": "Logo wird geladen…",
+                    "defaultBadge": "Standard",
+                    "untitledTab": "Tab ohne Titel",
+                    "noTabs": "Keine Tabs konfiguriert",
+                    "noSections": "Keine Bereiche in diesem Tab",
+                    "noFooter": "Keine Footer-Einträge",
+                    "noRoot": "Keine Root-Kategorie gewählt",
+                    "noManualLinks": "Keine manuellen Links in diesem Bereich",
+                    "noChildLinks": "Keine Unterlinks",
+                    "loadingCategories": "Kategorien werden geladen…",
+                    "emptyCategoryTree": "Keine Kind-Kategorien unter dieser Root (siehe Katalog → Kategorien)",
+                    "allLinkFallback": "",
+                    "allLinkForCategory": "Alle {name}",
+                    "sectionCount": "{count} Bereiche",
+                    "footerCount": "{count} Einträge",
+                    "categoryDetail": "Tiefe {depth} · Root {root}",
+                    "manualDetail": "{count} Links",
+                    "moreItems": "+{count} weitere",
+                    "dividerDetail": "Visuelle Trennung",
+                    "promoEmpty": "Kein Promo-Titel",
+                    "visibility": {
+                        "always": "immer",
+                        "guest": "Gast",
+                        "customer": "Kunde"
+                    }
+                },
+                "config": {
+                    "logoMedia": {
+                        "label": "Logo",
+                        "caption": "Logo für die Seitennavigation hochladen"
+                    },
+                    "logoLink": {
+                        "label": "Logo-Link",
+                        "placeholder": ""
+                    },
+                    "defaultTabId": {
+                        "label": "Standard-Tab-ID",
+                        "placeholder": ""
+                    },
+                    "tabs": {
+                        "title": "Tabs",
+                        "add": "Tab hinzufügen",
+                        "remove": "Tab entfernen",
+                        "id": {
+                            "label": "Tab-ID"
+                        },
+                        "label": {
+                            "label": "Tab-Bezeichnung"
+                        }
+                    },
+                    "footer": {
+                        "title": "Footer",
+                        "add": "Footer-Eintrag hinzufügen",
+                        "remove": "Eintrag entfernen",
+                        "id": {
+                            "label": "ID"
+                        },
+                        "label": {
+                            "label": "Beschriftung"
+                        },
+                        "href": {
+                            "label": "Link"
+                        },
+                        "icon": {
+                            "label": "Icon",
+                            "placeholder": "",
+                            "none": "Kein Icon",
+                            "helpText": "Benannter Icon-Schlüssel für das Next.js Icon-Set (login, user, orders…). Kein Media-Upload — Bilder aus der Mediathek über iconMediaId bei Manual Links."
+                        },
+                        "visibility": {
+                            "label": "Sichtbarkeit"
+                        }
+                    },
+                    "sections": {
+                        "title": "Bereiche",
+                        "add": "Bereich hinzufügen",
+                        "remove": "Bereich entfernen",
+                        "id": {
+                            "label": "Bereichs-ID"
+                        },
+                        "type": {
+                            "label": "Typ"
+                        },
+                        "types": {
+                            "categoryTree": "Kategoriebaum",
+                            "manualLinks": "Manuelle Links",
+                            "divider": "Trenner",
+                            "promo": "Promo"
+                        },
+                        "categoryTree": {
+                            "rootCategoryId": {
+                                "label": "Wurzelkategorie",
+                                "placeholder": "Kategorie auswählen"
+                            },
+                            "maxDepth": {
+                                "label": "Max. Tiefe"
+                            },
+                            "showIcons": {
+                                "label": "Kategorie-Icons anzeigen"
+                            },
+                            "includeRootAsAllLink": {
+                                "label": "„Alle“-Link für Root anzeigen",
+                                "helpText": "Wie home24 „Alle Möbel“: Link über den Kindern der Root auf die Root-Seite. Tiefere Ebenen bekommen in der Vorschau automatisch „Alle {Kategorie}“."
+                            },
+                            "allLinkLabel": {
+                                "label": "Alle-Link Beschriftung",
+                                "placeholder": "",
+                                "helpText": "Nur für den Root-„Alle“-Link (z. B. „Alle Living Room“). Leer = Root-Name. Unterkategorie-Spalten nutzen automatisch „Alle {name}“."
+                            }
+                        },
+                        "manualLinks": {
+                            "style": {
+                                "label": "Stil",
+                                "default": "Standard",
+                                "uppercase": "Großbuchstaben"
+                            },
+                            "items": {
+                                "title": "Links",
+                                "add": "Link hinzufügen",
+                                "remove": "Link entfernen",
+                                "id": {
+                                    "label": "ID"
+                                },
+                                "label": {
+                                    "label": "Beschriftung"
+                                },
+                                "url": {
+                                    "label": "URL"
+                                },
+                                "openInNewTab": {
+                                    "label": "In neuem Tab öffnen"
+                                },
+                                "iconMediaId": {
+                                    "label": "Icon"
+                                },
+                                "children": {
+                                    "title": "Unterpunkte",
+                                    "add": "Unterpunkt hinzufügen"
+                                }
+                            }
+                        },
+                        "promo": {
+                            "mediaId": {
+                                "label": "Medien"
+                            },
+                            "title": {
+                                "label": "Titel"
+                            },
+                            "url": {
+                                "label": "Link"
+                            },
+                            "alt": {
+                                "label": "Alt-Text"
+                            }
+                        }
+                    }
+                }
             }
         },
         "blocks": {
@@ -33,6 +198,9 @@
             },
             "jv-button-link": {
                 "label": "Button · Link"
+            },
+            "jv-side-navigation": {
+                "label": "Seitennavigation"
             }
         }
     },
@@ -41,7 +209,8 @@
             "detail": {
                 "label": {
                     "blockCategory": {
-                        "button": "Button"
+                        "button": "Button",
+                        "navigation": "Navigation"
                     }
                 }
             }
