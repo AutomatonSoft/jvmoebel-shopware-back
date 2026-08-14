@@ -158,7 +158,7 @@ final class CatalogProductUpdatePlannerTest extends TestCase
         $update = (new CatalogProductUpdatePlanner())->plan(
             new ExistingProductForCatalogEnrichment('product-id', '4260454043503', '4260454043503', 'EUR', 1000.0, 840.34, 19.0, [], []),
             new CatalogProductData('okb', '4260454043503', '4260454043503', 'reference-1', '25922', '3446', null, null, [new CatalogProductAttribute('Color', ['Brown'])]),
-            [new CatalogCategoryAttributeSchema('okb', '3446', '100', 'Color', 'STRING', false, 'property', 'color-group', true, true, 'VARIATION_THEME')],
+            [new CatalogCategoryAttributeSchema('okb', '3446', '100', 'Color', 'STRING', false, 'property', 'color-group', true, true, 'TITLE|VARIATION_THEME|SEARCH')],
         );
 
         $optionId = CatalogIdentity::propertyOptionId('color-group', 'Brown');

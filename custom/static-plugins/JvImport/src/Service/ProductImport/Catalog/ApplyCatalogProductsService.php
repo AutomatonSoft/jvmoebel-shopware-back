@@ -262,14 +262,27 @@ final readonly class ApplyCatalogProductsService
     {
         $prices = [];
         foreach ($product->getPrice() ?? [] as $price) {
-            $prices[$price->getCurrencyId()] = [
+            $record = [
                 'currencyId' => $price->getCurrencyId(),
                 'net' => $price->getNet(),
                 'gross' => $price->getGross(),
                 'linked' => $price->getLinked(),
             ];
+            if (null !== $price->getListPrice()) {
+                $record['listPrice'] = [
+                    'net' => $price->getListPrice()->getNet(),
+                    'gross' => $price->getListPrice()->getGross(),
+                    'linked' => $price->getListPrice()->getLinked(),
+                ];
+            }
+            $prices[$price->getCurrencyId()] = $record;
         }
-        $prices[$currencyId] = ['currencyId' => $currencyId, 'net' => $net, 'gross' => $gross, 'linked' => false];
+        $prices[$currencyId] = [
+            ...($prices[$currencyId] ?? ['currencyId' => $currencyId]),
+            'net' => $net,
+            'gross' => $gross,
+            'linked' => false,
+        ];
 
         return array_values($prices);
     }

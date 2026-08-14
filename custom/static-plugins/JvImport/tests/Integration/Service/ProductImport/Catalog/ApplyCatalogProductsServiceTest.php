@@ -43,7 +43,7 @@ final class ApplyCatalogProductsServiceTest extends TestCase
         ], $context);
         $this->propertyGroups()->create([['id' => $propertyGroupId, 'name' => 'Color', 'displayType' => 'text', 'sortingType' => 'alphanumeric']], $context);
         $products->create([
-            $this->product($firstId, '4260454043503', 'First', $taxId, 1000.0),
+            $this->product($firstId, '4260454043503', 'First', $taxId, 1000.0, 1500.0),
             $this->product($secondId, '4260454043504', 'Second', $taxId, 1300.0),
         ], $context);
 
@@ -64,7 +64,8 @@ final class ApplyCatalogProductsServiceTest extends TestCase
             $first = $this->productById($firstId, $context);
             self::assertSame($parentId, $first->getParentId());
             self::assertContains($categoryId, $first->getCategoryIds() ?? []);
-            self::assertSame(1200.0, $first->getPrice()?->getCurrencyPrice(Defaults::CURRENCY, false)?->getGross());
+            self::assertSame(1200.0, $first->getPrice()->getCurrencyPrice(Defaults::CURRENCY, false)->getGross());
+            self::assertSame(1500.0, $first->getPrice()->getCurrencyPrice(Defaults::CURRENCY, false)->getListPrice()?->getGross());
             self::assertSame(120.5, $first->getCustomFields()['jv_catalog_attributes'][$source.':width']);
             self::assertCount(1, $first->getOptionIds() ?? []);
             self::assertCount(1, $first->getPropertyIds() ?? []);
@@ -111,7 +112,7 @@ final class ApplyCatalogProductsServiceTest extends TestCase
     }
 
     /** @return array<string, mixed> */
-    private function product(string $id, string $productNumber, string $name, string $taxId, float $gross): array
+    private function product(string $id, string $productNumber, string $name, string $taxId, float $gross, ?float $listPriceGross = null): array
     {
         return [
             'id' => $id,
@@ -120,7 +121,13 @@ final class ApplyCatalogProductsServiceTest extends TestCase
             'name' => $name,
             'stock' => 1,
             'taxId' => $taxId,
-            'price' => [['currencyId' => Defaults::CURRENCY, 'net' => round($gross / 1.19, 2), 'gross' => $gross, 'linked' => false]],
+            'price' => [[
+                'currencyId' => Defaults::CURRENCY,
+                'net' => round($gross / 1.19, 2),
+                'gross' => $gross,
+                'linked' => false,
+                ...null === $listPriceGross ? [] : ['listPrice' => ['net' => round($listPriceGross / 1.19, 2), 'gross' => $listPriceGross, 'linked' => false]],
+            ]],
         ];
     }
 

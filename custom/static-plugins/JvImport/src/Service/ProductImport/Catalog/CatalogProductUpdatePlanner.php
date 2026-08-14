@@ -80,7 +80,7 @@ final class CatalogProductUpdatePlanner
                 foreach ($attribute->values as $value) {
                     $optionId = CatalogIdentity::propertyOptionId($schema->propertyGroupId, $value);
                     $propertyOptionIds[$optionId] = true;
-                    if ('VARIATION_THEME' === $schema->featureRelevance) {
+                    if ($this->isVariationTheme($schema->featureRelevance)) {
                         $variantOptionIds[$optionId] = true;
                     }
                 }
@@ -97,6 +97,11 @@ final class CatalogProductUpdatePlanner
         }
 
         return [array_keys($propertyOptionIds), array_keys($variantOptionIds), $customFields];
+    }
+
+    private function isVariationTheme(?string $featureRelevance): bool
+    {
+        return in_array('VARIATION_THEME', explode('|', (string) $featureRelevance), true);
     }
 
     /** @return list<string|float|int> */
