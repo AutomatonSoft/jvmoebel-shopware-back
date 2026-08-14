@@ -31,6 +31,11 @@ final class CatalogIdentity
         return self::id('property-option.'.$propertyGroupId.'.'.mb_strtolower(trim($value)));
     }
 
+    public static function variantParentId(string $sourceCode, string $productReference): string
+    {
+        return self::id($sourceCode.'.variant-parent.'.$productReference);
+    }
+
     private static function id(string $value): string
     {
         return Uuid::fromStringToHex('jvmoebel.'.$value);
