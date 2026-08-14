@@ -34,12 +34,12 @@ final readonly class ImportOkbCatalogSchemaService
     ) {
     }
 
-    public function execute(string $directory, bool $dryRun, Context $context, ?string $groupParentId = null): OkbCatalogSchemaImportResult
+    public function execute(string $directory, bool $dryRun, Context $context): OkbCatalogSchemaImportResult
     {
         $directory = rtrim($directory, '/');
         $this->assertSnapshotIsComplete($directory);
 
-        $categoryGroups = $this->importCategoryGroups($directory, $dryRun, $context, $groupParentId);
+        $categoryGroups = $this->importCategoryGroups($directory, $dryRun, $context);
         $categories = $this->importCategories($directory, $dryRun, $context);
         [$attributeRelations, $propertyGroups, $propertyAttributes] = $this->importAttributeSchema($directory, $dryRun, $context);
         $propertyOptions = $this->importAllowedValues($directory, $propertyAttributes, $dryRun, $context);
@@ -66,23 +66,19 @@ final readonly class ImportOkbCatalogSchemaService
         }
     }
 
-    private function importCategoryGroups(string $directory, bool $dryRun, Context $context, ?string $groupParentId): int
+    private function importCategoryGroups(string $directory, bool $dryRun, Context $context): int
     {
         $records = [];
         $count = 0;
         foreach ($this->csvReader->rows($directory.'/okb-category-groups.csv', ['category_group_id', 'category_group']) as $row) {
             $this->requireValues($row, ['category_group_id', 'category_group'], 'category group');
-            $record = [
+            $records[] = [
                 'id' => OkbCatalogIdentity::categoryGroupId($row['category_group_id']),
                 'name' => $row['category_group'],
                 'active' => true,
                 'visible' => true,
                 'type' => CategoryDefinition::TYPE_PAGE,
             ];
-            if (null !== $groupParentId) {
-                $record['parentId'] = $groupParentId;
-            }
-            $records[] = $record;
             ++$count;
             $this->upsertBatch($this->categoryRepository, $records, $dryRun, $context);
         }
