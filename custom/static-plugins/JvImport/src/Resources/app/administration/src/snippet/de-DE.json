@@ -4,5 +4,14 @@
             "title": "Import",
             "description": "JVMöbel-Importe"
         }
+    },
+    "jv-catalog-attribute-mapping": {
+        "title": "Katalog-Attributzuordnungen",
+        "description": "Steuert, wie Attribute je Quellkategorie importiert werden.",
+        "saved": "Attributzuordnung gespeichert.",
+        "saveError": "Attributzuordnung konnte nicht gespeichert werden.",
+        "columns": {
+            "source": "Quelle", "group": "Kategoriegruppe", "attribute": "Attribut", "type": "Datentyp", "relevance": "Verwendung", "present": "In Quelle vorhanden", "enabled": "Importieren", "storage": "Ziel", "propertyGroup": "Property-Gruppe-ID"
+        }
     }
 }

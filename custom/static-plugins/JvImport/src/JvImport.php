@@ -12,12 +12,17 @@ final class JvImport extends Plugin
         return [
             'product.viewer' => [
                 'jv_import_product_sales_channel_delivery_time:read',
+                'jv_catalog_category_attribute:read',
             ],
             'product.editor' => [
                 'jv_import_product_sales_channel_delivery_time:read',
                 'jv_import_product_sales_channel_delivery_time:create',
                 'jv_import_product_sales_channel_delivery_time:update',
                 'jv_import_product_sales_channel_delivery_time:delete',
+                'jv_catalog_category_attribute:read',
+                'jv_catalog_category_attribute:create',
+                'jv_catalog_category_attribute:update',
+                'jv_catalog_category_attribute:delete',
             ],
         ];
     }

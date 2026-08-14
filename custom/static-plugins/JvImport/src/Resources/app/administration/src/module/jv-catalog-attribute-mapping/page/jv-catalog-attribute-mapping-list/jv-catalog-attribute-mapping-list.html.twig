@@ -1,0 +1,20 @@
+{% block jv_catalog_attribute_mapping_list %}
+    <sw-page class="jv-catalog-attribute-mapping-list">
+        <template #smart-bar-header>
+            <h2>{{ $tc('jv-catalog-attribute-mapping.title') }}</h2>
+        </template>
+        <template #content>
+            <sw-entity-listing
+                v-if="mappings"
+                :items="mappings"
+                :repository="repository"
+                :columns="columns"
+                :is-loading="isLoading"
+                :show-selection="false"
+                :allow-inline-edit="true"
+                :total="total"
+                @inline-edit-save="onInlineEditSave"
+            />
+        </template>
+    </sw-page>
+{% endblock %}

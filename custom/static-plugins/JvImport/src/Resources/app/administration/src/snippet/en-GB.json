@@ -4,5 +4,14 @@
             "title": "Import",
             "description": "JVMöbel imports"
         }
+    },
+    "jv-catalog-attribute-mapping": {
+        "title": "Catalog attribute mappings",
+        "description": "Controls how source-category attributes are imported into Shopware.",
+        "saved": "Attribute mapping saved.",
+        "saveError": "Attribute mapping could not be saved.",
+        "columns": {
+            "source": "Source", "group": "Category group", "attribute": "Attribute", "type": "Data type", "relevance": "Usage", "present": "Present in source", "enabled": "Import", "storage": "Target", "propertyGroup": "Property group ID"
+        }
     }
 }
