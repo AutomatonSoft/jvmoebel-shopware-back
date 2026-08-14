@@ -15,6 +15,7 @@ final readonly class CatalogCategoryAttributeSchema
         public ?string $propertyGroupId,
         public bool $active = true,
         public bool $enabled = true,
+        public ?string $featureRelevance = null,
     ) {
     }
 }

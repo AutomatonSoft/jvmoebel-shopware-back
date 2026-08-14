@@ -32,13 +32,14 @@ final class CatalogProductUpdatePlanner
             $schemasByName[$schema->attributeName] = $schema;
         }
 
-        [$propertyOptionIds, $customFields] = $this->attributes($existing, $prepared, $schemasByName);
+        [$propertyOptionIds, $variantOptionIds, $customFields] = $this->attributes($existing, $prepared, $schemasByName);
         [$priceGross, $priceNet] = $this->price($existing, $prepared);
 
         return new CatalogProductUpdate(
             $existing->id,
-            [CatalogIdentity::categoryId($prepared->sourceCode, $prepared->categoryId)],
+            array_keys(array_fill_keys([...$existing->categoryIds, CatalogIdentity::categoryId($prepared->sourceCode, $prepared->categoryId)], true)),
             $propertyOptionIds,
+            $variantOptionIds,
             $customFields,
             $priceGross,
             $priceNet,
@@ -48,11 +49,12 @@ final class CatalogProductUpdatePlanner
     /**
      * @param array<string, CatalogCategoryAttributeSchema> $schemasByName
      *
-     * @return array{0: list<string>, 1: array<string, mixed>}
+     * @return array{0: list<string>, 1: list<string>, 2: array<string, mixed>}
      */
     private function attributes(ExistingProductForCatalogEnrichment $existing, CatalogProductData $prepared, array $schemasByName): array
     {
         $propertyOptionIds = array_fill_keys($existing->propertyOptionIds, true);
+        $variantOptionIds = [];
         $customFields = $existing->customFields;
         $catalogValues = $customFields['jv_catalog_attributes'] ?? [];
         if (!is_array($catalogValues)) {
@@ -76,7 +78,11 @@ final class CatalogProductUpdatePlanner
                     throw new \InvalidArgumentException(sprintf('Catalog property attribute "%s" has no Shopware property group.', $schema->attributeName));
                 }
                 foreach ($attribute->values as $value) {
-                    $propertyOptionIds[CatalogIdentity::propertyOptionId($schema->propertyGroupId, $value)] = true;
+                    $optionId = CatalogIdentity::propertyOptionId($schema->propertyGroupId, $value);
+                    $propertyOptionIds[$optionId] = true;
+                    if ('VARIATION_THEME' === $schema->featureRelevance) {
+                        $variantOptionIds[$optionId] = true;
+                    }
                 }
 
                 continue;
@@ -90,7 +96,7 @@ final class CatalogProductUpdatePlanner
             $customFields['jv_catalog_attributes'] = $catalogValues;
         }
 
-        return [array_keys($propertyOptionIds), $customFields];
+        return [array_keys($propertyOptionIds), array_keys($variantOptionIds), $customFields];
     }
 
     /** @return list<string|float|int> */

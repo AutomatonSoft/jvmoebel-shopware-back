@@ -4,8 +4,9 @@ namespace Jv\Import\Service\ProductImport\Catalog\Dto;
 
 final readonly class ExistingProductForCatalogEnrichment
 {
-    /** @param list<string> $propertyOptionIds
+    /** @param list<string>         $propertyOptionIds
      * @param array<string, mixed> $customFields
+     * @param list<string>         $categoryIds
      */
     public function __construct(
         public string $id,
@@ -17,6 +18,7 @@ final readonly class ExistingProductForCatalogEnrichment
         public float $taxRate,
         public array $propertyOptionIds,
         public array $customFields,
+        public array $categoryIds = [],
     ) {
     }
 }

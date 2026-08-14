@@ -36,6 +36,11 @@ final class CatalogIdentity
         return self::id($sourceCode.'.variant-parent.'.$productReference);
     }
 
+    public static function configuratorSettingId(string $productId, string $optionId): string
+    {
+        return self::id('configurator-setting.'.$productId.'.'.$optionId);
+    }
+
     private static function id(string $value): string
     {
         return Uuid::fromStringToHex('jvmoebel.'.$value);

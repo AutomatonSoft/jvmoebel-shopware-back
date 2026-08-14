@@ -8,6 +8,8 @@ final readonly class CatalogVariantParent
         public string $id,
         public string $productNumber,
         public float $priceGross,
+        /** @var list<string> */
+        public array $configuratorOptionIds,
     ) {
     }
 }

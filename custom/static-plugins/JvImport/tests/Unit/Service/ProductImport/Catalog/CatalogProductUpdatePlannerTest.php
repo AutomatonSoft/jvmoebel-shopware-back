@@ -51,6 +51,7 @@ final class CatalogProductUpdatePlannerTest extends TestCase
         self::assertSame('product-id', $update->productId);
         self::assertSame([CatalogIdentity::categoryId('okb', '25922')], $update->categoryIds);
         self::assertSame(['existing-option', CatalogIdentity::propertyOptionId('farbe-group', 'Braun')], $update->propertyOptionIds);
+        self::assertSame([], $update->variantOptionIds);
         self::assertSame([
             'jv_internal_article_code' => 'Sofort',
             'jv_catalog_attributes' => [
@@ -150,5 +151,18 @@ final class CatalogProductUpdatePlannerTest extends TestCase
 
         self::assertSame([], $update->propertyOptionIds);
         self::assertSame([], $update->customFields);
+    }
+
+    public function testItUsesVariationThemePropertiesAsChildVariantOptions(): void
+    {
+        $update = (new CatalogProductUpdatePlanner())->plan(
+            new ExistingProductForCatalogEnrichment('product-id', '4260454043503', '4260454043503', 'EUR', 1000.0, 840.34, 19.0, [], []),
+            new CatalogProductData('okb', '4260454043503', '4260454043503', 'reference-1', '25922', '3446', null, null, [new CatalogProductAttribute('Color', ['Brown'])]),
+            [new CatalogCategoryAttributeSchema('okb', '3446', '100', 'Color', 'STRING', false, 'property', 'color-group', true, true, 'VARIATION_THEME')],
+        );
+
+        $optionId = CatalogIdentity::propertyOptionId('color-group', 'Brown');
+        self::assertSame([$optionId], $update->propertyOptionIds);
+        self::assertSame([$optionId], $update->variantOptionIds);
     }
 }

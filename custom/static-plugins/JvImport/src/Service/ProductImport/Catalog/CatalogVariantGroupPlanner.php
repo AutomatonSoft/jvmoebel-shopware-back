@@ -30,15 +30,23 @@ final class CatalogVariantGroupPlanner
             if (isset($childProductNumbers[$first->productReference])) {
                 throw new \InvalidArgumentException(sprintf('Variant parent product number "%s" already belongs to a child product.', $first->productReference));
             }
+            $parentId = CatalogIdentity::variantParentId($first->sourceCode, $first->productReference);
             $existingProductId = $existingProductNumbers[$first->productReference] ?? null;
-            if (null !== $existingProductId) {
+            if (null !== $existingProductId && $parentId !== $existingProductId) {
                 throw new \InvalidArgumentException(sprintf('Variant parent product number "%s" already belongs to a different product.', $first->productReference));
             }
             $priceGross = max(array_map(static fn (CatalogVariantCandidate $child): float => $child->priceGross, $children));
+            $configuratorOptionIds = [];
+            foreach ($children as $child) {
+                foreach ($child->variantOptionIds as $optionId) {
+                    $configuratorOptionIds[$optionId] = true;
+                }
+            }
             $parent = new CatalogVariantParent(
-                CatalogIdentity::variantParentId($first->sourceCode, $first->productReference),
+                $parentId,
                 $first->productReference,
                 $priceGross,
+                array_keys($configuratorOptionIds),
             );
             $parents[] = $parent;
             foreach ($children as $child) {

@@ -10,6 +10,8 @@ final readonly class CatalogVariantCandidate
         public string $productReference,
         public float $priceGross,
         public string $sourceCode,
+        /** @var list<string> */
+        public array $variantOptionIds = [],
     ) {
     }
 }
