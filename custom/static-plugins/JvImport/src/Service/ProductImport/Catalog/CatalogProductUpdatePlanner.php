@@ -27,7 +27,7 @@ final class CatalogProductUpdatePlanner
                 continue;
             }
             if (isset($schemasByName[$schema->attributeName])) {
-                throw new \InvalidArgumentException(sprintf('OKB category group %s has ambiguous attribute "%s".', $prepared->categoryGroupId, $schema->attributeName));
+                throw new \InvalidArgumentException(sprintf('Catalog category group %s has ambiguous attribute "%s".', $prepared->categoryGroupId, $schema->attributeName));
             }
             $schemasByName[$schema->attributeName] = $schema;
         }
@@ -62,7 +62,10 @@ final class CatalogProductUpdatePlanner
         foreach ($prepared->attributes as $attribute) {
             $schema = $schemasByName[$attribute->name] ?? null;
             if (null === $schema) {
-                throw new \InvalidArgumentException(sprintf('OKB attribute "%s" is not present in OKB category group %s.', $attribute->name, $prepared->categoryGroupId));
+                throw new \InvalidArgumentException(sprintf('Catalog attribute "%s" is not present in category group %s.', $attribute->name, $prepared->categoryGroupId));
+            }
+            if (!$schema->active || !$schema->enabled || 'ignore' === $schema->storage) {
+                continue;
             }
             $values = $this->values($attribute, $schema);
             if ([] === $values) {
@@ -70,7 +73,7 @@ final class CatalogProductUpdatePlanner
             }
             if ('property' === $schema->storage) {
                 if (null === $schema->propertyGroupId) {
-                    throw new \InvalidArgumentException(sprintf('OKB property attribute "%s" has no Shopware property group.', $schema->attributeName));
+                    throw new \InvalidArgumentException(sprintf('Catalog property attribute "%s" has no Shopware property group.', $schema->attributeName));
                 }
                 foreach ($attribute->values as $value) {
                     $propertyOptionIds[CatalogIdentity::propertyOptionId($schema->propertyGroupId, $value)] = true;
@@ -79,7 +82,7 @@ final class CatalogProductUpdatePlanner
                 continue;
             }
             if ('custom_field' !== $schema->storage) {
-                throw new \InvalidArgumentException(sprintf('OKB attribute "%s" has unsupported storage "%s".', $schema->attributeName, $schema->storage));
+                throw new \InvalidArgumentException(sprintf('Catalog attribute "%s" has unsupported storage "%s".', $schema->attributeName, $schema->storage));
             }
             $catalogValues[$schema->sourceCode.':'.$schema->attributeId] = $schema->multiValue ? $values : $values[0];
         }
@@ -94,7 +97,7 @@ final class CatalogProductUpdatePlanner
     private function values(CatalogProductAttribute $attribute, CatalogCategoryAttributeSchema $schema): array
     {
         if (!$schema->multiValue && 1 < count($attribute->values)) {
-            throw new \InvalidArgumentException(sprintf('OKB attribute "%s" does not accept multiple values.', $schema->attributeName));
+            throw new \InvalidArgumentException(sprintf('Catalog attribute "%s" does not accept multiple values.', $schema->attributeName));
         }
 
         return array_map(function (string $value) use ($schema): string|float|int {
@@ -102,7 +105,7 @@ final class CatalogProductUpdatePlanner
                 'STRING' => $value,
                 'INTEGER' => $this->integer($value, $schema),
                 'FLOAT' => $this->float($value, $schema),
-                default => throw new \InvalidArgumentException(sprintf('OKB attribute "%s" has unsupported type "%s".', $schema->attributeName, $schema->attributeType)),
+                default => throw new \InvalidArgumentException(sprintf('Catalog attribute "%s" has unsupported type "%s".', $schema->attributeName, $schema->attributeType)),
             };
         }, $attribute->values);
     }
@@ -110,7 +113,7 @@ final class CatalogProductUpdatePlanner
     private function integer(string $value, CatalogCategoryAttributeSchema $schema): int
     {
         if (!preg_match('/^-?\d+$/D', $value)) {
-            throw new \InvalidArgumentException(sprintf('OKB attribute "%s" requires an integer value.', $schema->attributeName));
+            throw new \InvalidArgumentException(sprintf('Catalog attribute "%s" requires an integer value.', $schema->attributeName));
         }
 
         return (int) $value;
@@ -120,7 +123,7 @@ final class CatalogProductUpdatePlanner
     {
         $normalized = str_replace(',', '.', $value);
         if (!is_numeric($normalized)) {
-            throw new \InvalidArgumentException(sprintf('OKB attribute "%s" requires a decimal value.', $schema->attributeName));
+            throw new \InvalidArgumentException(sprintf('Catalog attribute "%s" requires a decimal value.', $schema->attributeName));
         }
 
         return (float) $normalized;
@@ -133,7 +136,7 @@ final class CatalogProductUpdatePlanner
             return [$existing->priceGross, $existing->priceNet];
         }
         if (null === $prepared->currency || strtoupper($existing->currencyCode) !== strtoupper($prepared->currency)) {
-            throw new \InvalidArgumentException('OKB price currency does not match the existing Shopware price currency.');
+            throw new \InvalidArgumentException('Catalog price currency does not match the existing Shopware price currency.');
         }
         if ($prepared->standardPriceAmount <= $existing->priceGross) {
             return [$existing->priceGross, $existing->priceNet];

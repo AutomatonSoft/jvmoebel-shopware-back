@@ -17,6 +17,8 @@ final class CatalogCategoryAttributeEntity extends Entity
     protected string $attributeType;
     protected ?string $featureRelevance = null;
     protected bool $multiValue;
+    protected bool $active;
+    protected bool $enabled;
     protected string $storage;
     protected ?string $propertyGroupId = null;
     protected ?string $customFieldName = null;
@@ -90,6 +92,26 @@ final class CatalogCategoryAttributeEntity extends Entity
     public function setMultiValue(bool $multiValue): void
     {
         $this->multiValue = $multiValue;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->active;
+    }
+
+    public function setActive(bool $active): void
+    {
+        $this->active = $active;
+    }
+
+    public function isEnabled(): bool
+    {
+        return $this->enabled;
+    }
+
+    public function setEnabled(bool $enabled): void
+    {
+        $this->enabled = $enabled;
     }
 
     public function getStorage(): string

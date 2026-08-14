@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Jv\Import\Integration\Okb;
+namespace Jv\Import\Integration\Csv;
 
-final class OkbCsvReader
+final class SemicolonCsvReader
 {
     /**
      * @param list<string> $requiredHeaders
@@ -13,18 +13,18 @@ final class OkbCsvReader
     {
         $handle = fopen($file, 'rb');
         if (false === $handle) {
-            throw new \InvalidArgumentException(sprintf('OKB CSV file "%s" cannot be read.', $file));
+            throw new \InvalidArgumentException(sprintf('CSV file "%s" cannot be read.', $file));
         }
 
         try {
             $headers = fgetcsv($handle, 0, ';', '"', '\\');
             if (false === $headers) {
-                throw new \InvalidArgumentException(sprintf('OKB CSV file "%s" is empty.', $file));
+                throw new \InvalidArgumentException(sprintf('CSV file "%s" is empty.', $file));
             }
             $headers = $this->headers($headers, $file);
             $missing = array_values(array_diff($requiredHeaders, $headers));
             if ([] !== $missing) {
-                throw new \InvalidArgumentException(sprintf('OKB CSV file "%s" is missing required column(s): %s.', $file, implode(', ', $missing)));
+                throw new \InvalidArgumentException(sprintf('CSV file "%s" is missing required column(s): %s.', $file, implode(', ', $missing)));
             }
 
             $line = 1;
@@ -34,7 +34,7 @@ final class OkbCsvReader
                     continue;
                 }
                 if (count($headers) !== count($row)) {
-                    throw new \InvalidArgumentException(sprintf('OKB CSV file "%s" has %d columns on line %d; expected %d.', $file, count($row), $line, count($headers)));
+                    throw new \InvalidArgumentException(sprintf('CSV file "%s" has %d columns on line %d; expected %d.', $file, count($row), $line, count($headers)));
                 }
 
                 /** @var array<string, string> $record */
@@ -60,7 +60,7 @@ final class OkbCsvReader
         }
 
         if (in_array('', $headers, true) || count($headers) !== count(array_unique($headers))) {
-            throw new \InvalidArgumentException(sprintf('OKB CSV file "%s" has empty or duplicate column names.', $file));
+            throw new \InvalidArgumentException(sprintf('CSV file "%s" has empty or duplicate column names.', $file));
         }
 
         return $headers;

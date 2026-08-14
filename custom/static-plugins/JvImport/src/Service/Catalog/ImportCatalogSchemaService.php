@@ -3,7 +3,8 @@
 namespace Jv\Import\Service\Catalog;
 
 use Jv\Import\Core\Content\CatalogCategoryAttribute\CatalogCategoryAttributeCollection;
-use Jv\Import\Service\Catalog\Dto\CatalogAttribute;
+use Jv\Import\Core\Content\CatalogCategoryAttribute\CatalogCategoryAttributeEntity;
+use Jv\Import\Service\Catalog\Dto\CatalogAttributeMapping;
 use Jv\Import\Service\Catalog\Dto\CatalogSchemaImportResult;
 use Jv\Import\Service\Catalog\Dto\CatalogSchemaSnapshot;
 use Shopware\Core\Content\Category\CategoryCollection;
@@ -13,6 +14,8 @@ use Shopware\Core\Content\Property\PropertyGroupCollection;
 use Shopware\Core\Content\Property\PropertyGroupDefinition;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 
 final readonly class ImportCatalogSchemaService
 {
@@ -29,6 +32,7 @@ final readonly class ImportCatalogSchemaService
         private EntityRepository $propertyGroupRepository,
         private EntityRepository $propertyOptionRepository,
         private EntityRepository $categoryAttributeRepository,
+        private CatalogAttributeMappingSynchronizer $attributeMappingSynchronizer,
     ) {
     }
 
@@ -86,22 +90,28 @@ final readonly class ImportCatalogSchemaService
         $propertyGroups = [];
         $propertyAttributeGroups = [];
         $propertyGroupIds = [];
-        foreach ($snapshot->attributes as $attribute) {
-            $propertyGroupId = null;
-            if ('property' === $attribute->storage) {
-                $propertyGroupId = CatalogIdentity::propertyGroupId($attribute->name, $attribute->type, $attribute->multiValue);
-                $propertyAttributeGroups[$attribute->sourceKey] = $propertyGroupId;
+        $mappings = $this->attributeMappingSynchronizer->synchronize(
+            $snapshot->sourceCode,
+            $snapshot->attributes,
+            $this->existingAttributeMappings($snapshot->sourceCode, $context),
+        );
+        foreach ($mappings as $mapping) {
+            $propertyGroupId = $mapping->propertyGroupId;
+            if ($mapping->active && $mapping->enabled && 'property' === $mapping->storage && null !== $propertyGroupId) {
+                $propertyAttributeGroups[$mapping->attributeId] = $propertyGroupId;
                 $propertyGroupIds[$propertyGroupId] = true;
-                $propertyGroups[$propertyGroupId] = [
-                    'id' => $propertyGroupId,
-                    'name' => $attribute->name,
-                    'displayType' => PropertyGroupDefinition::DISPLAY_TYPE_TEXT,
-                    'sortingType' => PropertyGroupDefinition::SORTING_TYPE_ALPHANUMERIC,
-                    'filterable' => true,
-                    'visibleOnProductDetailPage' => true,
-                ];
+                if ($propertyGroupId === CatalogIdentity::propertyGroupId($mapping->attributeName, $mapping->attributeType, $mapping->multiValue)) {
+                    $propertyGroups[$propertyGroupId] = [
+                        'id' => $propertyGroupId,
+                        'name' => $mapping->attributeName,
+                        'displayType' => PropertyGroupDefinition::DISPLAY_TYPE_TEXT,
+                        'sortingType' => PropertyGroupDefinition::SORTING_TYPE_ALPHANUMERIC,
+                        'filterable' => true,
+                        'visibleOnProductDetailPage' => true,
+                    ];
+                }
             }
-            $relations[] = $this->attributeRelation($snapshot, $attribute, $propertyGroupId);
+            $relations[] = $this->attributeRelation($mapping);
             if (self::BATCH_SIZE <= count($relations)) {
                 if (!$dryRun) {
                     $this->propertyGroupRepository->upsert(array_values($propertyGroups), $context);
@@ -120,21 +130,46 @@ final readonly class ImportCatalogSchemaService
     }
 
     /** @return array<string, mixed> */
-    private function attributeRelation(CatalogSchemaSnapshot $snapshot, CatalogAttribute $attribute, ?string $propertyGroupId): array
+    private function attributeRelation(CatalogAttributeMapping $mapping): array
     {
         return [
-            'id' => CatalogIdentity::categoryAttributeId($snapshot->sourceCode, $attribute->categoryGroupSourceKey, $attribute->sourceKey),
-            'sourceCode' => $snapshot->sourceCode,
-            'categoryGroupId' => $attribute->categoryGroupSourceKey,
-            'attributeId' => $attribute->sourceKey,
-            'attributeName' => $attribute->name,
-            'attributeType' => $attribute->type,
-            'featureRelevance' => $attribute->sourceRelevance,
-            'multiValue' => $attribute->multiValue,
-            'storage' => $attribute->storage,
-            'propertyGroupId' => $propertyGroupId,
-            'customFieldName' => null,
+            'id' => CatalogIdentity::categoryAttributeId($mapping->sourceCode, $mapping->categoryGroupId, $mapping->attributeId),
+            'sourceCode' => $mapping->sourceCode,
+            'categoryGroupId' => $mapping->categoryGroupId,
+            'attributeId' => $mapping->attributeId,
+            'attributeName' => $mapping->attributeName,
+            'attributeType' => $mapping->attributeType,
+            'featureRelevance' => $mapping->featureRelevance,
+            'multiValue' => $mapping->multiValue,
+            'active' => $mapping->active,
+            'enabled' => $mapping->enabled,
+            'storage' => $mapping->storage,
+            'propertyGroupId' => $mapping->propertyGroupId,
+            'customFieldName' => $mapping->customFieldName,
         ];
+    }
+
+    /** @return list<CatalogAttributeMapping> */
+    private function existingAttributeMappings(string $sourceCode, Context $context): array
+    {
+        $criteria = (new Criteria())->addFilter(new EqualsFilter('sourceCode', $sourceCode));
+        /** @var CatalogCategoryAttributeCollection $entities */
+        $entities = $this->categoryAttributeRepository->search($criteria, $context)->getEntities();
+
+        return array_map(static fn (CatalogCategoryAttributeEntity $entity): CatalogAttributeMapping => new CatalogAttributeMapping(
+            $entity->getSourceCode(),
+            $entity->getCategoryGroupId(),
+            $entity->getAttributeId(),
+            $entity->getAttributeName(),
+            $entity->getAttributeType(),
+            $entity->getFeatureRelevance(),
+            $entity->isMultiValue(),
+            $entity->isActive(),
+            $entity->isEnabled(),
+            $entity->getStorage(),
+            $entity->getPropertyGroupId(),
+            $entity->getCustomFieldName(),
+        ), array_values($entities->getElements()));
     }
 
     /** @param array<string, string> $propertyAttributeGroups */

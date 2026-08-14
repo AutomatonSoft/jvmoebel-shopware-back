@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
 
 final class CatalogProductUpdatePlannerTest extends TestCase
 {
-    public function testItPlansCategoryPropertiesCustomValuesAndTheHigherOkbPrice(): void
+    public function testItPlansCategoryPropertiesCustomValuesAndTheHigherCatalogPrice(): void
     {
         $update = (new CatalogProductUpdatePlanner())->plan(
             new ExistingProductForCatalogEnrichment(
@@ -89,7 +89,7 @@ final class CatalogProductUpdatePlannerTest extends TestCase
     public function testItRejectsAnUnknownAttributeInsteadOfSilentlyDroppingIt(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('not present in OKB category group 3446');
+        $this->expectExceptionMessage('not present in category group 3446');
 
         (new CatalogProductUpdatePlanner())->plan(
             new ExistingProductForCatalogEnrichment('product-id', '4260454043503', '4260454043503', 'EUR', 1000.0, 840.34, 19.0, [], []),
@@ -98,7 +98,7 @@ final class CatalogProductUpdatePlannerTest extends TestCase
         );
     }
 
-    public function testItRejectsAnOkbPriceInAnotherCurrency(): void
+    public function testItRejectsACatalogPriceInAnotherCurrency(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('currency does not match');
@@ -120,5 +120,35 @@ final class CatalogProductUpdatePlannerTest extends TestCase
             new CatalogProductData('okb', '4260454043503', '4260454043503', 'reference-1', '25922', '3446', null, null, [new CatalogProductAttribute('Breite', ['120', '130'])]),
             [new CatalogCategoryAttributeSchema('okb', '3446', '101', 'Breite', 'FLOAT', false, 'custom_field', null)],
         );
+    }
+
+    public function testItDoesNotImportDisabledOrInactiveMappedAttributes(): void
+    {
+        $update = (new CatalogProductUpdatePlanner())->plan(
+            new ExistingProductForCatalogEnrichment('product-id', '4260454043503', '4260454043503', 'EUR', 1000.0, 840.34, 19.0, [], []),
+            new CatalogProductData('okb', '4260454043503', '4260454043503', 'reference-1', '25922', '3446', null, null, [
+                new CatalogProductAttribute('Disabled', ['do not use']),
+                new CatalogProductAttribute('Missing at source', ['do not use']),
+            ]),
+            [
+                new CatalogCategoryAttributeSchema('okb', '3446', '101', 'Disabled', 'STRING', false, 'custom_field', null, true, false),
+                new CatalogCategoryAttributeSchema('okb', '3446', '102', 'Missing at source', 'STRING', false, 'custom_field', null, false, true),
+            ],
+        );
+
+        self::assertSame([], $update->propertyOptionIds);
+        self::assertSame([], $update->customFields);
+    }
+
+    public function testItDoesNotImportAnAttributeExplicitlyMappedToIgnore(): void
+    {
+        $update = (new CatalogProductUpdatePlanner())->plan(
+            new ExistingProductForCatalogEnrichment('product-id', '4260454043503', '4260454043503', 'EUR', 1000.0, 840.34, 19.0, [], []),
+            new CatalogProductData('okb', '4260454043503', '4260454043503', 'reference-1', '25922', '3446', null, null, [new CatalogProductAttribute('Internal note', ['x'])]),
+            [new CatalogCategoryAttributeSchema('okb', '3446', '101', 'Internal note', 'STRING', false, 'ignore', null)],
+        );
+
+        self::assertSame([], $update->propertyOptionIds);
+        self::assertSame([], $update->customFields);
     }
 }

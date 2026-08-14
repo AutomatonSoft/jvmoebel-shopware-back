@@ -2,15 +2,15 @@
 
 namespace Jv\Import\Integration\Okb\Service;
 
+use Jv\Import\Integration\Csv\SemicolonCsvReader;
 use Jv\Import\Integration\Okb\Dto\OkbProductMappingPreparationResult;
 use Jv\Import\Integration\Okb\Dto\OkbProductVariation;
-use Jv\Import\Integration\Okb\OkbCsvReader;
 use Jv\Import\Integration\Okb\OkbProductApiClient;
 
 final readonly class PrepareOkbProductMappingService
 {
     public function __construct(
-        private OkbCsvReader $csvReader,
+        private SemicolonCsvReader $csvReader,
         private OkbProductApiClient $apiClient,
     ) {
     }

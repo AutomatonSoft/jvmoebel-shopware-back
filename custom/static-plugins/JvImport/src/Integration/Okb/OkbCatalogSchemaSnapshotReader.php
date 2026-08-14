@@ -2,6 +2,7 @@
 
 namespace Jv\Import\Integration\Okb;
 
+use Jv\Import\Integration\Csv\SemicolonCsvReader;
 use Jv\Import\Service\Catalog\Dto\CatalogAllowedValue;
 use Jv\Import\Service\Catalog\Dto\CatalogAttribute;
 use Jv\Import\Service\Catalog\Dto\CatalogCategory;
@@ -12,7 +13,7 @@ final readonly class OkbCatalogSchemaSnapshotReader
 {
     private const string SOURCE_CODE = 'okb';
 
-    public function __construct(private OkbCsvReader $csvReader)
+    public function __construct(private SemicolonCsvReader $csvReader)
     {
     }
 

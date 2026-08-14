@@ -45,6 +45,8 @@ final class CatalogCategoryAttributeDefinition extends EntityDefinition
             (new StringField('attribute_type', 'attributeType'))->addFlags(new ApiAware(AdminApiSource::class), new Required()),
             (new StringField('feature_relevance', 'featureRelevance'))->addFlags(new ApiAware(AdminApiSource::class)),
             (new BoolField('multi_value', 'multiValue'))->addFlags(new ApiAware(AdminApiSource::class), new Required()),
+            (new BoolField('active', 'active'))->addFlags(new ApiAware(AdminApiSource::class), new Required()),
+            (new BoolField('enabled', 'enabled'))->addFlags(new ApiAware(AdminApiSource::class), new Required()),
             (new StringField('storage', 'storage'))->addFlags(new ApiAware(AdminApiSource::class), new Required()),
             (new FkField('property_group_id', 'propertyGroupId', PropertyGroupDefinition::class))->addFlags(new ApiAware(AdminApiSource::class)),
             (new StringField('custom_field_name', 'customFieldName'))->addFlags(new ApiAware(AdminApiSource::class)),
