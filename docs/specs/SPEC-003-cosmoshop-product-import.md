@@ -10,7 +10,11 @@
 
 Импортируются: общая идентичность товара по SKU, active, stock, EAN, weight, length/width/height, min/max purchase, manufacturer, gross/net и UVP/list price в валюте рынка, translations, visibility, delivery/unit fields и SEO slug `urlkey`.
 
-Не входят: категории, свойства и варианты (их источником будет Otto), а также media — это отдельная итерация. Cross-sell намеренно отложен до завершения media, категорий и атрибутов.
+Категории, OKB attributes и варианты описаны отдельной
+[SPEC-006](SPEC-006-okb-catalog-import.md). Этот CSV остаётся источником
+базовой CosmoShop карточки и SKU; его категории и старые публикуемые attributes
+не становятся целевой моделью. Media описаны отдельно в SPEC-005. Cross-sell
+намеренно отложен до завершения media, категорий и атрибутов.
 
 ## CSV-контракт
 

@@ -59,6 +59,9 @@
         <service id="Jv\Import\Core\Content\ProductSalesChannelDeliveryTime\ProductDeliveryTimeExtension">
             <tag name="shopware.entity.extension"/>
         </service>
+        <service id="Jv\Import\Core\Content\OkbCategoryGroupAttribute\OkbCategoryGroupAttributeDefinition">
+            <tag name="shopware.entity.definition" entity="jv_import_okb_category_group_attribute"/>
+        </service>
 
         <service id="Jv\Import\Service\ProductImport\PrepareCosmoShopProductImportRecordService">
             <argument type="service" id="Jv\Import\Integration\CosmoShop\Normalizer\CosmoShopProductImportDataNormalizer"/>
@@ -83,6 +86,18 @@
 
         <service id="Jv\Import\Command\UpsertCosmoShopReferencesCommand">
             <argument key="$environment">%kernel.environment%</argument>
+        </service>
+        <service id="Jv\Import\Command\ImportOkbCatalogSchemaCommand">
+            <argument key="$environment">%kernel.environment%</argument>
+        </service>
+
+        <service id="Jv\Import\Integration\Okb\OkbCsvReader"/>
+        <service id="Jv\Import\Service\OkbCatalog\ImportOkbCatalogSchemaService">
+            <argument type="service" id="Jv\Import\Integration\Okb\OkbCsvReader"/>
+            <argument type="service" id="category.repository"/>
+            <argument type="service" id="property_group.repository"/>
+            <argument type="service" id="property_group_option.repository"/>
+            <argument type="service" id="jv_import_okb_category_group_attribute.repository"/>
         </service>
 
         <service id="Jv\Import\Integration\CosmoShop\Reader\CosmoShopCsvPreflightReaderFactory">

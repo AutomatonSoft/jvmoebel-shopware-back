@@ -12,6 +12,9 @@ final class CosmoShopProductImportDataValidator
         if ('' === $data->productNumber) {
             throw new InvalidCosmoShopProductImportDataException('CosmoShop product record is missing a product number.');
         }
+        if (!preg_match('/^\d{13}$/D', $data->ean)) {
+            throw new InvalidCosmoShopProductImportDataException('CosmoShop EAN must contain exactly 13 digits.');
+        }
         if (!in_array($data->sourceInactive, ['0', '1'], true)) {
             throw new InvalidCosmoShopProductImportDataException('CosmoShop source_inactive must be 0 or 1.');
         }
