@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Jv\Import\Service\OkbCatalog\Dto;
+namespace Jv\Import\Integration\Okb\Dto;
 
 final readonly class OkbProductMappingPreparationResult
 {

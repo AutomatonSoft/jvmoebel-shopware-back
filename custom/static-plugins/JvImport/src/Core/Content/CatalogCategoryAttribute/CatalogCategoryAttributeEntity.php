@@ -1,15 +1,16 @@
 <?php declare(strict_types=1);
 
-namespace Jv\Import\Core\Content\OkbCategoryGroupAttribute;
+namespace Jv\Import\Core\Content\CatalogCategoryAttribute;
 
 use Shopware\Core\Content\Property\PropertyGroupEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 
-final class OkbCategoryGroupAttributeEntity extends Entity
+final class CatalogCategoryAttributeEntity extends Entity
 {
     use EntityIdTrait;
 
+    protected string $sourceCode;
     protected string $categoryGroupId;
     protected string $attributeId;
     protected string $attributeName;
@@ -20,6 +21,16 @@ final class OkbCategoryGroupAttributeEntity extends Entity
     protected ?string $propertyGroupId = null;
     protected ?string $customFieldName = null;
     protected ?PropertyGroupEntity $propertyGroup = null;
+
+    public function getSourceCode(): string
+    {
+        return $this->sourceCode;
+    }
+
+    public function setSourceCode(string $sourceCode): void
+    {
+        $this->sourceCode = $sourceCode;
+    }
 
     public function getCategoryGroupId(): string
     {

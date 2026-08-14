@@ -2,7 +2,7 @@
 
 namespace Jv\Import\Command;
 
-use Jv\Import\Service\OkbCatalog\PrepareOkbProductMappingService;
+use Jv\Import\Integration\Okb\Service\PrepareOkbProductMappingService;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;

@@ -2,7 +2,8 @@
 
 namespace Jv\Import\Command;
 
-use Jv\Import\Service\OkbCatalog\ImportOkbCatalogSchemaService;
+use Jv\Import\Integration\Okb\OkbCatalogSchemaSnapshotReader;
+use Jv\Import\Service\Catalog\ImportCatalogSchemaService;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -17,7 +18,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 final class ImportOkbCatalogSchemaCommand extends Command
 {
     public function __construct(
-        private readonly ImportOkbCatalogSchemaService $service,
+        private readonly OkbCatalogSchemaSnapshotReader $snapshotReader,
+        private readonly ImportCatalogSchemaService $service,
         private readonly LoggerInterface $logger,
         private readonly string $environment,
     ) {
@@ -42,7 +44,7 @@ final class ImportOkbCatalogSchemaCommand extends Command
         $this->logger->info('OKB catalog schema import started.', $context);
 
         try {
-            $result = $this->service->execute($directory, $dryRun, Context::createCLIContext());
+            $result = $this->service->execute($this->snapshotReader->read($directory), $dryRun, Context::createCLIContext());
             $this->logger->info('OKB catalog schema import completed.', [
                 ...$context,
                 'categoryGroups' => $result->categoryGroups,

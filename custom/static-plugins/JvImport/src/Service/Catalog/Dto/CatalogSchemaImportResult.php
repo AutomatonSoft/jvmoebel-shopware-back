@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Jv\Import\Service\OkbCatalog\Dto;
+namespace Jv\Import\Service\Catalog\Dto;
 
-final readonly class OkbCatalogSchemaImportResult
+final readonly class CatalogSchemaImportResult
 {
     public function __construct(
         public int $categoryGroups,

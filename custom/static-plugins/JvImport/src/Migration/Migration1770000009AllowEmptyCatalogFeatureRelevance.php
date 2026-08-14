@@ -5,7 +5,7 @@ namespace Jv\Import\Migration;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Migration\MigrationStep;
 
-final class Migration1770000009AllowEmptyOkbFeatureRelevance extends MigrationStep
+final class Migration1770000009AllowEmptyCatalogFeatureRelevance extends MigrationStep
 {
     public function getCreationTimestamp(): int
     {
@@ -14,7 +14,7 @@ final class Migration1770000009AllowEmptyOkbFeatureRelevance extends MigrationSt
 
     public function update(Connection $connection): void
     {
-        $connection->executeStatement('ALTER TABLE `jv_import_okb_category_group_attribute` MODIFY `feature_relevance` VARCHAR(255) NULL');
+        $connection->executeStatement('ALTER TABLE `jv_catalog_category_attribute` MODIFY `feature_relevance` VARCHAR(255) NULL');
     }
 
     public function updateDestructive(Connection $connection): void

@@ -6,7 +6,7 @@ use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Migration\MigrationStep;
 use Shopware\Core\Framework\Uuid\Uuid;
 
-final class Migration1770000008CreateOkbCatalogSchema extends MigrationStep
+final class Migration1770000008CreateCatalogSchema extends MigrationStep
 {
     public function getCreationTimestamp(): int
     {
@@ -16,8 +16,9 @@ final class Migration1770000008CreateOkbCatalogSchema extends MigrationStep
     public function update(Connection $connection): void
     {
         $connection->executeStatement(<<<'SQL'
-            CREATE TABLE IF NOT EXISTS `jv_import_okb_category_group_attribute` (
+            CREATE TABLE IF NOT EXISTS `jv_catalog_category_attribute` (
                 `id` BINARY(16) NOT NULL,
+                `source_code` VARCHAR(64) NOT NULL,
                 `category_group_id` VARCHAR(64) NOT NULL,
                 `attribute_id` VARCHAR(64) NOT NULL,
                 `attribute_name` VARCHAR(255) NOT NULL,
@@ -30,8 +31,8 @@ final class Migration1770000008CreateOkbCatalogSchema extends MigrationStep
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,
                 PRIMARY KEY (`id`),
-                UNIQUE KEY `uniq.jv_import_okb_category_group_attribute.source` (`category_group_id`, `attribute_id`),
-                CONSTRAINT `fk.jv_import_okb_category_group_attribute.property_group`
+                UNIQUE KEY `uniq.jv_catalog_category_attribute.source` (`source_code`, `category_group_id`, `attribute_id`),
+                CONSTRAINT `fk.jv_catalog_category_attribute.property_group`
                     FOREIGN KEY (`property_group_id`) REFERENCES `property_group` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         SQL);

@@ -1,11 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace Jv\Import\Service\OkbCatalog;
+namespace Jv\Import\Integration\Okb\Service;
 
+use Jv\Import\Integration\Okb\Dto\OkbProductMappingPreparationResult;
 use Jv\Import\Integration\Okb\Dto\OkbProductVariation;
 use Jv\Import\Integration\Okb\OkbCsvReader;
 use Jv\Import\Integration\Okb\OkbProductApiClient;
-use Jv\Import\Service\OkbCatalog\Dto\OkbProductMappingPreparationResult;
 
 final readonly class PrepareOkbProductMappingService
 {
