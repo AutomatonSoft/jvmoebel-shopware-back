@@ -90,14 +90,27 @@
         <service id="Jv\Import\Command\ImportOkbCatalogSchemaCommand">
             <argument key="$environment">%kernel.environment%</argument>
         </service>
+        <service id="Jv\Import\Command\PrepareOkbProductMappingCommand">
+            <argument key="$environment">%kernel.environment%</argument>
+        </service>
 
         <service id="Jv\Import\Integration\Okb\OkbCsvReader"/>
+        <service id="Jv\Import\Integration\Okb\OkbProductResponseNormalizer"/>
+        <service id="Jv\Import\Integration\Okb\OkbProductApiClient">
+            <argument type="service" id="http_client"/>
+            <argument type="service" id="Jv\Import\Integration\Okb\OkbProductResponseNormalizer"/>
+            <argument key="$baseUri">https://okb.automatonsoft.de</argument>
+        </service>
         <service id="Jv\Import\Service\OkbCatalog\ImportOkbCatalogSchemaService">
             <argument type="service" id="Jv\Import\Integration\Okb\OkbCsvReader"/>
             <argument type="service" id="category.repository"/>
             <argument type="service" id="property_group.repository"/>
             <argument type="service" id="property_group_option.repository"/>
             <argument type="service" id="jv_import_okb_category_group_attribute.repository"/>
+        </service>
+        <service id="Jv\Import\Service\OkbCatalog\PrepareOkbProductMappingService">
+            <argument type="service" id="Jv\Import\Integration\Okb\OkbCsvReader"/>
+            <argument type="service" id="Jv\Import\Integration\Okb\OkbProductApiClient"/>
         </service>
 
         <service id="Jv\Import\Integration\CosmoShop\Reader\CosmoShopCsvPreflightReaderFactory">
