@@ -18,11 +18,16 @@ use Shopware\Core\Content\Cms\DataResolver\Element\ElementDataCollection;
 use Shopware\Core\Content\Cms\DataResolver\FieldConfig;
 use Shopware\Core\Content\Cms\DataResolver\FieldConfigCollection;
 use Shopware\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
+use Shopware\Core\Framework\Struct\Struct;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
 
 final class SideNavigationCmsElementResolverTest extends TestCase
 {
+    private const string ROOT_ID = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    private const string CHILD_ID = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+    private const string MISSING_ID = 'cccccccccccccccccccccccccccccccc';
+
     public function testItExposesTheCmsElementType(): void
     {
         $resolver = $this->resolver();
@@ -68,7 +73,7 @@ final class SideNavigationCmsElementResolverTest extends TestCase
                         [
                             'id' => 'tree',
                             'type' => 'category-tree',
-                            'rootCategoryId' => 'missing-category',
+                            'rootCategoryId' => 'not-a-uuid',
                         ],
                         [
                             'id' => 'unknown',
@@ -112,9 +117,7 @@ final class SideNavigationCmsElementResolverTest extends TestCase
         ]);
 
         $loader = $this->createMock(NavigationLoaderInterface::class);
-        $loader->expects(self::once())
-            ->method('load')
-            ->willThrowException(new CategoryNotFoundException('missing-category'));
+        $loader->expects(self::never())->method('load');
 
         $this->resolver($loader)->enrich(
             $slot,
@@ -141,6 +144,7 @@ final class SideNavigationCmsElementResolverTest extends TestCase
         self::assertSame('divider', $data->getTabs()[0]->getSections()[1]->getType());
         self::assertSame('category-tree', $data->getTabs()[0]->getSections()[2]->getType());
         self::assertSame([], $data->getTabs()[0]->getSections()[2]->getItems());
+        self::assertNull($data->getTabs()[0]->getSections()[2]->getAllLink());
 
         $footer = $data->getFooterItems();
         self::assertCount(2, $footer);
@@ -154,15 +158,15 @@ final class SideNavigationCmsElementResolverTest extends TestCase
     public function testItMapsCategoryTreeFromNavigationLoader(): void
     {
         $root = new SalesChannelCategoryEntity();
-        $root->setUniqueIdentifier('root-id');
-        $root->setId('root-id');
+        $root->setUniqueIdentifier(self::ROOT_ID);
+        $root->setId(self::ROOT_ID);
         $root->setName('Root');
         $root->setTranslated(['name' => 'Root']);
         $root->setSeoUrl('/alle');
 
         $child = new SalesChannelCategoryEntity();
-        $child->setUniqueIdentifier('child-id');
-        $child->setId('child-id');
+        $child->setUniqueIdentifier(self::CHILD_ID);
+        $child->setId(self::CHILD_ID);
         $child->setName('Möbel');
         $child->setTranslated(['name' => 'Möbel']);
         $child->setSeoUrl('/moebel');
@@ -174,7 +178,7 @@ final class SideNavigationCmsElementResolverTest extends TestCase
         $loader = $this->createMock(NavigationLoaderInterface::class);
         $loader->expects(self::once())
             ->method('load')
-            ->with('root-id', self::anything(), 'root-id', 3)
+            ->with(self::ROOT_ID, self::anything(), self::ROOT_ID, 3)
             ->willReturn($tree);
 
         $slot = $this->slot([
@@ -186,7 +190,7 @@ final class SideNavigationCmsElementResolverTest extends TestCase
                         [
                             'id' => 'main-tree',
                             'type' => 'category-tree',
-                            'rootCategoryId' => 'root-id',
+                            'rootCategoryId' => self::ROOT_ID,
                             'maxDepth' => 3,
                             'showIcons' => false,
                             'includeRootAsAllLink' => true,
@@ -210,7 +214,7 @@ final class SideNavigationCmsElementResolverTest extends TestCase
         $section = $data->getTabs()[0]->getSections()[0];
         self::assertSame('category-tree', $section->getType());
         self::assertCount(1, $section->getItems());
-        self::assertSame('child-id', $section->getItems()[0]->getId());
+        self::assertSame(self::CHILD_ID, $section->getItems()[0]->getId());
         self::assertSame('category', $section->getItems()[0]->getKind());
         self::assertSame('Möbel', $section->getItems()[0]->getLabel());
         self::assertSame('/moebel', $section->getItems()[0]->getUrl());
@@ -218,9 +222,191 @@ final class SideNavigationCmsElementResolverTest extends TestCase
 
         $allLink = $section->getAllLink();
         self::assertNotNull($allLink);
-        self::assertSame('root-id', $allLink->getId());
+        self::assertSame(self::ROOT_ID, $allLink->getId());
         self::assertSame('Alle Artikel', $allLink->getLabel());
         self::assertSame('/alle', $allLink->getUrl());
+    }
+
+    public function testValidButMissingCategoryDoesNotThrow(): void
+    {
+        $loader = $this->createMock(NavigationLoaderInterface::class);
+        $loader->expects(self::once())
+            ->method('load')
+            ->with(self::MISSING_ID, self::anything(), self::MISSING_ID, 3)
+            ->willThrowException(new CategoryNotFoundException(self::MISSING_ID));
+
+        $slot = $this->slot([
+            'tabs' => [[
+                'id' => 't1',
+                'label' => 'Tab',
+                'sections' => [[
+                    'id' => 'tree',
+                    'type' => 'category-tree',
+                    'rootCategoryId' => self::MISSING_ID,
+                ]],
+            ]],
+            'footer' => ['items' => []],
+        ]);
+
+        $this->resolver($loader)->enrich($slot, $this->resolverContext(), new ElementDataCollection());
+
+        $data = $slot->getData();
+        self::assertInstanceOf(SideNavigationStruct::class, $data);
+
+        $section = $data->getTabs()[0]->getSections()[0];
+        self::assertSame('category-tree', $section->getType());
+        self::assertSame([], $section->getItems());
+        self::assertNull($section->getAllLink());
+    }
+
+    public function testMalformedMediaIdsAreNotCollected(): void
+    {
+        $slot = $this->slot([
+            'logoMedia' => 'not-a-uuid',
+            'tabs' => [[
+                'id' => 't1',
+                'label' => 'Tab',
+                'sections' => [
+                    [
+                        'id' => 'p1',
+                        'type' => 'promo',
+                        'mediaId' => 'also-bad',
+                        'title' => 'Promo',
+                    ],
+                    [
+                        'id' => 'm1',
+                        'type' => 'manual-links',
+                        'items' => [[
+                            'id' => 'i1',
+                            'label' => 'Link',
+                            'url' => '/x',
+                            'iconMediaId' => 'bad-icon',
+                            'children' => [[
+                                'id' => 'i2',
+                                'label' => 'Child',
+                                'url' => '/y',
+                                'iconMediaId' => 'nested-bad',
+                                'children' => [],
+                            ]],
+                        ]],
+                    ],
+                ],
+            ]],
+            'footer' => ['items' => []],
+        ]);
+
+        $loader = $this->createMock(NavigationLoaderInterface::class);
+        $loader->expects(self::never())->method('load');
+
+        $resolver = $this->resolver($loader);
+        self::assertNull($resolver->collect($slot, $this->resolverContext()));
+
+        $resolver->enrich($slot, $this->resolverContext(), new ElementDataCollection());
+        $data = $slot->getData();
+        self::assertInstanceOf(SideNavigationStruct::class, $data);
+        self::assertNull($data->getLogo());
+        self::assertNull($data->getTabs()[0]->getSections()[0]->getMedia());
+        self::assertNull($data->getTabs()[0]->getSections()[1]->getItems()[0]->getIcon());
+        self::assertNull($data->getTabs()[0]->getSections()[1]->getItems()[0]->getChildren()[0]->getIcon());
+    }
+
+    public function testSerializedStoreApiPayloadMatchesContract(): void
+    {
+        $loader = $this->createMock(NavigationLoaderInterface::class);
+        $loader->expects(self::never())->method('load');
+
+        $slot = $this->slot([
+            'logoLink' => '/',
+            'logoMedia' => 'not-a-uuid',
+            'defaultTabId' => 'assortment',
+            'tabs' => [[
+                'id' => 'assortment',
+                'label' => 'Sortiment',
+                'sections' => [
+                    [
+                        'id' => 'links',
+                        'type' => 'manual-links',
+                        'style' => 'default',
+                        'items' => [[
+                            'id' => 'brands',
+                            'label' => 'Marken',
+                            'url' => '/marken',
+                            'iconMediaId' => 'bad-icon',
+                            'children' => [],
+                        ]],
+                    ],
+                    [
+                        'id' => 'tree',
+                        'type' => 'category-tree',
+                        'rootCategoryId' => 'not-a-uuid',
+                        'includeRootAsAllLink' => true,
+                    ],
+                    [
+                        'id' => 'promo',
+                        'type' => 'promo',
+                        'mediaId' => 'bad-media',
+                        'title' => 'Sale',
+                        'url' => '/sale',
+                    ],
+                ],
+            ]],
+            'footer' => [
+                'items' => [[
+                    'id' => 'help',
+                    'label' => 'Hilfe',
+                    'href' => '/hilfe',
+                    'icon' => 'unknown-icon',
+                    'visibility' => 'weird',
+                ]],
+            ],
+        ]);
+
+        $this->resolver($loader)->enrich($slot, $this->resolverContext(), new ElementDataCollection());
+
+        $data = $slot->getData();
+        self::assertInstanceOf(SideNavigationStruct::class, $data);
+
+        $payload = $this->storeApiArray($data);
+
+        self::assertSame('cms_jv_side_navigation', $payload['apiAlias']);
+        self::assertArrayHasKey('logo', $payload);
+        self::assertArrayHasKey('logoLink', $payload);
+        self::assertArrayHasKey('defaultTabId', $payload);
+        self::assertArrayHasKey('tabs', $payload);
+        self::assertArrayHasKey('footerItems', $payload);
+        self::assertNull($payload['logo']);
+        self::assertSame('/', $payload['logoLink']);
+        self::assertSame('assortment', $payload['defaultTabId']);
+
+        self::assertIsArray($payload['tabs']);
+        self::assertArrayHasKey(0, $payload['tabs']);
+        self::assertIsArray($payload['tabs'][0]);
+        self::assertSame('cms_jv_side_navigation_tab', $payload['tabs'][0]['apiAlias']);
+        self::assertIsArray($payload['tabs'][0]['sections']);
+
+        $manual = $payload['tabs'][0]['sections'][0];
+        self::assertIsArray($manual);
+        self::assertSame('cms_jv_side_navigation_section', $manual['apiAlias']);
+        self::assertIsArray($manual['items'][0]);
+        self::assertSame('cms_jv_side_navigation_nav_item', $manual['items'][0]['apiAlias']);
+        self::assertSame('/marken', $manual['items'][0]['url']);
+        self::assertNull($manual['items'][0]['icon']);
+
+        $tree = $payload['tabs'][0]['sections'][1];
+        self::assertIsArray($tree);
+        self::assertSame([], $tree['items']);
+        self::assertNull($tree['allLink']);
+
+        $promo = $payload['tabs'][0]['sections'][2];
+        self::assertIsArray($promo);
+        self::assertNull($promo['media']);
+        self::assertSame('Sale', $promo['title']);
+
+        self::assertIsArray($payload['footerItems'][0]);
+        self::assertSame('cms_jv_side_navigation_footer_item', $payload['footerItems'][0]['apiAlias']);
+        self::assertSame('/hilfe', $payload['footerItems'][0]['href']);
+        self::assertNull($payload['footerItems'][0]['icon']);
+        self::assertSame('always', $payload['footerItems'][0]['visibility']);
     }
 
     public function testEmptyTabsStaySafe(): void
@@ -282,8 +468,6 @@ final class SideNavigationCmsElementResolverTest extends TestCase
     }
 
     /**
-     * Side-nav allowlist: relative `/path` and http(s) with host. Unlike jv-button, relative is accepted.
-     *
      * @return iterable<string, array{0: string, 1: string}>
      */
     public static function safeHrefProvider(): iterable
@@ -344,21 +528,18 @@ final class SideNavigationCmsElementResolverTest extends TestCase
      */
     public static function unsafeHrefProvider(): iterable
     {
-        // empty / whitespace
         yield 'empty' => [''];
         yield 'spaces' => [' '];
         yield 'tabs' => ["\t"];
         yield 'newlines' => ["\n\r"];
         yield 'mixed whitespace' => [" \t\n "];
 
-        // not a rooted relative path (side-nav allows `/…` only, not bare paths)
         yield 'bare path without slash' => ['marken'];
         yield 'relative nested without slash' => ['angebote/sale'];
         yield 'query only' => ['?utm=1'];
         yield 'hash only' => ['#section'];
         yield 'protocol relative' => ['//evil.com'];
 
-        // dangerous / non-http schemes
         yield 'javascript' => ['javascript:alert(1)'];
         yield 'javascript uppercase' => ['JaVaScRiPt:alert(1)'];
         yield 'javascript with padding' => [' javascript:alert(1) '];
@@ -373,7 +554,6 @@ final class SideNavigationCmsElementResolverTest extends TestCase
         yield 'ws' => ['ws://example.com'];
         yield 'wss' => ['wss://example.com'];
 
-        // incomplete http(s)
         yield 'https without host' => ['https://'];
         yield 'http without host' => ['http://'];
         yield 'https empty host' => ['https:///foo'];
@@ -382,10 +562,51 @@ final class SideNavigationCmsElementResolverTest extends TestCase
         yield 'scheme only https' => ['https:'];
         yield 'no host with path-looking' => ['https:/angebote'];
 
-        // malformed / injection-ish
         yield 'newline injection' => ["https://jvmoebel.de\njavascript:alert(1)"];
         yield 'crlf injection' => ["https://jvmoebel.de\r\njavascript:alert(1)"];
         yield 'null byte style junk' => ["https://jvmoebel.de\0.evil.com"];
+    }
+
+    /**
+     * Store API adds apiAlias via StructEncoder, not jsonSerialize().
+     *
+     * @return array<string, mixed>
+     */
+    private function storeApiArray(Struct $struct): array
+    {
+        $payload = $struct->jsonSerialize();
+        foreach ($payload as $key => $value) {
+            if ($value instanceof Struct) {
+                $payload[$key] = $this->storeApiArray($value);
+            } elseif (\is_array($value)) {
+                $payload[$key] = $this->storeApiList($value);
+            }
+        }
+
+        $payload['apiAlias'] = $struct->getApiAlias();
+        if (isset($payload['extensions']) && [] === $payload['extensions']) {
+            unset($payload['extensions']);
+        }
+
+        return $payload;
+    }
+
+    /**
+     * @param array<array-key, mixed> $values
+     *
+     * @return array<array-key, mixed>
+     */
+    private function storeApiList(array $values): array
+    {
+        foreach ($values as $key => $value) {
+            if ($value instanceof Struct) {
+                $values[$key] = $this->storeApiArray($value);
+            } elseif (\is_array($value)) {
+                $values[$key] = $this->storeApiList($value);
+            }
+        }
+
+        return $values;
     }
 
     private function resolver(?NavigationLoaderInterface $loader = null): SideNavigationCmsElementResolver

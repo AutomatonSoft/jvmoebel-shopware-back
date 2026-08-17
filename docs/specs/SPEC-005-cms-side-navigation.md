@@ -72,11 +72,18 @@
 - Footer читается один раз из `config.footer`; не из tabs.
 - `maxDepth` clamp в диапазон 1…5.
 - Повторное сохранение страницы идемпотентно относительно контракта `data`.
+- Перед DAL и `NavigationLoader`: только `Uuid::isValid()` (`normalizeUuid()`). Невалидный ID не попадает в Criteria и не передаётся в loader. `\Throwable` не глотать.
 
 ## Ошибки и повтор
 
-Некорректный config → безопасный `data`, HTTP 500 из resolver недопустим.  
-Отсутствующая category/media → null/пустой список, без исключения наружу.
+Некорректный config → безопасный `data`, HTTP 500 из resolver недопустим.
+
+| Случай | Ожидание |
+|---|---|
+| Невалидный `rootCategoryId` (не UUID) | `items: []`, `allLink: null`; loader не вызывается |
+| Валидный UUID, категория не найдена | ловится только `CategoryNotFoundException`; тот же безопасный `data` |
+| Невалидный media id (logo / promo / icon, в т.ч. nested) | не в Criteria; logo/media/icon = `null` |
+| Отсутствующая media entity при валидном UUID | поле `null`, без исключения наружу |
 
 ## Изменения Shopware
 
@@ -172,6 +179,10 @@ Twig Storefront для меню **не** публикуется (ADR-007).
 - CI: Administration build + `git diff --exit-code` на `Resources/public/administration` (source и assets синхронизированы).
 - unit: битый `rootCategoryId` → `items: []`;
 - integration: resolver зарегистрирован в контейнере с tag `shopware.cms.data_resolver`.
+- unit: невалидный `rootCategoryId` → loader не вызывается, `items: []`, `allLink: null`;
+- unit: валидный UUID + `CategoryNotFoundException` → `items: []`, `allLink: null`;
+- unit: невалидные media ids → `collect()` = `null`, logo/media/icon = `null`;
+- integration: `CmsSlotsDataResolver` → `StructEncoder` → массив с `apiAlias`, `tabs`, `sections`, nested `children`, `footerItems`; битые UUID в payload остаются `null` / `[]`.
 
 Ручные:
 

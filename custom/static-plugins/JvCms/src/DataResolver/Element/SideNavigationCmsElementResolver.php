@@ -25,6 +25,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 final class SideNavigationCmsElementResolver extends AbstractCmsElementResolver
@@ -64,8 +65,8 @@ final class SideNavigationCmsElementResolver extends AbstractCmsElementResolver
 
         $logoMedia = $config->get('logoMedia');
         if (null !== $logoMedia) {
-            $id = trim((string) $logoMedia->getValue());
-            if ('' !== $id) {
+            $id = $this->normalizeUuid($logoMedia->getValue());
+            if (null !== $id) {
                 $mediaIds[] = $id;
             }
         }
@@ -107,8 +108,8 @@ final class SideNavigationCmsElementResolver extends AbstractCmsElementResolver
         $salesChannelContext = $resolverContext->getSalesChannelContext();
 
         $logoLink = $this->safeHref($config->get('logoLink')?->getStringValue()) ?? '/';
-        $logoMediaId = trim((string) ($config->get('logoMedia')?->getValue() ?? ''));
-        $logo = $this->mediaRef($media[$logoMediaId] ?? null);
+        $logoMediaId = $this->normalizeUuid($config->get('logoMedia')?->getValue());
+        $logo = $this->mediaRef(null !== $logoMediaId ? ($media[$logoMediaId] ?? null) : null);
 
         $tabs = $this->normalizeTabs(
             $this->configArray($config->get('tabs')?->getValue()),
@@ -145,8 +146,8 @@ final class SideNavigationCmsElementResolver extends AbstractCmsElementResolver
         $type = (string) ($section['type'] ?? '');
 
         if ('promo' === $type) {
-            $id = trim((string) ($section['mediaId'] ?? ''));
-            if ('' !== $id) {
+            $id = $this->normalizeUuid($section['mediaId'] ?? null);
+            if (null !== $id) {
                 $mediaIds[] = $id;
             }
 
@@ -168,8 +169,8 @@ final class SideNavigationCmsElementResolver extends AbstractCmsElementResolver
             if (!\is_array($item)) {
                 continue;
             }
-            $id = trim((string) ($item['iconMediaId'] ?? ''));
-            if ('' !== $id) {
+            $id = $this->normalizeUuid($item['iconMediaId'] ?? null);
+            if (null !== $id) {
                 $mediaIds[] = $id;
             }
             $this->collectMediaIdsFromManualItems($this->configArray($item['children'] ?? null), $mediaIds);
@@ -237,7 +238,10 @@ final class SideNavigationCmsElementResolver extends AbstractCmsElementResolver
             'promo' => new Section(
                 id: $id,
                 type: 'promo',
-                media: $this->mediaRef($media[trim((string) ($section['mediaId'] ?? ''))] ?? null, trim((string) ($section['alt'] ?? ''))),
+                media: $this->mediaRef(
+                    $media[$this->normalizeUuid($section['mediaId'] ?? null) ?? ''] ?? null,
+                    trim((string) ($section['alt'] ?? '')),
+                ),
                 title: '' !== ($promoTitle = trim((string) ($section['title'] ?? ''))) ? $promoTitle : null,
                 url: $this->safeHref(isset($section['url']) ? (string) $section['url'] : null),
             ),
@@ -251,20 +255,20 @@ final class SideNavigationCmsElementResolver extends AbstractCmsElementResolver
      */
     private function normalizeCategoryTreeSection(string $id, array $section, SalesChannelContext $salesChannelContext): Section
     {
-        $rootId = trim((string) ($section['rootCategoryId'] ?? ''));
+        $rootId = $this->normalizeUuid($section['rootCategoryId'] ?? null);
         $maxDepth = $this->clampMaxDepth($section['maxDepth'] ?? 3);
         $showIcons = (bool) ($section['showIcons'] ?? true);
         $includeAll = (bool) ($section['includeRootAsAllLink'] ?? false);
         $allLabel = trim((string) ($section['allLinkLabel'] ?? ''));
 
-        if ('' === $rootId) {
-            return new Section(id: $id, type: 'category-tree', items: []);
+        if (null === $rootId) {
+            return new Section(id: $id, type: 'category-tree', items: [], allLink: null);
         }
 
         try {
             $tree = $this->navigationLoader->load($rootId, $salesChannelContext, $rootId, $maxDepth);
         } catch (CategoryNotFoundException) {
-            return new Section(id: $id, type: 'category-tree', items: []);
+            return new Section(id: $id, type: 'category-tree', items: [], allLink: null);
         }
 
         $items = $this->mapTreeItems($tree->getTree(), $showIcons);
@@ -382,7 +386,7 @@ final class SideNavigationCmsElementResolver extends AbstractCmsElementResolver
             }
 
             $children = $this->normalizeManualItems($this->configArray($item['children'] ?? null), $media, $depth + 1);
-            $iconMediaId = trim((string) ($item['iconMediaId'] ?? ''));
+            $iconMediaId = $this->normalizeUuid($item['iconMediaId'] ?? null);
 
             $normalized[] = new NavItem(
                 id: $id,
@@ -390,7 +394,7 @@ final class SideNavigationCmsElementResolver extends AbstractCmsElementResolver
                 label: $label,
                 url: $this->safeHref(isset($item['url']) ? (string) $item['url'] : null),
                 openInNewTab: (bool) ($item['openInNewTab'] ?? false),
-                icon: $this->mediaRef($media[$iconMediaId] ?? null),
+                icon: $this->mediaRef(null !== $iconMediaId ? ($media[$iconMediaId] ?? null) : null),
                 hasChildren: [] !== $children,
                 children: $children,
             );
@@ -461,6 +465,23 @@ final class SideNavigationCmsElementResolver extends AbstractCmsElementResolver
         }
 
         return false;
+    }
+
+    /**
+     * CMS config is untrusted persisted input. Only valid Shopware UUIDs reach DAL.
+     */
+    private function normalizeUuid(mixed $value): ?string
+    {
+        if (!\is_string($value) && !\is_int($value)) {
+            return null;
+        }
+
+        $id = strtolower(trim((string) $value));
+        if ('' === $id || !Uuid::isValid($id)) {
+            return null;
+        }
+
+        return $id;
     }
 
     private function safeHref(?string $href): ?string
