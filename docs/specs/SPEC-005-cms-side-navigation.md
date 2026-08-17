@@ -62,9 +62,8 @@
 ## Правила
 
 - `getType()` = `jv-side-navigation` = `registerCmsElement({ name: 'jv-side-navigation', ... })`.
-- `collect()` возвращает `CriteriaCollection` для:
-  - media: logo + promo + manual icon media ids;
-  - categories: все `rootCategoryId` из секций + association children до нужной глубины (или эквивалентная стратегия загрузки дерева в sales-channel context).
+- `collect()` возвращает `CriteriaCollection` только для media: logo + promo + manual `iconMediaId` (включая nested `children`). Невалидные UUID в Criteria не попадают.
+- Category tree в `enrich()` через `NavigationLoader::load()`; в `collect()` category criteria нет. Перед `load()` — `normalizeUuid()`; невалидный `rootCategoryId` → `items: []`, `allLink: null`, loader не вызывается.
 - `enrich()` собирает `SideNavigationStruct` строго по platform SPEC-003.
 - URL/href через `safeHref()` (relative `/…` и `http`/`https`); не копировать слепо правила `ButtonCmsElementResolver::safeUrl()` (там relative запрещены).
 - Administration `defaultConfig` — пустая форма (logo null, tabs `[]`, footer.items `[]`, defaultTabId `''`); без demo-seed (assortment / Marken / Anmelden). Редактор заполняет структуру сам. После смены Admin source — пересобрать `Resources/public/administration` и закоммитить assets (CI `git diff --exit-code`).
