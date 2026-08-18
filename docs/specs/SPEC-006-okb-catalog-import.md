@@ -17,10 +17,7 @@ OKB, её схему атрибутов и сопоставление товар
 
 - OKB category group и вложенные OKB categories;
 - связь `OKB category_group_id → схема атрибутов`;
-- Shopware properties/options для атрибутов, которые являются variation theme
-  или участвуют в filter/navigation/search;
-- служебное хранение остальных PDP-атрибутов без создания десятков тысяч
-  property groups;
+- Shopware properties/options для каждого атрибута OKB;
 - EAN-обогащение подготовленного product CSV ответом
   `GET /extermal/get_products?sku=<EAN>`;
 - назначение товару внутренней OKB category, запись фактических OKB attribute
@@ -76,11 +73,11 @@ Shopware records.
 переимпортируются и не пересоздаются.
 
 Shopware стандартно не умеет назначить category набор обязательных или
-разрешённых properties. Поэтому плагин хранит собственную нормализованную
+разрешённых properties. Поэтому плагин хранит внутреннюю нормализованную
 связь, привязанную также к созданной Shopware category group:
 
 ```text
-Shopware category group ← OKB category_group_id → OKB attribute_id → storage target
+Shopware category group ← OKB category_group_id → OKB attribute_id → Shopware property group
 ```
 
 Она определяет допустимую схему, но не делает каждый attribute обязательным:
@@ -88,36 +85,27 @@ Shopware category group ← OKB category_group_id → OKB attribute_id → stora
 attribute в product response и пустой ответ по EAN попадают в отчёт и не
 создают сущности молча.
 
-В Administration настройка находится во вкладке `Import: Kategorien &
-Attribute` карточки импортированной category group, а не в отдельном списке
-технических связей. Контент-менеджер видит только добавленные в категорию
-attributes и через действие «добавить attribute» выбирает один из доступных
-attributes текущего snapshot. Затем он задаёт понятное назначение: Shopware
-property для filters/variants либо дополнительная product information; при
-выборе property указывается соответствующая Shopware property group. Удаление
-из категории выключает mapping, но не удаляет source schema. Новый source
-attribute не создаётся пустой строкой в UI: он появляется после повторной
-явной синхронизации snapshot как доступный, но не включённый attribute,
-сохраняя ранее выбранные настройки. Пользовательские верхние navigation
-categories создаются и перемещаются обычным category tree Shopware.
+Это техническая связь импортёра, а не настраиваемый экран Administration.
+Повторная синхронизация snapshot автоматически создаёт или обновляет все
+связанные Properties. Пользовательские верхние navigation categories создаются
+и перемещаются обычным category tree Shopware.
 
 После установки версии, добавляющей связь с Shopware category group, для уже
 загруженных mappings запускается отдельная идемпотентная команда
 `jv:catalog:backfill-category-attribute-relations`. Она заполняет только
 служебную связь и не изменяет products, categories, attributes или цены.
 
-## Properties и PDP values
+## Properties
 
-Если `feature_relevance` содержит `VARIATION_THEME`, `FILTER`, `NAVIGATION`
-или `SEARCH`, attribute записывается как Shopware property group/option. Один
+Каждый атрибут OKB записывается как Shopware property group/option. Один
 семантический attribute образует один общий property group, даже если он
 встречается в нескольких OKB category groups. Options создаются из known
 allowed values и дополняются только фактически полученными значениями товара.
 
-Остальные attributes сохраняются как typed product custom-field values. Их
-definitions создаются повторяемо из схемы только для реально импортируемых
-атрибутов; технический ключ основан на OKB attribute ID, поэтому одноимённые
-attributes с разным типом не смешиваются.
+`PRODUCT_DETAILS` означает, что Property видна на карточке товара.
+`FILTER`, `NAVIGATION` и `SEARCH` включают её в стандартную фильтрацию
+Shopware. `VARIATION_THEME` дополнительно отмечает option как option варианта.
+Эти метки не меняют место хранения и не создают custom fields.
 
 В категории не создаётся копия набора properties. Источником допустимости
 остаётся собственная group-to-attribute relation.
@@ -171,14 +159,13 @@ category/attribute/value, пустые OKB responses, parent SKU conflicts и
 
 ## Проверка
 
-- unit tests CSV parsing, attribute classification, semantic property keys,
+- unit tests CSV parsing, единого импорта атрибутов в properties, semantic property keys,
   SKU/EAN collision rule and OKB response normalization;
 - integration tests schema command, deterministic category parent links,
-  property/options, own relation, migration custom field and idempotent rerun;
+  property/options, own relation and idempotent rerun;
 - unit test, что schema import связывает attribute mapping с созданной
-  Shopware category group; ручная проверка вкладки Administration на group и
-  на обычной navigation category;
+  Shopware category group;
 - representative local smoke import (до 600 products), including a simple
-  product, variant group, property and custom-field attributes, larger OKB
+  product, variant group, properties, larger OKB
   price and invalid records;
 - full product run only on a separately prepared staging database.

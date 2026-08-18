@@ -30,7 +30,7 @@ final readonly class CatalogCategoryAttributeSchemaProvider
             $mapping->getAttributeName(),
             $mapping->getAttributeType(),
             $mapping->isMultiValue(),
-            $mapping->getStorage(),
+            'property',
             $mapping->getPropertyGroupId(),
             $mapping->isActive(),
             $mapping->isEnabled(),

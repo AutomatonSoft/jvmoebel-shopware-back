@@ -10,10 +10,10 @@ use PHPUnit\Framework\TestCase;
 
 final class CatalogAttributeMappingSynchronizerTest extends TestCase
 {
-    public function testItCreatesAnAvailableMappingForANewObservedAttribute(): void
+    public function testItCreatesAnEnabledPropertyMappingForEveryNewObservedAttribute(): void
     {
         $mappings = (new CatalogAttributeMappingSynchronizer())->synchronize('source-a', [
-            new CatalogAttribute('color', 'group-1', 'Color', 'STRING', 'FILTER', false, 'property'),
+            new CatalogAttribute('color', 'group-1', 'Color', 'STRING', 'FILTER', false),
         ], []);
 
         self::assertEquals([
@@ -26,7 +26,7 @@ final class CatalogAttributeMappingSynchronizerTest extends TestCase
                 'FILTER',
                 false,
                 true,
-                false,
+                true,
                 'property',
                 CatalogIdentity::propertyGroupId('Color', 'STRING', false),
                 null,
@@ -34,40 +34,40 @@ final class CatalogAttributeMappingSynchronizerTest extends TestCase
         ], $mappings);
     }
 
-    public function testItRefreshesTheSourceSchemaWithoutOverwritingTheAdminMapping(): void
+    public function testItReplacesLegacyCustomFieldStorageWithAProperty(): void
     {
         $mappings = (new CatalogAttributeMappingSynchronizer())->synchronize('source-a', [
-            new CatalogAttribute('width', 'group-1', 'Width', 'FLOAT', 'SEARCH', false, 'property'),
+            new CatalogAttribute('width', 'group-1', 'Width', 'FLOAT', 'PRODUCT_DETAILS', false),
         ], [
             new CatalogAttributeMapping('source-a', 'group-1', 'width', 'Old width', 'STRING', null, false, true, false, 'custom_field', null, 'jv_catalog_attributes'),
         ]);
 
         self::assertEquals([
-            new CatalogAttributeMapping('source-a', 'group-1', 'width', 'Width', 'FLOAT', 'SEARCH', false, true, false, 'custom_field', null, 'jv_catalog_attributes'),
+            new CatalogAttributeMapping('source-a', 'group-1', 'width', 'Width', 'FLOAT', 'PRODUCT_DETAILS', false, true, true, 'property', CatalogIdentity::propertyGroupId('Width', 'FLOAT', false), null),
         ], $mappings);
     }
 
-    public function testItMarksAnAttributeMissingFromTheCurrentSourceSnapshotInactiveAndKeepsItsConfiguration(): void
+    public function testItMarksAnAttributeMissingFromTheCurrentSourceSnapshotInactive(): void
     {
         $mappings = (new CatalogAttributeMappingSynchronizer())->synchronize('source-a', [], [
-            new CatalogAttributeMapping('source-a', 'group-1', 'width', 'Width', 'FLOAT', 'SEARCH', false, true, false, 'custom_field', null, 'jv_catalog_attributes'),
+            new CatalogAttributeMapping('source-a', 'group-1', 'width', 'Width', 'FLOAT', 'SEARCH', false, true, true, 'property', CatalogIdentity::propertyGroupId('Width', 'FLOAT', false), null),
         ]);
 
         self::assertEquals([
-            new CatalogAttributeMapping('source-a', 'group-1', 'width', 'Width', 'FLOAT', 'SEARCH', false, false, false, 'custom_field', null, 'jv_catalog_attributes'),
+            new CatalogAttributeMapping('source-a', 'group-1', 'width', 'Width', 'FLOAT', 'SEARCH', false, false, true, 'property', CatalogIdentity::propertyGroupId('Width', 'FLOAT', false), null),
         ], $mappings);
     }
 
-    public function testItKeepsADisconnectedAttributeDisconnectedWhenTheSourceSchemaIsRefreshed(): void
+    public function testItRestoresAnObservedAttributeAsAnEnabledProperty(): void
     {
         $mappings = (new CatalogAttributeMappingSynchronizer())->synchronize('source-a', [
-            new CatalogAttribute('width', 'group-1', 'Width', 'FLOAT', 'SEARCH', false, 'property'),
+            new CatalogAttribute('width', 'group-1', 'Width', 'FLOAT', 'SEARCH', false),
         ], [
             new CatalogAttributeMapping('source-a', 'group-1', 'width', 'Width', 'FLOAT', 'SEARCH', false, true, false, 'ignore', null, null),
         ]);
 
         self::assertEquals([
-            new CatalogAttributeMapping('source-a', 'group-1', 'width', 'Width', 'FLOAT', 'SEARCH', false, true, false, 'ignore', null, null),
+            new CatalogAttributeMapping('source-a', 'group-1', 'width', 'Width', 'FLOAT', 'SEARCH', false, true, true, 'property', CatalogIdentity::propertyGroupId('Width', 'FLOAT', false), null),
         ], $mappings);
     }
 
@@ -77,7 +77,7 @@ final class CatalogAttributeMappingSynchronizerTest extends TestCase
         $this->expectExceptionMessage('does not belong to source "source-a"');
 
         (new CatalogAttributeMappingSynchronizer())->synchronize('source-a', [], [
-            new CatalogAttributeMapping('source-b', 'group-1', 'width', 'Width', 'FLOAT', 'SEARCH', false, true, true, 'custom_field', null, 'jv_catalog_attributes'),
+            new CatalogAttributeMapping('source-b', 'group-1', 'width', 'Width', 'FLOAT', 'SEARCH', false, true, true, 'property', CatalogIdentity::propertyGroupId('Width', 'FLOAT', false), null),
         ]);
     }
 }

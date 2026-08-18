@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
 
 final class CatalogProductUpdatePlannerTest extends TestCase
 {
-    public function testItPlansCategoryPropertiesCustomValuesAndTheHigherCatalogPrice(): void
+    public function testItPlansAllOkbAttributesAsPropertiesAndRemovesLegacyCatalogJson(): void
     {
         $update = (new CatalogProductUpdatePlanner())->plan(
             new ExistingProductForCatalogEnrichment(
@@ -24,7 +24,10 @@ final class CatalogProductUpdatePlannerTest extends TestCase
                 840.34,
                 19.0,
                 ['existing-option'],
-                ['jv_internal_article_code' => 'Sofort'],
+                [
+                    'jv_internal_article_code' => 'Sofort',
+                    'jv_catalog_attributes' => ['okb:101' => 120.5],
+                ],
             ),
             new CatalogProductData(
                 'okb',
@@ -43,22 +46,22 @@ final class CatalogProductUpdatePlannerTest extends TestCase
             ),
             [
                 new CatalogCategoryAttributeSchema('okb', '3446', '100', 'Farbe', 'STRING', false, 'property', 'farbe-group'),
-                new CatalogCategoryAttributeSchema('okb', '3446', '101', 'Breite', 'FLOAT', false, 'custom_field', null),
-                new CatalogCategoryAttributeSchema('okb', '3446', '102', 'Lieferumfang', 'STRING', true, 'custom_field', null),
+                new CatalogCategoryAttributeSchema('okb', '3446', '101', 'Breite', 'FLOAT', false, 'property', 'breite-group'),
+                new CatalogCategoryAttributeSchema('okb', '3446', '102', 'Lieferumfang', 'STRING', true, 'property', 'lieferumfang-group'),
             ],
         );
 
         self::assertSame('product-id', $update->productId);
         self::assertSame([CatalogIdentity::categoryId('okb', '25922')], $update->categoryIds);
-        self::assertSame(['existing-option', CatalogIdentity::propertyOptionId('farbe-group', 'Braun')], $update->propertyOptionIds);
-        self::assertSame([], $update->variantOptionIds);
         self::assertSame([
-            'jv_internal_article_code' => 'Sofort',
-            'jv_catalog_attributes' => [
-                'okb:101' => 120.5,
-                'okb:102' => ['Kissen', 'Decke'],
-            ],
-        ], $update->customFields);
+            'existing-option',
+            CatalogIdentity::propertyOptionId('farbe-group', 'Braun'),
+            CatalogIdentity::propertyOptionId('breite-group', '120.5'),
+            CatalogIdentity::propertyOptionId('lieferumfang-group', 'Kissen'),
+            CatalogIdentity::propertyOptionId('lieferumfang-group', 'Decke'),
+        ], $update->propertyOptionIds);
+        self::assertSame([], $update->variantOptionIds);
+        self::assertSame(['jv_internal_article_code' => 'Sofort'], $update->customFields);
         self::assertSame(1200.0, $update->priceGross);
         self::assertSame(1008.4, $update->priceNet);
     }
@@ -119,7 +122,7 @@ final class CatalogProductUpdatePlannerTest extends TestCase
         (new CatalogProductUpdatePlanner())->plan(
             new ExistingProductForCatalogEnrichment('product-id', '4260454043503', '4260454043503', 'EUR', 1000.0, 840.34, 19.0, [], []),
             new CatalogProductData('okb', '4260454043503', '4260454043503', 'reference-1', '25922', '3446', null, null, [new CatalogProductAttribute('Breite', ['120', '130'])]),
-            [new CatalogCategoryAttributeSchema('okb', '3446', '101', 'Breite', 'FLOAT', false, 'custom_field', null)],
+            [new CatalogCategoryAttributeSchema('okb', '3446', '101', 'Breite', 'FLOAT', false, 'property', 'breite-group')],
         );
     }
 
@@ -132,21 +135,9 @@ final class CatalogProductUpdatePlannerTest extends TestCase
                 new CatalogProductAttribute('Missing at source', ['do not use']),
             ]),
             [
-                new CatalogCategoryAttributeSchema('okb', '3446', '101', 'Disabled', 'STRING', false, 'custom_field', null, true, false),
-                new CatalogCategoryAttributeSchema('okb', '3446', '102', 'Missing at source', 'STRING', false, 'custom_field', null, false, true),
+                new CatalogCategoryAttributeSchema('okb', '3446', '101', 'Disabled', 'STRING', false, 'property', 'disabled-group', true, false),
+                new CatalogCategoryAttributeSchema('okb', '3446', '102', 'Missing at source', 'STRING', false, 'property', 'missing-group', false, true),
             ],
-        );
-
-        self::assertSame([], $update->propertyOptionIds);
-        self::assertSame([], $update->customFields);
-    }
-
-    public function testItDoesNotImportAnAttributeExplicitlyMappedToIgnore(): void
-    {
-        $update = (new CatalogProductUpdatePlanner())->plan(
-            new ExistingProductForCatalogEnrichment('product-id', '4260454043503', '4260454043503', 'EUR', 1000.0, 840.34, 19.0, [], []),
-            new CatalogProductData('okb', '4260454043503', '4260454043503', 'reference-1', '25922', '3446', null, null, [new CatalogProductAttribute('Internal note', ['x'])]),
-            [new CatalogCategoryAttributeSchema('okb', '3446', '101', 'Internal note', 'STRING', false, 'ignore', null)],
         );
 
         self::assertSame([], $update->propertyOptionIds);

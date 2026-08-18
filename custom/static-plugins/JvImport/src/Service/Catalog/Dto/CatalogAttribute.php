@@ -11,7 +11,6 @@ final readonly class CatalogAttribute
         public string $type,
         public ?string $sourceRelevance,
         public bool $multiValue,
-        public string $storage,
     ) {
     }
 }

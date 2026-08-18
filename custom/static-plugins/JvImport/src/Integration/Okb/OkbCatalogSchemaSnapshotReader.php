@@ -48,7 +48,6 @@ final readonly class OkbCatalogSchemaSnapshotReader
                 $this->required($row, 'attribute_type', 'attribute'),
                 '' === $row['feature_relevance'] ? null : $row['feature_relevance'],
                 $multiValue,
-                OkbAttributeStorage::fromFeatureRelevance($row['feature_relevance'])->value,
             );
         }
         $allowedValues = [];

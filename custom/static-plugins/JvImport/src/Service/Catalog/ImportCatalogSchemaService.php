@@ -98,7 +98,7 @@ final readonly class ImportCatalogSchemaService
         );
         foreach ($mappings as $mapping) {
             $propertyGroupId = $mapping->propertyGroupId;
-            if ($mapping->active && $mapping->enabled && 'property' === $mapping->storage && null !== $propertyGroupId) {
+            if ($mapping->active && $mapping->enabled && null !== $propertyGroupId) {
                 $propertyAttributeGroups[$mapping->attributeId] = $propertyGroupId;
                 $propertyGroupIds[$propertyGroupId] = true;
                 if ($propertyGroupId === CatalogIdentity::propertyGroupId($mapping->attributeName, $mapping->attributeType, $mapping->multiValue)) {
@@ -107,7 +107,7 @@ final readonly class ImportCatalogSchemaService
                         'name' => $mapping->attributeName,
                         'displayType' => PropertyGroupDefinition::DISPLAY_TYPE_TEXT,
                         'sortingType' => PropertyGroupDefinition::SORTING_TYPE_ALPHANUMERIC,
-                        'filterable' => true,
+                        'filterable' => $this->isFilterable($mapping->featureRelevance),
                         'visibleOnProductDetailPage' => true,
                     ];
                 }
@@ -150,6 +150,17 @@ final readonly class ImportCatalogSchemaService
             'propertyGroupId' => $mapping->propertyGroupId,
             'customFieldName' => $mapping->customFieldName,
         ];
+    }
+
+    private function isFilterable(?string $featureRelevance): bool
+    {
+        foreach (['FILTER', 'NAVIGATION', 'SEARCH'] as $feature) {
+            if (in_array($feature, explode('|', (string) $featureRelevance), true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** @return list<CatalogAttributeMapping> */

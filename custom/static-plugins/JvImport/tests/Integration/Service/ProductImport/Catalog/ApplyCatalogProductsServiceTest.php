@@ -24,13 +24,14 @@ final class ApplyCatalogProductsServiceTest extends TestCase
 {
     use IntegrationTestBehaviour;
 
-    public function testItAssignsCategoriesPropertiesTypedAttributesPricesAndVariantParents(): void
+    public function testItAssignsCategoriesAllPropertiesPricesAndVariantParents(): void
     {
         $context = Context::createDefaultContext();
         $source = 'catalog-test';
         $categoryId = CatalogIdentity::categoryId($source, 'category-1');
         $groupId = CatalogIdentity::categoryGroupId($source, 'group-1');
         $propertyGroupId = Uuid::randomHex();
+        $widthGroupId = Uuid::randomHex();
         $firstId = Uuid::randomHex();
         $secondId = Uuid::randomHex();
         $parentId = CatalogIdentity::variantParentId($source, 'model-1');
@@ -41,7 +42,10 @@ final class ApplyCatalogProductsServiceTest extends TestCase
             ['id' => $groupId, 'name' => 'Test group', 'active' => true],
             ['id' => $categoryId, 'parentId' => $groupId, 'name' => 'Test category', 'active' => true],
         ], $context);
-        $this->propertyGroups()->create([['id' => $propertyGroupId, 'name' => 'Color', 'displayType' => 'text', 'sortingType' => 'alphanumeric']], $context);
+        $this->propertyGroups()->create([
+            ['id' => $propertyGroupId, 'name' => 'Color', 'displayType' => 'text', 'sortingType' => 'alphanumeric'],
+            ['id' => $widthGroupId, 'name' => 'Width', 'displayType' => 'text', 'sortingType' => 'alphanumeric'],
+        ], $context);
         $products->create([
             $this->product($firstId, '4260454043503', 'First', $taxId, 1000.0, 1500.0),
             $this->product($secondId, '4260454043504', 'Second', $taxId, 1300.0),
@@ -55,7 +59,7 @@ final class ApplyCatalogProductsServiceTest extends TestCase
                 new CatalogProductData($source, '4260454043504', '4260454043504', 'model-1', 'category-1', 'group-1', 1100.0, 'EUR', [new CatalogProductAttribute('Color', ['White']), new CatalogProductAttribute('Width', ['140'])]),
             ], [
                 new CatalogCategoryAttributeSchema($source, 'group-1', 'color', 'Color', 'STRING', false, 'property', $propertyGroupId, true, true, 'VARIATION_THEME'),
-                new CatalogCategoryAttributeSchema($source, 'group-1', 'width', 'Width', 'FLOAT', false, 'custom_field', null),
+                new CatalogCategoryAttributeSchema($source, 'group-1', 'width', 'Width', 'FLOAT', false, 'property', $widthGroupId),
             ], false, $context);
 
             self::assertSame(2, $result->products);
@@ -66,9 +70,9 @@ final class ApplyCatalogProductsServiceTest extends TestCase
             self::assertContains($categoryId, $first->getCategoryIds() ?? []);
             self::assertSame(1200.0, $first->getPrice()->getCurrencyPrice(Defaults::CURRENCY, false)->getGross());
             self::assertSame(1500.0, $first->getPrice()->getCurrencyPrice(Defaults::CURRENCY, false)->getListPrice()?->getGross());
-            self::assertSame(120.5, $first->getCustomFields()['jv_catalog_attributes'][$source.':width']);
+            self::assertArrayNotHasKey('jv_catalog_attributes', $first->getCustomFields() ?? []);
             self::assertCount(1, $first->getOptionIds() ?? []);
-            self::assertCount(1, $first->getPropertyIds() ?? []);
+            self::assertCount(2, $first->getPropertyIds() ?? []);
 
             $second = $this->productById($secondId, $context);
             self::assertSame(1300.0, $second->getPrice()?->getCurrencyPrice(Defaults::CURRENCY, false)?->getGross());
@@ -78,7 +82,7 @@ final class ApplyCatalogProductsServiceTest extends TestCase
             self::assertCount(2, $parent->getConfiguratorSettings() ?? []);
         } finally {
             $products->delete([['id' => $firstId], ['id' => $secondId], ['id' => $parentId]], $context);
-            $this->propertyGroups()->delete([['id' => $propertyGroupId]], $context);
+            $this->propertyGroups()->delete([['id' => $propertyGroupId], ['id' => $widthGroupId]], $context);
             $this->categories()->delete([['id' => $categoryId], ['id' => $groupId]], $context);
         }
     }

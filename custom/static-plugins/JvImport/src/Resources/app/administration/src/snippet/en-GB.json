@@ -4,48 +4,5 @@
             "title": "Import",
             "description": "JVMöbel imports"
         }
-    },
-    "jv-catalog-category-attributes": {
-        "tab": "Imported attributes",
-        "saved": "Attribute saved.",
-        "saveError": "Attribute could not be saved.",
-        "actions": {
-            "add": "Add attribute",
-            "edit": "Edit",
-            "remove": "Remove from category",
-            "save": "Save"
-        },
-        "editor": {
-            "addTitle": "Add attribute",
-            "editTitle": "Edit attribute: {attribute}",
-            "sourceAttribute": "Imported attribute",
-            "usage": "Use in Shopware",
-            "target": "Shopware attribute",
-            "productInformation": "The value will be imported as additional product information. It is not used for filters or variants."
-        },
-        "mappings": {
-            "title": "Attributes in this category",
-            "description": "Choose which imported attributes are used for products in this category.",
-            "empty": {
-                "title": "No attributes selected yet",
-                "description": "Add an imported attribute to decide how it is used in Shopware."
-            }
-        },
-        "notSourceGroup": {
-            "title": "No category group attributes",
-            "description": "This category has no attributes configured."
-        },
-        "usage": {
-            "property": "Filters and variants",
-            "productInformation": "Additional product information"
-        },
-        "target": {
-            "selectProperty": "Select property",
-            "notSelected": "Not selected",
-            "notApplicable": "–"
-        },
-        "columns": {
-            "attribute": "Attribute", "usage": "Use", "target": "Shopware attribute"
-        }
     }
 }

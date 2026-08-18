@@ -56,44 +56,30 @@ final class CatalogProductUpdatePlanner
         $propertyOptionIds = array_fill_keys($existing->propertyOptionIds, true);
         $variantOptionIds = [];
         $customFields = $existing->customFields;
-        $catalogValues = $customFields['jv_catalog_attributes'] ?? [];
-        if (!is_array($catalogValues)) {
-            throw new \InvalidArgumentException('Existing jv_catalog_attributes value must be an object.');
-        }
+        unset($customFields['jv_catalog_attributes']);
 
         foreach ($prepared->attributes as $attribute) {
             $schema = $schemasByName[$attribute->name] ?? null;
             if (null === $schema) {
                 throw new \InvalidArgumentException(sprintf('Catalog attribute "%s" is not present in category group %s.', $attribute->name, $prepared->categoryGroupId));
             }
-            if (!$schema->active || !$schema->enabled || 'ignore' === $schema->storage) {
+            if (!$schema->active || !$schema->enabled) {
                 continue;
             }
             $values = $this->values($attribute, $schema);
             if ([] === $values) {
                 continue;
             }
-            if ('property' === $schema->storage) {
-                if (null === $schema->propertyGroupId) {
-                    throw new \InvalidArgumentException(sprintf('Catalog property attribute "%s" has no Shopware property group.', $schema->attributeName));
-                }
-                foreach ($attribute->values as $value) {
-                    $optionId = CatalogIdentity::propertyOptionId($schema->propertyGroupId, $value);
-                    $propertyOptionIds[$optionId] = true;
-                    if ($this->isVariationTheme($schema->featureRelevance)) {
-                        $variantOptionIds[$optionId] = true;
-                    }
-                }
-
-                continue;
+            if ('property' !== $schema->storage || null === $schema->propertyGroupId) {
+                throw new \InvalidArgumentException(sprintf('Catalog attribute "%s" has no Shopware property group.', $schema->attributeName));
             }
-            if ('custom_field' !== $schema->storage) {
-                throw new \InvalidArgumentException(sprintf('Catalog attribute "%s" has unsupported storage "%s".', $schema->attributeName, $schema->storage));
+            foreach ($values as $value) {
+                $optionId = CatalogIdentity::propertyOptionId($schema->propertyGroupId, $value);
+                $propertyOptionIds[$optionId] = true;
+                if ($this->isVariationTheme($schema->featureRelevance)) {
+                    $variantOptionIds[$optionId] = true;
+                }
             }
-            $catalogValues[$schema->sourceCode.':'.$schema->attributeId] = $schema->multiValue ? $values : $values[0];
-        }
-        if ([] !== $catalogValues) {
-            $customFields['jv_catalog_attributes'] = $catalogValues;
         }
 
         return [array_keys($propertyOptionIds), array_keys($variantOptionIds), $customFields];
@@ -104,40 +90,14 @@ final class CatalogProductUpdatePlanner
         return in_array('VARIATION_THEME', explode('|', (string) $featureRelevance), true);
     }
 
-    /** @return list<string|float|int> */
+    /** @return list<string> */
     private function values(CatalogProductAttribute $attribute, CatalogCategoryAttributeSchema $schema): array
     {
         if (!$schema->multiValue && 1 < count($attribute->values)) {
             throw new \InvalidArgumentException(sprintf('Catalog attribute "%s" does not accept multiple values.', $schema->attributeName));
         }
 
-        return array_map(function (string $value) use ($schema): string|float|int {
-            return match ($schema->attributeType) {
-                'STRING' => $value,
-                'INTEGER' => $this->integer($value, $schema),
-                'FLOAT' => $this->float($value, $schema),
-                default => throw new \InvalidArgumentException(sprintf('Catalog attribute "%s" has unsupported type "%s".', $schema->attributeName, $schema->attributeType)),
-            };
-        }, $attribute->values);
-    }
-
-    private function integer(string $value, CatalogCategoryAttributeSchema $schema): int
-    {
-        if (!preg_match('/^-?\d+$/D', $value)) {
-            throw new \InvalidArgumentException(sprintf('Catalog attribute "%s" requires an integer value.', $schema->attributeName));
-        }
-
-        return (int) $value;
-    }
-
-    private function float(string $value, CatalogCategoryAttributeSchema $schema): float
-    {
-        $normalized = str_replace(',', '.', $value);
-        if (!is_numeric($normalized)) {
-            throw new \InvalidArgumentException(sprintf('Catalog attribute "%s" requires a decimal value.', $schema->attributeName));
-        }
-
-        return (float) $normalized;
+        return $attribute->values;
     }
 
     /** @return array{0: float, 1: float} */

@@ -4,48 +4,5 @@
             "title": "Import",
             "description": "JVMöbel-Importe"
         }
-    },
-    "jv-catalog-category-attributes": {
-        "tab": "Importierte Attribute",
-        "saved": "Attribut gespeichert.",
-        "saveError": "Attribut konnte nicht gespeichert werden.",
-        "actions": {
-            "add": "Attribut hinzufügen",
-            "edit": "Bearbeiten",
-            "remove": "Aus Kategorie entfernen",
-            "save": "Speichern"
-        },
-        "editor": {
-            "addTitle": "Attribut hinzufügen",
-            "editTitle": "Attribut bearbeiten: {attribute}",
-            "sourceAttribute": "Importiertes Attribut",
-            "usage": "Verwendung in Shopware",
-            "target": "Shopware-Attribut",
-            "productInformation": "Der Wert wird als zusätzliche Produktinformation importiert. Er wird nicht als Filter oder Variante verwendet."
-        },
-        "mappings": {
-            "title": "Attribute dieser Kategorie",
-            "description": "Wählen Sie, welche importierten Attribute für Produkte in dieser Kategorie verwendet werden.",
-            "empty": {
-                "title": "Noch keine Attribute ausgewählt",
-                "description": "Fügen Sie ein importiertes Attribut hinzu, um festzulegen, wie es in Shopware verwendet wird."
-            }
-        },
-        "notSourceGroup": {
-            "title": "Keine Kategoriegruppenattribute",
-            "description": "Für diese Kategorie sind keine Attribute hinterlegt."
-        },
-        "usage": {
-            "property": "Filter und Varianten",
-            "productInformation": "Zusätzliche Produktinformation"
-        },
-        "target": {
-            "selectProperty": "Eigenschaft auswählen",
-            "notSelected": "Nicht ausgewählt",
-            "notApplicable": "–"
-        },
-        "columns": {
-            "attribute": "Attribut", "usage": "Verwendung", "target": "Shopware-Attribut"
-        }
     }
 }

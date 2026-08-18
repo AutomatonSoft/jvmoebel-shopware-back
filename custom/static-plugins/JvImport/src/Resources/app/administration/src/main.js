@@ -2,8 +2,6 @@ import deDE from './snippet/de-DE.json';
 import enGB from './snippet/en-GB.json';
 import './extension/sw-product-deliverability-form';
 import './extension/sw-product-detail';
-import './extension/sw-category-view';
-import './module/jv-catalog-category-attributes';
 
 Shopware.Locale.extend('de-DE', deDE);
 Shopware.Locale.extend('en-GB', enGB);

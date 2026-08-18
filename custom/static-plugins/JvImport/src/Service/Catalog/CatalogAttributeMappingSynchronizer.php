@@ -36,10 +36,10 @@ final class CatalogAttributeMappingSynchronizer
                 $attribute->sourceRelevance,
                 $attribute->multiValue,
                 true,
-                null === $mapping ? false : $mapping->enabled,
-                null === $mapping ? $attribute->storage : $mapping->storage,
-                null === $mapping ? $this->defaultPropertyGroupId($attribute) : $mapping->propertyGroupId,
-                $mapping?->customFieldName,
+                true,
+                'property',
+                $this->propertyGroupId($attribute),
+                null,
             );
         }
 
@@ -56,8 +56,8 @@ final class CatalogAttributeMappingSynchronizer
                 $mapping->featureRelevance,
                 $mapping->multiValue,
                 false,
-                $mapping->enabled,
-                $mapping->storage,
+                true,
+                'property',
                 $mapping->propertyGroupId,
                 $mapping->customFieldName,
             );
@@ -68,12 +68,8 @@ final class CatalogAttributeMappingSynchronizer
         return array_values($synchronized);
     }
 
-    private function defaultPropertyGroupId(CatalogAttribute $attribute): ?string
+    private function propertyGroupId(CatalogAttribute $attribute): string
     {
-        if ('property' !== $attribute->storage) {
-            return null;
-        }
-
         return CatalogIdentity::propertyGroupId($attribute->name, $attribute->type, $attribute->multiValue);
     }
 
