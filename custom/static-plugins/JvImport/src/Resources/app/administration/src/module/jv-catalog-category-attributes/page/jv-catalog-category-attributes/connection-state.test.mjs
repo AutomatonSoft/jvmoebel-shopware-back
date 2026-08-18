@@ -2,10 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+    availableAttributes,
     connectionForProductDetails,
     connectionForProperty,
     disconnectedConnection,
     isConnected,
+    usedAttributes,
 } from './connection-state.mjs';
 
 test('a property connection is active only with a selected property group', () => {
@@ -36,4 +38,20 @@ test('disconnecting clears every target and prevents product enrichment', () => 
         storage: 'ignore',
     });
     assert.equal(isConnected(disconnectedConnection()), false);
+});
+
+test('only connected source attributes are shown as category attributes', () => {
+    const property = { id: 'property', active: true, ...connectionForProperty('a'.repeat(32)) };
+    const productInformation = { id: 'information', active: true, ...connectionForProductDetails() };
+    const unused = { id: 'unused', active: true, ...disconnectedConnection() };
+
+    assert.deepEqual(usedAttributes([property, productInformation, unused]), [property, productInformation]);
+});
+
+test('only active unused source attributes can be added to a category', () => {
+    const available = { id: 'available', active: true, ...disconnectedConnection() };
+    const used = { id: 'used', active: true, ...connectionForProductDetails() };
+    const removedFromSnapshot = { id: 'removed', active: false, ...disconnectedConnection() };
+
+    assert.deepEqual(availableAttributes([available, used, removedFromSnapshot]), [available]);
 });

@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 
 final class CatalogAttributeMappingSynchronizerTest extends TestCase
 {
-    public function testItCreatesAnEnabledMappingForANewObservedAttribute(): void
+    public function testItCreatesAnAvailableMappingForANewObservedAttribute(): void
     {
         $mappings = (new CatalogAttributeMappingSynchronizer())->synchronize('source-a', [
             new CatalogAttribute('color', 'group-1', 'Color', 'STRING', 'FILTER', false, 'property'),
@@ -26,7 +26,7 @@ final class CatalogAttributeMappingSynchronizerTest extends TestCase
                 'FILTER',
                 false,
                 true,
-                true,
+                false,
                 'property',
                 CatalogIdentity::propertyGroupId('Color', 'STRING', false),
                 null,

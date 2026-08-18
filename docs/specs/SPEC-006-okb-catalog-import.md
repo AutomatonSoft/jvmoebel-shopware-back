@@ -90,12 +90,16 @@ attribute в product response и пустой ответ по EAN попадаю
 
 В Administration настройка находится во вкладке `Import: Kategorien &
 Attribute` карточки импортированной category group, а не в отдельном списке
-технических связей. Вкладка показывает её внутренние categories и позволяет
-включить attribute, выбрать тип цели (`property`, PDP JSON или ignore) и
-свойство Shopware. Новый source attribute не создаётся пустой строкой в UI:
-он появляется при повторной явной синхронизации snapshot, сохраняя ранее
-выбранные настройки. Пользовательские верхние navigation categories
-создаются и перемещаются обычным category tree Shopware.
+технических связей. Контент-менеджер видит только добавленные в категорию
+attributes и через действие «добавить attribute» выбирает один из доступных
+attributes текущего snapshot. Затем он задаёт понятное назначение: Shopware
+property для filters/variants либо дополнительная product information; при
+выборе property указывается соответствующая Shopware property group. Удаление
+из категории выключает mapping, но не удаляет source schema. Новый source
+attribute не создаётся пустой строкой в UI: он появляется после повторной
+явной синхронизации snapshot как доступный, но не включённый attribute,
+сохраняя ранее выбранные настройки. Пользовательские верхние navigation
+categories создаются и перемещаются обычным category tree Shopware.
 
 После установки версии, добавляющей связь с Shopware category group, для уже
 загруженных mappings запускается отдельная идемпотентная команда

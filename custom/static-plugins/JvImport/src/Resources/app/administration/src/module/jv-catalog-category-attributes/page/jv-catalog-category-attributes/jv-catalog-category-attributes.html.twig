@@ -3,37 +3,33 @@
 
     <template v-else-if="isSourceCategoryGroup">
         <sw-card
-            :title="$t('jv-catalog-category-attributes.sourceCategories.title')"
-            :subtitle="$t('jv-catalog-category-attributes.sourceCategories.description')"
-        >
-            <sw-data-grid
-                v-if="sourceCategories.length > 0"
-                :data-source="sourceCategories"
-                :columns="sourceCategoryColumns"
-                :show-selection="false"
-                :show-actions="false"
-                identifier="jv-catalog-source-categories"
-            />
-            <mt-empty-state
-                v-else
-                icon="regular-folder-open"
-                :headline="$t('jv-catalog-category-attributes.sourceCategories.empty')"
-            />
-        </sw-card>
-
-        <sw-card
             :title="$t('jv-catalog-category-attributes.mappings.title')"
             :subtitle="$t('jv-catalog-category-attributes.mappings.description')"
         >
+            <template #headerRight>
+                <mt-button
+                    variant="primary"
+                    :disabled="!canEditMappings || availableMappings.length === 0"
+                    @click="openAttributeCreator"
+                >
+                    {{ $t('jv-catalog-category-attributes.actions.add') }}
+                </mt-button>
+            </template>
+
             <sw-data-grid
-                :data-source="mappings"
+                v-if="usedMappings.length > 0"
+                :data-source="usedMappings"
                 :columns="mappingColumns"
                 :show-selection="false"
                 :show-actions="true"
                 identifier="jv-catalog-category-attributes"
             >
-                <template #column-connection="{ item }">
-                    {{ connectionLabel(item) }}
+                <template #column-usage="{ item }">
+                    {{ usageLabel(item) }}
+                </template>
+
+                <template #column-target="{ item }">
+                    {{ targetLabel(item) }}
                 </template>
 
                 <template #actions="{ item }">
@@ -41,7 +37,7 @@
                         :disabled="!canEditMappings"
                         @click="openMappingEditor(item)"
                     >
-                        {{ isConnected(item) ? $t('jv-catalog-category-attributes.actions.change') : $t('jv-catalog-category-attributes.actions.connect') }}
+                        {{ $t('jv-catalog-category-attributes.actions.edit') }}
                     </sw-context-menu-item>
                     <sw-context-menu-item
                         v-if="isConnected(item)"
@@ -49,10 +45,17 @@
                         :disabled="!canEditMappings || savingMappingId === item.id"
                         @click="disconnectMapping(item)"
                     >
-                        {{ $t('jv-catalog-category-attributes.actions.disconnect') }}
+                        {{ $t('jv-catalog-category-attributes.actions.remove') }}
                     </sw-context-menu-item>
                 </template>
             </sw-data-grid>
+
+            <mt-empty-state
+                v-else
+                icon="regular-tag"
+                :headline="$t('jv-catalog-category-attributes.mappings.empty.title')"
+                :description="$t('jv-catalog-category-attributes.mappings.empty.description')"
+            />
         </sw-card>
 
         <sw-modal
@@ -61,8 +64,16 @@
             @modal-close="closeMappingEditor"
         >
             <sw-single-select
+                v-if="isAddingMapping"
+                v-model:value="editableMapping.id"
+                :label="$t('jv-catalog-category-attributes.editor.sourceAttribute')"
+                :options="sourceAttributeOptions"
+                @update:value="selectSourceAttribute"
+            />
+
+            <sw-single-select
                 v-model:value="editableMapping.storage"
-                :label="$t('jv-catalog-category-attributes.editor.connection')"
+                :label="$t('jv-catalog-category-attributes.editor.usage')"
                 :options="storageOptions"
                 @update:value="onEditorStorageChange"
             />
@@ -71,14 +82,14 @@
                 v-if="editableMapping.storage === 'property'"
                 v-model:value="editableMapping.propertyGroupId"
                 entity="property_group"
-                :label="$t('jv-catalog-category-attributes.columns.target')"
+                :label="$t('jv-catalog-category-attributes.editor.target')"
                 :placeholder="$t('jv-catalog-category-attributes.target.selectProperty')"
             />
 
             <p
                 v-else-if="editableMapping.storage === 'custom_field'"
             >
-                {{ $t('jv-catalog-category-attributes.editor.productDetails') }}
+                {{ $t('jv-catalog-category-attributes.editor.productInformation') }}
             </p>
 
             <template #modal-footer>
@@ -91,7 +102,7 @@
                     :is-loading="savingMappingId === editableMapping.id"
                     @click="saveEditedMapping"
                 >
-                    {{ $t('jv-catalog-category-attributes.actions.connect') }}
+                    {{ $t('jv-catalog-category-attributes.actions.save') }}
                 </mt-button>
             </template>
         </sw-modal>

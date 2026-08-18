@@ -28,3 +28,11 @@ export function disconnectedConnection() {
 export function isConnected(mapping) {
     return mapping.enabled && ('custom_field' === mapping.storage || ('property' === mapping.storage && !!mapping.propertyGroupId));
 }
+
+export function usedAttributes(mappings) {
+    return mappings.filter(isConnected);
+}
+
+export function availableAttributes(mappings) {
+    return mappings.filter((mapping) => mapping.active && !isConnected(mapping));
+}

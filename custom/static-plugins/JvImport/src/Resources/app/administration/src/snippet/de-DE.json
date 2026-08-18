@@ -6,44 +6,46 @@
         }
     },
     "jv-catalog-category-attributes": {
-        "tab": "Kategorieattribute",
-        "saved": "Attributverknüpfung gespeichert.",
-        "saveError": "Attributverknüpfung konnte nicht gespeichert werden.",
+        "tab": "Importierte Attribute",
+        "saved": "Attribut gespeichert.",
+        "saveError": "Attribut konnte nicht gespeichert werden.",
         "actions": {
-            "connect": "Verbinden",
-            "change": "Verbindung ändern",
-            "disconnect": "Trennen"
+            "add": "Attribut hinzufügen",
+            "edit": "Bearbeiten",
+            "remove": "Aus Kategorie entfernen",
+            "save": "Speichern"
         },
         "editor": {
-            "title": "Verbinden: {attribute}",
-            "connection": "Attribut speichern als",
-            "productDetails": "Der Wert wird in den Produktdetails gespeichert."
-        },
-        "sourceCategories": {
-            "title": "Kategorien dieser Gruppe",
-            "description": "Die verknüpften Attribute gelten für alle Kategorien dieser Gruppe.",
-            "empty": "Diese Gruppe enthält keine Kategorien."
+            "addTitle": "Attribut hinzufügen",
+            "editTitle": "Attribut bearbeiten: {attribute}",
+            "sourceAttribute": "Importiertes Attribut",
+            "usage": "Verwendung in Shopware",
+            "target": "Shopware-Attribut",
+            "productInformation": "Der Wert wird als zusätzliche Produktinformation importiert. Er wird nicht als Filter oder Variante verwendet."
         },
         "mappings": {
-            "title": "Attribute der Kategoriegruppe",
-            "description": "Ein Attribut mit einer Shopware-Eigenschaft oder den Produktdetails verbinden."
+            "title": "Attribute dieser Kategorie",
+            "description": "Wählen Sie, welche importierten Attribute für Produkte in dieser Kategorie verwendet werden.",
+            "empty": {
+                "title": "Noch keine Attribute ausgewählt",
+                "description": "Fügen Sie ein importiertes Attribut hinzu, um festzulegen, wie es in Shopware verwendet wird."
+            }
         },
         "notSourceGroup": {
             "title": "Keine Kategoriegruppenattribute",
             "description": "Für diese Kategorie sind keine Attribute hinterlegt."
         },
-        "connection": {
-            "property": "Shopware-Eigenschaft / Variante",
-            "productDetails": "Produktdetails",
-            "notConnected": "Nicht verbunden"
+        "usage": {
+            "property": "Filter und Varianten",
+            "productInformation": "Zusätzliche Produktinformation"
         },
         "target": {
             "selectProperty": "Eigenschaft auswählen",
-            "noProperty": "Keine Eigenschaft ausgewählt",
-            "catalogJson": "Produktdetails"
+            "notSelected": "Nicht ausgewählt",
+            "notApplicable": "–"
         },
         "columns": {
-            "category": "Kategorie", "attribute": "Attribut", "connection": "Shopware-Verknüpfung", "target": "Verknüpfung"
+            "attribute": "Attribut", "usage": "Verwendung", "target": "Shopware-Attribut"
         }
     }
 }

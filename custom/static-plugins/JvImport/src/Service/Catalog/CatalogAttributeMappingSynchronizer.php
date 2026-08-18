@@ -36,7 +36,7 @@ final class CatalogAttributeMappingSynchronizer
                 $attribute->sourceRelevance,
                 $attribute->multiValue,
                 true,
-                null === $mapping ? true : $mapping->enabled,
+                null === $mapping ? false : $mapping->enabled,
                 null === $mapping ? $attribute->storage : $mapping->storage,
                 null === $mapping ? $this->defaultPropertyGroupId($attribute) : $mapping->propertyGroupId,
                 $mapping?->customFieldName,

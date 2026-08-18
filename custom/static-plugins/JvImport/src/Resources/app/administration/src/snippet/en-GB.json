@@ -6,44 +6,46 @@
         }
     },
     "jv-catalog-category-attributes": {
-        "tab": "Category attributes",
-        "saved": "Attribute connection saved.",
-        "saveError": "Attribute connection could not be saved.",
+        "tab": "Imported attributes",
+        "saved": "Attribute saved.",
+        "saveError": "Attribute could not be saved.",
         "actions": {
-            "connect": "Connect",
-            "change": "Change connection",
-            "disconnect": "Disconnect"
+            "add": "Add attribute",
+            "edit": "Edit",
+            "remove": "Remove from category",
+            "save": "Save"
         },
         "editor": {
-            "title": "Connect: {attribute}",
-            "connection": "Save this attribute as",
-            "productDetails": "The value will be saved in the product details."
-        },
-        "sourceCategories": {
-            "title": "Categories in this group",
-            "description": "The connected attributes apply to all categories in this group.",
-            "empty": "This group has no categories."
+            "addTitle": "Add attribute",
+            "editTitle": "Edit attribute: {attribute}",
+            "sourceAttribute": "Imported attribute",
+            "usage": "Use in Shopware",
+            "target": "Shopware attribute",
+            "productInformation": "The value will be imported as additional product information. It is not used for filters or variants."
         },
         "mappings": {
-            "title": "Category group attributes",
-            "description": "Connect an attribute to a Shopware property or product details."
+            "title": "Attributes in this category",
+            "description": "Choose which imported attributes are used for products in this category.",
+            "empty": {
+                "title": "No attributes selected yet",
+                "description": "Add an imported attribute to decide how it is used in Shopware."
+            }
         },
         "notSourceGroup": {
             "title": "No category group attributes",
             "description": "This category has no attributes configured."
         },
-        "connection": {
-            "property": "Shopware property / variant",
-            "productDetails": "Product details",
-            "notConnected": "Not connected"
+        "usage": {
+            "property": "Filters and variants",
+            "productInformation": "Additional product information"
         },
         "target": {
             "selectProperty": "Select property",
-            "noProperty": "No property selected",
-            "catalogJson": "Product details"
+            "notSelected": "Not selected",
+            "notApplicable": "–"
         },
         "columns": {
-            "category": "Category", "attribute": "Attribute", "connection": "Shopware connection", "target": "Connection"
+            "attribute": "Attribute", "usage": "Use", "target": "Shopware attribute"
         }
     }
 }
