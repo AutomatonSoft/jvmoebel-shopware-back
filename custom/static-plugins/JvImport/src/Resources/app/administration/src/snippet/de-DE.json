@@ -9,6 +9,12 @@
         "tab": "Import: Kategorien & Attribute",
         "saved": "Attributzuordnung gespeichert.",
         "saveError": "Attributzuordnung konnte nicht gespeichert werden.",
+        "edit": "Bearbeiten",
+        "enabled": "Importieren",
+        "disabled": "Nicht importieren",
+        "editor": {
+            "title": "Konfigurieren: {attribute}"
+        },
         "sourceCategories": {
             "title": "Importierte Unterkategorien",
             "description": "Diese Kategorien gehören zur geöffneten Importgruppe.",

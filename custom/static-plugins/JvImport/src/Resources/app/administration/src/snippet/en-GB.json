@@ -9,6 +9,12 @@
         "tab": "Import: categories & attributes",
         "saved": "Attribute mapping saved.",
         "saveError": "Attribute mapping could not be saved.",
+        "edit": "Edit",
+        "enabled": "Import",
+        "disabled": "Do not import",
+        "editor": {
+            "title": "Configure: {attribute}"
+        },
         "sourceCategories": {
             "title": "Imported subcategories",
             "description": "These categories belong to the opened import group.",

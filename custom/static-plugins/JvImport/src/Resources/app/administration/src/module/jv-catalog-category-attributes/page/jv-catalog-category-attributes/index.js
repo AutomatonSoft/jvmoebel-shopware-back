@@ -24,6 +24,8 @@ Component.register('jv-catalog-category-attributes', {
             sourceCategories: [],
             isMappingLoading: false,
             savingMappingId: null,
+            editingMapping: null,
+            editableMapping: null,
         };
     },
 
@@ -49,6 +51,7 @@ Component.register('jv-catalog-category-attributes', {
                 { property: 'enabled', label: this.$tc('jv-catalog-category-attributes.columns.import') },
                 { property: 'storage', label: this.$tc('jv-catalog-category-attributes.columns.destination') },
                 { property: 'target', label: this.$tc('jv-catalog-category-attributes.columns.target') },
+                { property: 'actions', label: '' },
             ];
         },
 
@@ -121,35 +124,66 @@ Component.register('jv-catalog-category-attributes', {
             try {
                 await this.mappingRepository.save(mapping, Shopware.Context.api);
                 this.createNotificationSuccess({ message: this.$tc('jv-catalog-category-attributes.saved') });
+                return true;
             } catch (error) {
                 this.createNotificationError({ message: this.$tc('jv-catalog-category-attributes.saveError') });
+                return false;
             } finally {
                 this.savingMappingId = null;
             }
         },
 
-        onStorageChange(mapping, storage) {
-            mapping.storage = storage;
+        openMappingEditor(mapping) {
+            this.editingMapping = mapping;
+            this.editableMapping = {
+                id: mapping.id,
+                attributeName: mapping.attributeName,
+                customFieldName: mapping.customFieldName,
+                enabled: mapping.enabled,
+                propertyGroupId: mapping.propertyGroupId,
+                storage: mapping.storage,
+            };
+        },
+
+        closeMappingEditor() {
+            if (this.savingMappingId) {
+                return;
+            }
+
+            this.editingMapping = null;
+            this.editableMapping = null;
+        },
+
+        onEditorStorageChange(storage) {
+            this.editableMapping.storage = storage;
             if (storage !== 'property') {
-                mapping.propertyGroupId = null;
+                this.editableMapping.propertyGroupId = null;
             }
             if (storage !== 'custom_field') {
-                mapping.customFieldName = null;
+                this.editableMapping.customFieldName = null;
+            }
+        },
+
+        async saveEditedMapping() {
+            if (!this.editingMapping || !this.editableMapping) {
+                return;
             }
 
-            return this.saveMapping(mapping);
+            Object.assign(this.editingMapping, {
+                customFieldName: this.editableMapping.customFieldName || null,
+                enabled: this.editableMapping.enabled,
+                propertyGroupId: this.editableMapping.propertyGroupId || null,
+                storage: this.editableMapping.storage,
+            });
+
+            const saved = await this.saveMapping(this.editingMapping);
+            if (saved) {
+                this.closeMappingEditor();
+            }
         },
 
-        onPropertyGroupChange(mapping, propertyGroupId) {
-            mapping.propertyGroupId = propertyGroupId || null;
-
-            return this.saveMapping(mapping);
-        },
-
-        onCustomFieldNameChange(mapping, customFieldName) {
-            mapping.customFieldName = customFieldName || null;
-
-            return this.saveMapping(mapping);
+        storageLabel(storage) {
+            return this.storageOptions.find((option) => option.value === storage)?.label ?? storage;
         },
 
         targetLabel(mapping) {

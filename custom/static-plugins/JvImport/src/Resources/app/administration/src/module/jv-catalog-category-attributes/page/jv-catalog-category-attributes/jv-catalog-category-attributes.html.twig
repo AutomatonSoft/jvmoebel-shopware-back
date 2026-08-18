@@ -40,42 +40,75 @@
                 </template>
 
                 <template #column-enabled="{ item }">
-                    <sw-switch-field
-                        :value="item.enabled"
-                        :disabled="!canEditMappings || savingMappingId === item.id"
-                        @update:value="item.enabled = $event; saveMapping(item)"
-                    />
+                    {{ item.enabled ? $t('jv-catalog-category-attributes.enabled') : $t('jv-catalog-category-attributes.disabled') }}
                 </template>
 
                 <template #column-storage="{ item }">
-                    <sw-single-select
-                        :value="item.storage"
-                        :options="storageOptions"
-                        :disabled="!canEditMappings || savingMappingId === item.id"
-                        @update:value="onStorageChange(item, $event)"
-                    />
+                    {{ storageLabel(item.storage) }}
                 </template>
 
                 <template #column-target="{ item }">
-                    <sw-entity-single-select
-                        v-if="item.storage === 'property'"
-                        entity="property_group"
-                        :value="item.propertyGroupId"
-                        :disabled="!canEditMappings || savingMappingId === item.id"
-                        :placeholder="$t('jv-catalog-category-attributes.target.selectProperty')"
-                        @update:value="onPropertyGroupChange(item, $event)"
-                    />
-                    <sw-text-field
-                        v-else-if="item.storage === 'custom_field'"
-                        :value="item.customFieldName"
-                        :disabled="!canEditMappings || savingMappingId === item.id"
-                        :placeholder="$t('jv-catalog-category-attributes.target.catalogJson')"
-                        @update:value="onCustomFieldNameChange(item, $event)"
-                    />
-                    <span v-else>{{ targetLabel(item) }}</span>
+                    {{ targetLabel(item) }}
+                </template>
+
+                <template #column-actions="{ item }">
+                    <mt-button
+                        size="small"
+                        variant="secondary"
+                        :disabled="!canEditMappings"
+                        @click="openMappingEditor(item)"
+                    >
+                        {{ $t('jv-catalog-category-attributes.edit') }}
+                    </mt-button>
                 </template>
             </sw-data-grid>
         </sw-card>
+
+        <sw-modal
+            v-if="editableMapping"
+            :title="$t('jv-catalog-category-attributes.editor.title', 0, { attribute: editableMapping.attributeName })"
+            @modal-close="closeMappingEditor"
+        >
+            <sw-switch-field
+                v-model:value="editableMapping.enabled"
+                :label="$t('jv-catalog-category-attributes.columns.import')"
+            />
+
+            <sw-single-select
+                v-model:value="editableMapping.storage"
+                :label="$t('jv-catalog-category-attributes.columns.destination')"
+                :options="storageOptions"
+                @update:value="onEditorStorageChange"
+            />
+
+            <sw-entity-single-select
+                v-if="editableMapping.storage === 'property'"
+                v-model:value="editableMapping.propertyGroupId"
+                entity="property_group"
+                :label="$t('jv-catalog-category-attributes.columns.target')"
+                :placeholder="$t('jv-catalog-category-attributes.target.selectProperty')"
+            />
+
+            <sw-text-field
+                v-else-if="editableMapping.storage === 'custom_field'"
+                v-model:value="editableMapping.customFieldName"
+                :label="$t('jv-catalog-category-attributes.columns.target')"
+                :placeholder="$t('jv-catalog-category-attributes.target.catalogJson')"
+            />
+
+            <template #modal-footer>
+                <mt-button variant="secondary" @click="closeMappingEditor">
+                    {{ $t('global.default.cancel') }}
+                </mt-button>
+                <mt-button
+                    variant="primary"
+                    :is-loading="savingMappingId === editableMapping.id"
+                    @click="saveEditedMapping"
+                >
+                    {{ $t('global.default.save') }}
+                </mt-button>
+            </template>
+        </sw-modal>
     </template>
 
     <mt-empty-state
