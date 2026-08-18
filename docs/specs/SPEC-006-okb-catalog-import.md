@@ -97,6 +97,11 @@ Attribute` карточки импортированной category group, а н
 выбранные настройки. Пользовательские верхние navigation categories
 создаются и перемещаются обычным category tree Shopware.
 
+После установки версии, добавляющей связь с Shopware category group, для уже
+загруженных mappings запускается отдельная идемпотентная команда
+`jv:catalog:backfill-category-attribute-relations`. Она заполняет только
+служебную связь и не изменяет products, categories, attributes или цены.
+
 ## Properties и PDP values
 
 Если `feature_relevance` содержит `VARIATION_THEME`, `FILTER`, `NAVIGATION`
