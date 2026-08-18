@@ -58,6 +58,19 @@ final class CatalogAttributeMappingSynchronizerTest extends TestCase
         ], $mappings);
     }
 
+    public function testItKeepsADisconnectedAttributeDisconnectedWhenTheSourceSchemaIsRefreshed(): void
+    {
+        $mappings = (new CatalogAttributeMappingSynchronizer())->synchronize('source-a', [
+            new CatalogAttribute('width', 'group-1', 'Width', 'FLOAT', 'SEARCH', false, 'property'),
+        ], [
+            new CatalogAttributeMapping('source-a', 'group-1', 'width', 'Width', 'FLOAT', 'SEARCH', false, true, false, 'ignore', null, null),
+        ]);
+
+        self::assertEquals([
+            new CatalogAttributeMapping('source-a', 'group-1', 'width', 'Width', 'FLOAT', 'SEARCH', false, true, false, 'ignore', null, null),
+        ], $mappings);
+    }
+
     public function testItRejectsMappingsForAnotherSource(): void
     {
         $this->expectException(\InvalidArgumentException::class);

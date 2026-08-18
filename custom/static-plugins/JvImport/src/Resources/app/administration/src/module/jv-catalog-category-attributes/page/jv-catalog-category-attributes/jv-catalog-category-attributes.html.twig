@@ -29,31 +29,28 @@
                 :data-source="mappings"
                 :columns="mappingColumns"
                 :show-selection="false"
-                :show-actions="false"
+                :show-actions="true"
                 identifier="jv-catalog-category-attributes"
             >
                 <template #column-connection="{ item }">
                     {{ connectionLabel(item) }}
                 </template>
 
-                <template #column-actions="{ item }">
-                    <button
-                        type="button"
-                        class="sw-button sw-button--small sw-button--secondary"
+                <template #actions="{ item }">
+                    <sw-context-menu-item
                         :disabled="!canEditMappings"
-                        @click.stop="openMappingEditor(item)"
+                        @click="openMappingEditor(item)"
                     >
                         {{ isConnected(item) ? $t('jv-catalog-category-attributes.actions.change') : $t('jv-catalog-category-attributes.actions.connect') }}
-                    </button>
-                    <button
+                    </sw-context-menu-item>
+                    <sw-context-menu-item
                         v-if="isConnected(item)"
-                        type="button"
-                        class="sw-button sw-button--small sw-button--critical"
+                        variant="danger"
                         :disabled="!canEditMappings || savingMappingId === item.id"
-                        @click.stop="disconnectMapping(item)"
+                        @click="disconnectMapping(item)"
                     >
                         {{ $t('jv-catalog-category-attributes.actions.disconnect') }}
-                    </button>
+                    </sw-context-menu-item>
                 </template>
             </sw-data-grid>
         </sw-card>

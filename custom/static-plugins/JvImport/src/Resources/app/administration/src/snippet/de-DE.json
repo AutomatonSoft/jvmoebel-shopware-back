@@ -6,16 +6,6 @@
         }
     },
     "jv-catalog-category-attributes": {
-        "overview": {
-            "title": "Kategorieattribute",
-            "description": "Attributverknüpfungen der Kategoriegruppen verwalten.",
-            "selectGroup": "Kategoriegruppe",
-            "searchGroup": "Kategoriegruppe suchen",
-            "empty": {
-                "title": "Kategoriegruppe auswählen",
-                "description": "Danach lassen sich ihre Attribute verbinden oder trennen."
-            }
-        },
         "tab": "Kategorieattribute",
         "saved": "Attributverknüpfung gespeichert.",
         "saveError": "Attributverknüpfung konnte nicht gespeichert werden.",

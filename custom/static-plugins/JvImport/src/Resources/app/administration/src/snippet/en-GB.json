@@ -6,16 +6,6 @@
         }
     },
     "jv-catalog-category-attributes": {
-        "overview": {
-            "title": "Category attributes",
-            "description": "Manage category group attribute connections.",
-            "selectGroup": "Category group",
-            "searchGroup": "Search for a category group",
-            "empty": {
-                "title": "Choose a category group",
-                "description": "Then connect or disconnect its attributes."
-            }
-        },
         "tab": "Category attributes",
         "saved": "Attribute connection saved.",
         "saveError": "Attribute connection could not be saved.",

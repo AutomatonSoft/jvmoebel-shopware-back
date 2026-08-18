@@ -1,4 +1,10 @@
 import template from './jv-catalog-category-attributes.html.twig';
+import {
+    connectionForProductDetails,
+    connectionForProperty,
+    disconnectedConnection,
+    isConnected as isCatalogAttributeConnected,
+} from './connection-state.mjs';
 
 const { Component, Mixin } = Shopware;
 const { Criteria } = Shopware.Data;
@@ -11,11 +17,6 @@ Component.register('jv-catalog-category-attributes', {
     mixins: [Mixin.getByName('notification')],
 
     props: {
-        categoryId: {
-            type: String,
-            required: false,
-            default: null,
-        },
         isLoading: {
             type: Boolean,
             required: false,
@@ -35,8 +36,8 @@ Component.register('jv-catalog-category-attributes', {
     },
 
     computed: {
-        mappingCategoryId() {
-            return this.categoryId || this.$route.params.id;
+        categoryId() {
+            return this.$route.params.id;
         },
 
         mappingRepository() {
@@ -51,7 +52,6 @@ Component.register('jv-catalog-category-attributes', {
             return [
                 { property: 'attributeName', label: this.$tc('jv-catalog-category-attributes.columns.attribute'), primary: true },
                 { property: 'connection', label: this.$tc('jv-catalog-category-attributes.columns.connection') },
-                { property: 'actions', label: '' },
             ];
         },
 
@@ -86,7 +86,7 @@ Component.register('jv-catalog-category-attributes', {
     },
 
     watch: {
-        mappingCategoryId: {
+        categoryId: {
             immediate: true,
             handler() {
                 this.load();
@@ -96,18 +96,18 @@ Component.register('jv-catalog-category-attributes', {
 
     methods: {
         async load() {
-            if (!this.mappingCategoryId) {
+            if (!this.categoryId) {
                 return;
             }
 
             this.isMappingLoading = true;
             const mappingCriteria = new Criteria(1, 500);
-            mappingCriteria.addFilter(Criteria.equals('categoryId', this.mappingCategoryId));
+            mappingCriteria.addFilter(Criteria.equals('categoryId', this.categoryId));
             mappingCriteria.addAssociation('propertyGroup');
             mappingCriteria.addSorting(Criteria.sort('attributeName', 'ASC'));
 
             const categoryCriteria = new Criteria(1, 500);
-            categoryCriteria.addFilter(Criteria.equals('parentId', this.mappingCategoryId));
+            categoryCriteria.addFilter(Criteria.equals('parentId', this.categoryId));
             categoryCriteria.addSorting(Criteria.sort('name', 'ASC'));
 
             try {
@@ -162,15 +162,11 @@ Component.register('jv-catalog-category-attributes', {
         },
 
         onEditorStorageChange(storage) {
-            this.editableMapping.storage = storage;
-            if (storage !== 'property') {
-                this.editableMapping.propertyGroupId = null;
-            }
-            if ('custom_field' === storage) {
-                this.editableMapping.customFieldName = 'jv_catalog_attributes';
-            } else {
-                this.editableMapping.customFieldName = null;
-            }
+            const connection = 'property' === storage
+                ? connectionForProperty(this.editableMapping.propertyGroupId)
+                : connectionForProductDetails();
+
+            Object.assign(this.editableMapping, connection);
         },
 
         async saveEditedMapping() {
@@ -178,12 +174,11 @@ Component.register('jv-catalog-category-attributes', {
                 return;
             }
 
-            Object.assign(this.editingMapping, {
-                customFieldName: this.editableMapping.customFieldName || null,
-                enabled: true,
-                propertyGroupId: this.editableMapping.propertyGroupId || null,
-                storage: this.editableMapping.storage,
-            });
+            const connection = 'property' === this.editableMapping.storage
+                ? connectionForProperty(this.editableMapping.propertyGroupId)
+                : connectionForProductDetails();
+
+            Object.assign(this.editingMapping, connection);
 
             const saved = await this.saveMapping(this.editingMapping);
             if (saved) {
@@ -199,12 +194,7 @@ Component.register('jv-catalog-category-attributes', {
                 storage: mapping.storage,
             };
 
-            Object.assign(mapping, {
-                customFieldName: null,
-                enabled: false,
-                propertyGroupId: null,
-                storage: 'ignore',
-            });
+            Object.assign(mapping, disconnectedConnection());
 
             const saved = await this.saveMapping(mapping);
             if (!saved) {
@@ -213,7 +203,7 @@ Component.register('jv-catalog-category-attributes', {
         },
 
         isConnected(mapping) {
-            return mapping.enabled && ('custom_field' === mapping.storage || ('property' === mapping.storage && !!mapping.propertyGroupId));
+            return isCatalogAttributeConnected(mapping);
         },
 
         connectionLabel(mapping) {
