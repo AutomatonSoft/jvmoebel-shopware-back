@@ -11,6 +11,11 @@ Component.register('jv-catalog-category-attributes', {
     mixins: [Mixin.getByName('notification')],
 
     props: {
+        categoryId: {
+            type: String,
+            required: false,
+            default: null,
+        },
         isLoading: {
             type: Boolean,
             required: false,
@@ -30,8 +35,8 @@ Component.register('jv-catalog-category-attributes', {
     },
 
     computed: {
-        categoryId() {
-            return this.$route.params.id;
+        mappingCategoryId() {
+            return this.categoryId || this.$route.params.id;
         },
 
         mappingRepository() {
@@ -45,12 +50,7 @@ Component.register('jv-catalog-category-attributes', {
         mappingColumns() {
             return [
                 { property: 'attributeName', label: this.$tc('jv-catalog-category-attributes.columns.attribute'), primary: true },
-                { property: 'attributeType', label: this.$tc('jv-catalog-category-attributes.columns.type') },
-                { property: 'featureRelevance', label: this.$tc('jv-catalog-category-attributes.columns.usage') },
-                { property: 'active', label: this.$tc('jv-catalog-category-attributes.columns.available') },
-                { property: 'enabled', label: this.$tc('jv-catalog-category-attributes.columns.import') },
-                { property: 'storage', label: this.$tc('jv-catalog-category-attributes.columns.destination') },
-                { property: 'target', label: this.$tc('jv-catalog-category-attributes.columns.target') },
+                { property: 'connection', label: this.$tc('jv-catalog-category-attributes.columns.connection') },
                 { property: 'actions', label: '' },
             ];
         },
@@ -63,10 +63,17 @@ Component.register('jv-catalog-category-attributes', {
 
         storageOptions() {
             return [
-                { value: 'property', label: this.$tc('jv-catalog-category-attributes.storage.property') },
-                { value: 'custom_field', label: this.$tc('jv-catalog-category-attributes.storage.customField') },
-                { value: 'ignore', label: this.$tc('jv-catalog-category-attributes.storage.ignore') },
+                { value: 'property', label: this.$tc('jv-catalog-category-attributes.connection.property') },
+                { value: 'custom_field', label: this.$tc('jv-catalog-category-attributes.connection.productDetails') },
             ];
+        },
+
+        editorTitle() {
+            if (!this.editableMapping) {
+                return '';
+            }
+
+            return this.$tc('jv-catalog-category-attributes.editor.title', 0, { attribute: this.editableMapping.attributeName });
         },
 
         isSourceCategoryGroup() {
@@ -79,7 +86,7 @@ Component.register('jv-catalog-category-attributes', {
     },
 
     watch: {
-        categoryId: {
+        mappingCategoryId: {
             immediate: true,
             handler() {
                 this.load();
@@ -89,18 +96,18 @@ Component.register('jv-catalog-category-attributes', {
 
     methods: {
         async load() {
-            if (!this.categoryId) {
+            if (!this.mappingCategoryId) {
                 return;
             }
 
             this.isMappingLoading = true;
             const mappingCriteria = new Criteria(1, 500);
-            mappingCriteria.addFilter(Criteria.equals('categoryId', this.categoryId));
+            mappingCriteria.addFilter(Criteria.equals('categoryId', this.mappingCategoryId));
             mappingCriteria.addAssociation('propertyGroup');
             mappingCriteria.addSorting(Criteria.sort('attributeName', 'ASC'));
 
             const categoryCriteria = new Criteria(1, 500);
-            categoryCriteria.addFilter(Criteria.equals('parentId', this.categoryId));
+            categoryCriteria.addFilter(Criteria.equals('parentId', this.mappingCategoryId));
             categoryCriteria.addSorting(Criteria.sort('name', 'ASC'));
 
             try {
@@ -159,7 +166,9 @@ Component.register('jv-catalog-category-attributes', {
             if (storage !== 'property') {
                 this.editableMapping.propertyGroupId = null;
             }
-            if (storage !== 'custom_field') {
+            if ('custom_field' === storage) {
+                this.editableMapping.customFieldName = 'jv_catalog_attributes';
+            } else {
                 this.editableMapping.customFieldName = null;
             }
         },
@@ -171,7 +180,7 @@ Component.register('jv-catalog-category-attributes', {
 
             Object.assign(this.editingMapping, {
                 customFieldName: this.editableMapping.customFieldName || null,
-                enabled: this.editableMapping.enabled,
+                enabled: true,
                 propertyGroupId: this.editableMapping.propertyGroupId || null,
                 storage: this.editableMapping.storage,
             });
@@ -182,19 +191,41 @@ Component.register('jv-catalog-category-attributes', {
             }
         },
 
-        storageLabel(storage) {
-            return this.storageOptions.find((option) => option.value === storage)?.label ?? storage;
+        async disconnectMapping(mapping) {
+            const currentConnection = {
+                customFieldName: mapping.customFieldName,
+                enabled: mapping.enabled,
+                propertyGroupId: mapping.propertyGroupId,
+                storage: mapping.storage,
+            };
+
+            Object.assign(mapping, {
+                customFieldName: null,
+                enabled: false,
+                propertyGroupId: null,
+                storage: 'ignore',
+            });
+
+            const saved = await this.saveMapping(mapping);
+            if (!saved) {
+                Object.assign(mapping, currentConnection);
+            }
         },
 
-        targetLabel(mapping) {
-            if (mapping.storage === 'property') {
-                return mapping.propertyGroup?.name ?? this.$tc('jv-catalog-category-attributes.target.noProperty');
-            }
-            if (mapping.storage === 'custom_field') {
-                return mapping.customFieldName ?? this.$tc('jv-catalog-category-attributes.target.catalogJson');
+        isConnected(mapping) {
+            return mapping.enabled && ('custom_field' === mapping.storage || ('property' === mapping.storage && !!mapping.propertyGroupId));
+        },
+
+        connectionLabel(mapping) {
+            if (!this.isConnected(mapping)) {
+                return this.$tc('jv-catalog-category-attributes.connection.notConnected');
             }
 
-            return this.$tc('jv-catalog-category-attributes.target.notImported');
+            if ('property' === mapping.storage) {
+                return mapping.propertyGroup?.name ?? this.$tc('jv-catalog-category-attributes.target.noProperty');
+            }
+
+            return this.$tc('jv-catalog-category-attributes.connection.productDetails');
         },
     },
 });

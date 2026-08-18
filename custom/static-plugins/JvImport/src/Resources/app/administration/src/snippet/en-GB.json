@@ -6,41 +6,54 @@
         }
     },
     "jv-catalog-category-attributes": {
-        "tab": "Import: categories & attributes",
-        "saved": "Attribute mapping saved.",
-        "saveError": "Attribute mapping could not be saved.",
-        "edit": "Edit",
-        "enabled": "Import",
-        "disabled": "Do not import",
+        "overview": {
+            "title": "Category attributes",
+            "description": "Manage category group attribute connections.",
+            "selectGroup": "Category group",
+            "searchGroup": "Search for a category group",
+            "empty": {
+                "title": "Choose a category group",
+                "description": "Then connect or disconnect its attributes."
+            }
+        },
+        "tab": "Category attributes",
+        "saved": "Attribute connection saved.",
+        "saveError": "Attribute connection could not be saved.",
+        "actions": {
+            "connect": "Connect",
+            "change": "Change connection",
+            "disconnect": "Disconnect"
+        },
         "editor": {
-            "title": "Configure: {attribute}"
+            "title": "Connect: {attribute}",
+            "connection": "Save this attribute as",
+            "productDetails": "The value will be saved in the product details."
         },
         "sourceCategories": {
-            "title": "Imported subcategories",
-            "description": "These categories belong to the opened import group.",
-            "empty": "This import group has no subcategories."
+            "title": "Categories in this group",
+            "description": "The connected attributes apply to all categories in this group.",
+            "empty": "This group has no categories."
         },
         "mappings": {
-            "title": "Category-group attribute mapping",
-            "description": "The settings apply to every subcategory in this group. New source attributes appear automatically after schema synchronization."
+            "title": "Category group attributes",
+            "description": "Connect an attribute to a Shopware property or product details."
         },
         "notSourceGroup": {
-            "title": "Not an import group",
-            "description": "No source attributes were synchronized for this category. Create your own navigation categories in the standard category tree."
+            "title": "No category group attributes",
+            "description": "This category has no attributes configured."
         },
-        "storage": {
-            "property": "Property / variant",
-            "customField": "Product details (JSON)",
-            "ignore": "Do not import"
+        "connection": {
+            "property": "Shopware property / variant",
+            "productDetails": "Product details",
+            "notConnected": "Not connected"
         },
         "target": {
             "selectProperty": "Select property",
             "noProperty": "No property selected",
-            "catalogJson": "jv_catalog_attributes",
-            "notImported": "Will not be imported"
+            "catalogJson": "Product details"
         },
         "columns": {
-            "category": "Category", "attribute": "Attribute", "type": "Data type", "usage": "Usage", "available": "In source", "import": "Import", "destination": "Destination type", "target": "Destination"
+            "category": "Category", "attribute": "Attribute", "connection": "Shopware connection", "target": "Connection"
         }
     }
 }

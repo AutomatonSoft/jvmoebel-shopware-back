@@ -6,41 +6,54 @@
         }
     },
     "jv-catalog-category-attributes": {
-        "tab": "Import: Kategorien & Attribute",
-        "saved": "Attributzuordnung gespeichert.",
-        "saveError": "Attributzuordnung konnte nicht gespeichert werden.",
-        "edit": "Bearbeiten",
-        "enabled": "Importieren",
-        "disabled": "Nicht importieren",
+        "overview": {
+            "title": "Kategorieattribute",
+            "description": "Attributverknüpfungen der Kategoriegruppen verwalten.",
+            "selectGroup": "Kategoriegruppe",
+            "searchGroup": "Kategoriegruppe suchen",
+            "empty": {
+                "title": "Kategoriegruppe auswählen",
+                "description": "Danach lassen sich ihre Attribute verbinden oder trennen."
+            }
+        },
+        "tab": "Kategorieattribute",
+        "saved": "Attributverknüpfung gespeichert.",
+        "saveError": "Attributverknüpfung konnte nicht gespeichert werden.",
+        "actions": {
+            "connect": "Verbinden",
+            "change": "Verbindung ändern",
+            "disconnect": "Trennen"
+        },
         "editor": {
-            "title": "Konfigurieren: {attribute}"
+            "title": "Verbinden: {attribute}",
+            "connection": "Attribut speichern als",
+            "productDetails": "Der Wert wird in den Produktdetails gespeichert."
         },
         "sourceCategories": {
-            "title": "Importierte Unterkategorien",
-            "description": "Diese Kategorien gehören zur geöffneten Importgruppe.",
-            "empty": "Diese Importgruppe enthält keine Unterkategorien."
+            "title": "Kategorien dieser Gruppe",
+            "description": "Die verknüpften Attribute gelten für alle Kategorien dieser Gruppe.",
+            "empty": "Diese Gruppe enthält keine Kategorien."
         },
         "mappings": {
-            "title": "Attributzuordnung der Kategoriegruppe",
-            "description": "Die Einstellungen gelten für alle Unterkategorien dieser Gruppe. Neue Quellattribute erscheinen nach der Schemasynchronisierung automatisch."
+            "title": "Attribute der Kategoriegruppe",
+            "description": "Ein Attribut mit einer Shopware-Eigenschaft oder den Produktdetails verbinden."
         },
         "notSourceGroup": {
-            "title": "Keine Importgruppe",
-            "description": "Für diese Kategorie wurden keine Quellattribute synchronisiert. Eigene Navigationskategorien werden im normalen Kategoriebaum angelegt."
+            "title": "Keine Kategoriegruppenattribute",
+            "description": "Für diese Kategorie sind keine Attribute hinterlegt."
         },
-        "storage": {
-            "property": "Eigenschaft / Variante",
-            "customField": "Produktdetail (JSON)",
-            "ignore": "Nicht importieren"
+        "connection": {
+            "property": "Shopware-Eigenschaft / Variante",
+            "productDetails": "Produktdetails",
+            "notConnected": "Nicht verbunden"
         },
         "target": {
             "selectProperty": "Eigenschaft auswählen",
             "noProperty": "Keine Eigenschaft ausgewählt",
-            "catalogJson": "jv_catalog_attributes",
-            "notImported": "Wird nicht importiert"
+            "catalogJson": "Produktdetails"
         },
         "columns": {
-            "category": "Kategorie", "attribute": "Attribut", "type": "Datentyp", "usage": "Verwendung", "available": "In Quelle", "import": "Importieren", "destination": "Zielart", "target": "Ziel"
+            "category": "Kategorie", "attribute": "Attribut", "connection": "Shopware-Verknüpfung", "target": "Verknüpfung"
         }
     }
 }
