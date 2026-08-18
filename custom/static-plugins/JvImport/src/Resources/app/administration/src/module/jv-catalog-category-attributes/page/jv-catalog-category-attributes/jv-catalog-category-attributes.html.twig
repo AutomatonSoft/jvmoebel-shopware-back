@@ -1,0 +1,86 @@
+<div class="jv-catalog-category-attributes">
+    <sw-loader v-if="isMappingLoading || isLoading" />
+
+    <template v-else-if="isSourceCategoryGroup">
+        <sw-card
+            :title="$t('jv-catalog-category-attributes.sourceCategories.title')"
+            :subtitle="$t('jv-catalog-category-attributes.sourceCategories.description')"
+        >
+            <sw-data-grid
+                v-if="sourceCategories.length > 0"
+                :data-source="sourceCategories"
+                :columns="sourceCategoryColumns"
+                :show-selection="false"
+                :show-actions="false"
+                identifier="jv-catalog-source-categories"
+            />
+            <mt-empty-state
+                v-else
+                :headline="$t('jv-catalog-category-attributes.sourceCategories.empty')"
+            />
+        </sw-card>
+
+        <sw-card
+            :title="$t('jv-catalog-category-attributes.mappings.title')"
+            :subtitle="$t('jv-catalog-category-attributes.mappings.description')"
+        >
+            <sw-data-grid
+                :data-source="mappings"
+                :columns="mappingColumns"
+                :show-selection="false"
+                :show-actions="false"
+                identifier="jv-catalog-category-attributes"
+            >
+                <template #column-active="{ item }">
+                    <sw-icon
+                        :name="item.active ? 'regular-checkmark-xs' : 'regular-times-xs'"
+                        :color="item.active ? '#37D046' : '#DE294C'"
+                        size="16px"
+                    />
+                </template>
+
+                <template #column-enabled="{ item }">
+                    <sw-switch-field
+                        :value="item.enabled"
+                        :disabled="!canEditMappings || savingMappingId === item.id"
+                        @update:value="item.enabled = $event; saveMapping(item)"
+                    />
+                </template>
+
+                <template #column-storage="{ item }">
+                    <sw-single-select
+                        :value="item.storage"
+                        :options="storageOptions"
+                        :disabled="!canEditMappings || savingMappingId === item.id"
+                        @update:value="onStorageChange(item, $event)"
+                    />
+                </template>
+
+                <template #column-target="{ item }">
+                    <sw-entity-single-select
+                        v-if="item.storage === 'property'"
+                        entity="property_group"
+                        :value="item.propertyGroupId"
+                        :disabled="!canEditMappings || savingMappingId === item.id"
+                        :placeholder="$t('jv-catalog-category-attributes.target.selectProperty')"
+                        @update:value="onPropertyGroupChange(item, $event)"
+                    />
+                    <sw-text-field
+                        v-else-if="item.storage === 'custom_field'"
+                        :value="item.customFieldName"
+                        :disabled="!canEditMappings || savingMappingId === item.id"
+                        :placeholder="$t('jv-catalog-category-attributes.target.catalogJson')"
+                        @update:value="onCustomFieldNameChange(item, $event)"
+                    />
+                    <span v-else>{{ targetLabel(item) }}</span>
+                </template>
+            </sw-data-grid>
+        </sw-card>
+    </template>
+
+    <mt-empty-state
+        v-else
+        :headline="$t('jv-catalog-category-attributes.notSourceGroup.title')"
+        :description="$t('jv-catalog-category-attributes.notSourceGroup.description')"
+    />
+</div>

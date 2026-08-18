@@ -12,6 +12,7 @@ use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\Property\Aggregate\PropertyGroupOption\PropertyGroupOptionCollection;
 use Shopware\Core\Content\Property\PropertyGroupCollection;
 use Shopware\Core\Content\Property\PropertyGroupDefinition;
+use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -136,6 +137,8 @@ final readonly class ImportCatalogSchemaService
             'id' => CatalogIdentity::categoryAttributeId($mapping->sourceCode, $mapping->categoryGroupId, $mapping->attributeId),
             'sourceCode' => $mapping->sourceCode,
             'categoryGroupId' => $mapping->categoryGroupId,
+            'categoryId' => CatalogIdentity::categoryGroupId($mapping->sourceCode, $mapping->categoryGroupId),
+            'categoryVersionId' => Defaults::LIVE_VERSION,
             'attributeId' => $mapping->attributeId,
             'attributeName' => $mapping->attributeName,
             'attributeType' => $mapping->attributeType,

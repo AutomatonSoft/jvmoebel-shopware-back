@@ -2,6 +2,7 @@
 
 namespace Jv\Import\Core\Content\CatalogCategoryAttribute;
 
+use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\Property\PropertyGroupDefinition;
 use Shopware\Core\Framework\Api\Context\AdminApiSource;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
@@ -12,6 +13,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\IdField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\ReferenceVersionField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
 
@@ -40,6 +42,8 @@ final class CatalogCategoryAttributeDefinition extends EntityDefinition
             (new IdField('id', 'id'))->addFlags(new ApiAware(AdminApiSource::class), new Required(), new PrimaryKey()),
             (new StringField('source_code', 'sourceCode'))->addFlags(new ApiAware(AdminApiSource::class), new Required()),
             (new StringField('category_group_id', 'categoryGroupId'))->addFlags(new ApiAware(AdminApiSource::class), new Required()),
+            (new FkField('category_id', 'categoryId', CategoryDefinition::class))->addFlags(new ApiAware(AdminApiSource::class)),
+            (new ReferenceVersionField(CategoryDefinition::class, 'category_version_id'))->addFlags(new ApiAware(AdminApiSource::class), new Required()),
             (new StringField('attribute_id', 'attributeId'))->addFlags(new ApiAware(AdminApiSource::class), new Required()),
             (new StringField('attribute_name', 'attributeName'))->addFlags(new ApiAware(AdminApiSource::class), new Required()),
             (new StringField('attribute_type', 'attributeType'))->addFlags(new ApiAware(AdminApiSource::class), new Required()),
@@ -51,6 +55,7 @@ final class CatalogCategoryAttributeDefinition extends EntityDefinition
             (new FkField('property_group_id', 'propertyGroupId', PropertyGroupDefinition::class))->addFlags(new ApiAware(AdminApiSource::class)),
             (new StringField('custom_field_name', 'customFieldName'))->addFlags(new ApiAware(AdminApiSource::class)),
             (new ManyToOneAssociationField('propertyGroup', 'property_group_id', PropertyGroupDefinition::class, 'id', false))->addFlags(new ApiAware(AdminApiSource::class)),
+            (new ManyToOneAssociationField('category', 'category_id', CategoryDefinition::class, 'id', false))->addFlags(new ApiAware(AdminApiSource::class)),
         ]);
     }
 }

@@ -5,13 +5,36 @@
             "description": "JVMöbel-Importe"
         }
     },
-    "jv-catalog-attribute-mapping": {
-        "title": "Katalog-Attributzuordnungen",
-        "description": "Steuert, wie Attribute je Quellkategorie importiert werden.",
+    "jv-catalog-category-attributes": {
+        "tab": "Import: Kategorien & Attribute",
         "saved": "Attributzuordnung gespeichert.",
         "saveError": "Attributzuordnung konnte nicht gespeichert werden.",
+        "sourceCategories": {
+            "title": "Importierte Unterkategorien",
+            "description": "Diese Kategorien gehören zur geöffneten Importgruppe.",
+            "empty": "Diese Importgruppe enthält keine Unterkategorien."
+        },
+        "mappings": {
+            "title": "Attributzuordnung der Kategoriegruppe",
+            "description": "Die Einstellungen gelten für alle Unterkategorien dieser Gruppe. Neue Quellattribute erscheinen nach der Schemasynchronisierung automatisch."
+        },
+        "notSourceGroup": {
+            "title": "Keine Importgruppe",
+            "description": "Für diese Kategorie wurden keine Quellattribute synchronisiert. Eigene Navigationskategorien werden im normalen Kategoriebaum angelegt."
+        },
+        "storage": {
+            "property": "Eigenschaft / Variante",
+            "customField": "Produktdetail (JSON)",
+            "ignore": "Nicht importieren"
+        },
+        "target": {
+            "selectProperty": "Eigenschaft auswählen",
+            "noProperty": "Keine Eigenschaft ausgewählt",
+            "catalogJson": "jv_catalog_attributes",
+            "notImported": "Wird nicht importiert"
+        },
         "columns": {
-            "source": "Quelle", "group": "Kategoriegruppe", "attribute": "Attribut", "type": "Datentyp", "relevance": "Verwendung", "present": "In Quelle vorhanden", "enabled": "Importieren", "storage": "Ziel", "propertyGroup": "Property-Gruppe-ID"
+            "category": "Kategorie", "attribute": "Attribut", "type": "Datentyp", "usage": "Verwendung", "available": "In Quelle", "import": "Importieren", "destination": "Zielart", "target": "Ziel"
         }
     }
 }

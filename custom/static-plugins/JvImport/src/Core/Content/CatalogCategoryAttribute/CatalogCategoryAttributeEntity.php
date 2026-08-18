@@ -2,6 +2,7 @@
 
 namespace Jv\Import\Core\Content\CatalogCategoryAttribute;
 
+use Shopware\Core\Content\Category\CategoryEntity;
 use Shopware\Core\Content\Property\PropertyGroupEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
@@ -12,6 +13,8 @@ final class CatalogCategoryAttributeEntity extends Entity
 
     protected string $sourceCode;
     protected string $categoryGroupId;
+    protected ?string $categoryId = null;
+    protected string $categoryVersionId;
     protected string $attributeId;
     protected string $attributeName;
     protected string $attributeType;
@@ -23,6 +26,7 @@ final class CatalogCategoryAttributeEntity extends Entity
     protected ?string $propertyGroupId = null;
     protected ?string $customFieldName = null;
     protected ?PropertyGroupEntity $propertyGroup = null;
+    protected ?CategoryEntity $category = null;
 
     public function getSourceCode(): string
     {
@@ -42,6 +46,26 @@ final class CatalogCategoryAttributeEntity extends Entity
     public function setCategoryGroupId(string $categoryGroupId): void
     {
         $this->categoryGroupId = $categoryGroupId;
+    }
+
+    public function getCategoryId(): ?string
+    {
+        return $this->categoryId;
+    }
+
+    public function setCategoryId(?string $categoryId): void
+    {
+        $this->categoryId = $categoryId;
+    }
+
+    public function getCategoryVersionId(): string
+    {
+        return $this->categoryVersionId;
+    }
+
+    public function setCategoryVersionId(string $categoryVersionId): void
+    {
+        $this->categoryVersionId = $categoryVersionId;
     }
 
     public function getAttributeId(): string
@@ -152,5 +176,15 @@ final class CatalogCategoryAttributeEntity extends Entity
     public function setPropertyGroup(?PropertyGroupEntity $propertyGroup): void
     {
         $this->propertyGroup = $propertyGroup;
+    }
+
+    public function getCategory(): ?CategoryEntity
+    {
+        return $this->category;
+    }
+
+    public function setCategory(?CategoryEntity $category): void
+    {
+        $this->category = $category;
     }
 }

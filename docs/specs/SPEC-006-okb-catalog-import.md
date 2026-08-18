@@ -77,16 +77,25 @@ Shopware records.
 
 Shopware стандартно не умеет назначить category набор обязательных или
 разрешённых properties. Поэтому плагин хранит собственную нормализованную
-связь:
+связь, привязанную также к созданной Shopware category group:
 
 ```text
-OKB category_group_id → OKB attribute_id → storage target
+Shopware category group ← OKB category_group_id → OKB attribute_id → storage target
 ```
 
 Она определяет допустимую схему, но не делает каждый attribute обязательным:
 реальные OKB product responses могут содержать только её часть. Неизвестный
 attribute в product response и пустой ответ по EAN попадают в отчёт и не
 создают сущности молча.
+
+В Administration настройка находится во вкладке `Import: Kategorien &
+Attribute` карточки импортированной category group, а не в отдельном списке
+технических связей. Вкладка показывает её внутренние categories и позволяет
+включить attribute, выбрать тип цели (`property`, PDP JSON или ignore) и
+свойство Shopware. Новый source attribute не создаётся пустой строкой в UI:
+он появляется при повторной явной синхронизации snapshot, сохраняя ранее
+выбранные настройки. Пользовательские верхние navigation categories
+создаются и перемещаются обычным category tree Shopware.
 
 ## Properties и PDP values
 
@@ -157,6 +166,9 @@ category/attribute/value, пустые OKB responses, parent SKU conflicts и
   SKU/EAN collision rule and OKB response normalization;
 - integration tests schema command, deterministic category parent links,
   property/options, own relation, migration custom field and idempotent rerun;
+- unit test, что schema import связывает attribute mapping с созданной
+  Shopware category group; ручная проверка вкладки Administration на group и
+  на обычной navigation category;
 - representative local smoke import (до 600 products), including a simple
   product, variant group, property and custom-field attributes, larger OKB
   price and invalid records;

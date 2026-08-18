@@ -5,13 +5,36 @@
             "description": "JVMöbel imports"
         }
     },
-    "jv-catalog-attribute-mapping": {
-        "title": "Catalog attribute mappings",
-        "description": "Controls how source-category attributes are imported into Shopware.",
+    "jv-catalog-category-attributes": {
+        "tab": "Import: categories & attributes",
         "saved": "Attribute mapping saved.",
         "saveError": "Attribute mapping could not be saved.",
+        "sourceCategories": {
+            "title": "Imported subcategories",
+            "description": "These categories belong to the opened import group.",
+            "empty": "This import group has no subcategories."
+        },
+        "mappings": {
+            "title": "Category-group attribute mapping",
+            "description": "The settings apply to every subcategory in this group. New source attributes appear automatically after schema synchronization."
+        },
+        "notSourceGroup": {
+            "title": "Not an import group",
+            "description": "No source attributes were synchronized for this category. Create your own navigation categories in the standard category tree."
+        },
+        "storage": {
+            "property": "Property / variant",
+            "customField": "Product details (JSON)",
+            "ignore": "Do not import"
+        },
+        "target": {
+            "selectProperty": "Select property",
+            "noProperty": "No property selected",
+            "catalogJson": "jv_catalog_attributes",
+            "notImported": "Will not be imported"
+        },
         "columns": {
-            "source": "Source", "group": "Category group", "attribute": "Attribute", "type": "Data type", "relevance": "Usage", "present": "Present in source", "enabled": "Import", "storage": "Target", "propertyGroup": "Property group ID"
+            "category": "Category", "attribute": "Attribute", "type": "Data type", "usage": "Usage", "available": "In source", "import": "Import", "destination": "Destination type", "target": "Destination"
         }
     }
 }
