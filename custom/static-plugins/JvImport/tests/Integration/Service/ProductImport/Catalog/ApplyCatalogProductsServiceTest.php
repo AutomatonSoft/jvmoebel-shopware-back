@@ -63,7 +63,7 @@ final class ApplyCatalogProductsServiceTest extends TestCase
             ], false, $context);
 
             self::assertSame(2, $result->products);
-            self::assertSame(2, $result->propertyOptions);
+            self::assertSame(4, $result->propertyOptions);
             self::assertSame(1, $result->variantParents);
             $first = $this->productById($firstId, $context);
             self::assertSame($parentId, $first->getParentId());

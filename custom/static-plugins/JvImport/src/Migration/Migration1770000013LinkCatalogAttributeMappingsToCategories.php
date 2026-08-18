@@ -35,12 +35,24 @@ final class Migration1770000013LinkCatalogAttributeMappingsToCategories extends 
         }
 
         $foreignKeys = $connection->createSchemaManager()->listTableForeignKeys('jv_catalog_category_attribute');
-        if (!isset($foreignKeys['fk.jv_catalog_category_attribute.category'])) {
+        if (!$this->hasCategoryForeignKey($foreignKeys)) {
             $connection->executeStatement('ALTER TABLE `jv_catalog_category_attribute` ADD CONSTRAINT `fk.jv_catalog_category_attribute.category` FOREIGN KEY (`category_id`, `category_version_id`) REFERENCES `category` (`id`, `version_id`) ON DELETE RESTRICT ON UPDATE CASCADE');
         }
     }
 
     public function updateDestructive(Connection $connection): void
     {
+    }
+
+    /** @param list<\Doctrine\DBAL\Schema\ForeignKeyConstraint> $foreignKeys */
+    private function hasCategoryForeignKey(array $foreignKeys): bool
+    {
+        foreach ($foreignKeys as $foreignKey) {
+            if ('fk.jv_catalog_category_attribute.category' === $foreignKey->getName()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
