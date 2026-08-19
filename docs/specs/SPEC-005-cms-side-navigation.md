@@ -56,7 +56,7 @@
 
 Config UI: logo upload, logo link, текстовое поле placeholder поиска, выбор root category, show icons, footer items. Нет CRUD табов и нет select depth 1…5.
 
-Canvas в Shopping Experiences — интерактивное превью: поиск по загруженному дереву (prefix, L1…L4), overlay, крестик очистки, drill-down. Это не витрина.
+Canvas в Shopping Experiences — интерактивное превью: поиск по загруженному дереву (prefix, L1…L4), overlay, крестик очистки, drill-down. Смена `rootCategoryId` не должна показывать дерево предыдущего root (async token). Это не витрина. Next.js на витрине читает `slot.data`, не raw config.
 
 ## Правила
 
@@ -135,7 +135,8 @@ Tag: `shopware.cms.data_resolver`.
 - `searchPlaceholder` trim + fallback;
 - footer из `config.footer`;
 - невалидные media ids → collect без них, logo/icon null;
-- `CmsSlotsDataResolver` → `StructEncoder`: ключи `logo`, `logoLink`, `searchPlaceholder`, `items`, `footerItems`, nested `apiAlias`.
+- `CmsSlotsDataResolver` → реальный Shopware `StructEncoder`: пустое дерево (malformed root) **и** non-empty `items` с nested `NavItem` / `MediaRef` / `apiAlias`;
+- Admin canvas: `loadCategoryTree()` не применяет stale async (token, как `loadLogo`).
 
 Ручные:
 

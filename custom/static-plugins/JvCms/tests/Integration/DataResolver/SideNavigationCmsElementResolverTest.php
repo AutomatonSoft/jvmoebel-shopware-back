@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Jv\Cms\Tests\Integration\DataResolver\Element;
 
+use Jv\Cms\DataResolver\Element\SideNavigation\MediaRef;
+use Jv\Cms\DataResolver\Element\SideNavigation\NavItem;
 use Jv\Cms\DataResolver\Element\SideNavigationCmsElementResolver;
 use Jv\Cms\DataResolver\Element\SideNavigationStruct;
 use PHPUnit\Framework\TestCase;
@@ -126,6 +128,61 @@ final class SideNavigationCmsElementResolverTest extends TestCase
         self::assertSame('cms_jv_side_navigation_footer_item', $payload['footerItems'][0]['apiAlias']);
         self::assertNull($payload['footerItems'][0]['icon']);
         self::assertSame('always', $payload['footerItems'][0]['visibility']);
+    }
+
+    public function testStructEncoderSerializesNonEmptyCategoryTree(): void
+    {
+        // Real Shopware StructEncoder — not the unit-test storeApiArray() helper.
+        /** @var StructEncoder $encoder */
+        $encoder = static::getContainer()->get(StructEncoder::class);
+
+        $child = new NavItem(
+            id: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+            kind: 'category',
+            label: 'Sofas',
+            url: '/sofas',
+            openInNewTab: false,
+            icon: null,
+            hasChildren: false,
+            children: [],
+        );
+
+        $parent = new NavItem(
+            id: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+            kind: 'category',
+            label: 'Möbel',
+            url: '/moebel',
+            openInNewTab: false,
+            icon: new MediaRef('https://cdn.example.com/moebel.png', 'Möbel'),
+            hasChildren: true,
+            children: [$child],
+        );
+
+        $data = new SideNavigationStruct(
+            logo: null,
+            logoLink: '/',
+            searchPlaceholder: 'Kategorie suchen',
+            items: [$parent],
+            footerItems: [],
+        );
+
+        $payload = $encoder->encode($data, new ResponseFields());
+
+        self::assertSame('cms_jv_side_navigation', $payload['apiAlias']);
+        self::assertIsArray($payload['items'][0]);
+        self::assertSame('cms_jv_side_navigation_nav_item', $payload['items'][0]['apiAlias']);
+        self::assertSame('category', $payload['items'][0]['kind']);
+        self::assertSame('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', $payload['items'][0]['id']);
+        self::assertSame('Möbel', $payload['items'][0]['label']);
+        self::assertSame('/moebel', $payload['items'][0]['url']);
+        self::assertTrue($payload['items'][0]['hasChildren']);
+        self::assertIsArray($payload['items'][0]['children']);
+        self::assertSame('cms_jv_side_navigation_media_ref', $payload['items'][0]['icon']['apiAlias']);
+        self::assertSame('https://cdn.example.com/moebel.png', $payload['items'][0]['icon']['url']);
+        self::assertSame('cms_jv_side_navigation_nav_item', $payload['items'][0]['children'][0]['apiAlias']);
+        self::assertSame('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb', $payload['items'][0]['children'][0]['id']);
+        self::assertSame('/sofas', $payload['items'][0]['children'][0]['url']);
+        self::assertFalse($payload['items'][0]['children'][0]['hasChildren']);
     }
 
     /**

@@ -27,6 +27,7 @@ export default {
             columns: [],
             logoUrl: null,
             logoLoadToken: 0,
+            categoryLoadToken: 0,
             /** L1 category nodes; nested `children` are L2–L4. */
             categoryTree: [],
             categoryLoading: false,
@@ -218,7 +219,13 @@ export default {
             };
         },
 
+        /**
+         * Load L1–L4 for the current root. Stale responses from a previous root
+         * must not overwrite categoryTree / categoryLoading / columns.
+         */
         async loadCategoryTree() {
+            const token = this.categoryLoadToken + 1;
+            this.categoryLoadToken = token;
             const rootId = this.rootCategoryId;
 
             if (!rootId) {
@@ -241,11 +248,23 @@ export default {
                 });
 
                 const result = await this.categoryRepository.search(criteria, Shopware.Context.api);
+                if (token !== this.categoryLoadToken) {
+                    return;
+                }
+
                 this.categoryTree = this.toEntityArray(result)
                     .map((category) => this.mapCategoryNode(category, this.showIcons, TREE_DEPTH));
             } catch {
+                if (token !== this.categoryLoadToken) {
+                    return;
+                }
+
                 this.categoryTree = [];
             } finally {
+                if (token !== this.categoryLoadToken) {
+                    return;
+                }
+
                 this.categoryLoading = false;
                 if (this.columns.length <= 1) {
                     this.resetColumnsToRoot();
