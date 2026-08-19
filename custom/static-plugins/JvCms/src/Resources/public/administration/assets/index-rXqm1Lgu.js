@@ -1,2 +1,0 @@
-const s='{% block sw_cms_element_jv_side_navigation_preview %} <div class="sw-cms-el-preview-jv-side-navigation"> <span class="sw-cms-el-preview-jv-side-navigation__title">Navigation</span> <span class="sw-cms-el-preview-jv-side-navigation__line"></span> <span class="sw-cms-el-preview-jv-side-navigation__line"></span> <span class="sw-cms-el-preview-jv-side-navigation__line"></span> </div> {% endblock %}',e={template:s};export{e as default};
-//# sourceMappingURL=index-rXqm1Lgu.js.map

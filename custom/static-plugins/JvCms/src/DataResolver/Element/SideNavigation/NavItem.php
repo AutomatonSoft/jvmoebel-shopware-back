@@ -4,6 +4,7 @@ namespace Jv\Cms\DataResolver\Element\SideNavigation;
 
 use Shopware\Core\Framework\Struct\Struct;
 
+/** One category node. `kind` is always `category` in the current contract. */
 final class NavItem extends Struct
 {
     /**

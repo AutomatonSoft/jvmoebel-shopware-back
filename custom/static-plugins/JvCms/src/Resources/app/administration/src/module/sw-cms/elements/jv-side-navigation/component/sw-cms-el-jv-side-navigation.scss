@@ -1,8 +1,7 @@
 /**
  * Styles for the jv-side-navigation CMS canvas preview (Administration only).
  *
- * Layout mirrors a simplified home24 drawer:
- * hint → chrome (logo) → tabs → optional back → horizontal columns → footer.
+ * Layout: hint → logo → category search → back → L1…L4 columns → footer.
  * Not used on the public Next.js storefront.
  */
 
@@ -19,14 +18,12 @@
     line-height: 1.35;
 }
 
-/* Editor-only tip above the drawer mock */
 .sw-cms-el-jv-side-navigation__hint {
     margin: 0;
     color: #6b7280;
     font-size: 11px;
 }
 
-/* Outer frame of the preview drawer */
 .sw-cms-el-jv-side-navigation__drawer {
     display: flex;
     flex-direction: column;
@@ -38,7 +35,6 @@
     background: #ffffff;
 }
 
-/* Top bar: logo (+ link). Close “×” intentionally omitted in this preview. */
 .sw-cms-el-jv-side-navigation__chrome {
     display: flex;
     align-items: flex-start;
@@ -79,31 +75,96 @@
     white-space: nowrap;
 }
 
-/* Tab strip under the logo (Catalog / Angebote / …) */
-.sw-cms-el-jv-side-navigation__tablist {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px 16px;
-    padding: 0 14px;
+.sw-cms-el-jv-side-navigation__search {
+    position: relative;
+    z-index: 5;
+    padding: 8px 14px;
     border-bottom: 1px solid #e5e7eb;
+    background: #ffffff;
 }
 
-.sw-cms-el-jv-side-navigation__tab {
+.sw-cms-el-jv-side-navigation__search-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    background: #f9fafb;
+}
+
+.sw-cms-el-jv-side-navigation__search-input {
+    flex: 1 1 auto;
+    min-width: 0;
     margin: 0;
-    padding: 10px 0 8px;
+    padding: 0;
     border: 0;
-    border-bottom: 2px solid transparent;
     background: transparent;
-    color: #4b5563;
+    color: inherit;
+    font: inherit;
+    outline: none;
+}
+
+.sw-cms-el-jv-side-navigation__search-clear {
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 0 4px;
+    border: 0;
+    background: transparent;
+    color: #6b7280;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.sw-cms-el-jv-side-navigation__search-overlay {
+    position: absolute;
+    top: 100%;
+    right: 14px;
+    left: 14px;
+    z-index: 6;
+    max-height: 280px;
+    margin: 0;
+    padding: 6px 0;
+    overflow-y: auto;
+    border: 1px solid #e5e7eb;
+    border-top: 0;
+    background: #ffffff;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 12%);
+    list-style: none;
+}
+
+.sw-cms-el-jv-side-navigation__search-suggestion-btn {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+    margin: 0;
+    padding: 8px 12px;
+    border: 0;
+    background: transparent;
+    color: inherit;
     cursor: pointer;
     font: inherit;
-    font-weight: 500;
+    text-align: left;
 
-    &.is-active {
-        border-bottom-color: #e85d04;
-        color: #111827;
-        font-weight: 600;
+    &:hover {
+        background: #f9fafb;
     }
+}
+
+.sw-cms-el-jv-side-navigation__search-suggestion-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.sw-cms-el-jv-side-navigation__search-empty {
+    padding: 8px 12px;
+    color: #9ca3af;
+    font-size: 12px;
+    font-style: italic;
 }
 
 .sw-cms-el-jv-side-navigation__back-bar {
@@ -123,10 +184,6 @@
     font-weight: 600;
 }
 
-/**
- * Horizontal scroller for deep trees (levels 4–5).
- * Each column scrolls vertically on its own (see __column).
- */
 .sw-cms-el-jv-side-navigation__columns {
     display: flex;
     flex-wrap: nowrap;
@@ -140,7 +197,6 @@
     overflow-y: hidden;
     border-bottom: 1px solid #e5e7eb;
     scroll-behavior: smooth;
-
     padding-bottom: 4px;
     scrollbar-width: thin;
     scrollbar-color: #9ca3af #f3f4f6;
@@ -181,62 +237,18 @@
     list-style: none;
 }
 
-/* Row state modifiers come from the twig :class binding */
 .sw-cms-el-jv-side-navigation__row {
-
-    /* Path highlight: this row owns the next open column */
     &.is-active .sw-cms-el-jv-side-navigation__link {
         background: #f3f4f6;
     }
 
-    /* Inactive Shopware categories still shown in Admin preview */
     &.is-inactive .sw-cms-el-jv-side-navigation__link {
         opacity: 0.55;
     }
 
-    &.is-divider {
-        padding: 8px 14px;
-    }
-
-    &.is-promo,
     &.is-empty,
-    &.is-tree-root,
     &.is-all-link {
         padding: 8px 14px;
-    }
-}
-
-/* Small caption for which root the category-tree section uses */
-.sw-cms-el-jv-side-navigation__tree-root {
-    display: block;
-    color: #6b7280;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-}
-
-.sw-cms-el-jv-side-navigation__divider {
-    display: block;
-    height: 1px;
-    background: #e5e7eb;
-}
-
-.sw-cms-el-jv-side-navigation__promo {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 10px 12px;
-    border-radius: 4px;
-    background: #fff7ed;
-    color: #9a3412;
-
-    strong {
-        font-size: 12px;
-    }
-
-    span {
-        font-size: 12px;
     }
 }
 
@@ -246,7 +258,6 @@
     font-style: italic;
 }
 
-/* “Alle Möbel” / “All Sofas” style entry */
 .sw-cms-el-jv-side-navigation__all-link {
     color: #111827;
     font-size: 13px;
@@ -255,7 +266,6 @@
     text-underline-offset: 2px;
 }
 
-/* Standard nav row: icon | label | chevron */
 .sw-cms-el-jv-side-navigation__link {
     display: grid;
     grid-template-columns: 36px minmax(0, 1fr) 16px;
@@ -307,8 +317,9 @@
     text-align: right;
 }
 
-/* Shared footer (same for every tab / depth) */
 .sw-cms-el-jv-side-navigation__footer {
+    position: relative;
+    z-index: 2;
     padding: 8px 12px 12px;
     background: #fafafa;
 }

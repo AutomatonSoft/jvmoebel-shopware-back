@@ -4,6 +4,7 @@ namespace Jv\Cms\DataResolver\Element\SideNavigation;
 
 use Shopware\Core\Framework\Struct\Struct;
 
+/** Drawer footer row. `visibility`: always | guest | customer. `icon` is a named key, not media. */
 final class FooterItem extends Struct
 {
     public function __construct(

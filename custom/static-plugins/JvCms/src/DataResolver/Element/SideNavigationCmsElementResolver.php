@@ -7,8 +7,6 @@ namespace Jv\Cms\DataResolver\Element;
 use Jv\Cms\DataResolver\Element\SideNavigation\FooterItem;
 use Jv\Cms\DataResolver\Element\SideNavigation\MediaRef;
 use Jv\Cms\DataResolver\Element\SideNavigation\NavItem;
-use Jv\Cms\DataResolver\Element\SideNavigation\Section;
-use Jv\Cms\DataResolver\Element\SideNavigation\Tab;
 use Shopware\Core\Content\Category\CategoryEntity;
 use Shopware\Core\Content\Category\Exception\CategoryNotFoundException;
 use Shopware\Core\Content\Category\SalesChannel\SalesChannelCategoryEntity;
@@ -28,9 +26,20 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
+/**
+ * Resolves CMS element `jv-side-navigation` for the Store API (SPEC-003 / SPEC-005).
+ *
+ * Config has no tabs. `items` is a category tree of exactly TREE_DEPTH child levels.
+ * Storefront typeahead reads this tree; this class does not search categories or products.
+ */
 final class SideNavigationCmsElementResolver extends AbstractCmsElementResolver
 {
     public const string TYPE = 'jv-side-navigation';
+
+    /** Child levels serialized from `rootCategoryId` (L1…L4). L5 is never included. */
+    private const int TREE_DEPTH = 4;
+
+    private const string DEFAULT_SEARCH_PLACEHOLDER = 'Kategorie suchen';
 
     private const array FOOTER_ICONS = [
         'login',
@@ -58,39 +67,23 @@ final class SideNavigationCmsElementResolver extends AbstractCmsElementResolver
         return self::TYPE;
     }
 
+    /**
+     * Logo media only. Category icons come from NavigationLoader (`category.media`).
+     */
     public function collect(CmsSlotEntity $slot, ResolverContext $resolverContext): ?CriteriaCollection
     {
         $config = $slot->getFieldConfig();
-        $mediaIds = [];
-
         $logoMedia = $config->get('logoMedia');
-        if (null !== $logoMedia) {
-            $id = $this->normalizeUuid($logoMedia->getValue());
-            if (null !== $id) {
-                $mediaIds[] = $id;
-            }
-        }
-
-        $tabs = $this->configArray($config->get('tabs')?->getValue());
-        foreach ($tabs as $tab) {
-            if (!\is_array($tab)) {
-                continue;
-            }
-            $sections = $this->configArray($tab['sections'] ?? null);
-            foreach ($sections as $section) {
-                if (!\is_array($section)) {
-                    continue;
-                }
-                $this->collectMediaIdsFromSection($section, $mediaIds);
-            }
-        }
-
-        $mediaIds = array_values(array_unique($mediaIds));
-        if ([] === $mediaIds) {
+        if (null === $logoMedia) {
             return null;
         }
 
-        $criteria = new Criteria($mediaIds);
+        $id = $this->normalizeUuid($logoMedia->getValue());
+        if (null === $id) {
+            return null;
+        }
+
+        $criteria = new Criteria([$id]);
         $criteriaCollection = new CriteriaCollection();
         $criteriaCollection->add(
             'jv_side_navigation_media_'.$slot->getUniqueIdentifier(),
@@ -101,6 +94,9 @@ final class SideNavigationCmsElementResolver extends AbstractCmsElementResolver
         return $criteriaCollection;
     }
 
+    /**
+     * Builds `SideNavigationStruct`. Leftover `tabs` / `defaultTabId` in saved config are ignored.
+     */
     public function enrich(CmsSlotEntity $slot, ResolverContext $resolverContext, ElementDataCollection $result): void
     {
         $config = $slot->getFieldConfig();
@@ -111,15 +107,9 @@ final class SideNavigationCmsElementResolver extends AbstractCmsElementResolver
         $logoMediaId = $this->normalizeUuid($config->get('logoMedia')?->getValue());
         $logo = $this->mediaRef(null !== $logoMediaId ? ($media[$logoMediaId] ?? null) : null);
 
-        $tabs = $this->normalizeTabs(
-            $this->configArray($config->get('tabs')?->getValue()),
-            $media,
-            $salesChannelContext,
-        );
-
-        $defaultTabId = trim((string) ($config->get('defaultTabId')?->getValue() ?? ''));
-        if ('' === $defaultTabId || !$this->tabExists($tabs, $defaultTabId)) {
-            $defaultTabId = [] === $tabs ? '' : $tabs[0]->getId();
+        $placeholder = trim((string) ($config->get('searchPlaceholder')?->getValue() ?? ''));
+        if ('' === $placeholder) {
+            $placeholder = self::DEFAULT_SEARCH_PLACEHOLDER;
         }
 
         $footerValue = $config->get('footer')?->getValue();
@@ -131,174 +121,58 @@ final class SideNavigationCmsElementResolver extends AbstractCmsElementResolver
         $slot->setData(new SideNavigationStruct(
             logo: $logo,
             logoLink: $logoLink,
-            defaultTabId: $defaultTabId,
-            tabs: $tabs,
+            searchPlaceholder: $placeholder,
+            items: $this->loadCategoryItems(
+                $this->normalizeUuid($config->get('rootCategoryId')?->getValue()),
+                (bool) ($config->get('showIcons')?->getValue() ?? true),
+                $salesChannelContext,
+            ),
             footerItems: $this->normalizeFooterItems($footerItemsRaw),
         ));
     }
 
     /**
-     * @param list<string>         $mediaIds
-     * @param array<string, mixed> $section
-     */
-    private function collectMediaIdsFromSection(array $section, array &$mediaIds): void
-    {
-        $type = (string) ($section['type'] ?? '');
-
-        if ('promo' === $type) {
-            $id = $this->normalizeUuid($section['mediaId'] ?? null);
-            if (null !== $id) {
-                $mediaIds[] = $id;
-            }
-
-            return;
-        }
-
-        if ('manual-links' === $type) {
-            $this->collectMediaIdsFromManualItems($this->configArray($section['items'] ?? null), $mediaIds);
-        }
-    }
-
-    /**
-     * @param list<mixed>  $items
-     * @param list<string> $mediaIds
-     */
-    private function collectMediaIdsFromManualItems(array $items, array &$mediaIds): void
-    {
-        foreach ($items as $item) {
-            if (!\is_array($item)) {
-                continue;
-            }
-            $id = $this->normalizeUuid($item['iconMediaId'] ?? null);
-            if (null !== $id) {
-                $mediaIds[] = $id;
-            }
-            $this->collectMediaIdsFromManualItems($this->configArray($item['children'] ?? null), $mediaIds);
-        }
-    }
-
-    /**
-     * @param list<mixed>                $tabs
-     * @param array<string, MediaEntity> $media
+     * Invalid/empty root → [] and the loader is not called (no HTTP 500).
      *
-     * @return list<Tab>
+     * @return list<NavItem>
      */
-    private function normalizeTabs(array $tabs, array $media, SalesChannelContext $salesChannelContext): array
-    {
-        $normalized = [];
-
-        foreach ($tabs as $tab) {
-            if (!\is_array($tab)) {
-                continue;
-            }
-
-            $id = trim((string) ($tab['id'] ?? ''));
-            $label = trim((string) ($tab['label'] ?? ''));
-            if ('' === $id || '' === $label) {
-                continue;
-            }
-
-            $sections = [];
-            foreach ($this->configArray($tab['sections'] ?? null) as $section) {
-                if (!\is_array($section)) {
-                    continue;
-                }
-                $normalizedSection = $this->normalizeSection($section, $media, $salesChannelContext);
-                if (null !== $normalizedSection) {
-                    $sections[] = $normalizedSection;
-                }
-            }
-
-            $normalized[] = new Tab($id, $label, $sections);
-        }
-
-        return $normalized;
-    }
-
-    /**
-     * @param array<string, mixed>       $section
-     * @param array<string, MediaEntity> $media
-     */
-    private function normalizeSection(array $section, array $media, SalesChannelContext $salesChannelContext): ?Section
-    {
-        $id = trim((string) ($section['id'] ?? ''));
-        $type = trim((string) ($section['type'] ?? ''));
-        if ('' === $id || '' === $type) {
-            return null;
-        }
-
-        return match ($type) {
-            'divider' => new Section(id: $id, type: 'divider'),
-            'manual-links' => new Section(
-                id: $id,
-                type: 'manual-links',
-                items: $this->normalizeManualItems($this->configArray($section['items'] ?? null), $media),
-                style: $this->normalizeManualStyle($section['style'] ?? null),
-            ),
-            'promo' => new Section(
-                id: $id,
-                type: 'promo',
-                media: $this->mediaRef(
-                    $media[$this->normalizeUuid($section['mediaId'] ?? null) ?? ''] ?? null,
-                    trim((string) ($section['alt'] ?? '')),
-                ),
-                title: '' !== ($promoTitle = trim((string) ($section['title'] ?? ''))) ? $promoTitle : null,
-                url: $this->safeHref(isset($section['url']) ? (string) $section['url'] : null),
-            ),
-            'category-tree' => $this->normalizeCategoryTreeSection($id, $section, $salesChannelContext),
-            default => null,
-        };
-    }
-
-    /**
-     * @param array<string, mixed> $section
-     */
-    private function normalizeCategoryTreeSection(string $id, array $section, SalesChannelContext $salesChannelContext): Section
-    {
-        $rootId = $this->normalizeUuid($section['rootCategoryId'] ?? null);
-        $maxDepth = $this->clampMaxDepth($section['maxDepth'] ?? 3);
-        $showIcons = (bool) ($section['showIcons'] ?? true);
-        $includeAll = (bool) ($section['includeRootAsAllLink'] ?? false);
-        $allLabel = trim((string) ($section['allLinkLabel'] ?? ''));
-
+    private function loadCategoryItems(
+        ?string $rootId,
+        bool $showIcons,
+        SalesChannelContext $salesChannelContext,
+    ): array {
         if (null === $rootId) {
-            return new Section(id: $id, type: 'category-tree', items: [], allLink: null);
+            return [];
         }
 
         try {
-            $tree = $this->navigationLoader->load($rootId, $salesChannelContext, $rootId, $maxDepth);
-        } catch (CategoryNotFoundException) {
-            return new Section(id: $id, type: 'category-tree', items: [], allLink: null);
-        }
-
-        $items = $this->mapTreeItems($tree->getTree(), $showIcons);
-
-        $allLink = null;
-        $active = $tree->getActive();
-        if ($includeAll && null !== $active) {
-            $label = '' !== $allLabel ? $allLabel : $this->categoryLabel($active);
-            $allLink = new NavItem(
-                id: $active->getId(),
-                kind: 'category',
-                label: $label,
-                url: $this->categoryUrl($active),
-                openInNewTab: false,
-                icon: null,
-                hasChildren: false,
-                children: [],
+            $tree = $this->navigationLoader->load(
+                $rootId,
+                $salesChannelContext,
+                $rootId,
+                self::TREE_DEPTH,
             );
+        } catch (CategoryNotFoundException) {
+            // Valid UUID but missing in the sales channel — empty tree, not an exception to the client.
+            return [];
         }
 
-        return new Section(id: $id, type: 'category-tree', items: $items, allLink: $allLink);
+        return $this->mapTreeItems($tree->getTree(), $showIcons, self::TREE_DEPTH);
     }
 
     /**
+     * Cuts the tree at TREE_DEPTH even if the loader returned deeper nodes.
+     *
      * @param list<TreeItem> $treeItems
      *
      * @return list<NavItem>
      */
-    private function mapTreeItems(array $treeItems, bool $showIcons): array
+    private function mapTreeItems(array $treeItems, bool $showIcons, int $remainingDepth): array
     {
+        if ($remainingDepth < 1) {
+            return [];
+        }
+
         $normalized = [];
 
         foreach ($treeItems as $treeItem) {
@@ -308,7 +182,7 @@ final class SideNavigationCmsElementResolver extends AbstractCmsElementResolver
                 continue;
             }
 
-            $children = $this->mapTreeItems($treeItem->getChildren(), $showIcons);
+            $children = $this->mapTreeItems($treeItem->getChildren(), $showIcons, $remainingDepth - 1);
 
             $normalized[] = new NavItem(
                 id: $category->getId(),
@@ -345,62 +219,6 @@ final class SideNavigationCmsElementResolver extends AbstractCmsElementResolver
         }
 
         return null;
-    }
-
-    private function clampMaxDepth(mixed $value): int
-    {
-        $depth = (int) $value;
-        if ($depth < 1) {
-            return 1;
-        }
-        if ($depth > 5) {
-            return 5;
-        }
-
-        return $depth;
-    }
-
-    /**
-     * @param list<mixed>                $items
-     * @param array<string, MediaEntity> $media
-     *
-     * @return list<NavItem>
-     */
-    private function normalizeManualItems(array $items, array $media, int $depth = 0): array
-    {
-        if ($depth > 5) {
-            return [];
-        }
-
-        $normalized = [];
-
-        foreach ($items as $item) {
-            if (!\is_array($item)) {
-                continue;
-            }
-
-            $id = trim((string) ($item['id'] ?? ''));
-            $label = trim((string) ($item['label'] ?? ''));
-            if ('' === $id || '' === $label) {
-                continue;
-            }
-
-            $children = $this->normalizeManualItems($this->configArray($item['children'] ?? null), $media, $depth + 1);
-            $iconMediaId = $this->normalizeUuid($item['iconMediaId'] ?? null);
-
-            $normalized[] = new NavItem(
-                id: $id,
-                kind: 'link',
-                label: $label,
-                url: $this->safeHref(isset($item['url']) ? (string) $item['url'] : null),
-                openInNewTab: (bool) ($item['openInNewTab'] ?? false),
-                icon: $this->mediaRef(null !== $iconMediaId ? ($media[$iconMediaId] ?? null) : null),
-                hasChildren: [] !== $children,
-                children: $children,
-            );
-        }
-
-        return $normalized;
     }
 
     /**
@@ -446,27 +264,6 @@ final class SideNavigationCmsElementResolver extends AbstractCmsElementResolver
         return $normalized;
     }
 
-    private function normalizeManualStyle(mixed $style): string
-    {
-        $style = trim((string) $style);
-
-        return 'uppercase' === $style ? 'uppercase' : 'default';
-    }
-
-    /**
-     * @param list<Tab> $tabs
-     */
-    private function tabExists(array $tabs, string $id): bool
-    {
-        foreach ($tabs as $tab) {
-            if ($tab->getId() === $id) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     /**
      * CMS config is untrusted persisted input. Only valid Shopware UUIDs reach DAL.
      */
@@ -484,6 +281,10 @@ final class SideNavigationCmsElementResolver extends AbstractCmsElementResolver
         return $id;
     }
 
+    /**
+     * Allow relative `/path` (not `//host`) and http(s) URLs with a host.
+     * Rejects javascript:, data:, empty, and anything without a valid host.
+     */
     private function safeHref(?string $href): ?string
     {
         $href = trim((string) $href);
@@ -557,13 +358,5 @@ final class SideNavigationCmsElementResolver extends AbstractCmsElementResolver
         }
 
         return $map;
-    }
-
-    /**
-     * @return list<mixed>
-     */
-    private function configArray(mixed $value): array
-    {
-        return \is_array($value) ? array_values($value) : [];
     }
 }

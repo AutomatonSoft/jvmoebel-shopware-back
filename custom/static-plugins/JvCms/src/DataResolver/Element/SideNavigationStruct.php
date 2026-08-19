@@ -1,23 +1,29 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Jv\Cms\DataResolver\Element;
 
 use Jv\Cms\DataResolver\Element\SideNavigation\FooterItem;
 use Jv\Cms\DataResolver\Element\SideNavigation\MediaRef;
-use Jv\Cms\DataResolver\Element\SideNavigation\Tab;
+use Jv\Cms\DataResolver\Element\SideNavigation\NavItem;
 use Shopware\Core\Framework\Struct\Struct;
 
+/**
+ * Store API `data` for `jv-side-navigation`.
+ * `items` is L1; nested `children` are L2…L4. There is no `tabs` field.
+ */
 final class SideNavigationStruct extends Struct
 {
     /**
-     * @param list<Tab>        $tabs
+     * @param list<NavItem>    $items
      * @param list<FooterItem> $footerItems
      */
     public function __construct(
         protected ?MediaRef $logo,
         protected string $logoLink,
-        protected string $defaultTabId,
-        protected array $tabs,
+        protected string $searchPlaceholder,
+        protected array $items,
         protected array $footerItems,
     ) {
     }
@@ -32,15 +38,15 @@ final class SideNavigationStruct extends Struct
         return $this->logoLink;
     }
 
-    public function getDefaultTabId(): string
+    public function getSearchPlaceholder(): string
     {
-        return $this->defaultTabId;
+        return $this->searchPlaceholder;
     }
 
-    /** @return list<Tab> */
-    public function getTabs(): array
+    /** @return list<NavItem> */
+    public function getItems(): array
     {
-        return $this->tabs;
+        return $this->items;
     }
 
     /** @return list<FooterItem> */
