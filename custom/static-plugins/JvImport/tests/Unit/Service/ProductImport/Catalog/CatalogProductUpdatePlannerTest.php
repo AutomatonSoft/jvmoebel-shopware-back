@@ -126,6 +126,18 @@ final class CatalogProductUpdatePlannerTest extends TestCase
         );
     }
 
+    public function testItRejectsAPropertyOptionValueLongerThanShopwareAllows(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('exceeds the 255 character limit');
+
+        (new CatalogProductUpdatePlanner())->plan(
+            new ExistingProductForCatalogEnrichment('product-id', '4260454043503', '4260454043503', 'EUR', 1000.0, 840.34, 19.0, [], []),
+            new CatalogProductData('okb', '4260454043503', '4260454043503', 'reference-1', '25922', '3446', null, null, [new CatalogProductAttribute('Markeninformationen', [str_repeat('x', 256)])]),
+            [new CatalogCategoryAttributeSchema('okb', '3446', '101', 'Markeninformationen', 'STRING', false, 'property', 'brand-information-group')],
+        );
+    }
+
     public function testItDoesNotImportDisabledOrInactiveMappedAttributes(): void
     {
         $update = (new CatalogProductUpdatePlanner())->plan(

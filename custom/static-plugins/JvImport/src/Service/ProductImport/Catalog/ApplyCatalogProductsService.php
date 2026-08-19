@@ -43,33 +43,77 @@ final readonly class ApplyCatalogProductsService
      */
     public function execute(array $preparedProducts, array $schemas, bool $dryRun, Context $context): CatalogProductApplyResult
     {
+        $preparedProducts = $this->lastProductsByProductNumber($preparedProducts);
         if ([] === $preparedProducts) {
             return new CatalogProductApplyResult(0, 0, 0);
         }
         $products = $this->existingProducts($preparedProducts, $context);
         $currencyIds = $this->currencyIds($preparedProducts, $context);
-        $optionRecords = $this->propertyOptions($preparedProducts, $schemas);
-        $updates = [];
-        $candidates = [];
+        $validatedProducts = [];
+        $invalidRecords = [];
+        $candidateGroups = [];
         $existingProductNumbers = [];
 
         foreach ($products as $productNumber => $product) {
             $existingProductNumbers[$product->getProductNumber()] = $product->getId();
         }
         foreach ($preparedProducts as $prepared) {
-            $product = $products[$this->productKey($prepared->productNumber)] ?? null;
-            if (null === $product) {
-                throw new \InvalidArgumentException(sprintf('Shopware product number "%s" does not exist.', $prepared->productNumber));
+            try {
+                $product = $products[$this->productKey($prepared->productNumber)] ?? null;
+                if (null === $product) {
+                    throw new \InvalidArgumentException(sprintf('Shopware product number "%s" does not exist.', $prepared->productNumber));
+                }
+                $currencyCode = strtoupper($prepared->currency ?? 'EUR');
+                $currencyId = $currencyIds[$currencyCode] ?? null;
+                if (null === $currencyId) {
+                    throw new \InvalidArgumentException(sprintf('Shopware currency "%s" does not exist.', $currencyCode));
+                }
+                $existing = $this->existingProduct($product, $currencyCode, $currencyId);
+                $update = $this->updatePlanner->plan($existing, $prepared, $schemas);
+                $validatedProducts[] = [$product, $prepared, $update, $currencyId];
+                $candidateGroups[$this->variantGroupKey($prepared)][] = new Dto\CatalogVariantCandidate($product->getId(), $prepared->productNumber, $prepared->productReference, $update->priceGross, $prepared->sourceCode, $update->variantOptionIds);
+            } catch (\InvalidArgumentException $exception) {
+                $invalidRecords[] = $this->invalidRecord($prepared, $exception->getMessage());
             }
-            $currencyId = $currencyIds[$prepared->currency ?? 'EUR'] ?? Defaults::CURRENCY;
-            $existing = $this->existingProduct($product, $prepared->currency ?? 'EUR', $currencyId);
-            $update = $this->updatePlanner->plan($existing, $prepared, $schemas);
-            $updates[$product->getId()] = [$product, $prepared, $update, $currencyId];
-            $candidates[] = new Dto\CatalogVariantCandidate($product->getId(), $prepared->productNumber, $prepared->productReference, $update->priceGross, $prepared->sourceCode, $update->variantOptionIds);
         }
-        $variantPlan = $this->variantGroupPlanner->plan($candidates, $existingProductNumbers);
-        $productRecords = $this->productRecords($updates, $variantPlan->childParentIds);
-        $parentRecords = $this->parentRecords($variantPlan->parents, $updates, $currencyIds);
+        $invalidVariantGroups = [];
+        foreach ($invalidRecords as $invalidRecord) {
+            $invalidVariantGroups[$this->variantGroupKeyFromValues($invalidRecord->sourceCode, $invalidRecord->productReference)] = true;
+        }
+        $variantParents = [];
+        $childParentIds = [];
+        foreach ($candidateGroups as $key => $candidates) {
+            if (isset($invalidVariantGroups[$key])) {
+                continue;
+            }
+            try {
+                $variantPlan = $this->variantGroupPlanner->plan($candidates, $existingProductNumbers);
+                array_push($variantParents, ...$variantPlan->parents);
+                $childParentIds += $variantPlan->childParentIds;
+            } catch (\InvalidArgumentException $exception) {
+                $invalidVariantGroups[$key] = true;
+                foreach ($validatedProducts as [, $prepared]) {
+                    if ($key === $this->variantGroupKey($prepared)) {
+                        $invalidRecords[] = $this->invalidRecord($prepared, $exception->getMessage());
+                    }
+                }
+            }
+        }
+        $updates = [];
+        $validProducts = [];
+        foreach ($validatedProducts as [$product, $prepared, $update, $currencyId]) {
+            if (isset($invalidVariantGroups[$this->variantGroupKey($prepared)])) {
+                if (!$this->hasInvalidRecord($invalidRecords, $prepared->sourceCode, $prepared->productNumber)) {
+                    $invalidRecords[] = $this->invalidRecord($prepared, sprintf('Variant group "%s" contains an invalid child product.', $prepared->productReference));
+                }
+                continue;
+            }
+            $updates[$product->getId()] = [$product, $prepared, $update, $currencyId];
+            $validProducts[] = $prepared;
+        }
+        $optionRecords = $this->propertyOptions($validProducts, $schemas);
+        $productRecords = $this->productRecords($updates, $childParentIds);
+        $parentRecords = $this->parentRecords($variantParents, $updates, $currencyIds);
 
         if (!$dryRun) {
             if ([] !== $optionRecords) {
@@ -81,10 +125,10 @@ final readonly class ApplyCatalogProductsService
             if ([] !== $productRecords) {
                 $this->productRepository->upsert($productRecords, $context);
             }
-            $this->upsertConfiguratorSettings($variantPlan->parents, $context);
+            $this->upsertConfiguratorSettings($variantParents, $context);
         }
 
-        return new CatalogProductApplyResult(count($preparedProducts), count($optionRecords), count($variantPlan->parents));
+        return new CatalogProductApplyResult(count($validProducts), count($optionRecords), count($variantParents), $invalidRecords);
     }
 
     /** @param list<CatalogProductData> $preparedProducts
@@ -126,13 +170,8 @@ final readonly class ApplyCatalogProductsService
         foreach ($currencies as $currency) {
             $ids[strtoupper($currency->getIsoCode())] = $currency->getId();
         }
-        foreach (array_keys($codes) as $code) {
-            if (!isset($ids[$code])) {
-                throw new \InvalidArgumentException(sprintf('Shopware currency "%s" does not exist.', $code));
-            }
-        }
 
-        return $ids;
+        return ['EUR' => Defaults::CURRENCY, ...$ids];
     }
 
     /**
@@ -308,5 +347,45 @@ final readonly class ApplyCatalogProductsService
     private function productKey(string $productNumber): string
     {
         return 'product-number:'.$productNumber;
+    }
+
+    /** @param list<CatalogProductData> $preparedProducts
+     * @return list<CatalogProductData>
+     */
+    private function lastProductsByProductNumber(array $preparedProducts): array
+    {
+        $products = [];
+        foreach ($preparedProducts as $preparedProduct) {
+            $products[$preparedProduct->sourceCode."\0".$preparedProduct->productNumber] = $preparedProduct;
+        }
+
+        return array_values($products);
+    }
+
+    private function variantGroupKey(CatalogProductData $product): string
+    {
+        return $this->variantGroupKeyFromValues($product->sourceCode, $product->productReference);
+    }
+
+    private function variantGroupKeyFromValues(string $sourceCode, string $productReference): string
+    {
+        return $sourceCode."\0".$productReference;
+    }
+
+    private function invalidRecord(CatalogProductData $product, string $reason): Dto\CatalogProductInvalidRecord
+    {
+        return new Dto\CatalogProductInvalidRecord($product->sourceCode, $product->productNumber, $product->ean, $product->productReference, $reason);
+    }
+
+    /** @param list<Dto\CatalogProductInvalidRecord> $invalidRecords */
+    private function hasInvalidRecord(array $invalidRecords, string $sourceCode, string $productNumber): bool
+    {
+        foreach ($invalidRecords as $invalidRecord) {
+            if ($sourceCode === $invalidRecord->sourceCode && $productNumber === $invalidRecord->productNumber) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

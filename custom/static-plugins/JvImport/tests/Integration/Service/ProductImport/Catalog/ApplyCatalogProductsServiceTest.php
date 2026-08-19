@@ -87,6 +87,66 @@ final class ApplyCatalogProductsServiceTest extends TestCase
         }
     }
 
+    public function testItRejectsTheWholeVariantGroupWhenOneChildHasAnInvalidAttributeValue(): void
+    {
+        $context = Context::createDefaultContext();
+        $source = 'catalog-invalid-variant-test';
+        $categoryId = CatalogIdentity::categoryId($source, 'category-1');
+        $groupId = CatalogIdentity::categoryGroupId($source, 'group-1');
+        $propertyGroupId = Uuid::randomHex();
+        $firstId = Uuid::randomHex();
+        $secondId = Uuid::randomHex();
+        $thirdId = Uuid::randomHex();
+        $taxId = $this->taxId($context);
+        $products = $this->products();
+
+        $this->categories()->upsert([
+            ['id' => $groupId, 'name' => 'Test group', 'active' => true],
+            ['id' => $categoryId, 'parentId' => $groupId, 'name' => 'Test category', 'active' => true],
+        ], $context);
+        $this->propertyGroups()->create([
+            ['id' => $propertyGroupId, 'name' => 'Brand information', 'displayType' => 'text', 'sortingType' => 'alphanumeric'],
+        ], $context);
+        $products->create([
+            $this->product($firstId, '4260454043510', 'Valid child', $taxId, 1000.0),
+            $this->product($secondId, '4260454043511', 'Invalid child', $taxId, 1000.0),
+            $this->product($thirdId, '4260454043512', 'Valid standalone product', $taxId, 1000.0),
+        ], $context);
+
+        try {
+            $service = static::getContainer()->get(ApplyCatalogProductsService::class);
+            self::assertInstanceOf(ApplyCatalogProductsService::class, $service);
+            $result = $service->execute([
+                new CatalogProductData($source, '4260454043510', '4260454043510', 'model-invalid', 'category-1', 'group-1', 1000.0, 'EUR', [new CatalogProductAttribute('Brand information', ['Valid'])]),
+                new CatalogProductData($source, '4260454043511', '4260454043511', 'model-invalid', 'category-1', 'group-1', 1000.0, 'EUR', [new CatalogProductAttribute('Brand information', [str_repeat('x', 256)])]),
+                new CatalogProductData($source, '4260454043512', '4260454043512', '4260454043512', 'category-1', 'group-1', 1000.0, 'EUR', [new CatalogProductAttribute('Brand information', ['Valid'])]),
+            ], [
+                new CatalogCategoryAttributeSchema($source, 'group-1', 'brand-information', 'Brand information', 'STRING', false, 'property', $propertyGroupId),
+            ], false, $context);
+
+            self::assertSame(1, $result->products);
+            self::assertSame(1, $result->propertyOptions);
+            self::assertSame(0, $result->variantParents);
+            self::assertCount(2, $result->invalidRecords);
+            self::assertStringContainsString('255 character limit', $result->invalidRecords[0]->reason);
+            self::assertStringContainsString('Variant group', $result->invalidRecords[1]->reason);
+            self::assertNull($this->productById($firstId, $context)->getParentId());
+            self::assertNull($this->productById($secondId, $context)->getParentId());
+            $third = $this->productById($thirdId, $context);
+            self::assertContains($categoryId, $third->getCategoryIds() ?? []);
+            self::assertCount(1, $third->getPropertyIds() ?? []);
+        } finally {
+            $products->delete([
+                ['id' => $firstId],
+                ['id' => $secondId],
+                ['id' => $thirdId],
+                ['id' => CatalogIdentity::variantParentId($source, 'model-invalid')],
+            ], $context);
+            $this->propertyGroups()->delete([['id' => $propertyGroupId]], $context);
+            $this->categories()->delete([['id' => $categoryId], ['id' => $groupId]], $context);
+        }
+    }
+
     /** @return EntityRepository<ProductCollection> */
     private function products(): EntityRepository
     {

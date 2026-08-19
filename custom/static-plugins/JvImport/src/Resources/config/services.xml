@@ -109,6 +109,7 @@
         </service>
         <service id="Jv\Import\Service\ProductImport\Catalog\CatalogProductUpdatePlanner"/>
         <service id="Jv\Import\Service\ProductImport\Catalog\CatalogVariantGroupPlanner"/>
+        <service id="Jv\Import\Service\ProductImport\Catalog\CatalogProductInvalidRecordsCsvWriter"/>
         <service id="Jv\Import\Service\ProductImport\Catalog\ApplyCatalogProductsService">
             <argument type="service" id="product.repository"/>
             <argument type="service" id="property_group_option.repository"/>

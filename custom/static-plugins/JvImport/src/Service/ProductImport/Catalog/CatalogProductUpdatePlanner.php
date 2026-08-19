@@ -96,6 +96,11 @@ final class CatalogProductUpdatePlanner
         if (!$schema->multiValue && 1 < count($attribute->values)) {
             throw new \InvalidArgumentException(sprintf('Catalog attribute "%s" does not accept multiple values.', $schema->attributeName));
         }
+        foreach ($attribute->values as $value) {
+            if (255 < mb_strlen($value)) {
+                throw new \InvalidArgumentException(sprintf('Catalog attribute "%s" value exceeds the 255 character limit for a Shopware property option.', $schema->attributeName));
+            }
+        }
 
         return $attribute->values;
     }
