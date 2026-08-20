@@ -63,7 +63,7 @@ Canvas в Shopping Experiences — интерактивное превью: по
 - `getType()` = `jv-side-navigation`.
 - `collect()` — Criteria только для `logoMedia`. Невалидные UUID не в Criteria. Иконки категорий — `category.media` из дерева loader, не отдельный collect.
 - Дерево в `enrich()`: `NavigationLoader::load()`; перед вызовом `normalizeUuid(rootCategoryId)`. Невалидный id → `items: []`, loader не вызывать.
-- Глубина сериализации **фиксирована = 4** child-уровня. `mapTreeItems` обрезает явно. Поля `maxDepth` в config нет; в loader передавать 4 (или эквивалент), mapper всё равно режет до 4.
+- Глубина сериализации **фиксирована = 4** child-уровня. `mapTreeItems` обрезает явно. Поля `maxDepth` в config нет; сериализация = 4, loader depth = 3 (TREE_DEPTH - 1), mapper режет до 4 как защита. Контракт data тот же.
 - `searchPlaceholder`: trim; пусто → дефолтная строка (например `Kategorie suchen`), не `null`.
 - `safeHref()`: relative `/…` и `http`/`https`; не копировать `ButtonCmsElementResolver::safeUrl()`.
 - `defaultConfig`: logo null, `searchPlaceholder` `''` или дефолт, `rootCategoryId` null, `showIcons` true, `footer.items` `[]`. Без demo-seed.

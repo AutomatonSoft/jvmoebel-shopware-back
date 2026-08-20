@@ -131,7 +131,7 @@ final class SideNavigationCmsElementResolverTest extends TestCase
         $loader = $this->createMock(NavigationLoaderInterface::class);
         $loader->expects(self::once())
             ->method('load')
-            ->with(self::ROOT_ID, self::anything(), self::ROOT_ID, 4)
+            ->with(self::ROOT_ID, self::anything(), self::ROOT_ID, 3)
             ->willReturn($tree);
 
         $slot = $this->slot([
@@ -176,7 +176,7 @@ final class SideNavigationCmsElementResolverTest extends TestCase
         $loader = $this->createMock(NavigationLoaderInterface::class);
         $loader->expects(self::once())
             ->method('load')
-            ->with(self::ROOT_ID, self::anything(), self::ROOT_ID, 4)
+            ->with(self::ROOT_ID, self::anything(), self::ROOT_ID, 3)
             ->willReturn($tree);
 
         $slot = $this->slot([
@@ -213,7 +213,7 @@ final class SideNavigationCmsElementResolverTest extends TestCase
         $loader = $this->createMock(NavigationLoaderInterface::class);
         $loader->expects(self::once())
             ->method('load')
-            ->with(self::MISSING_ID, self::anything(), self::MISSING_ID, 4)
+            ->with(self::MISSING_ID, self::anything(), self::MISSING_ID, 3)
             ->willThrowException(new CategoryNotFoundException(self::MISSING_ID));
 
         $slot = $this->slot([

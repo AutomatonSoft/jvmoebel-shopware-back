@@ -39,6 +39,9 @@ final class SideNavigationCmsElementResolver extends AbstractCmsElementResolver
     /** Child levels serialized from `rootCategoryId` (L1…L4). L5 is never included. */
     private const int TREE_DEPTH = 4;
 
+    /** Shopware loads rootLevel + depth + 1; 3 hydrates L1–L4, not L5. */
+    private const int NAVIGATION_LOADER_DEPTH = self::TREE_DEPTH - 1; // 3
+
     private const string DEFAULT_SEARCH_PLACEHOLDER = 'Kategorie suchen';
 
     private const array FOOTER_ICONS = [
@@ -150,7 +153,7 @@ final class SideNavigationCmsElementResolver extends AbstractCmsElementResolver
                 $rootId,
                 $salesChannelContext,
                 $rootId,
-                self::TREE_DEPTH,
+                self::NAVIGATION_LOADER_DEPTH,
             );
         } catch (CategoryNotFoundException) {
             // Valid UUID but missing in the sales channel — empty tree, not an exception to the client.
