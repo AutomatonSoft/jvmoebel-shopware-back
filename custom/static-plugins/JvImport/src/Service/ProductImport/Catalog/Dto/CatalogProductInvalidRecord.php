@@ -8,7 +8,6 @@ final readonly class CatalogProductInvalidRecord
         public string $sourceCode,
         public string $productNumber,
         public string $ean,
-        public string $productReference,
         public string $reason,
     ) {
     }

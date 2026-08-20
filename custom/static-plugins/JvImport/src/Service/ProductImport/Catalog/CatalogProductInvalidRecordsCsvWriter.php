@@ -14,13 +14,12 @@ final class CatalogProductInvalidRecordsCsvWriter
             throw new \RuntimeException(sprintf('Unable to write invalid catalog records to "%s".', $path));
         }
         try {
-            $this->writeRow($handle, ['source_code', 'product_number', 'ean', 'product_reference', 'reason']);
+            $this->writeRow($handle, ['source_code', 'product_number', 'ean', 'reason']);
             foreach ($invalidRecords as $invalidRecord) {
                 $this->writeRow($handle, [
                     $invalidRecord->sourceCode,
                     $invalidRecord->productNumber,
                     $invalidRecord->ean,
-                    $invalidRecord->productReference,
                     $invalidRecord->reason,
                 ]);
             }

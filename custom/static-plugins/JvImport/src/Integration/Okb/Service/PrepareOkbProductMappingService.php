@@ -25,8 +25,9 @@ final readonly class PrepareOkbProductMappingService
         }
 
         $categories = $this->categoryLookup($snapshotDirectory);
+        $attributeNames = $this->attributeNamesByCategoryGroup($snapshotDirectory);
         $products = $this->openOutput($outputDirectory.'/okb-product-mapping.csv', [
-            'product_number', 'ean', 'product_reference', 'category_name', 'category_id', 'category_group_id', 'standard_price_amount', 'currency',
+            'product_number', 'ean', 'category_name', 'category_id', 'category_group_id', 'standard_price_amount', 'currency',
         ]);
         $attributes = $this->openOutput($outputDirectory.'/okb-product-attributes.csv', ['product_number', 'ean', 'attribute_name', 'values_json']);
         $failures = $this->openOutput($outputDirectory.'/okb-product-mapping-failures.csv', ['product_number', 'ean', 'reason']);
@@ -47,6 +48,7 @@ final readonly class PrepareOkbProductMappingService
                     if (null === $category) {
                         throw new \InvalidArgumentException(sprintf('OKB category "%s" is missing from the supplied snapshot.', $variation->categoryName));
                     }
+                    $this->validateAttributes($variation, $category['categoryGroupId'], $attributeNames);
                     $this->writeVariation($products, $productNumber, $variation, $category);
                     foreach ($variation->attributes as $attribute) {
                         $this->write($attributes, [$productNumber, $ean, $attribute->name, json_encode($attribute->values, \JSON_THROW_ON_ERROR)]);
@@ -84,6 +86,29 @@ final readonly class PrepareOkbProductMappingService
         return $categories;
     }
 
+    /** @return array<string, array<string, true>> */
+    private function attributeNamesByCategoryGroup(string $snapshotDirectory): array
+    {
+        $attributes = [];
+        foreach ($this->csvReader->rows(rtrim($snapshotDirectory, '/').'/okb-attributes.csv', ['category_group_id', 'attribute_id', 'attribute_name']) as $row) {
+            $attributes[$row['category_group_id']][$row['attribute_name']] = true;
+        }
+
+        return $attributes;
+    }
+
+    /**
+     * @param array<string, array<string, true>> $attributeNames
+     */
+    private function validateAttributes(OkbProductVariation $variation, string $categoryGroupId, array $attributeNames): void
+    {
+        foreach ($variation->attributes as $attribute) {
+            if (!isset($attributeNames[$categoryGroupId][$attribute->name])) {
+                throw new \InvalidArgumentException(sprintf('OKB attribute "%s" is not present in category group %s.', $attribute->name, $categoryGroupId));
+            }
+        }
+    }
+
     /**
      * @param resource                                           $handle
      * @param array{categoryId: string, categoryGroupId: string} $category
@@ -93,7 +118,6 @@ final readonly class PrepareOkbProductMappingService
         $this->write($handle, [
             $productNumber,
             $variation->ean,
-            $variation->productReference,
             $variation->categoryName,
             $category['categoryId'],
             $category['categoryGroupId'],

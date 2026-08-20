@@ -17,9 +17,6 @@ final class CatalogProductUpdatePlanner
         if ($existing->productNumber !== $prepared->productNumber) {
             throw new \InvalidArgumentException('Prepared product number does not match the existing Shopware product.');
         }
-        if ($existing->ean !== $prepared->ean) {
-            throw new \InvalidArgumentException('Prepared product EAN does not match the existing Shopware product EAN.');
-        }
 
         $schemasByName = [];
         foreach ($schemas as $schema) {
@@ -53,7 +50,7 @@ final class CatalogProductUpdatePlanner
      */
     private function attributes(ExistingProductForCatalogEnrichment $existing, CatalogProductData $prepared, array $schemasByName): array
     {
-        $propertyOptionIds = array_fill_keys($existing->propertyOptionIds, true);
+        $propertyOptionIds = [];
         $variantOptionIds = [];
         $customFields = $existing->customFields;
         unset($customFields['jv_catalog_attributes']);
@@ -76,18 +73,13 @@ final class CatalogProductUpdatePlanner
             foreach ($values as $value) {
                 $optionId = CatalogIdentity::propertyOptionId($schema->propertyGroupId, $value);
                 $propertyOptionIds[$optionId] = true;
-                if ($this->isVariationTheme($schema->featureRelevance)) {
+                if (str_contains((string) $schema->featureRelevance, 'VARIATION_THEME')) {
                     $variantOptionIds[$optionId] = true;
                 }
             }
         }
 
         return [array_keys($propertyOptionIds), array_keys($variantOptionIds), $customFields];
-    }
-
-    private function isVariationTheme(?string $featureRelevance): bool
-    {
-        return in_array('VARIATION_THEME', explode('|', (string) $featureRelevance), true);
     }
 
     /** @return list<string> */

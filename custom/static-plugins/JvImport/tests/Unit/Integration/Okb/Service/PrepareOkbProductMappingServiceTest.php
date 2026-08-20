@@ -1,0 +1,66 @@
+<?php declare(strict_types=1);
+
+namespace Jv\Import\Tests\Unit\Integration\Okb\Service;
+
+use Jv\Import\Integration\Csv\SemicolonCsvReader;
+use Jv\Import\Integration\Okb\OkbProductApiClient;
+use Jv\Import\Integration\Okb\OkbProductResponseNormalizer;
+use Jv\Import\Integration\Okb\Service\PrepareOkbProductMappingService;
+use PHPUnit\Framework\TestCase;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Contracts\HttpClient\ResponseInterface;
+
+final class PrepareOkbProductMappingServiceTest extends TestCase
+{
+    public function testItReportsAnAttributeThatIsNotInTheProductsCategoryGroupSchema(): void
+    {
+        $directory = sys_get_temp_dir().'/jv-okb-product-mapping-'.bin2hex(random_bytes(8));
+        mkdir($directory.'/snapshot', 0775, true);
+        mkdir($directory.'/output', 0775, true);
+        file_put_contents($directory.'/source.csv', "product_number;ean\n4260454043503;4260454043503\n");
+        file_put_contents($directory.'/snapshot/okb-categories.csv', "category_group_id;category_id;category_name\ngroup-1;category-1;Sofas\n");
+        file_put_contents($directory.'/snapshot/okb-attributes.csv', "category_group_id;attribute_id;attribute_name\ngroup-1;color;Color\n");
+        $response = $this->createMock(ResponseInterface::class);
+        $response->method('getStatusCode')->willReturn(200);
+        $response->method('toArray')->with(false)->willReturn([
+            'productVariations' => [[
+                'productReference' => '4260454043503',
+                'sku' => '4260454043503',
+                'ean' => '4260454043503',
+                'productDescription' => [
+                    'category' => 'Sofas',
+                    'attributes' => [['name' => 'Leg color', 'values' => ['black']]],
+                ],
+            ]],
+        ]);
+        $httpClient = $this->createMock(HttpClientInterface::class);
+        $httpClient->method('request')->willReturn($response);
+
+        try {
+            $result = (new PrepareOkbProductMappingService(
+                new SemicolonCsvReader(),
+                new OkbProductApiClient($httpClient, new OkbProductResponseNormalizer(), 'https://okb.example'),
+            ))->execute($directory.'/source.csv', $directory.'/snapshot', $directory.'/output', null);
+
+            self::assertSame(0, $result->products);
+            self::assertSame(0, $result->attributes);
+            self::assertSame(1, $result->failures);
+            self::assertStringContainsString('Leg color', (string) file_get_contents($directory.'/output/okb-product-mapping-failures.csv'));
+            self::assertStringNotContainsString('4260454043503;', (string) file_get_contents($directory.'/output/okb-product-mapping.csv'));
+        } finally {
+            $files = glob($directory.'/*/*');
+            if (false !== $files) {
+                foreach ($files as $file) {
+                    unlink($file);
+                }
+            }
+            $paths = glob($directory.'/*');
+            if (false !== $paths) {
+                foreach ($paths as $path) {
+                    is_dir($path) ? rmdir($path) : unlink($path);
+                }
+            }
+            rmdir($directory);
+        }
+    }
+}

@@ -15,11 +15,11 @@ final class CatalogProductInvalidRecordsCsvWriterTest extends TestCase
 
         try {
             (new CatalogProductInvalidRecordsCsvWriter())->write($path, [
-                new CatalogProductInvalidRecord('okb', '4260454043503', '4260454043503', 'model-1', 'Value exceeds the 255 character limit.'),
+                new CatalogProductInvalidRecord('okb', '4260454043503', '4260454043503', 'Value exceeds the 255 character limit.'),
             ]);
 
             self::assertSame(
-                "source_code;product_number;ean;product_reference;reason\nokb;4260454043503;4260454043503;model-1;\"Value exceeds the 255 character limit.\"\n",
+                "source_code;product_number;ean;reason\nokb;4260454043503;4260454043503;\"Value exceeds the 255 character limit.\"\n",
                 file_get_contents($path),
             );
         } finally {

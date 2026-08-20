@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
 
 final class CatalogProductUpdatePlannerTest extends TestCase
 {
-    public function testItPlansAllOkbAttributesAsPropertiesAndRemovesLegacyCatalogJson(): void
+    public function testItPlansOnlyOkbAttributesAsChildPropertiesAndRemovesLegacyCatalogJson(): void
     {
         $update = (new CatalogProductUpdatePlanner())->plan(
             new ExistingProductForCatalogEnrichment(
@@ -33,7 +33,6 @@ final class CatalogProductUpdatePlannerTest extends TestCase
                 'okb',
                 '4260454043503',
                 '4260454043503',
-                'reference-1',
                 '25922',
                 '3446',
                 1200.0,
@@ -54,13 +53,11 @@ final class CatalogProductUpdatePlannerTest extends TestCase
         self::assertSame('product-id', $update->productId);
         self::assertSame([CatalogIdentity::categoryId('okb', '25922')], $update->categoryIds);
         self::assertSame([
-            'existing-option',
             CatalogIdentity::propertyOptionId('farbe-group', 'Braun'),
             CatalogIdentity::propertyOptionId('breite-group', '120.5'),
             CatalogIdentity::propertyOptionId('lieferumfang-group', 'Kissen'),
             CatalogIdentity::propertyOptionId('lieferumfang-group', 'Decke'),
         ], $update->propertyOptionIds);
-        self::assertSame([], $update->variantOptionIds);
         self::assertSame(['jv_internal_article_code' => 'Sofort'], $update->customFields);
         self::assertSame(1200.0, $update->priceGross);
         self::assertSame(1008.4, $update->priceNet);
@@ -70,7 +67,7 @@ final class CatalogProductUpdatePlannerTest extends TestCase
     {
         $update = (new CatalogProductUpdatePlanner())->plan(
             new ExistingProductForCatalogEnrichment('product-id', '4260454043503', '4260454043503', 'EUR', 1500.0, 1260.5, 19.0, [], []),
-            new CatalogProductData('okb', '4260454043503', '4260454043503', 'reference-1', '25922', '3446', 1200.0, 'EUR', []),
+            new CatalogProductData('okb', '4260454043503', '4260454043503', '25922', '3446', 1200.0, 'EUR', []),
             [],
         );
 
@@ -78,16 +75,16 @@ final class CatalogProductUpdatePlannerTest extends TestCase
         self::assertSame(1260.5, $update->priceNet);
     }
 
-    public function testItRejectsAProductWithAnotherEan(): void
+    public function testItAcceptsTheOriginalParentEanBeingDifferentFromTheOkbChildEan(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('EAN does not match');
-
-        (new CatalogProductUpdatePlanner())->plan(
+        $update = (new CatalogProductUpdatePlanner())->plan(
             new ExistingProductForCatalogEnrichment('product-id', '4260454043503', '4260454043504', 'EUR', 1000.0, 840.34, 19.0, [], []),
-            new CatalogProductData('okb', '4260454043503', '4260454043503', 'reference-1', '25922', '3446', 1200.0, 'EUR', []),
+            new CatalogProductData('okb', '4260454043503', '4260454043503', '25922', '3446', 1200.0, 'EUR', []),
             [],
         );
+
+        self::assertSame('product-id', $update->productId);
+        self::assertSame(1200.0, $update->priceGross);
     }
 
     public function testItRejectsAnUnknownAttributeInsteadOfSilentlyDroppingIt(): void
@@ -97,7 +94,7 @@ final class CatalogProductUpdatePlannerTest extends TestCase
 
         (new CatalogProductUpdatePlanner())->plan(
             new ExistingProductForCatalogEnrichment('product-id', '4260454043503', '4260454043503', 'EUR', 1000.0, 840.34, 19.0, [], []),
-            new CatalogProductData('okb', '4260454043503', '4260454043503', 'reference-1', '25922', '3446', 1200.0, 'EUR', [new CatalogProductAttribute('Unknown', ['x'])]),
+            new CatalogProductData('okb', '4260454043503', '4260454043503', '25922', '3446', 1200.0, 'EUR', [new CatalogProductAttribute('Unknown', ['x'])]),
             [],
         );
     }
@@ -109,7 +106,7 @@ final class CatalogProductUpdatePlannerTest extends TestCase
 
         (new CatalogProductUpdatePlanner())->plan(
             new ExistingProductForCatalogEnrichment('product-id', '4260454043503', '4260454043503', 'EUR', 1000.0, 840.34, 19.0, [], []),
-            new CatalogProductData('okb', '4260454043503', '4260454043503', 'reference-1', '25922', '3446', 1200.0, 'CHF', []),
+            new CatalogProductData('okb', '4260454043503', '4260454043503', '25922', '3446', 1200.0, 'CHF', []),
             [],
         );
     }
@@ -121,7 +118,7 @@ final class CatalogProductUpdatePlannerTest extends TestCase
 
         (new CatalogProductUpdatePlanner())->plan(
             new ExistingProductForCatalogEnrichment('product-id', '4260454043503', '4260454043503', 'EUR', 1000.0, 840.34, 19.0, [], []),
-            new CatalogProductData('okb', '4260454043503', '4260454043503', 'reference-1', '25922', '3446', null, null, [new CatalogProductAttribute('Breite', ['120', '130'])]),
+            new CatalogProductData('okb', '4260454043503', '4260454043503', '25922', '3446', null, null, [new CatalogProductAttribute('Breite', ['120', '130'])]),
             [new CatalogCategoryAttributeSchema('okb', '3446', '101', 'Breite', 'FLOAT', false, 'property', 'breite-group')],
         );
     }
@@ -133,7 +130,7 @@ final class CatalogProductUpdatePlannerTest extends TestCase
 
         (new CatalogProductUpdatePlanner())->plan(
             new ExistingProductForCatalogEnrichment('product-id', '4260454043503', '4260454043503', 'EUR', 1000.0, 840.34, 19.0, [], []),
-            new CatalogProductData('okb', '4260454043503', '4260454043503', 'reference-1', '25922', '3446', null, null, [new CatalogProductAttribute('Markeninformationen', [str_repeat('x', 256)])]),
+            new CatalogProductData('okb', '4260454043503', '4260454043503', '25922', '3446', null, null, [new CatalogProductAttribute('Markeninformationen', [str_repeat('x', 256)])]),
             [new CatalogCategoryAttributeSchema('okb', '3446', '101', 'Markeninformationen', 'STRING', false, 'property', 'brand-information-group')],
         );
     }
@@ -142,7 +139,7 @@ final class CatalogProductUpdatePlannerTest extends TestCase
     {
         $update = (new CatalogProductUpdatePlanner())->plan(
             new ExistingProductForCatalogEnrichment('product-id', '4260454043503', '4260454043503', 'EUR', 1000.0, 840.34, 19.0, [], []),
-            new CatalogProductData('okb', '4260454043503', '4260454043503', 'reference-1', '25922', '3446', null, null, [
+            new CatalogProductData('okb', '4260454043503', '4260454043503', '25922', '3446', null, null, [
                 new CatalogProductAttribute('Disabled', ['do not use']),
                 new CatalogProductAttribute('Missing at source', ['do not use']),
             ]),
@@ -156,11 +153,11 @@ final class CatalogProductUpdatePlannerTest extends TestCase
         self::assertSame([], $update->customFields);
     }
 
-    public function testItUsesVariationThemePropertiesAsChildVariantOptions(): void
+    public function testItImportsVariationThemePropertiesAsRegularProperties(): void
     {
         $update = (new CatalogProductUpdatePlanner())->plan(
             new ExistingProductForCatalogEnrichment('product-id', '4260454043503', '4260454043503', 'EUR', 1000.0, 840.34, 19.0, [], []),
-            new CatalogProductData('okb', '4260454043503', '4260454043503', 'reference-1', '25922', '3446', null, null, [new CatalogProductAttribute('Color', ['Brown'])]),
+            new CatalogProductData('okb', '4260454043503', '4260454043503', '25922', '3446', null, null, [new CatalogProductAttribute('Color', ['Brown'])]),
             [new CatalogCategoryAttributeSchema('okb', '3446', '100', 'Color', 'STRING', false, 'property', 'color-group', true, true, 'TITLE|VARIATION_THEME|SEARCH')],
         );
 

@@ -13,8 +13,8 @@ final class CatalogPreparedProductReaderTest extends TestCase
     public function testItReadsPreparedProductsAndTypedAttributeRows(): void
     {
         $products = $this->file(<<<'CSV'
-product_number;ean;product_reference;category_id;category_group_id;standard_price_amount;currency
-4260454043503;4260454043503;model-1;25922;3446;1200.50;EUR
+product_number;ean;category_id;category_group_id;standard_price_amount;currency
+4260454043503;4260454043503;25922;3446;1200.50;EUR
 CSV);
         $attributes = $this->file(<<<'CSV'
 product_number;ean;attribute_name;values_json
@@ -24,7 +24,7 @@ CSV);
 
         try {
             self::assertEquals([
-                new CatalogProductData('source-a', '4260454043503', '4260454043503', 'model-1', '25922', '3446', 1200.5, 'EUR', [
+                new CatalogProductData('source-a', '4260454043503', '4260454043503', '25922', '3446', 1200.5, 'EUR', [
                     new CatalogProductAttribute('Color', ['Brown']),
                     new CatalogProductAttribute('Width', ['120,5']),
                 ]),
@@ -38,15 +38,14 @@ CSV);
     public function testItAcceptsTheLastIdenticalProductRow(): void
     {
         $products = $this->file(<<<'CSV'
-product_number;ean;product_reference;category_id;category_group_id;standard_price_amount;currency
-4260454043503;4260454043503;old-model;25922;3446;1000;EUR
-4260454043503;4260454043503;new-model;25923;3446;1200;EUR
+product_number;ean;category_id;category_group_id;standard_price_amount;currency
+4260454043503;4260454043503;25922;3446;1000;EUR
+4260454043503;4260454043503;25923;3446;1200;EUR
 CSV);
         $attributes = $this->file("product_number;ean;attribute_name;values_json\n");
 
         try {
             $result = (new CatalogPreparedProductReader(new SemicolonCsvReader()))->read('source-a', $products, $attributes);
-            self::assertSame('new-model', $result[0]->productReference);
             self::assertSame('25923', $result[0]->categoryId);
             self::assertSame(1200.0, $result[0]->standardPriceAmount);
         } finally {
@@ -58,9 +57,9 @@ CSV);
     public function testItRejectsTwoDifferentEansForTheSameProductNumber(): void
     {
         $products = $this->file(<<<'CSV'
-product_number;ean;product_reference;category_id;category_group_id;standard_price_amount;currency
-sku-1;4260454043503;model-1;25922;3446;1000;EUR
-sku-1;4260454043504;model-1;25922;3446;1000;EUR
+product_number;ean;category_id;category_group_id;standard_price_amount;currency
+sku-1;4260454043503;25922;3446;1000;EUR
+sku-1;4260454043504;25922;3446;1000;EUR
 CSV);
         $attributes = $this->file("product_number;ean;attribute_name;values_json\n");
 
@@ -76,7 +75,7 @@ CSV);
 
     public function testItRejectsAnAttributeWhoseEanDoesNotMatchTheProductRow(): void
     {
-        $products = $this->file("product_number;ean;product_reference;category_id;category_group_id;standard_price_amount;currency\nsku-1;4260454043503;model-1;25922;3446;1000;EUR\n");
+        $products = $this->file("product_number;ean;category_id;category_group_id;standard_price_amount;currency\nsku-1;4260454043503;25922;3446;1000;EUR\n");
         $attributes = $this->file("product_number;ean;attribute_name;values_json\nsku-1;4260454043504;Color;[\"Brown\"]\n");
 
         try {
@@ -91,7 +90,7 @@ CSV);
 
     public function testItRejectsMalformedOrNonStringAttributeValues(): void
     {
-        $products = $this->file("product_number;ean;product_reference;category_id;category_group_id;standard_price_amount;currency\nsku-1;4260454043503;model-1;25922;3446;1000;EUR\n");
+        $products = $this->file("product_number;ean;category_id;category_group_id;standard_price_amount;currency\nsku-1;4260454043503;25922;3446;1000;EUR\n");
         $attributes = $this->file("product_number;ean;attribute_name;values_json\nsku-1;4260454043503;Color;[1]\n");
 
         try {

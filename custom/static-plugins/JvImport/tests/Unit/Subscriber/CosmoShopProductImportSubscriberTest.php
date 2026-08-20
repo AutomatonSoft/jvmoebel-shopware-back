@@ -54,6 +54,7 @@ final class CosmoShopProductImportSubscriberTest extends TestCase
         $subscriber = $this->subscriberReturningTaxId('019fcbab6981707eb24dafd08a2ed8c0');
         $event = $this->event(Market::Germany, [
             'source_inactive' => '0',
+            'ean' => '4260174423463',
             'stock' => '0',
             'price_gross' => '3799.00',
             'min_purchase' => '1',
@@ -376,6 +377,7 @@ final class CosmoShopProductImportSubscriberTest extends TestCase
     {
         return [
             'source_inactive' => '0',
+            'ean' => '4260174423463',
             'stock' => '12',
             'price_gross' => '119.00',
             'min_purchase' => '1',

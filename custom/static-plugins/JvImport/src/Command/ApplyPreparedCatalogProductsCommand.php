@@ -42,14 +42,15 @@ final class ApplyPreparedCatalogProductsCommand extends Command
         $context = Context::createDefaultContext();
         $productsCsv = (string) $input->getArgument('products-csv');
         $products = $this->reader->read($sourceCode, $productsCsv, (string) $input->getArgument('attributes-csv'));
-        $result = $this->service->execute($products, $this->schemaProvider->forSource($sourceCode, $context), (bool) $input->getOption('dry-run'), $context);
+        $categoryGroupIds = array_values(array_unique(array_map(static fn ($product): string => $product->categoryGroupId, $products)));
+        $result = $this->service->execute($products, $this->schemaProvider->forSource($sourceCode, $categoryGroupIds, $context), (bool) $input->getOption('dry-run'), $context);
         $invalidRecordsPath = (string) $input->getOption('invalid-records-csv');
         if ('' === $invalidRecordsPath) {
             $invalidRecordsPath = $productsCsv.'.invalid-records.csv';
         }
         $this->invalidRecordsWriter->write($invalidRecordsPath, $result->invalidRecords);
         $verb = (bool) $input->getOption('dry-run') ? 'Validated' : 'Applied';
-        $message = sprintf('%s %d products, %d property options and %d variant parents.', $verb, $result->products, $result->propertyOptions, $result->variantParents);
+        $message = sprintf('%s %d products and %d property options.', $verb, $result->products, $result->propertyOptions);
         if ([] !== $result->invalidRecords) {
             $message .= sprintf(' %d invalid records were written to %s.', count($result->invalidRecords), $invalidRecordsPath);
         }

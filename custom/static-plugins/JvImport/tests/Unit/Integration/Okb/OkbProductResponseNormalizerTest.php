@@ -22,7 +22,6 @@ final class OkbProductResponseNormalizerTest extends TestCase
             ]],
         ]);
 
-        self::assertSame('4260454043503', $variation->productReference);
         self::assertSame('Kunstlederbett', $variation->categoryName);
         self::assertSame(1959.0, $variation->standardPriceAmount);
         self::assertSame('EUR', $variation->currency);

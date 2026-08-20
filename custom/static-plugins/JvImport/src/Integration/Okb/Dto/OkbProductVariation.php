@@ -6,7 +6,6 @@ final readonly class OkbProductVariation
 {
     /** @param list<OkbProductAttribute> $attributes */
     public function __construct(
-        public string $productReference,
         public string $sku,
         public string $ean,
         public string $categoryName,

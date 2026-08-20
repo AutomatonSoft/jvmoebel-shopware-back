@@ -20,7 +20,7 @@ final readonly class CatalogPreparedProductReader
         }
 
         $products = [];
-        foreach ($this->csvReader->rows($productsFile, ['product_number', 'ean', 'product_reference', 'category_id', 'category_group_id', 'standard_price_amount', 'currency']) as $line => $row) {
+        foreach ($this->csvReader->rows($productsFile, ['product_number', 'ean', 'category_id', 'category_group_id', 'standard_price_amount', 'currency']) as $line => $row) {
             $productNumber = $this->required($row, 'product_number', $productsFile, $line);
             $ean = $this->required($row, 'ean', $productsFile, $line);
             $key = $this->productKey($productNumber);
@@ -31,7 +31,6 @@ final readonly class CatalogPreparedProductReader
             $products[$key] = [
                 'productNumber' => $productNumber,
                 'ean' => $ean,
-                'productReference' => $this->required($row, 'product_reference', $productsFile, $line),
                 'categoryId' => $this->required($row, 'category_id', $productsFile, $line),
                 'categoryGroupId' => $this->required($row, 'category_group_id', $productsFile, $line),
                 'standardPriceAmount' => $this->price($row['standard_price_amount'], $productsFile, $line),
@@ -63,7 +62,6 @@ final readonly class CatalogPreparedProductReader
                 $sourceCode,
                 $product['productNumber'],
                 $product['ean'],
-                $product['productReference'],
                 $product['categoryId'],
                 $product['categoryGroupId'],
                 $product['standardPriceAmount'],

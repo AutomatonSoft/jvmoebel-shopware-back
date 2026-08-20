@@ -24,7 +24,7 @@ final class ApplyCatalogProductsServiceTest extends TestCase
 {
     use IntegrationTestBehaviour;
 
-    public function testItAssignsCategoriesAllPropertiesPricesAndVariantParents(): void
+    public function testItTurnsTheExistingCosmoShopProductIntoAParentAndCreatesItsOkbChild(): void
     {
         $context = Context::createDefaultContext();
         $source = 'catalog-test';
@@ -32,11 +32,13 @@ final class ApplyCatalogProductsServiceTest extends TestCase
         $groupId = CatalogIdentity::categoryGroupId($source, 'group-1');
         $propertyGroupId = Uuid::randomHex();
         $widthGroupId = Uuid::randomHex();
+        $legacyGroupId = Uuid::randomHex();
+        $legacyOptionId = Uuid::randomHex();
+        $legacyConfiguratorSettingId = Uuid::randomHex();
         $firstId = Uuid::randomHex();
-        $secondId = Uuid::randomHex();
-        $parentId = CatalogIdentity::variantParentId($source, 'model-1');
         $taxId = $this->taxId($context);
         $products = $this->products();
+        $child = null;
 
         $this->categories()->upsert([
             ['id' => $groupId, 'name' => 'Test group', 'active' => true],
@@ -45,49 +47,55 @@ final class ApplyCatalogProductsServiceTest extends TestCase
         $this->propertyGroups()->create([
             ['id' => $propertyGroupId, 'name' => 'Color', 'displayType' => 'text', 'sortingType' => 'alphanumeric'],
             ['id' => $widthGroupId, 'name' => 'Width', 'displayType' => 'text', 'sortingType' => 'alphanumeric'],
+            ['id' => $legacyGroupId, 'name' => 'Legacy', 'displayType' => 'text', 'sortingType' => 'alphanumeric', 'options' => [['id' => $legacyOptionId, 'name' => 'Old value']]],
         ], $context);
         $products->create([
-            $this->product($firstId, '4260454043503', 'First', $taxId, 1000.0, 1500.0),
-            $this->product($secondId, '4260454043504', 'Second', $taxId, 1300.0),
+            [
+                ...$this->product($firstId, 'cosmo-123', 'First', $taxId, 1000.0, 1500.0),
+                'properties' => [['id' => $legacyOptionId]],
+                'configuratorSettings' => [['id' => $legacyConfiguratorSettingId, 'optionId' => $legacyOptionId]],
+            ],
         ], $context);
 
         try {
             $service = static::getContainer()->get(ApplyCatalogProductsService::class);
             self::assertInstanceOf(ApplyCatalogProductsService::class, $service);
             $result = $service->execute([
-                new CatalogProductData($source, '4260454043503', '4260454043503', 'model-1', 'category-1', 'group-1', 1200.0, 'EUR', [new CatalogProductAttribute('Color', ['Brown']), new CatalogProductAttribute('Width', ['120.5'])]),
-                new CatalogProductData($source, '4260454043504', '4260454043504', 'model-1', 'category-1', 'group-1', 1100.0, 'EUR', [new CatalogProductAttribute('Color', ['White']), new CatalogProductAttribute('Width', ['140'])]),
+                new CatalogProductData($source, 'cosmo-123', '4260454043503', 'category-1', 'group-1', 1200.0, 'EUR', [new CatalogProductAttribute('Color', ['Brown']), new CatalogProductAttribute('Width', ['120.5'])]),
             ], [
                 new CatalogCategoryAttributeSchema($source, 'group-1', 'color', 'Color', 'STRING', false, 'property', $propertyGroupId, true, true, 'VARIATION_THEME'),
                 new CatalogCategoryAttributeSchema($source, 'group-1', 'width', 'Width', 'FLOAT', false, 'property', $widthGroupId),
             ], false, $context);
 
-            self::assertSame(2, $result->products);
-            self::assertSame(4, $result->propertyOptions);
-            self::assertSame(1, $result->variantParents);
-            $first = $this->productById($firstId, $context);
-            self::assertSame($parentId, $first->getParentId());
-            self::assertContains($categoryId, $first->getCategoryIds() ?? []);
-            self::assertSame(1200.0, $first->getPrice()->getCurrencyPrice(Defaults::CURRENCY, false)->getGross());
-            self::assertSame(1500.0, $first->getPrice()->getCurrencyPrice(Defaults::CURRENCY, false)->getListPrice()?->getGross());
-            self::assertArrayNotHasKey('jv_catalog_attributes', $first->getCustomFields() ?? []);
-            self::assertCount(1, $first->getOptionIds() ?? []);
-            self::assertCount(2, $first->getPropertyIds() ?? []);
+            self::assertSame(1, $result->products);
+            self::assertSame(2, $result->propertyOptions);
+            $parent = $this->productById($firstId, $context);
+            self::assertNull($parent->getParentId());
+            self::assertNull($parent->getEan());
+            self::assertContains($categoryId, $parent->getCategoryIds() ?? []);
+            self::assertCount(0, $parent->getPropertyIds() ?? []);
+            self::assertSame(1000.0, $parent->getPrice()->getCurrencyPrice(Defaults::CURRENCY, false)->getGross());
+            self::assertSame(1500.0, $parent->getPrice()->getCurrencyPrice(Defaults::CURRENCY, false)->getListPrice()?->getGross());
+            self::assertCount(1, $parent->getConfiguratorSettings() ?? []);
 
-            $second = $this->productById($secondId, $context);
-            self::assertSame(1300.0, $second->getPrice()?->getCurrencyPrice(Defaults::CURRENCY, false)?->getGross());
-            $parent = $this->productById($parentId, $context);
-            self::assertSame('model-1', $parent->getProductNumber());
-            self::assertSame(1300.0, $parent->getPrice()?->getCurrencyPrice(Defaults::CURRENCY, false)?->getGross());
-            self::assertCount(2, $parent->getConfiguratorSettings() ?? []);
+            $child = $this->productByNumber('cosmo-123-1', $context);
+            self::assertSame($firstId, $child->getParentId());
+            self::assertSame('4260454043503', $child->getEan());
+            self::assertSame(1200.0, $child->getPrice()->getCurrencyPrice(Defaults::CURRENCY, false)->getGross());
+            self::assertCount(1, $child->getOptionIds() ?? []);
+            self::assertCount(2, $child->getPropertyIds() ?? []);
         } finally {
-            $products->delete([['id' => $firstId], ['id' => $secondId], ['id' => $parentId]], $context);
-            $this->propertyGroups()->delete([['id' => $propertyGroupId], ['id' => $widthGroupId]], $context);
+            $records = [['id' => $firstId]];
+            if ($child instanceof ProductEntity) {
+                $records[] = ['id' => $child->getId()];
+            }
+            $products->delete($records, $context);
+            $this->propertyGroups()->delete([['id' => $propertyGroupId], ['id' => $widthGroupId], ['id' => $legacyGroupId]], $context);
             $this->categories()->delete([['id' => $categoryId], ['id' => $groupId]], $context);
         }
     }
 
-    public function testItRejectsTheWholeVariantGroupWhenOneChildHasAnInvalidAttributeValue(): void
+    public function testItContinuesWithAnotherSkuWhenOneSkuHasAnInvalidAttributeValue(): void
     {
         $context = Context::createDefaultContext();
         $source = 'catalog-invalid-variant-test';
@@ -99,6 +107,8 @@ final class ApplyCatalogProductsServiceTest extends TestCase
         $thirdId = Uuid::randomHex();
         $taxId = $this->taxId($context);
         $products = $this->products();
+        $firstChild = null;
+        $thirdChild = null;
 
         $this->categories()->upsert([
             ['id' => $groupId, 'name' => 'Test group', 'active' => true],
@@ -117,31 +127,46 @@ final class ApplyCatalogProductsServiceTest extends TestCase
             $service = static::getContainer()->get(ApplyCatalogProductsService::class);
             self::assertInstanceOf(ApplyCatalogProductsService::class, $service);
             $result = $service->execute([
-                new CatalogProductData($source, '4260454043510', '4260454043510', 'model-invalid', 'category-1', 'group-1', 1000.0, 'EUR', [new CatalogProductAttribute('Brand information', ['Valid'])]),
-                new CatalogProductData($source, '4260454043511', '4260454043511', 'model-invalid', 'category-1', 'group-1', 1000.0, 'EUR', [new CatalogProductAttribute('Brand information', [str_repeat('x', 256)])]),
-                new CatalogProductData($source, '4260454043512', '4260454043512', '4260454043512', 'category-1', 'group-1', 1000.0, 'EUR', [new CatalogProductAttribute('Brand information', ['Valid'])]),
+                new CatalogProductData($source, '4260454043510', '4260454043510', 'category-1', 'group-1', 1000.0, 'EUR', [new CatalogProductAttribute('Brand information', ['Valid'])]),
+                new CatalogProductData($source, '4260454043511', '4260454043511', 'category-1', 'group-1', 1000.0, 'EUR', [new CatalogProductAttribute('Brand information', [str_repeat('x', 256)])]),
+                new CatalogProductData($source, '4260454043512', '4260454043512', 'category-1', 'group-1', 1000.0, 'EUR', [new CatalogProductAttribute('Brand information', ['Valid'])]),
             ], [
                 new CatalogCategoryAttributeSchema($source, 'group-1', 'brand-information', 'Brand information', 'STRING', false, 'property', $propertyGroupId),
             ], false, $context);
 
-            self::assertSame(1, $result->products);
+            self::assertSame(2, $result->products);
             self::assertSame(1, $result->propertyOptions);
-            self::assertSame(0, $result->variantParents);
-            self::assertCount(2, $result->invalidRecords);
+            self::assertCount(1, $result->invalidRecords);
             self::assertStringContainsString('255 character limit', $result->invalidRecords[0]->reason);
-            self::assertStringContainsString('Variant group', $result->invalidRecords[1]->reason);
-            self::assertNull($this->productById($firstId, $context)->getParentId());
+            $first = $this->productById($firstId, $context);
+            self::assertNull($first->getParentId());
+            self::assertNull($first->getEan());
+            self::assertContains($categoryId, $first->getCategoryIds() ?? []);
             self::assertNull($this->productById($secondId, $context)->getParentId());
             $third = $this->productById($thirdId, $context);
+            self::assertNull($third->getEan());
             self::assertContains($categoryId, $third->getCategoryIds() ?? []);
-            self::assertCount(1, $third->getPropertyIds() ?? []);
+            $firstChild = $this->productByNumber('4260454043510-1', $context);
+            self::assertSame($firstId, $firstChild->getParentId());
+            self::assertSame('4260454043510', $firstChild->getEan());
+            self::assertCount(1, $firstChild->getPropertyIds() ?? []);
+            $thirdChild = $this->productByNumber('4260454043512-1', $context);
+            self::assertSame($thirdId, $thirdChild->getParentId());
+            self::assertSame('4260454043512', $thirdChild->getEan());
+            self::assertCount(1, $thirdChild->getPropertyIds() ?? []);
         } finally {
-            $products->delete([
+            $records = [
                 ['id' => $firstId],
                 ['id' => $secondId],
                 ['id' => $thirdId],
-                ['id' => CatalogIdentity::variantParentId($source, 'model-invalid')],
-            ], $context);
+            ];
+            if ($firstChild instanceof ProductEntity) {
+                $records[] = ['id' => $firstChild->getId()];
+            }
+            if ($thirdChild instanceof ProductEntity) {
+                $records[] = ['id' => $thirdChild->getId()];
+            }
+            $products->delete($records, $context);
             $this->propertyGroups()->delete([['id' => $propertyGroupId]], $context);
             $this->categories()->delete([['id' => $categoryId], ['id' => $groupId]], $context);
         }
@@ -199,6 +224,17 @@ final class ApplyCatalogProductsServiceTest extends TestCase
     {
         $product = $this->products()->search(
             (new Criteria([$id]))->addAssociation('price')->addAssociation('configuratorSettings'),
+            $context,
+        )->first();
+        self::assertInstanceOf(ProductEntity::class, $product);
+
+        return $product;
+    }
+
+    private function productByNumber(string $productNumber, Context $context): ProductEntity
+    {
+        $product = $this->products()->search(
+            (new Criteria())->addFilter(new \Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter('productNumber', $productNumber))->addAssociation('price'),
             $context,
         )->first();
         self::assertInstanceOf(ProductEntity::class, $product);

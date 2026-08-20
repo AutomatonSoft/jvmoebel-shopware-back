@@ -108,15 +108,15 @@
             <argument type="service" id="jv_catalog_category_attribute.repository"/>
         </service>
         <service id="Jv\Import\Service\ProductImport\Catalog\CatalogProductUpdatePlanner"/>
-        <service id="Jv\Import\Service\ProductImport\Catalog\CatalogVariantGroupPlanner"/>
         <service id="Jv\Import\Service\ProductImport\Catalog\CatalogProductInvalidRecordsCsvWriter"/>
         <service id="Jv\Import\Service\ProductImport\Catalog\ApplyCatalogProductsService">
             <argument type="service" id="product.repository"/>
             <argument type="service" id="property_group_option.repository"/>
             <argument type="service" id="currency.repository"/>
+            <argument type="service" id="product_option.repository"/>
+            <argument type="service" id="product_property.repository"/>
             <argument type="service" id="product_configurator_setting.repository"/>
             <argument type="service" id="Jv\Import\Service\ProductImport\Catalog\CatalogProductUpdatePlanner"/>
-            <argument type="service" id="Jv\Import\Service\ProductImport\Catalog\CatalogVariantGroupPlanner"/>
         </service>
         <service id="Jv\Import\Integration\Okb\OkbCatalogSchemaSnapshotReader"/>
         <service id="Jv\Import\Integration\Okb\OkbProductResponseNormalizer"/>

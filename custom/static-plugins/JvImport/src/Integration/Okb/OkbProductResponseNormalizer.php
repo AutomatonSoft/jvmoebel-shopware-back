@@ -32,7 +32,6 @@ final class OkbProductResponseNormalizer
         }
 
         return new OkbProductVariation(
-            $this->requiredString($variation, 'productReference', $requestedEan),
             $sku,
             $ean,
             $this->requiredString($description, 'category', $requestedEan),

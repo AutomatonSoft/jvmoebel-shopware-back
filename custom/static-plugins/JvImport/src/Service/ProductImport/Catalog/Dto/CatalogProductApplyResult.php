@@ -8,7 +8,6 @@ final readonly class CatalogProductApplyResult
     public function __construct(
         public int $products,
         public int $propertyOptions,
-        public int $variantParents,
         public array $invalidRecords = [],
     ) {
     }

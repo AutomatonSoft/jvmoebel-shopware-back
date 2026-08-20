@@ -9,7 +9,6 @@ final readonly class CatalogProductData
         public string $sourceCode,
         public string $productNumber,
         public string $ean,
-        public string $productReference,
         public string $categoryId,
         public string $categoryGroupId,
         public ?float $standardPriceAmount,
