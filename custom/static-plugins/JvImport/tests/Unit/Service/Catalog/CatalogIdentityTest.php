@@ -15,15 +15,19 @@ final class CatalogIdentityTest extends TestCase
         self::assertNotSame(CatalogIdentity::categoryGroupId('okb', '3446'), CatalogIdentity::categoryGroupId('another-source', '3446'));
     }
 
-    public function testItSharesAPropertyGroupOnlyForTheSameSemanticAttribute(): void
+    public function testItSharesOnePropertyGroupForOneAttributeNameRegardlessOfSourceType(): void
     {
         self::assertSame(
-            CatalogIdentity::propertyGroupId('Farbe', 'STRING', false),
-            CatalogIdentity::propertyGroupId('Farbe', 'STRING', false),
+            CatalogIdentity::propertyGroupId('Farbe'),
+            CatalogIdentity::propertyGroupId('Farbe'),
+        );
+        self::assertSame(
+            CatalogIdentity::propertyGroupId('Breite'),
+            CatalogIdentity::propertyGroupId('  breite  '),
         );
         self::assertNotSame(
-            CatalogIdentity::propertyGroupId('Farbe', 'STRING', false),
-            CatalogIdentity::propertyGroupId('Farbe', 'STRING', true),
+            CatalogIdentity::propertyGroupId('Farbe'),
+            CatalogIdentity::propertyGroupId('Material'),
         );
     }
 

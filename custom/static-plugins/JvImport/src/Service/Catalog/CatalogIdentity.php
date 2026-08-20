@@ -21,7 +21,12 @@ final class CatalogIdentity
         return self::id($sourceCode.'.category-attribute.'.$categoryGroupKey.'.'.$attributeKey);
     }
 
-    public static function propertyGroupId(string $attributeName, string $attributeType, bool $multiValue): string
+    public static function propertyGroupId(string $attributeName): string
+    {
+        return self::id('property-group.'.hash('sha256', self::normalizedAttributeName($attributeName)));
+    }
+
+    public static function legacyPropertyGroupId(string $attributeName, string $attributeType, bool $multiValue): string
     {
         return self::id('property-group.'.hash('sha256', trim($attributeName)."\0".trim($attributeType)."\0".($multiValue ? '1' : '0')));
     }
@@ -31,18 +36,23 @@ final class CatalogIdentity
         return self::id('property-option.'.$propertyGroupId.'.'.mb_strtolower(trim($value)));
     }
 
-    public static function variantParentId(string $sourceCode, string $productReference): string
-    {
-        return self::id($sourceCode.'.variant-parent.'.$productReference);
-    }
-
     public static function configuratorSettingId(string $productId, string $optionId): string
     {
         return self::id('configurator-setting.'.$productId.'.'.$optionId);
     }
 
+    public static function childProductId(string $sourceCode, string $parentProductId, string $ean): string
+    {
+        return self::id($sourceCode.'.product-child.'.$parentProductId.'.'.$ean);
+    }
+
     private static function id(string $value): string
     {
         return Uuid::fromStringToHex('jvmoebel.'.$value);
+    }
+
+    private static function normalizedAttributeName(string $attributeName): string
+    {
+        return mb_strtolower(trim($attributeName));
     }
 }

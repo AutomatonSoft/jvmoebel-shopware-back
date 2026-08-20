@@ -95,11 +95,16 @@
         </service>
         <service id="Jv\Import\Command\ApplyPreparedCatalogProductsCommand"/>
         <service id="Jv\Import\Command\BackfillCatalogAttributeCategoryRelationsCommand"/>
+        <service id="Jv\Import\Command\CleanupLegacyCatalogPropertyGroupsCommand"/>
 
         <service id="Jv\Import\Integration\Csv\SemicolonCsvReader"/>
         <service id="Jv\Import\Service\Catalog\CatalogAttributeMappingSynchronizer"/>
         <service id="Jv\Import\Service\Catalog\BackfillCatalogAttributeCategoryRelationsService">
             <argument type="service" id="Doctrine\DBAL\Connection"/>
+        </service>
+        <service id="Jv\Import\Service\Catalog\CleanupLegacyCatalogPropertyGroupsService">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="property_group.repository"/>
         </service>
         <service id="Jv\Import\Service\ProductImport\Catalog\CatalogPreparedProductReader">
             <argument type="service" id="Jv\Import\Integration\Csv\SemicolonCsvReader"/>
@@ -131,6 +136,7 @@
             <argument type="service" id="property_group_option.repository"/>
             <argument type="service" id="jv_catalog_category_attribute.repository"/>
             <argument type="service" id="Jv\Import\Service\Catalog\CatalogAttributeMappingSynchronizer"/>
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
         </service>
         <service id="Jv\Import\Integration\Okb\Service\PrepareOkbProductMappingService">
             <argument type="service" id="Jv\Import\Integration\Csv\SemicolonCsvReader"/>

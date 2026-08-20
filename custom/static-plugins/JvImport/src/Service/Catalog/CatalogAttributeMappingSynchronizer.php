@@ -70,7 +70,7 @@ final class CatalogAttributeMappingSynchronizer
 
     private function propertyGroupId(CatalogAttribute $attribute): string
     {
-        return CatalogIdentity::propertyGroupId($attribute->name, $attribute->type, $attribute->multiValue);
+        return CatalogIdentity::propertyGroupId($attribute->name);
     }
 
     private function key(string $categoryGroupId, string $attributeId): string

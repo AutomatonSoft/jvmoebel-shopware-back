@@ -28,10 +28,28 @@ final class CatalogAttributeMappingSynchronizerTest extends TestCase
                 true,
                 true,
                 'property',
-                CatalogIdentity::propertyGroupId('Color', 'STRING', false),
+                CatalogIdentity::propertyGroupId('Color'),
                 null,
             ),
         ], $mappings);
+    }
+
+    public function testItSharesOnePropertyGroupBetweenEquivalentAttributesFromDifferentCategoryGroups(): void
+    {
+        $mappings = (new CatalogAttributeMappingSynchronizer())->synchronize('source-a', [
+            new CatalogAttribute('width-as-number', 'sofas', 'Width', 'FLOAT', 'FILTER', false),
+            new CatalogAttribute('width-as-text', 'tables', '  width  ', 'STRING', 'PRODUCT_DETAILS', true),
+        ], []);
+
+        self::assertCount(2, $mappings);
+        self::assertSame(
+            CatalogIdentity::propertyGroupId('Width'),
+            $mappings[0]->propertyGroupId,
+        );
+        self::assertSame(
+            CatalogIdentity::propertyGroupId('Width'),
+            $mappings[1]->propertyGroupId,
+        );
     }
 
     public function testItReplacesLegacyCustomFieldStorageWithAProperty(): void
@@ -43,18 +61,18 @@ final class CatalogAttributeMappingSynchronizerTest extends TestCase
         ]);
 
         self::assertEquals([
-            new CatalogAttributeMapping('source-a', 'group-1', 'width', 'Width', 'FLOAT', 'PRODUCT_DETAILS', false, true, true, 'property', CatalogIdentity::propertyGroupId('Width', 'FLOAT', false), null),
+            new CatalogAttributeMapping('source-a', 'group-1', 'width', 'Width', 'FLOAT', 'PRODUCT_DETAILS', false, true, true, 'property', CatalogIdentity::propertyGroupId('Width'), null),
         ], $mappings);
     }
 
     public function testItMarksAnAttributeMissingFromTheCurrentSourceSnapshotInactive(): void
     {
         $mappings = (new CatalogAttributeMappingSynchronizer())->synchronize('source-a', [], [
-            new CatalogAttributeMapping('source-a', 'group-1', 'width', 'Width', 'FLOAT', 'SEARCH', false, true, true, 'property', CatalogIdentity::propertyGroupId('Width', 'FLOAT', false), null),
+            new CatalogAttributeMapping('source-a', 'group-1', 'width', 'Width', 'FLOAT', 'SEARCH', false, true, true, 'property', CatalogIdentity::propertyGroupId('Width'), null),
         ]);
 
         self::assertEquals([
-            new CatalogAttributeMapping('source-a', 'group-1', 'width', 'Width', 'FLOAT', 'SEARCH', false, false, true, 'property', CatalogIdentity::propertyGroupId('Width', 'FLOAT', false), null),
+            new CatalogAttributeMapping('source-a', 'group-1', 'width', 'Width', 'FLOAT', 'SEARCH', false, false, true, 'property', CatalogIdentity::propertyGroupId('Width'), null),
         ], $mappings);
     }
 
@@ -67,7 +85,7 @@ final class CatalogAttributeMappingSynchronizerTest extends TestCase
         ]);
 
         self::assertEquals([
-            new CatalogAttributeMapping('source-a', 'group-1', 'width', 'Width', 'FLOAT', 'SEARCH', false, true, true, 'property', CatalogIdentity::propertyGroupId('Width', 'FLOAT', false), null),
+            new CatalogAttributeMapping('source-a', 'group-1', 'width', 'Width', 'FLOAT', 'SEARCH', false, true, true, 'property', CatalogIdentity::propertyGroupId('Width'), null),
         ], $mappings);
     }
 
@@ -77,7 +95,7 @@ final class CatalogAttributeMappingSynchronizerTest extends TestCase
         $this->expectExceptionMessage('does not belong to source "source-a"');
 
         (new CatalogAttributeMappingSynchronizer())->synchronize('source-a', [], [
-            new CatalogAttributeMapping('source-b', 'group-1', 'width', 'Width', 'FLOAT', 'SEARCH', false, true, true, 'property', CatalogIdentity::propertyGroupId('Width', 'FLOAT', false), null),
+            new CatalogAttributeMapping('source-b', 'group-1', 'width', 'Width', 'FLOAT', 'SEARCH', false, true, true, 'property', CatalogIdentity::propertyGroupId('Width'), null),
         ]);
     }
 }

@@ -2,7 +2,9 @@
 
 namespace Jv\Import\Tests\Unit\Service\Catalog;
 
+use Doctrine\DBAL\Connection;
 use Jv\Import\Core\Content\CatalogCategoryAttribute\CatalogCategoryAttributeCollection;
+use Jv\Import\Core\Content\CatalogCategoryAttribute\CatalogCategoryAttributeEntity;
 use Jv\Import\Service\Catalog\CatalogAttributeMappingSynchronizer;
 use Jv\Import\Service\Catalog\CatalogIdentity;
 use Jv\Import\Service\Catalog\Dto\CatalogAttribute;
@@ -14,11 +16,166 @@ use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
+use Shopware\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 
 final class ImportCatalogSchemaServiceTest extends TestCase
 {
+    public function testItStreamsExistingMappingsFromTheDatabaseInsteadOfHydratingEveryEntity(): void
+    {
+        $categoryRepository = $this->createMock(EntityRepository::class);
+        $propertyGroupRepository = $this->createMock(EntityRepository::class);
+        $propertyOptionRepository = $this->createMock(EntityRepository::class);
+        $mappingRepository = $this->createMock(EntityRepository::class);
+        $connection = $this->createMock(Connection::class);
+        $context = Context::createDefaultContext();
+        $relations = [];
+        $existingId = '9e75660a1ef94814bb09d47ce61182cf';
+
+        $categoryRepository->method('upsert')->willReturn(EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []));
+        $propertyGroupRepository->method('upsert')->willReturn(EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []));
+        $propertyOptionRepository->method('upsert')->willReturn(EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []));
+        $mappingRepository->expects(self::never())->method('search');
+        $mappingRepository->expects(self::once())->method('upsert')->willReturnCallback(
+            static function (array $records) use (&$relations, $context): EntityWrittenContainerEvent {
+                $relations = $records;
+
+                return EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []);
+            },
+        );
+        $connection->expects(self::once())->method('iterateAssociative')->willReturnCallback(
+            static function (string $sql, array $parameters) use ($existingId): \ArrayIterator {
+                self::assertStringContainsString('FROM `jv_catalog_category_attribute`', $sql);
+                self::assertSame(['sourceCode' => 'source-a'], $parameters);
+
+                return new \ArrayIterator([[
+                    'id' => $existingId,
+                    'category_group_id' => 'sofas',
+                    'attribute_id' => 'width',
+                    'attribute_name' => 'Old width',
+                    'attribute_type' => 'STRING',
+                    'feature_relevance' => null,
+                    'multi_value' => 0,
+                    'enabled' => 1,
+                    'storage' => 'property',
+                    'property_group_id' => CatalogIdentity::legacyPropertyGroupId('Old width', 'STRING', false),
+                    'custom_field_name' => null,
+                ]]);
+            },
+        );
+
+        (new ImportCatalogSchemaService(
+            $categoryRepository,
+            $propertyGroupRepository,
+            $propertyOptionRepository,
+            $mappingRepository,
+            new CatalogAttributeMappingSynchronizer(),
+            $connection,
+        ))->execute(new CatalogSchemaSnapshot('source-a', [], [], [
+            new CatalogAttribute('width', 'sofas', 'Width', 'FLOAT', 'FILTER', false),
+        ], []), false, $context);
+
+        self::assertSame($existingId, $relations[0]['id']);
+        self::assertSame(CatalogIdentity::propertyGroupId('Width'), $relations[0]['propertyGroupId']);
+    }
+
+    public function testItUpdatesALegacySchemaRelationUsingItsExistingId(): void
+    {
+        $categoryRepository = $this->createMock(EntityRepository::class);
+        $propertyGroupRepository = $this->createMock(EntityRepository::class);
+        $propertyOptionRepository = $this->createMock(EntityRepository::class);
+        $mappingRepository = $this->createMock(EntityRepository::class);
+        $context = Context::createDefaultContext();
+        $legacyId = '9e75660a1ef94814bb09d47ce61182cf';
+        $legacyRelation = new CatalogCategoryAttributeEntity();
+        $legacyRelation->setId($legacyId);
+        $legacyRelation->setSourceCode('source-a');
+        $legacyRelation->setCategoryGroupId('sofas');
+        $legacyRelation->setCategoryId(CatalogIdentity::categoryGroupId('source-a', 'sofas'));
+        $legacyRelation->setCategoryVersionId(Defaults::LIVE_VERSION);
+        $legacyRelation->setAttributeId('colour');
+        $legacyRelation->setAttributeName('Old colour');
+        $legacyRelation->setAttributeType('STRING');
+        $legacyRelation->setMultiValue(false);
+        $legacyRelation->setActive(true);
+        $legacyRelation->setEnabled(true);
+        $legacyRelation->setStorage('custom_field');
+        $relations = [];
+
+        $categoryRepository->method('upsert')->willReturn(EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []));
+        $propertyGroupRepository->method('upsert')->willReturn(EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []));
+        $propertyOptionRepository->method('upsert')->willReturn(EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []));
+        $mappingRepository->method('search')->willReturn(new EntitySearchResult(
+            'jv_catalog_category_attribute',
+            1,
+            new CatalogCategoryAttributeCollection([$legacyRelation]),
+            null,
+            new Criteria(),
+            $context,
+        ));
+        $mappingRepository->expects(self::once())->method('upsert')->willReturnCallback(
+            static function (array $records) use (&$relations, $context): EntityWrittenContainerEvent {
+                $relations = $records;
+
+                return EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []);
+            },
+        );
+
+        (new ImportCatalogSchemaService(
+            $categoryRepository,
+            $propertyGroupRepository,
+            $propertyOptionRepository,
+            $mappingRepository,
+            new CatalogAttributeMappingSynchronizer(),
+        ))->execute(new CatalogSchemaSnapshot('source-a', [], [], [
+            new CatalogAttribute('colour', 'sofas', 'Colour', 'STRING', 'FILTER', false),
+        ], []), false, $context);
+
+        self::assertSame($legacyId, $relations[0]['id']);
+        self::assertSame('property', $relations[0]['storage']);
+        self::assertSame(CatalogIdentity::propertyGroupId('Colour'), $relations[0]['propertyGroupId']);
+    }
+
+    public function testItDisablesImmediateIndexingForBulkSchemaWrites(): void
+    {
+        $categoryRepository = $this->createMock(EntityRepository::class);
+        $propertyGroupRepository = $this->createMock(EntityRepository::class);
+        $propertyOptionRepository = $this->createMock(EntityRepository::class);
+        $mappingRepository = $this->createMock(EntityRepository::class);
+        $context = Context::createDefaultContext();
+
+        $categoryRepository->expects(self::once())->method('upsert')->willReturnCallback(
+            static function (array $records, Context $writeContext) use ($context): EntityWrittenContainerEvent {
+                self::assertNotEmpty($records);
+                self::assertTrue($writeContext->hasState(EntityIndexerRegistry::DISABLE_INDEXING));
+
+                return EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []);
+            },
+        );
+        $propertyGroupRepository->method('upsert')->willReturn(EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []));
+        $propertyOptionRepository->method('upsert')->willReturn(EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []));
+        $mappingRepository->method('search')->willReturn(new EntitySearchResult(
+            'jv_catalog_category_attribute',
+            0,
+            new CatalogCategoryAttributeCollection(),
+            null,
+            new Criteria(),
+            $context,
+        ));
+        $mappingRepository->method('upsert')->willReturn(EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []));
+
+        (new ImportCatalogSchemaService(
+            $categoryRepository,
+            $propertyGroupRepository,
+            $propertyOptionRepository,
+            $mappingRepository,
+            new CatalogAttributeMappingSynchronizer(),
+        ))->execute(new CatalogSchemaSnapshot('source-a', [
+            new CatalogCategoryGroup('sofas', 'Sofas'),
+        ], [], [], []), false, $context);
+    }
+
     public function testItCreatesAVisibleNonFilterablePropertyForAnOkbProductDetailsAttribute(): void
     {
         $categoryRepository = $this->createMock(EntityRepository::class);
@@ -58,11 +215,60 @@ final class ImportCatalogSchemaServiceTest extends TestCase
         ], []), false, $context);
 
         self::assertSame([[
-            'id' => CatalogIdentity::propertyGroupId('Width', 'FLOAT', false),
+            'id' => CatalogIdentity::propertyGroupId('Width'),
             'name' => 'Width',
             'displayType' => 'text',
             'sortingType' => 'alphanumeric',
             'filterable' => false,
+            'visibleOnProductDetailPage' => true,
+        ]], $propertyGroups);
+    }
+
+    public function testItCreatesOneFilterablePropertyForEquivalentAttributes(): void
+    {
+        $categoryRepository = $this->createMock(EntityRepository::class);
+        $propertyGroupRepository = $this->createMock(EntityRepository::class);
+        $propertyOptionRepository = $this->createMock(EntityRepository::class);
+        $mappingRepository = $this->createMock(EntityRepository::class);
+        $context = Context::createDefaultContext();
+        $propertyGroups = [];
+
+        $categoryRepository->method('upsert')->willReturn(EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []));
+        $propertyGroupRepository->expects(self::once())->method('upsert')->willReturnCallback(
+            static function (array $records) use (&$propertyGroups, $context): EntityWrittenContainerEvent {
+                $propertyGroups = $records;
+
+                return EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []);
+            },
+        );
+        $propertyOptionRepository->method('upsert')->willReturn(EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []));
+        $mappingRepository->method('search')->willReturn(new EntitySearchResult(
+            'jv_catalog_category_attribute',
+            0,
+            new CatalogCategoryAttributeCollection(),
+            null,
+            new Criteria(),
+            $context,
+        ));
+        $mappingRepository->method('upsert')->willReturn(EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []));
+
+        (new ImportCatalogSchemaService(
+            $categoryRepository,
+            $propertyGroupRepository,
+            $propertyOptionRepository,
+            $mappingRepository,
+            new CatalogAttributeMappingSynchronizer(),
+        ))->execute(new CatalogSchemaSnapshot('source-a', [], [], [
+            new CatalogAttribute('width-as-number', 'sofas', 'Width', 'FLOAT', 'PRODUCT_DETAILS', false),
+            new CatalogAttribute('width-as-text', 'tables', ' width ', 'STRING', 'FILTER', true),
+        ], []), false, $context);
+
+        self::assertSame([[
+            'id' => CatalogIdentity::propertyGroupId('Width'),
+            'name' => 'Width',
+            'displayType' => 'text',
+            'sortingType' => 'alphanumeric',
+            'filterable' => true,
             'visibleOnProductDetailPage' => true,
         ]], $propertyGroups);
     }
