@@ -1,0 +1,43 @@
+.sw-cms-el-config-jv-side-navigation {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.sw-cms-el-config-jv-side-navigation__logo {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sw-cms-el-config-jv-side-navigation__logo-label {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.sw-cms-el-config-jv-side-navigation__section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.sw-cms-el-config-jv-side-navigation__section-header {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+}
+
+.sw-cms-el-config-jv-side-navigation__section-header h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.sw-cms-el-config-jv-side-navigation__card {
+    border: 1px solid #d1d9de;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+}
