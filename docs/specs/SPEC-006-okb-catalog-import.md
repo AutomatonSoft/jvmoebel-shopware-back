@@ -16,6 +16,8 @@ OKB, её схему атрибутов и сопоставление товар
 Входят:
 
 - OKB category group и вложенные OKB categories;
+- два верхних уровня пользовательской navigation, построенные по структуре
+  OTTO, и их связь с OKB category groups;
 - связь `OKB category_group_id → схема атрибутов`;
 - Shopware properties/options для каждого атрибута OKB;
 - EAN-обогащение подготовленного product CSV ответом
@@ -28,7 +30,6 @@ OKB, её схему атрибутов и сопоставление товар
 
 - категории CosmoShop и его старые публикуемые attributes;
 - постоянная синхронизация с OKB;
-- два будущих верхних уровня пользовательского меню (`Room → Küche` и т. п.);
 - автоматическое объединение различных товаров только из-за общего EAN;
 - создание или импорт Sofort-товаров в первом полном прогоне.
 
@@ -42,6 +43,10 @@ OKB, её схему атрибутов и сопоставление товар
   каждой group;
 - `okb-attribute-allowed-values.csv` — известные values property attributes;
 - `okb-attribute-fetch-failures.csv` — ошибки получения схемы.
+- `navigation-categories.csv` — новые navigation categories уровня 1 и 2:
+  `navigation_key`, nullable `parent_navigation_key`, `navigation_name`;
+- `category-group-parent-mapping.csv` — ровно одна строка на OKB group:
+  `category_group_id`, `navigation_key`, где navigation category — уровня 2.
 
 `attribute_source_category_id` используется только при сборе снимка. Он не
 является parent Shopware category и не записывается на товар.
@@ -64,13 +69,21 @@ Shopware records.
 
 ## Дерево и схема category
 
-Для каждого `category_group_id` создаётся верхняя Shopware category с
-детерминированным ID. Для каждой `category_id` создаётся её дочерняя category
- с детерминированным ID. Обновление сохраняет ID и не создаёт копий.
+Импорт создаёт дерево одним повторяемым запуском:
 
-Два будущих пользовательских уровня создаются отдельно. После их создания
-группы обновляются только через `parentId`; OKB groups и их children не
-переимпортируются и не пересоздаются.
+```text
+navigation level 1 → navigation level 2 → OKB category group → OKB category
+```
+
+Для navigation categories, каждого `category_group_id` и каждого
+`category_id` используется детерминированный Shopware ID. Group создаётся
+с `parentId` из `category-group-parent-mapping.csv`; внутренняя OKB category
+создаётся с parent своей group. Повторный запуск обновляет существующие
+entities и их `parentId`, не создаёт копий и не переимпортирует товары.
+
+Snapshot отклоняется до записи, если navigation key не уникален, родитель
+navigation category отсутствует, group не имеет ровно одного parent mapping
+или mapping указывает на navigation category не второго уровня.
 
 Shopware стандартно не умеет назначить category набор обязательных или
 разрешённых properties. Поэтому плагин хранит внутреннюю нормализованную
@@ -99,8 +112,16 @@ attribute в product response и пустой ответ по EAN попадаю
 
 Каждый атрибут OKB записывается как Shopware property group/option. Один
 семантический attribute образует один общий property group, даже если он
-встречается в нескольких OKB category groups. Options создаются из known
-allowed values и дополняются только фактически полученными значениями товара.
+встречается в нескольких OKB category groups или источник помечает его разным
+типом либо multi-value flag. Канонический ключ group строится из нормализованного
+имени attribute; source type остаётся метаданными relation и не создаёт дубль
+с одинаковым отображаемым именем. Options создаются из known allowed values и
+дополняются только фактически полученными значениями товара.
+
+После перехода на канонический ключ повторный schema import обновляет mappings
+на новую group. Отдельная идемпотентная cleanup-команда удаляет только прежние
+property groups, которые больше не используются mapping-ами, options,
+products или configurator settings; рабочие данные она не удаляет.
 
 `PRODUCT_DETAILS` означает, что Property видна на карточке товара.
 `FILTER`, `NAVIGATION` и `SEARCH` включают её в стандартную фильтрацию
@@ -152,6 +173,19 @@ child variants. Child сохраняет свой исходный SKU. Parent �
 schema relation и product records, а также конфликты SKU/EAN, неизвестные
 category/attribute/value, пустые OKB responses, parent SKU conflicts и
 несовпадения валют.
+
+`jv:catalog:apply-prepared-products` проверяет каждую подготовленную товарную
+строку до DAL-записи. Невалидная строка не прерывает остальные товары: она
+записывается в `--invalid-records-csv` (по умолчанию
+`<products-csv>.invalid-records.csv`) с source, SKU, EAN, product reference и
+причиной. Если дефектен один child варианта, не импортируется вся его
+`productReference`-группа, чтобы не создать неполный parent. Ограничение
+Shopware property option name в 255 символов относится к таким ошибкам; текст
+не обрезается автоматически.
+
+Нечитаемый CSV (например, отсутствующий обязательный заголовок или битый JSON)
+остаётся ошибкой файла и останавливает запуск: в таком случае нельзя надёжно
+восстановить границы товарных строк.
 
 Структурный импорт блокируется, если snapshot содержит строку в
 `okb-attribute-fetch-failures.csv`: неполная схема не должна считаться
