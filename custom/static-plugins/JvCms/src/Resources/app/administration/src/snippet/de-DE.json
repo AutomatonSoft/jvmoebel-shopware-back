@@ -1,118 +1,149 @@
 {
-    "cms": {
-        "elements": {
-            "jv-button": {
-                "label": "Button",
-                "config": {
-                    "label": {
-                        "label": "Beschriftung",
-                        "placeholder": "Zum Angebot"
-                    },
-                    "url": {
-                        "label": "Link",
-                        "placeholder": "https://jvmoebel.de/..."
-                    },
-                    "variant": {
-                        "label": "Variante",
-                        "primary": "Primary",
-                        "secondary": "Secondary",
-                        "link": "Link"
-                    },
-                    "openInNewTab": {
-                        "label": "In neuem Tab öffnen"
-                    }
-                }
-            },
-            "jv-side-navigation": {
-                "label": "Seitennavigation",
-                "component": {
-                    "previewHint": "Interaktive Vorschau — Suche über alle 4 Kategorie-Ebenen. Klick auf › öffnet die nächste Ebene.",
-                    "logoOff": "Kein Logo",
-                    "logoLoading": "Logo wird geladen…",
-                    "noFooter": "Keine Footer-Einträge",
-                    "noRoot": "Keine Root-Kategorie gewählt",
-                    "noChildLinks": "Keine Unterkategorien",
-                    "loadingCategories": "Kategorien werden geladen…",
-                    "emptyCategoryTree": "Keine Kind-Kategorien unter dieser Root (siehe Katalog → Kategorien)",
-                    "allLinkForCategory": "Alle {name}",
-                    "searchClear": "Suche löschen",
-                    "searchNoSuggestions": "Keine passenden Kategorien",
-                    "visibility": {
-                        "always": "immer",
-                        "guest": "Gast",
-                        "customer": "Kunde"
-                    }
-                },
-                "config": {
-                    "logoMedia": {
-                        "label": "Logo",
-                        "caption": "Logo für die Seitennavigation hochladen"
-                    },
-                    "logoLink": {
-                        "label": "Logo-Link",
-                        "placeholder": ""
-                    },
-                    "searchPlaceholder": {
-                        "label": "Such-Platzhalter",
-                        "placeholder": "Kategorie suchen",
-                        "helpText": "Text im Suchfeld der Storefront. Leer = Standard."
-                    },
-                    "rootCategoryId": {
-                        "label": "Wurzelkategorie",
-                        "placeholder": "Katalogwurzel wählen"
-                    },
-                    "showIcons": {
-                        "label": "Kategorie-Icons anzeigen"
-                    },
-                    "footer": {
-                        "title": "Footer",
-                        "add": "Footer-Eintrag hinzufügen",
-                        "remove": "Eintrag entfernen",
-                        "id": {
-                            "label": "ID"
-                        },
-                        "label": {
-                            "label": "Beschriftung"
-                        },
-                        "href": {
-                            "label": "Link"
-                        },
-                        "icon": {
-                            "label": "Icon",
-                            "none": "Kein Icon"
-                        },
-                        "visibility": {
-                            "label": "Sichtbarkeit"
-                        }
-                    }
-                }
-            }
+  "cms": {
+    "elements": {
+      "jv-button": {
+        "label": "Button",
+        "config": {
+          "label": {
+            "label": "Beschriftung",
+            "placeholder": "Zum Angebot"
+          },
+          "url": {
+            "label": "Link",
+            "placeholder": "https://jvmoebel.de/..."
+          },
+          "variant": {
+            "label": "Variante",
+            "primary": "Primary",
+            "secondary": "Secondary",
+            "link": "Link"
+          },
+          "openInNewTab": {
+            "label": "In neuem Tab öffnen"
+          }
+        }
+      },
+      "jv-side-navigation": {
+        "label": "Seitennavigation",
+        "component": {
+          "previewHint": "Interaktive Vorschau — Suche über alle 4 Kategorie-Ebenen. Klick auf › öffnet die nächste Ebene.",
+          "logoOff": "Kein Logo",
+          "logoLoading": "Logo wird geladen…",
+          "noFooter": "Keine Footer-Einträge",
+          "noRoot": "Keine Root-Kategorie gewählt",
+          "noChildLinks": "Keine Unterkategorien",
+          "loadingCategories": "Kategorien werden geladen…",
+          "emptyCategoryTree": "Keine Kind-Kategorien unter dieser Root (siehe Katalog → Kategorien)",
+          "allLinkForCategory": "Alle {name}",
+          "searchClear": "Suche löschen",
+          "searchNoSuggestions": "Keine passenden Kategorien",
+          "visibility": {
+            "always": "immer",
+            "guest": "Gast",
+            "customer": "Kunde"
+          }
         },
-        "blocks": {
-            "jv-button-primary": {
-                "label": "Button · Primary"
+        "config": {
+          "logoMedia": {
+            "label": "Logo",
+            "caption": "Logo für die Seitennavigation hochladen"
+          },
+          "logoLink": {
+            "label": "Logo-Link",
+            "placeholder": ""
+          },
+          "searchPlaceholder": {
+            "label": "Such-Platzhalter",
+            "placeholder": "Kategorie suchen",
+            "helpText": "Text im Suchfeld der Storefront. Leer = Standard."
+          },
+          "rootCategoryId": {
+            "label": "Wurzelkategorie",
+            "placeholder": "Katalogwurzel wählen"
+          },
+          "showIcons": {
+            "label": "Kategorie-Icons anzeigen"
+          },
+          "footer": {
+            "title": "Footer",
+            "add": "Footer-Eintrag hinzufügen",
+            "remove": "Eintrag entfernen",
+            "id": {
+              "label": "ID"
             },
-            "jv-button-secondary": {
-                "label": "Button · Secondary"
+            "label": {
+              "label": "Beschriftung"
             },
-            "jv-button-link": {
-                "label": "Button · Link"
+            "href": {
+              "label": "Link"
             },
-            "jv-side-navigation": {
-                "label": "Seitennavigation"
+            "icon": {
+              "label": "Icon",
+              "none": "Kein Icon"
+            },
+            "visibility": {
+              "label": "Sichtbarkeit"
             }
+          }
         }
+      },
+      "jv-global-search": {
+        "label": "Globale Suche",
+        "preview": {
+          "placeholder": "Wonach suchst du?"
+        },
+        "component": {
+          "defaultPlaceholder": "Wonach suchst du?"
+        },
+        "config": {
+          "searchPlaceholder": {
+            "label": "Such-Platzhalter",
+            "placeholder": "Wonach suchst du?",
+            "helpText": "Text im Suchfeld der Storefront. Leer = Standard."
+          },
+          "suggestMinChars": {
+            "label": "Min. Zeichen für Suggest",
+            "helpText": "0–10. Standard: 3. Darunter wird die Suchhistorie gezeigt."
+          },
+          "suggestLimit": {
+            "label": "Max. Suggest-Treffer",
+            "helpText": "1–20. Standard: 10."
+          },
+          "historyMaxItems": {
+            "label": "Max. Historieneinträge",
+            "helpText": "0–20. Standard: 8. 0 deaktiviert die Historie (nur Storefront)."
+          }
+        }
+      }
     },
-    "apps": {
-        "sw-cms": {
-            "detail": {
-                "label": {
-                    "blockCategory": {
-                        "button": "Button",
-                        "navigation": "Navigation"
-                    }
-                }
-            }
-        }
+    "blocks": {
+      "jv-button-primary": {
+        "label": "Button · Primary"
+      },
+      "jv-button-secondary": {
+        "label": "Button · Secondary"
+      },
+      "jv-button-link": {
+        "label": "Button · Link"
+      },
+      "jv-side-navigation": {
+        "label": "Seitennavigation"
+      },
+      "jv-global-search": {
+        "label": "Globale Suche"
+      }
     }
+  },
+  "apps": {
+    "sw-cms": {
+      "detail": {
+        "label": {
+          "blockCategory": {
+            "button": "Button",
+            "navigation": "Navigation"
+          }
+        }
+      }
+    }
+  }
 }
