@@ -21,5 +21,6 @@ interface ProductSearchServiceInterface
         int $limit,
         array $extraOptionIds,
         SalesChannelContext $context,
+        ?string $order = null,
     ): SearchResultStruct;
 }

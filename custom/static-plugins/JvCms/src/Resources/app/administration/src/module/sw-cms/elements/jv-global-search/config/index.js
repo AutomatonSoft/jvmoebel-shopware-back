@@ -83,14 +83,23 @@ export default {
             );
         },
 
+        /**
+         * Snap into [min, max]. Above max must become max (e.g. suggestLimit 999 → 20), not fallback.
+         */
         clampNumber(value, fallback, min, max) {
             if (value === null || value === undefined || value === '') {
                 return fallback;
             }
 
             const parsed = Number.parseInt(String(value), 10);
-            if (Number.isNaN(parsed) || parsed < min || parsed > max) {
+            if (Number.isNaN(parsed)) {
                 return fallback;
+            }
+            if (parsed < min) {
+                return min;
+            }
+            if (parsed > max) {
+                return max;
             }
 
             return parsed;

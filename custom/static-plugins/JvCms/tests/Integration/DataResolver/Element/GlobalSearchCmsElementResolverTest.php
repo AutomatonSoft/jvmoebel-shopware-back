@@ -123,7 +123,7 @@ final class GlobalSearchCmsElementResolverTest extends TestCase
         self::assertSame(GlobalSearchCmsElementResolver::DEFAULT_PLACEHOLDER, $data->getSearchPlaceholder());
         self::assertSame(3, $data->getSuggestMinChars());
         self::assertSame(10, $data->getSuggestLimit());
-        self::assertSame(8, $data->getHistoryMaxItems());
+        self::assertSame(20, $data->getHistoryMaxItems());
     }
 
     /**

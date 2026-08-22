@@ -60,6 +60,12 @@ final class JvSearchRoute
         $page = \is_numeric($pageRaw) ? (int) $pageRaw : 1;
         $limit = \is_numeric($limitRaw) ? (int) $limitRaw : JvProductSearchService::DEFAULT_PAGE_LIMIT;
 
+        $orderRaw = RequestParamHelper::get($request, 'order');
+        $order = \is_string($orderRaw) ? trim($orderRaw) : null;
+        if ('' === $order) {
+            $order = null;
+        }
+
         try {
             $result = $this->searchService->search(
                 $search,
@@ -67,6 +73,7 @@ final class JvSearchRoute
                 $limit,
                 $this->readOptionIds($request),
                 $context,
+                $order,
             );
         } catch (HttpExceptionInterface $exception) {
             throw $exception;

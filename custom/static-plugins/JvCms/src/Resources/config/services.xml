@@ -31,9 +31,15 @@
         <service id="Jv\Cms\Service\Search\QueryFilterInterpreterFactory">
             <argument type="service" id="Jv\Cms\Service\Search\SynonymDictionaryLoader"/>
             <argument>%kernel.project_dir%</argument>
+            <argument type="service" id="property_group_option.repository"/>
         </service>
 
-        <service id="Jv\Cms\Service\Search\JvProductSearchService"/>
+        <!-- AbstractProductSearchRoute has no DI alias; use the resolved-criteria outer route. -->
+        <service id="Jv\Cms\Service\Search\JvProductSearchService">
+            <argument type="service" id="Jv\Cms\Service\Search\QueryFilterInterpreterInterface"/>
+            <argument type="service" id="Shopware\Core\Content\Product\SalesChannel\Search\ResolvedCriteriaProductSearchRoute"/>
+            <argument type="service" id="logger"/>
+        </service>
 
         <service id="Jv\Cms\Service\Search\ProductSearchServiceInterface"
                  alias="Jv\Cms\Service\Search\JvProductSearchService"/>

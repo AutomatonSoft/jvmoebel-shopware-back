@@ -98,4 +98,37 @@ final class QueryFilterInterpreterTest extends TestCase
         self::assertSame([], $result['filters']);
         self::assertSame('braun sofa', $result['remainingSearchTerm']);
     }
+
+    public function testNonExistingOptionIdsDoNotConsumeTokens(): void
+    {
+        $existingOptionId = Uuid::randomHex();
+        $missingOptionId = Uuid::randomHex();
+        $groupId = Uuid::randomHex();
+
+        $interpreter = new QueryFilterInterpreter(
+            [
+                [
+                    'tokens' => ['braun'],
+                    'optionId' => $missingOptionId,
+                    'optionName' => 'braun',
+                    'propertyGroupId' => $groupId,
+                    'propertyGroupName' => 'Farbe',
+                ],
+                [
+                    'tokens' => ['leder'],
+                    'optionId' => $existingOptionId,
+                    'optionName' => 'Leder',
+                    'propertyGroupId' => Uuid::randomHex(),
+                    'propertyGroupName' => 'Material',
+                ],
+            ],
+            [$existingOptionId => true],
+        );
+
+        $result = $interpreter->interpret('braun leder sofa');
+
+        self::assertCount(1, $result['filters']);
+        self::assertSame($existingOptionId, $result['filters'][0]->getOptionId());
+        self::assertSame('braun sofa', $result['remainingSearchTerm']);
+    }
 }

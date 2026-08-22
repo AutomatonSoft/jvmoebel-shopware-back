@@ -95,12 +95,13 @@ final class GlobalSearchCmsElementResolverTest extends TestCase
     {
         yield 'min chars default on invalid' => ['suggestMinChars', 'x', 3];
         yield 'min chars default on -1' => ['suggestMinChars', -1, 3];
-        yield 'min chars default on 99' => ['suggestMinChars', 99, 3];
+        yield 'min chars clamps 99 to max' => ['suggestMinChars', 99, 10];
         yield 'min chars accepts 0' => ['suggestMinChars', 0, 0];
         yield 'min chars accepts 10' => ['suggestMinChars', 10, 10];
-        yield 'suggest limit default on 999' => ['suggestLimit', 999, 10];
+        yield 'suggest limit clamps 999 to max' => ['suggestLimit', 999, 20];
         yield 'suggest limit default on 0' => ['suggestLimit', 0, 10];
         yield 'history default on invalid' => ['historyMaxItems', true, 8];
+        yield 'history clamps 99 to max' => ['historyMaxItems', 99, 20];
         yield 'history accepts 0' => ['historyMaxItems', 0, 0];
         yield 'min chars rejects float' => ['suggestMinChars', 3.5, 3];
         yield 'suggest limit rejects bool' => ['suggestLimit', true, 10];

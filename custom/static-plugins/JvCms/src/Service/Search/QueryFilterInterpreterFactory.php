@@ -4,11 +4,21 @@ declare(strict_types=1);
 
 namespace Jv\Cms\Service\Search;
 
+use Shopware\Core\Content\Property\Aggregate\PropertyGroupOption\PropertyGroupOptionCollection;
+use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\Uuid\Uuid;
+
 final class QueryFilterInterpreterFactory
 {
+    /**
+     * @param EntityRepository<PropertyGroupOptionCollection> $propertyGroupOptionRepository
+     */
     public function __construct(
         private readonly SynonymDictionaryLoader $loader,
         private readonly string $projectDir,
+        private readonly EntityRepository $propertyGroupOptionRepository,
     ) {
     }
 
@@ -31,6 +41,43 @@ final class QueryFilterInterpreterFactory
             }
         }
 
-        return new QueryFilterInterpreter($dictionary);
+        // Whitelist option IDs against DAL so stale synonym UUIDs cannot consume query tokens.
+        return new QueryFilterInterpreter($dictionary, $this->resolveExistingOptionIds($dictionary));
+    }
+
+    /**
+     * @param iterable<mixed> $dictionary
+     *
+     * @return array<string, true>
+     */
+    private function resolveExistingOptionIds(iterable $dictionary): array
+    {
+        $candidateIds = [];
+        foreach ($dictionary as $row) {
+            if (!\is_array($row)) {
+                continue;
+            }
+            $optionId = trim((string) ($row['optionId'] ?? ''));
+            if (Uuid::isValid($optionId)) {
+                $candidateIds[$optionId] = true;
+            }
+        }
+
+        if ([] === $candidateIds) {
+            return [];
+        }
+
+        $ids = array_keys($candidateIds);
+        $criteria = new Criteria($ids);
+        $criteria->setLimit(\count($ids));
+
+        $existing = [];
+        foreach ($this->propertyGroupOptionRepository->searchIds($criteria, Context::createDefaultContext())->getIds() as $id) {
+            if (Uuid::isValid($id)) {
+                $existing[$id] = true;
+            }
+        }
+
+        return $existing;
     }
 }

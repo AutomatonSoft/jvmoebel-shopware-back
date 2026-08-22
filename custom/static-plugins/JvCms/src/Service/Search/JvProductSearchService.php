@@ -13,29 +13,24 @@ use Jv\Cms\StoreApi\Search\Struct\SuggestProductStruct;
 use Jv\Cms\StoreApi\Search\Struct\SuggestResultStruct;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+use Shopware\Core\Checkout\Cart\Price\Struct\CartPrice;
 use Shopware\Core\Content\Media\MediaEntity;
 use Shopware\Core\Content\Product\Aggregate\ProductMedia\ProductMediaEntity;
-use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
-use Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingLoader;
 use Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingResult;
-use Shopware\Core\Content\Product\SalesChannel\ProductAvailableFilter;
 use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
-use Shopware\Core\Content\Product\SearchKeyword\ProductSearchBuilderInterface;
+use Shopware\Core\Content\Product\SalesChannel\Search\AbstractProductSearchRoute;
 use Shopware\Core\Content\Seo\SeoUrl\SeoUrlCollection;
-use Shopware\Core\Content\Seo\SeoUrl\SeoUrlEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\AndFilter;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\OrFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
- * Cross-category product search/suggest via Shopware OpenSearch-aware listing loader.
+ * Runtime product suggest/search for headless storefronts (SPEC-004 / SPEC-006).
  *
- * Mapping never throws: broken entities are skipped.
- * Infrastructure failures become SearchUnavailableException (HTTP 503 at the route).
+ * Uses Shopware's resolved product-search route (paging, facets, sorting, channel visibility)
+ * instead of calling ProductListingLoader directly. Suggest maps a short DTO; full search
+ * returns flat listing fields (products/total/page/limit/aggregations), not a nested listing.
  */
 final class JvProductSearchService implements ProductSearchServiceInterface
 {
@@ -49,8 +44,7 @@ final class JvProductSearchService implements ProductSearchServiceInterface
 
     public function __construct(
         private readonly QueryFilterInterpreterInterface $interpreter,
-        private readonly ProductSearchBuilderInterface $searchBuilder,
-        private readonly ProductListingLoader $productListingLoader,
+        private readonly AbstractProductSearchRoute $productSearchRoute,
         private readonly LoggerInterface $logger,
     ) {
     }
@@ -73,11 +67,20 @@ final class JvProductSearchService implements ProductSearchServiceInterface
             );
         }
 
-        $listing = $this->loadListing($query, $remaining, $filters, 1, $limit, $context);
+        $listing = $this->loadListing(
+            remainingSearchTerm: $remaining,
+            originalQuery: $query,
+            filters: $filters,
+            page: 1,
+            limit: $limit,
+            context: $context,
+            extraOptionIds: [],
+            order: null,
+        );
 
         return new SuggestResultStruct(
             query: $query,
-            products: $this->mapSuggestProducts($listing),
+            products: $this->mapSuggestProducts($listing, $context),
             interpretedFilters: $filters,
             remainingSearchTerm: $remaining,
         );
@@ -92,30 +95,40 @@ final class JvProductSearchService implements ProductSearchServiceInterface
         int $limit,
         array $extraOptionIds,
         SalesChannelContext $context,
+        ?string $order = null,
     ): SearchResultStruct {
         $query = trim($search);
         $page = max(1, $page);
         $limit = $this->clampLimit($limit, self::DEFAULT_PAGE_LIMIT, 1, self::MAX_PAGE_LIMIT);
+        $order = null !== $order ? trim($order) : null;
+        if ('' === $order) {
+            $order = null;
+        }
 
         $interpretation = $this->safeInterpret($query);
         $filters = $interpretation['filters'];
         $remaining = $interpretation['remainingSearchTerm'];
 
         $listing = $this->loadListing(
-            $query,
-            $remaining,
-            $filters,
-            $page,
-            $limit,
-            $context,
-            $this->sanitizeOptionIds($extraOptionIds),
+            remainingSearchTerm: $remaining,
+            originalQuery: $query,
+            filters: $filters,
+            page: $page,
+            limit: $limit,
+            context: $context,
+            extraOptionIds: $this->sanitizeOptionIds($extraOptionIds),
+            order: $order,
         );
 
         return new SearchResultStruct(
             query: $query,
             interpretedFilters: $filters,
             remainingSearchTerm: $remaining,
-            listing: $listing,
+            products: array_values($listing->getElements()),
+            total: $listing->getTotal(),
+            page: $listing->getPage() > 0 ? $listing->getPage() : $page,
+            limit: $listing->getLimit() ?? $limit,
+            aggregations: $listing->getAggregations(),
         );
     }
 
@@ -145,39 +158,41 @@ final class JvProductSearchService implements ProductSearchServiceInterface
      * @param list<string>                  $extraOptionIds
      */
     private function loadListing(
-        string $originalQuery,
         string $remainingSearchTerm,
+        string $originalQuery,
         array $filters,
         int $page,
         int $limit,
         SalesChannelContext $context,
-        array $extraOptionIds = [],
+        array $extraOptionIds,
+        ?string $order,
     ): ProductListingResult {
+        // Prefer remaining term after synonym mapping; fall back to the original query.
         $term = '' !== $remainingSearchTerm ? $remainingSearchTerm : $originalQuery;
-
-        $criteria = new Criteria();
-        $criteria->setTitle('jv-search');
-        $criteria->setLimit($limit);
-        $criteria->setOffset(($page - 1) * $limit);
-        $criteria->addState(Criteria::STATE_ELASTICSEARCH_AWARE);
-        $criteria->addFilter(
-            new ProductAvailableFilter($context->getSalesChannelId(), ProductVisibilityDefinition::VISIBILITY_SEARCH),
-        );
-        $criteria->addAssociation('cover.media');
-        $criteria->addAssociation('seoUrls');
-
-        $this->applyPropertyFilters($criteria, $filters, $extraOptionIds);
 
         $request = new Request();
         $request->request->set('search', $term);
         $request->query->set('search', $term);
+        $request->request->set('limit', $limit);
+        // Shopware paging uses "p", not "page".
+        $request->request->set('p', $page);
+
+        if (null !== $order) {
+            $request->request->set('order', $order);
+        }
+
+        $propertyIds = $this->collectPropertyIds($filters, $extraOptionIds);
+        if ([] !== $propertyIds) {
+            // Pipe format understood by Shopware PropertyListingFilterHandler.
+            $request->request->set('properties', implode('|', $propertyIds));
+        }
+
+        $criteria = new Criteria();
+        $criteria->addAssociation('cover.media');
+        $criteria->addAssociation('seoUrls');
 
         try {
-            if ('' !== $term) {
-                $this->searchBuilder->build($request, $criteria, $context);
-            }
-
-            $result = $this->productListingLoader->load($criteria, $context);
+            $response = $this->productSearchRoute->load($request, $context, $criteria);
         } catch (\Throwable $exception) {
             $this->logger->error('jv-search listing failed', [
                 'operation' => 'jv_product_search',
@@ -188,46 +203,31 @@ final class JvProductSearchService implements ProductSearchServiceInterface
             throw new SearchUnavailableException('Product search is temporarily unavailable.', $exception);
         }
 
-        $listing = ProductListingResult::createFrom($result);
-        $listing->setPage($page);
-        $listing->setLimit($limit);
-
-        return $listing;
+        return $response->getListingResult();
     }
 
     /**
      * @param list<InterpretedFilterStruct> $filters
      * @param list<string>                  $extraOptionIds
+     *
+     * @return list<string>
      */
-    private function applyPropertyFilters(Criteria $criteria, array $filters, array $extraOptionIds = []): void
+    private function collectPropertyIds(array $filters, array $extraOptionIds): array
     {
-        $optionIds = [];
+        $ids = [];
         foreach ($filters as $filter) {
             $optionId = $filter->getOptionId();
             if (Uuid::isValid($optionId)) {
-                $optionIds[$optionId] = true;
+                $ids[$optionId] = true;
             }
         }
-
         foreach ($extraOptionIds as $optionId) {
             if (Uuid::isValid($optionId)) {
-                $optionIds[$optionId] = true;
+                $ids[$optionId] = true;
             }
         }
 
-        if ([] === $optionIds) {
-            return;
-        }
-
-        $groupFilters = [];
-        foreach (array_keys($optionIds) as $optionId) {
-            $groupFilters[] = new OrFilter([
-                new EqualsAnyFilter('product.propertyIds', [$optionId]),
-                new EqualsAnyFilter('product.optionIds', [$optionId]),
-            ]);
-        }
-
-        $criteria->addFilter(new AndFilter($groupFilters));
+        return array_keys($ids);
     }
 
     /**
@@ -254,7 +254,7 @@ final class JvProductSearchService implements ProductSearchServiceInterface
     /**
      * @return list<SuggestProductStruct>
      */
-    private function mapSuggestProducts(ProductListingResult $listing): array
+    private function mapSuggestProducts(ProductListingResult $listing, SalesChannelContext $context): array
     {
         $products = [];
 
@@ -263,7 +263,7 @@ final class JvProductSearchService implements ProductSearchServiceInterface
                 continue;
             }
 
-            $mapped = $this->mapOneSuggestProduct($entity);
+            $mapped = $this->mapOneSuggestProduct($entity, $context);
             if (null !== $mapped) {
                 $products[] = $mapped;
             }
@@ -272,8 +272,10 @@ final class JvProductSearchService implements ProductSearchServiceInterface
         return $products;
     }
 
-    private function mapOneSuggestProduct(SalesChannelProductEntity $entity): ?SuggestProductStruct
-    {
+    private function mapOneSuggestProduct(
+        SalesChannelProductEntity $entity,
+        SalesChannelContext $context,
+    ): ?SuggestProductStruct {
         $id = trim($entity->getId());
         if ('' === $id || !Uuid::isValid($id)) {
             return null;
@@ -287,31 +289,51 @@ final class JvProductSearchService implements ProductSearchServiceInterface
         return new SuggestProductStruct(
             id: $id,
             name: $name,
-            seoUrl: $this->resolveSeoUrl($entity),
+            seoUrl: $this->resolveSeoUrl($entity, $context),
             cover: $this->resolveCover($entity),
-            price: $this->resolvePrice($entity),
+            price: $this->resolvePrice($entity, $context),
         );
     }
 
-    private function resolveSeoUrl(SalesChannelProductEntity $product): ?string
+    /**
+     * Prefer the SEO URL for the current language + sales channel; never pick another market's path.
+     */
+    private function resolveSeoUrl(SalesChannelProductEntity $product, SalesChannelContext $context): ?string
     {
         $seoUrls = $product->getSeoUrls();
         if (!$seoUrls instanceof SeoUrlCollection || $seoUrls->count() < 1) {
             return null;
         }
 
-        $first = $seoUrls->first();
-        if (!$first instanceof SeoUrlEntity) {
+        $languageId = $context->getLanguageId();
+        $salesChannelId = $context->getSalesChannelId();
+
+        $exact = null;
+        $fallback = null;
+
+        foreach ($seoUrls as $seoUrl) {
+            if ($seoUrl->getLanguageId() !== $languageId) {
+                continue;
+            }
+
+            $urlSalesChannelId = $seoUrl->getSalesChannelId();
+            if ($urlSalesChannelId === $salesChannelId) {
+                $exact = $seoUrl;
+                break;
+            }
+            // Only accept channel-agnostic URLs as fallback (never a different sales channel).
+            if (null === $urlSalesChannelId && null === $fallback) {
+                $fallback = $seoUrl;
+            }
+        }
+
+        $chosen = $exact ?? $fallback;
+        if (null === $chosen) {
             return null;
         }
 
-        $path = trim($first->getSeoPathInfo());
-        if ('' === $path) {
-            return null;
-        }
-
-        // Reject scheme-relative / absolute injection in stored seo paths.
-        if (str_contains($path, '://') || str_starts_with($path, '//')) {
+        $path = trim($chosen->getSeoPathInfo());
+        if ('' === $path || str_contains($path, '://') || str_starts_with($path, '//')) {
             return null;
         }
 
@@ -341,25 +363,50 @@ final class JvProductSearchService implements ProductSearchServiceInterface
         );
     }
 
-    private function resolvePrice(SalesChannelProductEntity $product): ?SuggestProductPriceStruct
-    {
+    /**
+     * totalPrice is gross or net depending on tax state — do not treat unit/total as gross/net.
+     */
+    private function resolvePrice(
+        SalesChannelProductEntity $product,
+        SalesChannelContext $context,
+    ): ?SuggestProductPriceStruct {
         $vars = $product->getVars();
         $calculated = $vars['calculatedPrice'] ?? null;
         if (!$calculated instanceof CalculatedPrice) {
             return null;
         }
 
+        $price = $calculated->getTotalPrice();
+        $tax = 0.0;
+        foreach ($calculated->getCalculatedTaxes() as $calculatedTax) {
+            $tax += $calculatedTax->getTax();
+        }
+
+        if (CartPrice::TAX_STATE_GROSS === $context->getTaxState()) {
+            $gross = $price;
+            $net = $price - $tax;
+        } else {
+            $net = $price;
+            $gross = $price + $tax;
+        }
+
         return new SuggestProductPriceStruct(
-            gross: $calculated->getTotalPrice(),
-            net: $calculated->getUnitPrice(),
-            currencyId: null,
+            gross: $gross,
+            net: $net,
+            currencyId: $context->getCurrencyId(),
         );
     }
 
+    /**
+     * Below min / invalid → default; above max → max (e.g. suggestLimit 999 → 20, not 10).
+     */
     private function clampLimit(int $value, int $default, int $min, int $max): int
     {
-        if ($value < $min || $value > $max) {
+        if ($value < $min) {
             return $default;
+        }
+        if ($value > $max) {
+            return $max;
         }
 
         return $value;

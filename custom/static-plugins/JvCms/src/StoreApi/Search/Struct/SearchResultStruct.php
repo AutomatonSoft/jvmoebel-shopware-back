@@ -4,20 +4,27 @@ declare(strict_types=1);
 
 namespace Jv\Cms\StoreApi\Search\Struct;
 
-use Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingResult;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\AggregationResult\AggregationResultCollection;
 use Shopware\Core\Framework\Struct\Struct;
 
+/**
+ * Full-search Store API payload (SPEC-004): flat products/total/page/limit/aggregations — not nested listing.
+ */
 final class SearchResultStruct extends Struct
 {
     /**
-     * @param list<InterpretedFilterStruct> $interpretedFilters
+     * @param list<InterpretedFilterStruct>                              $interpretedFilters
+     * @param list<\Shopware\Core\Framework\DataAbstractionLayer\Entity> $products
      */
     public function __construct(
         protected string $query,
         protected array $interpretedFilters,
         protected string $remainingSearchTerm,
-        protected ProductListingResult $listing,
+        protected array $products,
+        protected int $total,
+        protected int $page,
+        protected int $limit,
+        protected AggregationResultCollection $aggregations,
     ) {
     }
 
@@ -26,7 +33,9 @@ final class SearchResultStruct extends Struct
         return $this->query;
     }
 
-    /** @return list<InterpretedFilterStruct> */
+    /**
+     * @return list<InterpretedFilterStruct>
+     */
     public function getInterpretedFilters(): array
     {
         return $this->interpretedFilters;
@@ -37,35 +46,32 @@ final class SearchResultStruct extends Struct
         return $this->remainingSearchTerm;
     }
 
-    public function getListing(): ProductListingResult
-    {
-        return $this->listing;
-    }
-
-    /** @return list<\Shopware\Core\Framework\DataAbstractionLayer\Entity> */
+    /**
+     * @return list<\Shopware\Core\Framework\DataAbstractionLayer\Entity>
+     */
     public function getProducts(): array
     {
-        return array_values($this->listing->getElements());
+        return $this->products;
     }
 
     public function getTotal(): int
     {
-        return $this->listing->getTotal();
+        return $this->total;
     }
 
     public function getPage(): int
     {
-        return $this->listing->getPage();
+        return $this->page;
     }
 
-    public function getLimit(): ?int
+    public function getLimit(): int
     {
-        return $this->listing->getLimit();
+        return $this->limit;
     }
 
     public function getAggregations(): AggregationResultCollection
     {
-        return $this->listing->getAggregations();
+        return $this->aggregations;
     }
 
     public function getApiAlias(): string

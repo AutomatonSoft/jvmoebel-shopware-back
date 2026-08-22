@@ -8,24 +8,19 @@ use Jv\Cms\Service\Search\JvProductSearchService;
 use Jv\Cms\Service\Search\QueryFilterInterpreter;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
-use Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingLoader;
-use Shopware\Core\Content\Product\SearchKeyword\ProductSearchBuilderInterface;
+use Shopware\Core\Content\Product\SalesChannel\Search\AbstractProductSearchRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 final class JvProductSearchServiceSuggestEmptyTest extends TestCase
 {
-    public function testEmptySuggestDoesNotCallListingLoader(): void
+    public function testEmptySuggestDoesNotCallProductSearchRoute(): void
     {
-        $searchBuilder = $this->createMock(ProductSearchBuilderInterface::class);
-        $searchBuilder->expects(self::never())->method('build');
-
-        $listingLoader = $this->createMock(ProductListingLoader::class);
-        $listingLoader->expects(self::never())->method('load');
+        $productSearchRoute = $this->createMock(AbstractProductSearchRoute::class);
+        $productSearchRoute->expects(self::never())->method('load');
 
         $service = new JvProductSearchService(
             new QueryFilterInterpreter([]),
-            $searchBuilder,
-            $listingLoader,
+            $productSearchRoute,
             new NullLogger(),
         );
 

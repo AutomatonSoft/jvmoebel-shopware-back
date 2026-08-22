@@ -11,35 +11,33 @@ use Jv\Cms\Service\Search\QueryFilterInterpreterInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
+use Shopware\Core\Checkout\Cart\Price\Struct\CartPrice;
 use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
 use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopware\Core\Content\Product\ProductCollection;
-use Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingLoader;
+use Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingResult;
 use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
-use Shopware\Core\Content\Product\SearchKeyword\ProductSearchBuilderInterface;
+use Shopware\Core\Content\Product\SalesChannel\Search\AbstractProductSearchRoute;
+use Shopware\Core\Content\Product\SalesChannel\Search\ProductSearchRouteResponse;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
+use Symfony\Component\HttpFoundation\Request;
 
 final class JvProductSearchServiceHardeningTest extends TestCase
 {
     public function testListingFailureBecomesSearchUnavailableException(): void
     {
-        $searchBuilder = $this->createMock(ProductSearchBuilderInterface::class);
-        $searchBuilder->expects(self::once())->method('build');
-
-        $listingLoader = $this->createMock(ProductListingLoader::class);
-        $listingLoader->expects(self::once())
+        $productSearchRoute = $this->createMock(AbstractProductSearchRoute::class);
+        $productSearchRoute->expects(self::once())
             ->method('load')
             ->willThrowException(new \RuntimeException('opensearch down'));
 
         $service = new JvProductSearchService(
             new QueryFilterInterpreter([]),
-            $searchBuilder,
-            $listingLoader,
+            $productSearchRoute,
             new NullLogger(),
         );
 
@@ -71,25 +69,14 @@ final class JvProductSearchServiceHardeningTest extends TestCase
         $withoutPrice->setId($withoutPrice->getUniqueIdentifier());
         $withoutPrice->setName('Sofa B');
 
-        $searchResult = new EntitySearchResult(
-            'product',
-            3,
-            new ProductCollection([$withName, $withoutName, $withoutPrice]),
-            null,
-            new Criteria(),
-            Context::createDefaultContext(),
-        );
-
-        $searchBuilder = $this->createMock(ProductSearchBuilderInterface::class);
-        $searchBuilder->expects(self::once())->method('build');
-
-        $listingLoader = $this->createMock(ProductListingLoader::class);
-        $listingLoader->expects(self::once())->method('load')->willReturn($searchResult);
+        $productSearchRoute = $this->createMock(AbstractProductSearchRoute::class);
+        $productSearchRoute->expects(self::once())
+            ->method('load')
+            ->willReturn($this->searchResponse(new ProductCollection([$withName, $withoutName, $withoutPrice]), 3));
 
         $service = new JvProductSearchService(
             new QueryFilterInterpreter([]),
-            $searchBuilder,
-            $listingLoader,
+            $productSearchRoute,
             new NullLogger(),
         );
 
@@ -107,25 +94,21 @@ final class JvProductSearchServiceHardeningTest extends TestCase
         $interpreter = $this->createMock(QueryFilterInterpreterInterface::class);
         $interpreter->method('interpret')->willThrowException(new \RuntimeException('dictionary boom'));
 
-        $searchResult = new EntitySearchResult(
-            'product',
-            0,
-            new ProductCollection(),
-            null,
-            new Criteria(),
-            Context::createDefaultContext(),
-        );
-
-        $searchBuilder = $this->createMock(ProductSearchBuilderInterface::class);
-        $searchBuilder->expects(self::once())->method('build');
-
-        $listingLoader = $this->createMock(ProductListingLoader::class);
-        $listingLoader->expects(self::once())->method('load')->willReturn($searchResult);
+        $productSearchRoute = $this->createMock(AbstractProductSearchRoute::class);
+        $productSearchRoute->expects(self::once())
+            ->method('load')
+            ->with(
+                self::callback(static function (Request $request): bool {
+                    return 'braunes sofa' === $request->request->get('search');
+                }),
+                self::anything(),
+                self::anything(),
+            )
+            ->willReturn($this->searchResponse(new ProductCollection(), 0));
 
         $service = new JvProductSearchService(
             $interpreter,
-            $searchBuilder,
-            $listingLoader,
+            $productSearchRoute,
             new NullLogger(),
         );
 
@@ -137,28 +120,28 @@ final class JvProductSearchServiceHardeningTest extends TestCase
 
     public function testInvalidExtraOptionIdsAreIgnored(): void
     {
-        $searchResult = new EntitySearchResult(
-            'product',
-            0,
-            new ProductCollection(),
-            null,
-            new Criteria(),
-            Context::createDefaultContext(),
-        );
+        $validOptionId = Uuid::randomHex();
 
-        $searchBuilder = $this->createMock(ProductSearchBuilderInterface::class);
-        $listingLoader = $this->createMock(ProductListingLoader::class);
-        $listingLoader->expects(self::once())->method('load')->willReturn($searchResult);
+        $productSearchRoute = $this->createMock(AbstractProductSearchRoute::class);
+        $productSearchRoute->expects(self::once())
+            ->method('load')
+            ->with(
+                self::callback(static function (Request $request) use ($validOptionId): bool {
+                    return $validOptionId === $request->request->get('properties');
+                }),
+                self::anything(),
+                self::anything(),
+            )
+            ->willReturn($this->searchResponse(new ProductCollection(), 0));
 
         $service = new JvProductSearchService(
             new QueryFilterInterpreter([]),
-            $searchBuilder,
-            $listingLoader,
+            $productSearchRoute,
             new NullLogger(),
         );
 
         /** @var list<mixed> $junk */
-        $junk = ['not-a-uuid', ['nested'], Uuid::randomHex()];
+        $junk = ['not-a-uuid', ['nested'], $validOptionId];
 
         $result = $service->search(
             'sofa',
@@ -170,6 +153,79 @@ final class JvProductSearchServiceHardeningTest extends TestCase
 
         self::assertSame('sofa', $result->getQuery());
         self::assertSame(0, $result->getTotal());
+        self::assertSame([], $result->getProducts());
+        self::assertCount(0, $result->getAggregations());
+    }
+
+    public function testSuggestLimitAboveMaxIsClampedToTwenty(): void
+    {
+        $productSearchRoute = $this->createMock(AbstractProductSearchRoute::class);
+        $productSearchRoute->expects(self::once())
+            ->method('load')
+            ->with(
+                self::callback(static function (Request $request): bool {
+                    return 20 === (int) $request->request->get('limit');
+                }),
+                self::anything(),
+                self::anything(),
+            )
+            ->willReturn($this->searchResponse(new ProductCollection(), 0));
+
+        $service = new JvProductSearchService(
+            new QueryFilterInterpreter([]),
+            $productSearchRoute,
+            new NullLogger(),
+        );
+
+        $service->suggest('sofa', 999, $this->salesChannelContext());
+    }
+
+    public function testSearchPassesOrderAndPageAsP(): void
+    {
+        $productSearchRoute = $this->createMock(AbstractProductSearchRoute::class);
+        $productSearchRoute->expects(self::once())
+            ->method('load')
+            ->with(
+                self::callback(static function (Request $request): bool {
+                    return 'name-asc' === $request->request->get('order')
+                        && 2 === (int) $request->request->get('p')
+                        && 24 === (int) $request->request->get('limit');
+                }),
+                self::anything(),
+                self::anything(),
+            )
+            ->willReturn($this->searchResponse(new ProductCollection(), 0, page: 2, limit: 24));
+
+        $service = new JvProductSearchService(
+            new QueryFilterInterpreter([]),
+            $productSearchRoute,
+            new NullLogger(),
+        );
+
+        $result = $service->search('sofa', 2, 24, [], $this->salesChannelContext(), 'name-asc');
+
+        self::assertSame(2, $result->getPage());
+        self::assertSame(24, $result->getLimit());
+    }
+
+    private function searchResponse(
+        ProductCollection $products,
+        int $total,
+        int $page = 1,
+        int $limit = 10,
+    ): ProductSearchRouteResponse {
+        $listing = new ProductListingResult(
+            'product',
+            $total,
+            $products,
+            null,
+            new Criteria(),
+            Context::createDefaultContext(),
+        );
+        $listing->setPage($page);
+        $listing->setLimit($limit);
+
+        return new ProductSearchRouteResponse($listing);
     }
 
     private function salesChannelContext(): SalesChannelContext
@@ -182,6 +238,9 @@ final class JvProductSearchServiceHardeningTest extends TestCase
         $context->method('getSalesChannelId')->willReturn($salesChannel->getId());
         $context->method('getSalesChannel')->willReturn($salesChannel);
         $context->method('getContext')->willReturn(Context::createDefaultContext());
+        $context->method('getLanguageId')->willReturn(Uuid::randomHex());
+        $context->method('getCurrencyId')->willReturn(Uuid::randomHex());
+        $context->method('getTaxState')->willReturn(CartPrice::TAX_STATE_GROSS);
 
         return $context;
     }

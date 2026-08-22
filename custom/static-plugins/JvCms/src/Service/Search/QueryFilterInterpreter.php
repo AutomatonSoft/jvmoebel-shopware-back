@@ -10,14 +10,20 @@ use Shopware\Core\Framework\Uuid\Uuid;
 /**
  * Deterministic token → property option mapper (SPEC-004 / SPEC-006).
  * Dictionary entries must resolve to option UUIDs; unknown options are skipped.
+ *
+ * When $existingOptionIds is provided, only optionIds present in that map are used.
+ * Missing options do not consume tokens (they stay in remainingSearchTerm).
+ * When null (unit tests / empty stub), UUID shape alone is enough.
  */
 final class QueryFilterInterpreter implements QueryFilterInterpreterInterface
 {
     /**
-     * @param iterable<mixed> $dictionary
+     * @param iterable<mixed>          $dictionary
+     * @param array<string, true>|null $existingOptionIds map of option UUID → true; null = skip existence check
      */
     public function __construct(
         private readonly iterable $dictionary = [],
+        private readonly ?array $existingOptionIds = null,
     ) {
     }
 
@@ -131,6 +137,11 @@ final class QueryFilterInterpreter implements QueryFilterInterpreterInterface
             $optionId = trim((string) ($row['optionId'] ?? ''));
             $groupId = trim((string) ($row['propertyGroupId'] ?? ''));
             if (!Uuid::isValid($optionId) || !Uuid::isValid($groupId)) {
+                continue;
+            }
+
+            // Skip dictionary rows whose option no longer exists so the token stays in remainingSearchTerm.
+            if (null !== $this->existingOptionIds && !isset($this->existingOptionIds[$optionId])) {
                 continue;
             }
 
