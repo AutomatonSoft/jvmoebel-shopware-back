@@ -7,6 +7,8 @@ use Jv\Import\Service\Catalog\Dto\CatalogAllowedValue;
 use Jv\Import\Service\Catalog\Dto\CatalogAttribute;
 use Jv\Import\Service\Catalog\Dto\CatalogCategory;
 use Jv\Import\Service\Catalog\Dto\CatalogCategoryGroup;
+use Jv\Import\Service\Catalog\Dto\CatalogCategoryGroupNavigationMapping;
+use Jv\Import\Service\Catalog\Dto\CatalogNavigationCategory;
 use Jv\Import\Service\Catalog\Dto\CatalogSchemaSnapshot;
 
 final readonly class OkbCatalogSchemaSnapshotReader
@@ -62,7 +64,23 @@ final readonly class OkbCatalogSchemaSnapshotReader
             );
         }
 
-        return new CatalogSchemaSnapshot(self::SOURCE_CODE, $groups, $categories, $attributes, $allowedValues);
+        $navigationCategories = [];
+        foreach ($this->csvReader->rows($directory.'/navigation-categories.csv', ['navigation_key', 'parent_navigation_key', 'navigation_name']) as $row) {
+            $navigationCategories[] = new CatalogNavigationCategory(
+                $this->required($row, 'navigation_key', 'navigation category'),
+                '' === $row['parent_navigation_key'] ? null : $row['parent_navigation_key'],
+                $this->required($row, 'navigation_name', 'navigation category'),
+            );
+        }
+        $categoryGroupNavigationMappings = [];
+        foreach ($this->csvReader->rows($directory.'/category-group-parent-mapping.csv', ['category_group_id', 'navigation_key']) as $row) {
+            $categoryGroupNavigationMappings[] = new CatalogCategoryGroupNavigationMapping(
+                $this->required($row, 'category_group_id', 'category group navigation mapping'),
+                $this->required($row, 'navigation_key', 'category group navigation mapping'),
+            );
+        }
+
+        return new CatalogSchemaSnapshot(self::SOURCE_CODE, $groups, $categories, $attributes, $allowedValues, $navigationCategories, $categoryGroupNavigationMappings);
     }
 
     private function assertComplete(string $directory): void

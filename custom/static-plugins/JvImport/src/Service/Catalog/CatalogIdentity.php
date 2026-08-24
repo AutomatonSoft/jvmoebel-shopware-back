@@ -6,6 +6,11 @@ use Shopware\Core\Framework\Uuid\Uuid;
 
 final class CatalogIdentity
 {
+    public static function navigationRootId(): string
+    {
+        return self::id('category.navigation-root');
+    }
+
     public static function categoryGroupId(string $sourceCode, string $categoryGroupKey): string
     {
         return self::id($sourceCode.'.category-group.'.$categoryGroupKey);
@@ -14,6 +19,11 @@ final class CatalogIdentity
     public static function categoryId(string $sourceCode, string $categoryKey): string
     {
         return self::id($sourceCode.'.category.'.$categoryKey);
+    }
+
+    public static function navigationCategoryId(string $sourceCode, string $navigationKey): string
+    {
+        return self::id($sourceCode.'.navigation-category.'.$navigationKey);
     }
 
     public static function categoryAttributeId(string $sourceCode, string $categoryGroupKey, string $attributeKey): string

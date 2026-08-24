@@ -10,6 +10,8 @@ use Jv\Import\Service\Catalog\CatalogIdentity;
 use Jv\Import\Service\Catalog\Dto\CatalogAllowedValue;
 use Jv\Import\Service\Catalog\Dto\CatalogAttribute;
 use Jv\Import\Service\Catalog\Dto\CatalogCategoryGroup;
+use Jv\Import\Service\Catalog\Dto\CatalogCategoryGroupNavigationMapping;
+use Jv\Import\Service\Catalog\Dto\CatalogNavigationCategory;
 use Jv\Import\Service\Catalog\Dto\CatalogSchemaSnapshot;
 use Jv\Import\Service\Catalog\ImportCatalogSchemaService;
 use PHPUnit\Framework\TestCase;
@@ -175,6 +177,60 @@ final class ImportCatalogSchemaServiceTest extends TestCase
         ))->execute(new CatalogSchemaSnapshot('source-a', [
             new CatalogCategoryGroup('sofas', 'Sofas'),
         ], [], [], []), false, $context);
+    }
+
+    public function testItImportsNavigationBeforeAssigningItsCategoryGroup(): void
+    {
+        $categoryRepository = $this->createMock(EntityRepository::class);
+        $propertyGroupRepository = $this->createMock(EntityRepository::class);
+        $propertyOptionRepository = $this->createMock(EntityRepository::class);
+        $mappingRepository = $this->createMock(EntityRepository::class);
+        $context = Context::createDefaultContext();
+        $writes = [];
+
+        $categoryRepository->expects(self::exactly(2))->method('upsert')->willReturnCallback(
+            static function (array $records) use (&$writes, $context): EntityWrittenContainerEvent {
+                $writes[] = $records;
+
+                return EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []);
+            },
+        );
+        $propertyGroupRepository->method('upsert')->willReturn(EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []));
+        $propertyOptionRepository->method('upsert')->willReturn(EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []));
+        $mappingRepository->method('search')->willReturn(new EntitySearchResult('jv_catalog_category_attribute', 0, new CatalogCategoryAttributeCollection(), null, new Criteria(), $context));
+        $mappingRepository->method('upsert')->willReturn(EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []));
+
+        (new ImportCatalogSchemaService($categoryRepository, $propertyGroupRepository, $propertyOptionRepository, $mappingRepository, new CatalogAttributeMappingSynchronizer()))->execute(
+            new CatalogSchemaSnapshot('source-a', [new CatalogCategoryGroup('sofas', 'Sofas')], [], [], [], [
+                new CatalogNavigationCategory('l1:furniture', null, 'Furniture'),
+                new CatalogNavigationCategory('l2:living-room', 'l1:furniture', 'Living room'),
+            ], [new CatalogCategoryGroupNavigationMapping('sofas', 'l2:living-room')]),
+            false,
+            $context,
+        );
+
+        self::assertSame(CatalogIdentity::navigationRootId(), $writes[0][0]['parentId']);
+        self::assertSame(CatalogIdentity::navigationCategoryId('source-a', 'l1:furniture'), $writes[0][1]['parentId']);
+        self::assertSame(CatalogIdentity::navigationCategoryId('source-a', 'l2:living-room'), $writes[1][0]['parentId']);
+    }
+
+    public function testItRejectsCategoryGroupMappingToLevelOneNavigation(): void
+    {
+        $categoryRepository = $this->createMock(EntityRepository::class);
+        $propertyGroupRepository = $this->createMock(EntityRepository::class);
+        $propertyOptionRepository = $this->createMock(EntityRepository::class);
+        $mappingRepository = $this->createMock(EntityRepository::class);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('not on level 2');
+
+        (new ImportCatalogSchemaService($categoryRepository, $propertyGroupRepository, $propertyOptionRepository, $mappingRepository, new CatalogAttributeMappingSynchronizer()))->execute(
+            new CatalogSchemaSnapshot('source-a', [new CatalogCategoryGroup('sofas', 'Sofas')], [], [], [], [
+                new CatalogNavigationCategory('l1:furniture', null, 'Furniture'),
+            ], [new CatalogCategoryGroupNavigationMapping('sofas', 'l1:furniture')]),
+            true,
+            Context::createDefaultContext(),
+        );
     }
 
     public function testItCreatesAVisibleNonFilterablePropertyForAnOkbProductDetailsAttribute(): void

@@ -5,10 +5,12 @@ namespace Jv\Import\Service\Catalog\Dto;
 final readonly class CatalogSchemaSnapshot
 {
     /**
-     * @param list<CatalogCategoryGroup> $categoryGroups
-     * @param list<CatalogCategory>      $categories
-     * @param list<CatalogAttribute>     $attributes
-     * @param list<CatalogAllowedValue>  $allowedValues
+     * @param list<CatalogCategoryGroup>                  $categoryGroups
+     * @param list<CatalogCategory>                       $categories
+     * @param list<CatalogAttribute>                      $attributes
+     * @param list<CatalogAllowedValue>                   $allowedValues
+     * @param list<CatalogNavigationCategory>             $navigationCategories
+     * @param list<CatalogCategoryGroupNavigationMapping> $categoryGroupNavigationMappings
      */
     public function __construct(
         public string $sourceCode,
@@ -16,6 +18,8 @@ final readonly class CatalogSchemaSnapshot
         public array $categories,
         public array $attributes,
         public array $allowedValues,
+        public array $navigationCategories = [],
+        public array $categoryGroupNavigationMappings = [],
     ) {
     }
 }
