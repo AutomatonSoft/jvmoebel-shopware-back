@@ -126,6 +126,9 @@
             <argument type="service" id="Jv\Import\Service\ProductImport\Catalog\CatalogCategoryAttributeSchemaProvider"/>
             <argument type="service" id="Doctrine\DBAL\Connection"/>
         </service>
+        <service id="Jv\Import\Service\ProductImport\Catalog\ReconcileCatalogProductImportRecordService">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+        </service>
         <service id="Jv\Import\Integration\Okb\OkbCatalogSchemaSnapshotReader"/>
         <service id="Jv\Import\Integration\Okb\OkbProductResponseNormalizer"/>
         <service id="Jv\Import\Integration\Okb\OkbProductApiClient">

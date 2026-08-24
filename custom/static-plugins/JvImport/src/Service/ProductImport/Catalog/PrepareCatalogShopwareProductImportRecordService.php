@@ -28,6 +28,9 @@ final class PrepareCatalogShopwareProductImportRecordService
     /** @var list<string>|null */
     private ?array $languageIds = null;
 
+    /** @var array<string, string|null> */
+    private array $manufacturerDescriptions = [];
+
     /** @param EntityRepository<ProductCollection> $productRepository
      * @param EntityRepository<CurrencyCollection> $currencyRepository
      */
@@ -54,6 +57,7 @@ final class PrepareCatalogShopwareProductImportRecordService
         $schemas = $this->schemas($groupId, $context);
         $this->validateLongValues($attributes, $schemas);
         $this->validatePair($productNumber, $row, $attributes, $schemas, $parent, $context);
+        $this->validateBrandInformation($productNumber, $attributes, $parent);
 
         if ('parent' === $type) {
             $record = [
@@ -102,11 +106,6 @@ final class PrepareCatalogShopwareProductImportRecordService
                     $variantOptionIds[$optionId] = true;
                 }
             }
-        }
-        $brandInformation = $attributes['Markeninformationen'][0] ?? null;
-        $manufacturerDescription = $parent->getManufacturer()?->getDescription();
-        if (is_string($brandInformation) && '' !== $brandInformation && null !== $manufacturerDescription && $brandInformation !== $manufacturerDescription) {
-            throw new \InvalidArgumentException(sprintf('Catalog brand information conflicts with existing manufacturer description for product "%s".', $productNumber));
         }
 
         return [
@@ -191,6 +190,24 @@ final class PrepareCatalogShopwareProductImportRecordService
                 throw new \InvalidArgumentException(sprintf('Catalog attribute "%s" does not accept multiple values.', $name));
             }
         }
+    }
+
+    /** @param array<string, list<string>> $attributes */
+    private function validateBrandInformation(string $productNumber, array $attributes, \Shopware\Core\Content\Product\ProductEntity $parent): void
+    {
+        $brandInformation = $attributes['Markeninformationen'][0] ?? null;
+        $manufacturerId = $parent->getManufacturerId();
+        if (!is_string($brandInformation) || '' === $brandInformation || null === $manufacturerId) {
+            return;
+        }
+        if (!array_key_exists($manufacturerId, $this->manufacturerDescriptions)) {
+            $this->manufacturerDescriptions[$manufacturerId] = $parent->getManufacturer()?->getDescription();
+        }
+        $description = $this->manufacturerDescriptions[$manufacturerId];
+        if (null !== $description && $brandInformation !== $description) {
+            throw new \InvalidArgumentException(sprintf('Catalog brand information conflicts with existing manufacturer description for product "%s".', $productNumber));
+        }
+        $this->manufacturerDescriptions[$manufacturerId] = $brandInformation;
     }
 
     private function parent(string $productNumber, Context $context): \Shopware\Core\Content\Product\ProductEntity
