@@ -9,6 +9,7 @@
         <service id="Jv\Import\Subscriber\CosmoShopProductImportSubscriber">
             <argument type="service" id="Jv\Import\Service\ProductImport\PrepareCosmoShopProductImportRecordService"/>
         </service>
+        <service id="Jv\Import\Subscriber\CatalogProductImportSubscriber"/>
         <service id="Jv\Import\Subscriber\ProductDeliveryTimeCacheInvalidationSubscriber"/>
         <service id="Jv\Import\Subscriber\CmsPageProductDeliveryTimeSubscriber"/>
 
@@ -93,7 +94,10 @@
         <service id="Jv\Import\Command\PrepareOkbProductMappingCommand">
             <argument key="$environment">%kernel.environment%</argument>
         </service>
-        <service id="Jv\Import\Command\ApplyPreparedCatalogProductsCommand"/>
+        <service id="Jv\Import\Command\BootstrapCatalogProductImportProfileCommand">
+            <argument type="service" id="import_export_profile.repository"/>
+        </service>
+        <service id="Jv\Import\Command\PrepareCatalogShopwareImportCsvCommand"/>
         <service id="Jv\Import\Command\BackfillCatalogAttributeCategoryRelationsCommand"/>
         <service id="Jv\Import\Command\CleanupLegacyCatalogPropertyGroupsCommand"/>
         <service id="Jv\Import\Command\BackfillCatalogPropertyTranslationsCommand"/>
@@ -110,22 +114,16 @@
         <service id="Jv\Import\Service\Catalog\BackfillCatalogPropertyTranslationsService">
             <argument type="service" id="Doctrine\DBAL\Connection"/>
         </service>
-        <service id="Jv\Import\Service\ProductImport\Catalog\CatalogPreparedProductReader">
+        <service id="Jv\Import\Service\ProductImport\Catalog\PrepareCatalogShopwareImportCsvService">
             <argument type="service" id="Jv\Import\Integration\Csv\SemicolonCsvReader"/>
         </service>
         <service id="Jv\Import\Service\ProductImport\Catalog\CatalogCategoryAttributeSchemaProvider">
             <argument type="service" id="jv_catalog_category_attribute.repository"/>
         </service>
-        <service id="Jv\Import\Service\ProductImport\Catalog\CatalogProductUpdatePlanner"/>
-        <service id="Jv\Import\Service\ProductImport\Catalog\CatalogProductInvalidRecordsCsvWriter"/>
-        <service id="Jv\Import\Service\ProductImport\Catalog\ApplyCatalogProductsService">
+        <service id="Jv\Import\Service\ProductImport\Catalog\PrepareCatalogShopwareProductImportRecordService">
             <argument type="service" id="product.repository"/>
-            <argument type="service" id="property_group_option.repository"/>
             <argument type="service" id="currency.repository"/>
-            <argument type="service" id="product_option.repository"/>
-            <argument type="service" id="product_property.repository"/>
-            <argument type="service" id="product_configurator_setting.repository"/>
-            <argument type="service" id="Jv\Import\Service\ProductImport\Catalog\CatalogProductUpdatePlanner"/>
+            <argument type="service" id="Jv\Import\Service\ProductImport\Catalog\CatalogCategoryAttributeSchemaProvider"/>
             <argument type="service" id="Doctrine\DBAL\Connection"/>
         </service>
         <service id="Jv\Import\Integration\Okb\OkbCatalogSchemaSnapshotReader"/>
