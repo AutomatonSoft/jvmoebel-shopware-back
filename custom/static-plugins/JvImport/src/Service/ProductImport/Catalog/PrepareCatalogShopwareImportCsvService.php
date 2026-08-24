@@ -13,8 +13,15 @@ final readonly class PrepareCatalogShopwareImportCsvService
     /** Returns the number of written Shopware product records. */
     public function execute(string $productsFile, string $attributesFile, string $outputFile): int
     {
-        $output = fopen($outputFile, 'wb');
+        $directory = dirname($outputFile);
+        $temporaryFile = tempnam($directory, '.catalog-import-');
+        if (false === $temporaryFile) {
+            throw new \InvalidArgumentException(sprintf('Shopware import CSV directory "%s" cannot be written.', $directory));
+        }
+        $output = fopen($temporaryFile, 'wb');
         if (false === $output) {
+            unlink($temporaryFile);
+
             throw new \InvalidArgumentException(sprintf('Shopware import CSV "%s" cannot be written.', $outputFile));
         }
 
@@ -52,8 +59,17 @@ final readonly class PrepareCatalogShopwareImportCsvService
                 $attribute = $attributes->current();
                 throw new \InvalidArgumentException(sprintf('Attribute row references unknown product number "%s" or is out of product order.', $attribute['product_number']));
             }
-        } finally {
+        } catch (\Throwable $exception) {
             fclose($output);
+            unlink($temporaryFile);
+
+            throw $exception;
+        }
+        fclose($output);
+        if (!rename($temporaryFile, $outputFile)) {
+            unlink($temporaryFile);
+
+            throw new \RuntimeException(sprintf('Shopware import CSV "%s" cannot be published.', $outputFile));
         }
 
         return $written;

@@ -63,6 +63,32 @@ final class PrepareCatalogShopwareImportCsvServiceTest extends TestCase
         }
     }
 
+    public function testItKeepsThePreviousOutputWhenPreparationFails(): void
+    {
+        $directory = sys_get_temp_dir().'/jv-catalog-shopware-csv-'.bin2hex(random_bytes(8));
+        mkdir($directory, 0775, true);
+        $products = $directory.'/products.csv';
+        $attributes = $directory.'/attributes.csv';
+        $output = $directory.'/shopware.csv';
+        file_put_contents($products, "product_number;ean;category_id;category_group_id;standard_price_amount;currency\nSKU-1;4260454043503;25922;3446;1200;EUR\n");
+        file_put_contents($attributes, "product_number;ean;attribute_name;values_json\nSKU-2;4260454043504;Color;[\"Brown\"]\n");
+        file_put_contents($output, 'previous import');
+
+        try {
+            try {
+                (new PrepareCatalogShopwareImportCsvService(new SemicolonCsvReader()))->execute($products, $attributes, $output);
+                self::fail('Expected invalid prepared attribute row.');
+            } catch (\InvalidArgumentException) {
+                self::assertSame('previous import', file_get_contents($output));
+            }
+        } finally {
+            unlink($products);
+            unlink($attributes);
+            unlink($output);
+            rmdir($directory);
+        }
+    }
+
     /** @return list<list<string>> */
     private function rows(string $file): array
     {
