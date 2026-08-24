@@ -2,6 +2,7 @@
 
 namespace Jv\Import\Service\ProductImport\Catalog;
 
+use Doctrine\DBAL\Connection;
 use Jv\Import\Service\Catalog\CatalogIdentity;
 use Jv\Import\Service\ProductImport\Catalog\Dto\CatalogCategoryAttributeSchema;
 use Jv\Import\Service\ProductImport\Catalog\Dto\CatalogProductApplyResult;
@@ -39,6 +40,7 @@ final readonly class ApplyCatalogProductsService
         private EntityRepository $productPropertyRepository,
         private EntityRepository $configuratorSettingRepository,
         private CatalogProductUpdatePlanner $updatePlanner,
+        private Connection $connection,
     ) {
     }
 
@@ -80,7 +82,7 @@ final readonly class ApplyCatalogProductsService
             }
         }
 
-        $optionRecords = $this->propertyOptions($validProducts, $schemas);
+        $optionRecords = $this->propertyOptions($validProducts, $schemas, $this->propertyTranslationLanguageIds());
         $productRecords = $this->productRecords($updates);
         if (!$dryRun) {
             $parentProductIds = array_keys($updates);
@@ -150,10 +152,11 @@ final readonly class ApplyCatalogProductsService
     /**
      * @param list<CatalogProductData>             $preparedProducts
      * @param list<CatalogCategoryAttributeSchema> $schemas
+     * @param list<string>                         $propertyTranslationLanguageIds
      *
      * @return array<string, array<string, mixed>>
      */
-    private function propertyOptions(array $preparedProducts, array $schemas): array
+    private function propertyOptions(array $preparedProducts, array $schemas, array $propertyTranslationLanguageIds): array
     {
         $schemaByKey = [];
         foreach ($schemas as $schema) {
@@ -168,12 +171,41 @@ final readonly class ApplyCatalogProductsService
                 }
                 foreach ($attribute->values as $value) {
                     $id = CatalogIdentity::propertyOptionId($schema->propertyGroupId, $value);
-                    $options[$id] = ['id' => $id, 'groupId' => $schema->propertyGroupId, 'name' => $value];
+                    $options[$id] = [
+                        'id' => $id,
+                        'groupId' => $schema->propertyGroupId,
+                        'name' => $value,
+                        'translations' => $this->translations($value, $propertyTranslationLanguageIds),
+                    ];
                 }
             }
         }
 
         return $options;
+    }
+
+    /** @return list<string> */
+    private function propertyTranslationLanguageIds(): array
+    {
+        /** @var list<string> $languageIds */
+        $languageIds = $this->connection->fetchFirstColumn('SELECT LOWER(HEX(`id`)) FROM `language`');
+
+        return array_values(array_unique($languageIds));
+    }
+
+    /**
+     * @param list<string> $languageIds
+     *
+     * @return array<string, array{name: string}>
+     */
+    private function translations(string $name, array $languageIds): array
+    {
+        $translations = [];
+        foreach ($languageIds as $languageId) {
+            $translations[$languageId] = ['name' => $name];
+        }
+
+        return $translations;
     }
 
     private function existingProduct(ProductEntity $product, string $currencyCode, string $currencyId): ExistingProductForCatalogEnrichment

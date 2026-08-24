@@ -11,6 +11,7 @@ use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Category\CategoryCollection;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
+use Shopware\Core\Content\Property\Aggregate\PropertyGroupOption\PropertyGroupOptionCollection;
 use Shopware\Core\Content\Property\PropertyGroupCollection;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
@@ -18,6 +19,8 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\System\Language\LanguageCollection;
+use Shopware\Core\System\Locale\LocaleCollection;
 use Shopware\Core\System\Tax\TaxCollection;
 
 final class ApplyCatalogProductsServiceTest extends TestCase
@@ -36,9 +39,18 @@ final class ApplyCatalogProductsServiceTest extends TestCase
         $legacyOptionId = Uuid::randomHex();
         $legacyConfiguratorSettingId = Uuid::randomHex();
         $firstId = Uuid::randomHex();
+        $englishLanguageId = Uuid::randomHex();
         $taxId = $this->taxId($context);
         $products = $this->products();
         $child = null;
+
+        $englishLocaleId = $this->localeId('en-GB', $context);
+        $this->languages()->create([[
+            'id' => $englishLanguageId,
+            'name' => 'Catalog import English',
+            'localeId' => $englishLocaleId,
+            'translationCodeId' => $englishLocaleId,
+        ]], $context);
 
         $this->categories()->upsert([
             ['id' => $groupId, 'name' => 'Test group', 'active' => true],
@@ -84,6 +96,9 @@ final class ApplyCatalogProductsServiceTest extends TestCase
             self::assertSame(1200.0, $child->getPrice()->getCurrencyPrice(Defaults::CURRENCY, false)->getGross());
             self::assertCount(1, $child->getOptionIds() ?? []);
             self::assertCount(2, $child->getPropertyIds() ?? []);
+            $colorOption = $this->propertyOptions()->search((new Criteria([CatalogIdentity::propertyOptionId($propertyGroupId, 'Brown')]))->addAssociation('translations'), $context)->first();
+            self::assertNotNull($colorOption);
+            self::assertGreaterThanOrEqual(2, count($colorOption->getTranslations() ?? []));
         } finally {
             $records = [['id' => $firstId]];
             if ($child instanceof ProductEntity) {
@@ -92,6 +107,7 @@ final class ApplyCatalogProductsServiceTest extends TestCase
             $products->delete($records, $context);
             $this->propertyGroups()->delete([['id' => $propertyGroupId], ['id' => $widthGroupId], ['id' => $legacyGroupId]], $context);
             $this->categories()->delete([['id' => $categoryId], ['id' => $groupId]], $context);
+            $this->languages()->delete([['id' => $englishLanguageId]], $context);
         }
     }
 
@@ -188,6 +204,28 @@ final class ApplyCatalogProductsServiceTest extends TestCase
     private function propertyGroups(): EntityRepository
     {
         return static::getContainer()->get('property_group.repository');
+    }
+
+    /** @return EntityRepository<PropertyGroupOptionCollection> */
+    private function propertyOptions(): EntityRepository
+    {
+        return static::getContainer()->get('property_group_option.repository');
+    }
+
+    /** @return EntityRepository<LanguageCollection> */
+    private function languages(): EntityRepository
+    {
+        return static::getContainer()->get('language.repository');
+    }
+
+    private function localeId(string $code, Context $context): string
+    {
+        /** @var EntityRepository<LocaleCollection> $locales */
+        $locales = static::getContainer()->get('locale.repository');
+        $id = $locales->searchIds((new Criteria())->addFilter(new \Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter('code', $code)), $context)->firstId();
+        self::assertNotNull($id);
+
+        return $id;
     }
 
     private function taxId(Context $context): string
