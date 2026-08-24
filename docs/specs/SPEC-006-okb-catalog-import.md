@@ -155,11 +155,12 @@ catalog attribute mapping, и не меняет пользовательские
 последняя строка. Если этот SKU встречается с разными EAN, обе конфликтующие
 строки попадают в invalid-records до записи.
 
-Ответы, у которых совпадает `productReference`, образуют Shopware parent и
-child variants. Child сохраняет свой исходный SKU. Parent использует
-`productReference` только если тот не конфликтует с существующим SKU; при
-конфликте группа попадает в отчёт, идентификатор не генерируется и не
-переименовывается автоматически.
+Каждая строка входного CosmoShop CSV однозначно находит одну OKB variation по
+своему EAN. Исходный CosmoShop product становится Shopware parent с прежним
+`productNumber`; variation создаётся единственным child с детерминированным
+`productNumber` `<parent productNumber>-1` и EAN из OKB. `productReference`
+ответа не участвует в поиске, идентичности или объединении товаров: разные
+CosmoShop products не объединяются автоматически.
 
 ## Цена и назначение товара
 
