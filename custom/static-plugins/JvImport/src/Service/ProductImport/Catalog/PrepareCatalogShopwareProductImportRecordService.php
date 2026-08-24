@@ -2,6 +2,7 @@
 
 namespace Jv\Import\Service\ProductImport\Catalog;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Jv\Import\Service\Catalog\CatalogIdentity;
 use Jv\Import\Service\ProductImport\Catalog\Dto\CatalogCategoryAttributeSchema;
@@ -12,6 +13,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Pricing\Price;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\Currency\CurrencyCollection;
 
 final class PrepareCatalogShopwareProductImportRecordService
@@ -30,6 +32,9 @@ final class PrepareCatalogShopwareProductImportRecordService
 
     /** @var array<string, string|null> */
     private array $manufacturerDescriptions = [];
+
+    /** @var array<string, array<string, true>> */
+    private array $existingOptionIdsByPropertyGroup = [];
 
     /** @param EntityRepository<ProductCollection> $productRepository
      * @param EntityRepository<CurrencyCollection> $currencyRepository
@@ -101,7 +106,15 @@ final class PrepareCatalogShopwareProductImportRecordService
             }
             foreach ($values as $value) {
                 $optionId = CatalogIdentity::propertyOptionId($schema->propertyGroupId, $value);
-                $optionRecords[$optionId] = ['id' => $optionId, 'groupId' => $schema->propertyGroupId, 'name' => $value, 'translations' => $this->translations($value)];
+                $optionRecords[$optionId] = ['id' => $optionId];
+                if (!$this->optionExists($schema->propertyGroupId, $optionId)) {
+                    $optionRecords[$optionId] = [
+                        'id' => $optionId,
+                        'groupId' => $schema->propertyGroupId,
+                        'name' => $value,
+                        'translations' => $this->translations($value),
+                    ];
+                }
                 if (str_contains((string) $schema->featureRelevance, 'VARIATION_THEME')) {
                     $variantOptionIds[$optionId] = true;
                 }
@@ -233,8 +246,43 @@ final class PrepareCatalogShopwareProductImportRecordService
         foreach ($this->schemaProvider->forSource('okb', [$categoryGroupId], $context) as $schema) {
             $schemas[$schema->attributeName] = $schema;
         }
+        $this->loadExistingOptions($schemas);
 
         return $this->schemas[$categoryGroupId] = $schemas;
+    }
+
+    /** @param array<string, CatalogCategoryAttributeSchema> $schemas */
+    private function loadExistingOptions(array $schemas): void
+    {
+        $groupIds = [];
+        foreach ($schemas as $schema) {
+            if (null !== $schema->propertyGroupId && !isset($this->existingOptionIdsByPropertyGroup[$schema->propertyGroupId])) {
+                $groupIds[] = $schema->propertyGroupId;
+                $this->existingOptionIdsByPropertyGroup[$schema->propertyGroupId] = [];
+            }
+        }
+        if ([] === $groupIds) {
+            return;
+        }
+        /** @var list<array{id: string, group_id: string}> $options */
+        $options = $this->connection->fetchAllAssociative(
+            'SELECT LOWER(HEX(`id`)) AS `id`, LOWER(HEX(`property_group_id`)) AS `group_id` FROM `property_group_option` WHERE `property_group_id` IN (:ids)',
+            ['ids' => array_map(Uuid::fromHexToBytes(...), $groupIds)],
+            ['ids' => ArrayParameterType::BINARY],
+        );
+        foreach ($options as $option) {
+            $this->existingOptionIdsByPropertyGroup[$option['group_id']][$option['id']] = true;
+        }
+    }
+
+    private function optionExists(string $propertyGroupId, string $optionId): bool
+    {
+        if (isset($this->existingOptionIdsByPropertyGroup[$propertyGroupId][$optionId])) {
+            return true;
+        }
+        $this->existingOptionIdsByPropertyGroup[$propertyGroupId][$optionId] = true;
+
+        return false;
     }
 
     private function childId(\Shopware\Core\Content\Product\ProductEntity $parent, string $ean, Context $context): string
