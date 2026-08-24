@@ -58,7 +58,7 @@ final class CatalogProductUpdatePlanner
         foreach ($prepared->attributes as $attribute) {
             $schema = $schemasByName[$attribute->name] ?? null;
             if (null === $schema) {
-                throw new \InvalidArgumentException(sprintf('Catalog attribute "%s" is not present in category group %s.', $attribute->name, $prepared->categoryGroupId));
+                continue;
             }
             if (!$schema->active || !$schema->enabled) {
                 continue;

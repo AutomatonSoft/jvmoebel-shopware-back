@@ -188,6 +188,57 @@ final class ApplyCatalogProductsServiceTest extends TestCase
         }
     }
 
+    public function testItIgnoresAnAttributeMissingFromTheCategoryGroupSnapshot(): void
+    {
+        $context = Context::createDefaultContext();
+        $source = 'catalog-extra-attribute-test';
+        $categoryId = CatalogIdentity::categoryId($source, 'category-1');
+        $groupId = CatalogIdentity::categoryGroupId($source, 'group-1');
+        $propertyGroupId = Uuid::randomHex();
+        $productId = Uuid::randomHex();
+        $taxId = $this->taxId($context);
+        $child = null;
+
+        $this->categories()->upsert([
+            ['id' => $groupId, 'name' => 'Test group', 'active' => true],
+            ['id' => $categoryId, 'parentId' => $groupId, 'name' => 'Test category', 'active' => true],
+        ], $context);
+        $this->propertyGroups()->create([
+            ['id' => $propertyGroupId, 'name' => 'Color', 'displayType' => 'text', 'sortingType' => 'alphanumeric'],
+        ], $context);
+        $this->products()->create([
+            $this->product($productId, '4260454043513', 'Product with extra attribute', $taxId, 1000.0),
+        ], $context);
+
+        try {
+            $service = static::getContainer()->get(ApplyCatalogProductsService::class);
+            self::assertInstanceOf(ApplyCatalogProductsService::class, $service);
+            $result = $service->execute([
+                new CatalogProductData($source, '4260454043513', '4260454043513', 'category-1', 'group-1', 1000.0, 'EUR', [
+                    new CatalogProductAttribute('Color', ['Brown']),
+                    new CatalogProductAttribute('Color of feet', ['Black']),
+                ]),
+            ], [
+                new CatalogCategoryAttributeSchema($source, 'group-1', 'color', 'Color', 'STRING', false, 'property', $propertyGroupId),
+            ], false, $context);
+
+            self::assertSame(1, $result->products);
+            self::assertSame(1, $result->propertyOptions);
+            self::assertCount(0, $result->invalidRecords);
+            $child = $this->productByNumber('4260454043513-1', $context);
+            self::assertSame($productId, $child->getParentId());
+            self::assertCount(1, $child->getPropertyIds() ?? []);
+        } finally {
+            $records = [['id' => $productId]];
+            if ($child instanceof ProductEntity) {
+                $records[] = ['id' => $child->getId()];
+            }
+            $this->products()->delete($records, $context);
+            $this->propertyGroups()->delete([['id' => $propertyGroupId]], $context);
+            $this->categories()->delete([['id' => $categoryId], ['id' => $groupId]], $context);
+        }
+    }
+
     /** @return EntityRepository<ProductCollection> */
     private function products(): EntityRepository
     {

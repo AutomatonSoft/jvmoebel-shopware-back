@@ -94,9 +94,12 @@ Shopware category group ← OKB category_group_id → OKB attribute_id → Shopw
 ```
 
 Она определяет допустимую схему, но не делает каждый attribute обязательным:
-реальные OKB product responses могут содержать только её часть. Неизвестный
-attribute в product response и пустой ответ по EAN попадают в отчёт и не
-создают сущности молча.
+реальные OKB product responses могут содержать только её часть. OKB может
+вернуть у конкретной внутренней category дополнительный attribute, которого
+нет в снимке, собранном по первой category той же group. Такой лишний
+attribute игнорируется; известные attributes этой строки продолжают
+импортироваться. Пустой ответ по EAN попадает в отчёт и не создаёт сущности
+молча.
 
 Это техническая связь импортёра, а не настраиваемый экран Administration.
 Повторная синхронизация snapshot автоматически создаёт или обновляет все
@@ -185,7 +188,7 @@ CosmoShop products не объединяются автоматически.
 Команды поддерживают `--dry-run`, пакетную запись и повторный запуск без
 дубликатов. В отчёте показываются созданные/обновлённые category, property,
 schema relation и product records, а также конфликты SKU/EAN, неизвестные
-category/attribute/value, пустые OKB responses, parent SKU conflicts и
+category/value, пустые OKB responses, parent SKU conflicts и
 несовпадения валют.
 
 `jv:catalog:apply-prepared-products` проверяет каждую подготовленную товарную

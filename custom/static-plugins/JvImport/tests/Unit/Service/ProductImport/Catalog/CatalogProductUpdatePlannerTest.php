@@ -87,16 +87,16 @@ final class CatalogProductUpdatePlannerTest extends TestCase
         self::assertSame(1200.0, $update->priceGross);
     }
 
-    public function testItRejectsAnUnknownAttributeInsteadOfSilentlyDroppingIt(): void
+    public function testItIgnoresAnAttributeMissingFromTheCategoryGroupSnapshot(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('not present in category group 3446');
-
-        (new CatalogProductUpdatePlanner())->plan(
+        $update = (new CatalogProductUpdatePlanner())->plan(
             new ExistingProductForCatalogEnrichment('product-id', '4260454043503', '4260454043503', 'EUR', 1000.0, 840.34, 19.0, [], []),
             new CatalogProductData('okb', '4260454043503', '4260454043503', '25922', '3446', 1200.0, 'EUR', [new CatalogProductAttribute('Unknown', ['x'])]),
             [],
         );
+
+        self::assertSame([], $update->propertyOptionIds);
+        self::assertSame([], $update->variantOptionIds);
     }
 
     public function testItRejectsACatalogPriceInAnotherCurrency(): void
