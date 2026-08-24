@@ -131,6 +131,19 @@ Shopware. `VARIATION_THEME` дополнительно отмечает option �
 В категории не создаётся копия набора properties. Источником допустимости
 остаётся собственная group-to-attribute relation.
 
+Каждая созданная property group и её option получает прямой `name`-перевод
+для каждого языка Shopware. Первым значением во всех языках служит имя из
+снимка; позднее редактор может заменить его локализованным именем. Это не
+заменяет существующие переводы. Прямые переводы необходимы генератору
+вариантов Administration: в языковом контексте без прямого перевода ядро
+Shopware получает `null` вместо имени группы и не может отсортировать две
+выбранные группы.
+
+Для уже импортированных catalog properties отдельная идемпотентная команда
+`jv:catalog:backfill-property-translations` добавляет только отсутствующие
+переводы групп и options. Она ограничена property groups, на которые ссылается
+catalog attribute mapping, и не меняет пользовательские свойства.
+
 ## EAN, SKU и варианты
 
 Для выбранной строки CosmoShop запрос выполняется только как
@@ -199,6 +212,8 @@ Shopware property option name в 255 символов относится к та
   property/options, own relation and idempotent rerun;
 - unit test, что schema import связывает attribute mapping с созданной
   Shopware category group;
+- unit tests payload прямых property translations и idempotent backfill без
+  перезаписи существующей локализации;
 - representative local smoke import (до 600 products), including a simple
   product, variant group, properties, larger OKB
   price and invalid records;
