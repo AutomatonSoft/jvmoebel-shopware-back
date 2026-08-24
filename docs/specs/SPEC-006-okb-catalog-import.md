@@ -171,7 +171,8 @@ CosmoShop products не объединяются автоматически.
 затем товару назначается соответствующая внутренняя Shopware category.
 
 Цена variation равна `max(CosmoShop gross price, OKB standardPrice.amount)`.
-Цена parent равна максимуму цен его child variants. Валюта должна совпадать с
+Parent сохраняет цену CosmoShop: это базовая карточка, а не цена variation.
+Валюта должна совпадать с
 рынком; несовпадающая или отсутствующая цена является ошибкой строки.
 
 ## Внутренний код администратора
@@ -185,20 +186,24 @@ CosmoShop products не объединяются автоматически.
 
 ## Ошибки, отчёт и повтор
 
+`jv:catalog:prepare-shopware-product-import` потоково преобразует два
+подготовленных CSV в один CSV с явными строками parent и child. Затем файл
+загружается штатным профилем Shopware `jv_catalog_prepared_product`: он
+использует batches и invalid-records ядра. Поле core `variants` не
+используется, потому что оно создаёт декартовы комбинации и автоматические SKU.
+
+Subscriber профиля до записи проверяет и нормализует одну строку. Ошибка
+попадает в стандартный invalid-records и не останавливает остальные строки.
+Обе строки пары повторяют входные attributes, поэтому ошибка валидации
+останавливает и parent, и child. `Markeninformationen` не является property
+option: его значение любой длины записывается в `manufacturer.description`.
+Другое значение property длиннее 255 символов остаётся invalid и не обрезается.
+
 Команды поддерживают `--dry-run`, пакетную запись и повторный запуск без
 дубликатов. В отчёте показываются созданные/обновлённые category, property,
 schema relation и product records, а также конфликты SKU/EAN, неизвестные
 category/value, пустые OKB responses, parent SKU conflicts и
 несовпадения валют.
-
-`jv:catalog:apply-prepared-products` проверяет каждую подготовленную товарную
-строку до DAL-записи. Невалидная строка не прерывает остальные товары: она
-записывается в `--invalid-records-csv` (по умолчанию
-`<products-csv>.invalid-records.csv`) с source, SKU, EAN, product reference и
-причиной. Если дефектен один child варианта, не импортируется вся его
-`productReference`-группа, чтобы не создать неполный parent. Ограничение
-Shopware property option name в 255 символов относится к таким ошибкам; текст
-не обрезается автоматически.
 
 Нечитаемый CSV (например, отсутствующий обязательный заголовок или битый JSON)
 остаётся ошибкой файла и останавливает запуск: в таком случае нельзя надёжно
