@@ -12,7 +12,7 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
 
 final class PrepareOkbProductMappingServiceTest extends TestCase
 {
-    public function testItReportsAnAttributeThatIsNotInTheProductsCategoryGroupSchema(): void
+    public function testItIgnoresAnAttributeThatIsNotInTheProductsCategoryGroupSchema(): void
     {
         $directory = sys_get_temp_dir().'/jv-okb-product-mapping-'.bin2hex(random_bytes(8));
         mkdir($directory.'/snapshot', 0775, true);
@@ -42,11 +42,11 @@ final class PrepareOkbProductMappingServiceTest extends TestCase
                 new OkbProductApiClient($httpClient, new OkbProductResponseNormalizer(), 'https://okb.example'),
             ))->execute($directory.'/source.csv', $directory.'/snapshot', $directory.'/output', null);
 
-            self::assertSame(0, $result->products);
+            self::assertSame(1, $result->products);
             self::assertSame(0, $result->attributes);
-            self::assertSame(1, $result->failures);
-            self::assertStringContainsString('Leg color', (string) file_get_contents($directory.'/output/okb-product-mapping-failures.csv'));
-            self::assertStringNotContainsString('4260454043503;', (string) file_get_contents($directory.'/output/okb-product-mapping.csv'));
+            self::assertSame(0, $result->failures);
+            self::assertSame("product_number;ean;reason\n", file_get_contents($directory.'/output/okb-product-mapping-failures.csv'));
+            self::assertStringContainsString('4260454043503;4260454043503;Sofas;category-1;group-1', (string) file_get_contents($directory.'/output/okb-product-mapping.csv'));
         } finally {
             $files = glob($directory.'/*/*');
             if (false !== $files) {

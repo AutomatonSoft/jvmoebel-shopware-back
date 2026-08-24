@@ -48,9 +48,11 @@ final readonly class PrepareOkbProductMappingService
                     if (null === $category) {
                         throw new \InvalidArgumentException(sprintf('OKB category "%s" is missing from the supplied snapshot.', $variation->categoryName));
                     }
-                    $this->validateAttributes($variation, $category['categoryGroupId'], $attributeNames);
                     $this->writeVariation($products, $productNumber, $variation, $category);
                     foreach ($variation->attributes as $attribute) {
+                        if (!isset($attributeNames[$category['categoryGroupId']][$attribute->name])) {
+                            continue;
+                        }
                         $this->write($attributes, [$productNumber, $ean, $attribute->name, json_encode($attribute->values, \JSON_THROW_ON_ERROR)]);
                         ++$attributeCount;
                     }
@@ -95,18 +97,6 @@ final readonly class PrepareOkbProductMappingService
         }
 
         return $attributes;
-    }
-
-    /**
-     * @param array<string, array<string, true>> $attributeNames
-     */
-    private function validateAttributes(OkbProductVariation $variation, string $categoryGroupId, array $attributeNames): void
-    {
-        foreach ($variation->attributes as $attribute) {
-            if (!isset($attributeNames[$categoryGroupId][$attribute->name])) {
-                throw new \InvalidArgumentException(sprintf('OKB attribute "%s" is not present in category group %s.', $attribute->name, $categoryGroupId));
-            }
-        }
     }
 
     /**
