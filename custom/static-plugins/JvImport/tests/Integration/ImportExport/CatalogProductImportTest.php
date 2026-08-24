@@ -4,6 +4,7 @@ namespace Jv\Import\Tests\Integration\ImportExport;
 
 require_once __DIR__.'/AbstractCosmoShopImportExportTestCase.php';
 
+use Doctrine\DBAL\Connection;
 use Jv\Import\Core\Content\CatalogCategoryAttribute\CatalogCategoryAttributeCollection;
 use Jv\Import\Integration\Okb\Profile\CatalogProductImportProfile;
 use Jv\Import\Service\Catalog\CatalogIdentity;
@@ -82,6 +83,12 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
             self::assertSame('4260174423463', $child->getEan());
             self::assertSame(1200.0, $child->getPrice()?->first()?->getGross());
             self::assertCount(1, $child->getOptions() ?? []);
+            $brownOptionId = $child->getOptions()?->first()?->getId();
+            self::assertIsString($brownOptionId);
+            $this->connection()->executeStatement(
+                'UPDATE `property_group_option_translation` SET `name` = :name WHERE `property_group_option_id` = :optionId AND `language_id` = :languageId',
+                ['name' => 'Manuell übersetzt', 'optionId' => Uuid::fromHexToBytes($brownOptionId), 'languageId' => Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM)],
+            );
 
             $second = $this->import($profileId, $this->catalogCsv($productNumber, '4260174423464', $categoryId, $categoryGroupId, 1300, 'Black'));
             self::assertSame('succeeded', $second->getState(), $this->importResult($second));
@@ -92,6 +99,13 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
             self::assertSame(1300.0, $reloadedChild->getPrice()?->first()?->getGross());
             self::assertCount(1, $reloadedChild->getOptions() ?? []);
             self::assertSame('Black', $reloadedChild->getOptions()?->first()?->getName());
+
+            $third = $this->import($profileId, $this->catalogCsv($productNumber, '4260174423464', $categoryId, $categoryGroupId, 1300, 'Brown'));
+            self::assertSame('succeeded', $third->getState(), $this->importResult($third));
+            self::assertSame('Manuell übersetzt', $this->connection()->fetchOne(
+                'SELECT `name` FROM `property_group_option_translation` WHERE `property_group_option_id` = :optionId AND `language_id` = :languageId',
+                ['optionId' => Uuid::fromHexToBytes($brownOptionId), 'languageId' => Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM)],
+            ));
 
             $parent = $this->product($productNumber, $context);
             self::assertCount(1, $parent->getProperties() ?? []);
@@ -232,5 +246,10 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
     private function profileRepository(): EntityRepository
     {
         return static::getContainer()->get('import_export_profile.repository');
+    }
+
+    private function connection(): Connection
+    {
+        return static::getContainer()->get(Connection::class);
     }
 }
