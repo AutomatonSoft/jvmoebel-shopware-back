@@ -7,6 +7,7 @@ use Jv\Import\Core\Content\CatalogCategoryAttribute\CatalogCategoryAttributeColl
 use Jv\Import\Core\Content\CatalogCategoryAttribute\CatalogCategoryAttributeEntity;
 use Jv\Import\Service\Catalog\CatalogAttributeMappingSynchronizer;
 use Jv\Import\Service\Catalog\CatalogIdentity;
+use Jv\Import\Service\Catalog\Dto\CatalogAllowedValue;
 use Jv\Import\Service\Catalog\Dto\CatalogAttribute;
 use Jv\Import\Service\Catalog\Dto\CatalogCategoryGroup;
 use Jv\Import\Service\Catalog\Dto\CatalogSchemaSnapshot;
@@ -221,6 +222,9 @@ final class ImportCatalogSchemaServiceTest extends TestCase
             'sortingType' => 'alphanumeric',
             'filterable' => false,
             'visibleOnProductDetailPage' => true,
+            'translations' => [
+                Defaults::LANGUAGE_SYSTEM => ['name' => 'Width'],
+            ],
         ]], $propertyGroups);
     }
 
@@ -270,6 +274,9 @@ final class ImportCatalogSchemaServiceTest extends TestCase
             'sortingType' => 'alphanumeric',
             'filterable' => true,
             'visibleOnProductDetailPage' => true,
+            'translations' => [
+                Defaults::LANGUAGE_SYSTEM => ['name' => 'Width'],
+            ],
         ]], $propertyGroups);
     }
 
@@ -315,5 +322,60 @@ final class ImportCatalogSchemaServiceTest extends TestCase
 
         self::assertSame(CatalogIdentity::categoryGroupId('source-a', 'sofas'), $relations[0]['categoryId']);
         self::assertSame(Defaults::LIVE_VERSION, $relations[0]['categoryVersionId']);
+    }
+
+    public function testItCreatesDirectTranslationsForEveryShopwareLanguage(): void
+    {
+        $categoryRepository = $this->createMock(EntityRepository::class);
+        $propertyGroupRepository = $this->createMock(EntityRepository::class);
+        $propertyOptionRepository = $this->createMock(EntityRepository::class);
+        $mappingRepository = $this->createMock(EntityRepository::class);
+        $connection = $this->createMock(Connection::class);
+        $context = Context::createDefaultContext();
+        $propertyGroups = [];
+        $propertyOptions = [];
+        $germanLanguageId = Defaults::LANGUAGE_SYSTEM;
+        $englishLanguageId = '23f3b8dcf6244c26934f3b6b1426f657';
+
+        $connection->method('iterateAssociative')->willReturn(new \ArrayIterator());
+        $connection->expects(self::once())->method('fetchFirstColumn')->with('SELECT LOWER(HEX(`id`)) FROM `language`')->willReturn([$germanLanguageId, $englishLanguageId]);
+        $categoryRepository->method('upsert')->willReturn(EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []));
+        $propertyGroupRepository->expects(self::once())->method('upsert')->willReturnCallback(
+            static function (array $records) use (&$propertyGroups, $context): EntityWrittenContainerEvent {
+                $propertyGroups = $records;
+
+                return EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []);
+            },
+        );
+        $propertyOptionRepository->expects(self::once())->method('upsert')->willReturnCallback(
+            static function (array $records) use (&$propertyOptions, $context): EntityWrittenContainerEvent {
+                $propertyOptions = $records;
+
+                return EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []);
+            },
+        );
+        $mappingRepository->method('upsert')->willReturn(EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []));
+
+        (new ImportCatalogSchemaService(
+            $categoryRepository,
+            $propertyGroupRepository,
+            $propertyOptionRepository,
+            $mappingRepository,
+            new CatalogAttributeMappingSynchronizer(),
+            $connection,
+        ))->execute(new CatalogSchemaSnapshot('source-a', [], [], [
+            new CatalogAttribute('colour', 'sofas', 'Colour', 'STRING', 'FILTER', false),
+        ], [
+            new CatalogAllowedValue('colour', 1, 'Blue'),
+        ]), false, $context);
+
+        self::assertSame([
+            $germanLanguageId => ['name' => 'Colour'],
+            $englishLanguageId => ['name' => 'Colour'],
+        ], $propertyGroups[0]['translations']);
+        self::assertSame([
+            $germanLanguageId => ['name' => 'Blue'],
+            $englishLanguageId => ['name' => 'Blue'],
+        ], $propertyOptions[0]['translations']);
     }
 }

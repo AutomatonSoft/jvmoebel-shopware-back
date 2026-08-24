@@ -43,10 +43,11 @@ final readonly class ImportCatalogSchemaService
     public function execute(CatalogSchemaSnapshot $snapshot, bool $dryRun, Context $context): CatalogSchemaImportResult
     {
         $context->addState(EntityIndexerRegistry::DISABLE_INDEXING);
+        $propertyTranslationLanguageIds = $this->propertyTranslationLanguageIds();
         $categoryGroups = $this->importCategoryGroups($snapshot, $dryRun, $context);
         $categories = $this->importCategories($snapshot, $dryRun, $context);
-        [$attributeRelations, $propertyGroups, $propertyAttributes] = $this->importAttributeSchema($snapshot, $dryRun, $context);
-        $propertyOptions = $this->importAllowedValues($snapshot, $propertyAttributes, $dryRun, $context);
+        [$attributeRelations, $propertyGroups, $propertyAttributes] = $this->importAttributeSchema($snapshot, $propertyTranslationLanguageIds, $dryRun, $context);
+        $propertyOptions = $this->importAllowedValues($snapshot, $propertyAttributes, $propertyTranslationLanguageIds, $dryRun, $context);
 
         return new CatalogSchemaImportResult($categoryGroups, $categories, $attributeRelations, $propertyGroups, $propertyOptions);
     }
@@ -88,8 +89,12 @@ final readonly class ImportCatalogSchemaService
         return count($snapshot->categories);
     }
 
-    /** @return array{0: int, 1: int, 2: array<string, string>} */
-    private function importAttributeSchema(CatalogSchemaSnapshot $snapshot, bool $dryRun, Context $context): array
+    /**
+     * @param list<string> $propertyTranslationLanguageIds
+     *
+     * @return array{0: int, 1: int, 2: array<string, string>}
+     */
+    private function importAttributeSchema(CatalogSchemaSnapshot $snapshot, array $propertyTranslationLanguageIds, bool $dryRun, Context $context): array
     {
         $relations = [];
         $propertyGroups = [];
@@ -119,6 +124,7 @@ final readonly class ImportCatalogSchemaService
                         'sortingType' => PropertyGroupDefinition::SORTING_TYPE_ALPHANUMERIC,
                         'filterable' => false,
                         'visibleOnProductDetailPage' => true,
+                        'translations' => $this->translations($mapping->attributeName, $propertyTranslationLanguageIds),
                     ];
                     $propertyGroups[$propertyGroupId]['filterable'] = $propertyGroups[$propertyGroupId]['filterable'] || $this->isFilterable($mapping->featureRelevance);
                 }
@@ -284,8 +290,11 @@ final readonly class ImportCatalogSchemaService
         return $categoryGroupId."\0".$attributeId;
     }
 
-    /** @param array<string, string> $propertyAttributeGroups */
-    private function importAllowedValues(CatalogSchemaSnapshot $snapshot, array $propertyAttributeGroups, bool $dryRun, Context $context): int
+    /**
+     * @param array<string, string> $propertyAttributeGroups
+     * @param list<string>          $propertyTranslationLanguageIds
+     */
+    private function importAllowedValues(CatalogSchemaSnapshot $snapshot, array $propertyAttributeGroups, array $propertyTranslationLanguageIds, bool $dryRun, Context $context): int
     {
         $records = [];
         foreach ($snapshot->allowedValues as $allowedValue) {
@@ -294,13 +303,46 @@ final readonly class ImportCatalogSchemaService
                 continue;
             }
             $id = CatalogIdentity::propertyOptionId($propertyGroupId, $allowedValue->value);
-            $records[$id] = ['id' => $id, 'groupId' => $propertyGroupId, 'name' => $allowedValue->value, 'position' => $allowedValue->position];
+            $records[$id] = [
+                'id' => $id,
+                'groupId' => $propertyGroupId,
+                'name' => $allowedValue->value,
+                'position' => $allowedValue->position,
+                'translations' => $this->translations($allowedValue->value, $propertyTranslationLanguageIds),
+            ];
         }
         if ([] !== $records && !$dryRun) {
             $this->propertyOptionRepository->upsert(array_values($records), $context);
         }
 
         return count($records);
+    }
+
+    /** @return list<string> */
+    private function propertyTranslationLanguageIds(): array
+    {
+        if (null === $this->connection) {
+            return [Defaults::LANGUAGE_SYSTEM];
+        }
+
+        /** @var list<string> $languageIds */
+        $languageIds = $this->connection->fetchFirstColumn('SELECT LOWER(HEX(`id`)) FROM `language`');
+
+        return array_values(array_unique($languageIds));
+    }
+
+    /** @param list<string> $languageIds
+     *
+     * @return array<string, array{name: string}>
+     */
+    private function translations(string $name, array $languageIds): array
+    {
+        $translations = [];
+        foreach ($languageIds as $languageId) {
+            $translations[$languageId] = ['name' => $name];
+        }
+
+        return $translations;
     }
 
     /**
