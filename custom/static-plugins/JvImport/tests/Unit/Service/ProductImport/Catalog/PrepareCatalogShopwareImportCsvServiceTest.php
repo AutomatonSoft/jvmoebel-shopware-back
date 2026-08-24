@@ -23,10 +23,10 @@ final class PrepareCatalogShopwareImportCsvServiceTest extends TestCase
 
             self::assertSame(2, $result);
             self::assertSame([
-                'record_type;product_number;ean;category_id;category_group_id;standard_price_amount;currency;attributes_json',
-                'parent;SKU-1;4260454043503;25922;3446;1200;EUR;[["Color",["Brown"]],["Width",["120"]]]',
-                'child;SKU-1;4260454043503;25922;3446;1200;EUR;[["Color",["Brown"]],["Width",["120"]]]',
-            ], explode("\n", trim((string) file_get_contents($output))));
+                ['record_type', 'product_number', 'ean', 'category_id', 'category_group_id', 'standard_price_amount', 'currency', 'attributes_json'],
+                ['parent', 'SKU-1', '4260454043503', '25922', '3446', '1200', 'EUR', '[["Color",["Brown"]],["Width",["120"]]]'],
+                ['child', 'SKU-1', '4260454043503', '25922', '3446', '1200', 'EUR', '[["Color",["Brown"]],["Width",["120"]]]'],
+            ], $this->rows($output));
         } finally {
             unlink($products);
             unlink($attributes);
@@ -61,5 +61,22 @@ final class PrepareCatalogShopwareImportCsvServiceTest extends TestCase
             }
             rmdir($directory);
         }
+    }
+
+    /** @return list<list<string>> */
+    private function rows(string $file): array
+    {
+        $handle = fopen($file, 'rb');
+        self::assertIsResource($handle);
+        $rows = [];
+        try {
+            while (false !== ($row = fgetcsv($handle, 0, ';', '"', '\\'))) {
+                $rows[] = $row;
+            }
+        } finally {
+            fclose($handle);
+        }
+
+        return $rows;
     }
 }
