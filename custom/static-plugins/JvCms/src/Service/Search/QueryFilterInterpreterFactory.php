@@ -42,15 +42,15 @@ final class QueryFilterInterpreterFactory
         }
 
         // Whitelist option IDs against DAL so stale synonym UUIDs cannot consume query tokens.
-        return new QueryFilterInterpreter($dictionary, $this->resolveExistingOptionIds($dictionary));
+        return new QueryFilterInterpreter($dictionary, $this->resolveOptionGroupIds($dictionary));
     }
 
     /**
      * @param iterable<mixed> $dictionary
      *
-     * @return array<string, true>
+     * @return array<string, string> optionId → groupId
      */
-    private function resolveExistingOptionIds(iterable $dictionary): array
+    private function resolveOptionGroupIds(iterable $dictionary): array
     {
         $candidateIds = [];
         foreach ($dictionary as $row) {
@@ -71,13 +71,12 @@ final class QueryFilterInterpreterFactory
         $criteria = new Criteria($ids);
         $criteria->setLimit(\count($ids));
 
-        $existing = [];
-        foreach ($this->propertyGroupOptionRepository->searchIds($criteria, Context::createDefaultContext())->getIds() as $id) {
-            if (Uuid::isValid($id)) {
-                $existing[$id] = true;
-            }
+        $map = [];
+        /** @var \Shopware\Core\Content\Property\Aggregate\PropertyGroupOption\PropertyGroupOptionEntity $option */
+        foreach ($this->propertyGroupOptionRepository->search($criteria, Context::createDefaultContext()) as $option) {
+            $map[$option->getId()] = $option->getGroupId();
         }
 
-        return $existing;
+        return $map;
     }
 }

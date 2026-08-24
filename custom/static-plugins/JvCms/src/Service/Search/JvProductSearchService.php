@@ -24,6 +24,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 /**
  * Runtime product suggest/search for headless storefronts (SPEC-004 / SPEC-006).
@@ -193,6 +194,9 @@ final class JvProductSearchService implements ProductSearchServiceInterface
 
         try {
             $response = $this->productSearchRoute->load($request, $context, $criteria);
+        } catch (HttpExceptionInterface $exception) {
+            // Client/API errors from Shopware listing pipeline (unknown order, page out of range, …).
+            throw $exception;
         } catch (\Throwable $exception) {
             $this->logger->error('jv-search listing failed', [
                 'operation' => 'jv_product_search',
@@ -296,7 +300,7 @@ final class JvProductSearchService implements ProductSearchServiceInterface
     }
 
     /**
-     * Prefer the SEO URL for the current language + sales channel; never pick another market's path.
+     * Canonical, non-deleted PDP SEO URL for the current language + sales channel only.
      */
     private function resolveSeoUrl(SalesChannelProductEntity $product, SalesChannelContext $context): ?string
     {
@@ -315,13 +319,22 @@ final class JvProductSearchService implements ProductSearchServiceInterface
             if ($seoUrl->getLanguageId() !== $languageId) {
                 continue;
             }
+            if ('frontend.detail.page' !== $seoUrl->getRouteName()) {
+                continue;
+            }
+            if (true !== $seoUrl->getIsCanonical()) {
+                continue;
+            }
+            if ($seoUrl->getIsDeleted()) {
+                continue;
+            }
 
             $urlSalesChannelId = $seoUrl->getSalesChannelId();
             if ($urlSalesChannelId === $salesChannelId) {
                 $exact = $seoUrl;
                 break;
             }
-            // Only accept channel-agnostic URLs as fallback (never a different sales channel).
+            // Channel-agnostic fallback only (never another sales channel).
             if (null === $urlSalesChannelId && null === $fallback) {
                 $fallback = $seoUrl;
             }

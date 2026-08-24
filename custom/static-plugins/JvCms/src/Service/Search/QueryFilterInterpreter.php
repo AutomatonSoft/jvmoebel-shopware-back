@@ -18,12 +18,12 @@ use Shopware\Core\Framework\Uuid\Uuid;
 final class QueryFilterInterpreter implements QueryFilterInterpreterInterface
 {
     /**
-     * @param iterable<mixed>          $dictionary
-     * @param array<string, true>|null $existingOptionIds map of option UUID → true; null = skip existence check
+     * @param iterable<mixed>            $dictionary
+     * @param array<string, string>|null $optionGroupIds optionId → real groupId from DAL; null = skip DAL check
      */
     public function __construct(
         private readonly iterable $dictionary = [],
-        private readonly ?array $existingOptionIds = null,
+        private readonly ?array $optionGroupIds = null,
     ) {
     }
 
@@ -140,9 +140,12 @@ final class QueryFilterInterpreter implements QueryFilterInterpreterInterface
                 continue;
             }
 
-            // Skip dictionary rows whose option no longer exists so the token stays in remainingSearchTerm.
-            if (null !== $this->existingOptionIds && !isset($this->existingOptionIds[$optionId])) {
-                continue;
+            // Accept only when option exists AND dictionary groupId matches DAL groupId.
+            if (null !== $this->optionGroupIds) {
+                $realGroupId = $this->optionGroupIds[$optionId] ?? null;
+                if (null === $realGroupId || $realGroupId !== $groupId) {
+                    continue;
+                }
             }
 
             $rawTokens = $row['tokens'] ?? null;

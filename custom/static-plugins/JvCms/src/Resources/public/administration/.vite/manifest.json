@@ -1,6 +1,6 @@
 {
   "main.js": {
-    "file": "assets/jv-cms-G_lE8nBd.js",
+    "file": "assets/jv-cms-gyLdqBVc.js",
     "name": "jv-cms",
     "src": "main.js",
     "isEntry": true,
@@ -138,7 +138,7 @@
     ]
   },
   "module/sw-cms/elements/jv-global-search/config/index.js": {
-    "file": "assets/index-sTLNLCtu.js",
+    "file": "assets/index-327SfiWz.js",
     "name": "index",
     "src": "module/sw-cms/elements/jv-global-search/config/index.js",
     "isDynamicEntry": true

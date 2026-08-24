@@ -15,6 +15,7 @@ use Shopware\Core\Checkout\Cart\Price\Struct\CartPrice;
 use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
 use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
 use Shopware\Core\Content\Product\ProductCollection;
+use Shopware\Core\Content\Product\ProductException;
 use Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingResult;
 use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
 use Shopware\Core\Content\Product\SalesChannel\Search\AbstractProductSearchRoute;
@@ -243,5 +244,35 @@ final class JvProductSearchServiceHardeningTest extends TestCase
         $context->method('getTaxState')->willReturn(CartPrice::TAX_STATE_GROSS);
 
         return $context;
+    }
+
+    public function testUnknownSortingIsNotWrappedAsSearchUnavailable(): void
+    {
+        $productSearchRoute = $this->createMock(AbstractProductSearchRoute::class);
+        $productSearchRoute->expects(self::once())
+            ->method('load')
+            ->willThrowException(ProductException::sortingNotFoundException('nope'));
+        $service = new JvProductSearchService(
+            new QueryFilterInterpreter([]),
+            $productSearchRoute,
+            new NullLogger(),
+        );
+        $this->expectException(ProductException::class);
+        $service->search('sofa', 1, 24, [], $this->salesChannelContext(), 'nope');
+    }
+
+    public function testPageOutOfRangeIsNotWrappedAsSearchUnavailable(): void
+    {
+        $productSearchRoute = $this->createMock(AbstractProductSearchRoute::class);
+        $productSearchRoute->expects(self::once())
+            ->method('load')
+            ->willThrowException(ProductException::pageOutOfRange(99, 1));
+        $service = new JvProductSearchService(
+            new QueryFilterInterpreter([]),
+            $productSearchRoute,
+            new NullLogger(),
+        );
+        $this->expectException(ProductException::class);
+        $service->search('sofa', 99, 1, [], $this->salesChannelContext());
     }
 }

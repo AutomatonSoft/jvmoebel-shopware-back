@@ -90,18 +90,10 @@ export default {
             if (value === null || value === undefined || value === '') {
                 return fallback;
             }
-
             const parsed = Number.parseInt(String(value), 10);
-            if (Number.isNaN(parsed)) {
+            if (Number.isNaN(parsed) || parsed < min || parsed > max) {
                 return fallback;
             }
-            if (parsed < min) {
-                return min;
-            }
-            if (parsed > max) {
-                return max;
-            }
-
             return parsed;
         },
     },

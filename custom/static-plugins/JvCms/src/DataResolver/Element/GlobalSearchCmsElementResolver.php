@@ -97,12 +97,8 @@ final class GlobalSearchCmsElementResolver extends AbstractCmsElementResolver
             return $default;
         }
 
-        // Invalid / below range → default; above max → clamp to max (not default).
-        if ($int < $min) {
+        if ($int < $min || $int > $max) {
             return $default;
-        }
-        if ($int > $max) {
-            return $max;
         }
 
         return $int;

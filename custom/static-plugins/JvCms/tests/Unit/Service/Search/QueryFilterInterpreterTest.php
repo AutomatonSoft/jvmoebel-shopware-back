@@ -103,7 +103,8 @@ final class QueryFilterInterpreterTest extends TestCase
     {
         $existingOptionId = Uuid::randomHex();
         $missingOptionId = Uuid::randomHex();
-        $groupId = Uuid::randomHex();
+        $colorGroupId = Uuid::randomHex();
+        $materialGroupId = Uuid::randomHex();
 
         $interpreter = new QueryFilterInterpreter(
             [
@@ -111,24 +112,47 @@ final class QueryFilterInterpreterTest extends TestCase
                     'tokens' => ['braun'],
                     'optionId' => $missingOptionId,
                     'optionName' => 'braun',
-                    'propertyGroupId' => $groupId,
+                    'propertyGroupId' => $colorGroupId,
                     'propertyGroupName' => 'Farbe',
                 ],
                 [
                     'tokens' => ['leder'],
                     'optionId' => $existingOptionId,
                     'optionName' => 'Leder',
-                    'propertyGroupId' => Uuid::randomHex(),
+                    'propertyGroupId' => $materialGroupId,
                     'propertyGroupName' => 'Material',
                 ],
             ],
-            [$existingOptionId => true],
+            [$existingOptionId => $materialGroupId],
         );
 
         $result = $interpreter->interpret('braun leder sofa');
 
         self::assertCount(1, $result['filters']);
         self::assertSame($existingOptionId, $result['filters'][0]->getOptionId());
+        self::assertSame('braun sofa', $result['remainingSearchTerm']);
+    }
+
+    public function testExistingOptionWithWrongGroupIdDoesNotConsumeToken(): void
+    {
+        $optionId = Uuid::randomHex();
+        $realGroupId = Uuid::randomHex();
+        $wrongGroupId = Uuid::randomHex();
+
+        $interpreter = new QueryFilterInterpreter(
+            [[
+                'tokens' => ['braun'],
+                'optionId' => $optionId,
+                'optionName' => 'braun',
+                'propertyGroupId' => $wrongGroupId,
+                'propertyGroupName' => 'Farbe',
+            ]],
+            [$optionId => $realGroupId],
+        );
+
+        $result = $interpreter->interpret('braun sofa');
+
+        self::assertSame([], $result['filters']);
         self::assertSame('braun sofa', $result['remainingSearchTerm']);
     }
 }

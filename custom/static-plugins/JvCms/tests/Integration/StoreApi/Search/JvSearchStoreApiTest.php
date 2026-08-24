@@ -283,7 +283,30 @@ final class JvSearchStoreApiTest extends TestCase
             Context::createDefaultContext(),
         );
 
+        // uniq.seo_url.foreign_key allows only one row per (language, channel, foreign_key, route, is_canonical).
         static::getContainer()->get('seo_url.repository')->create([
+            [
+                'id' => Uuid::randomHex(),
+                'languageId' => Defaults::LANGUAGE_SYSTEM,
+                'salesChannelId' => $this->salesChannelId,
+                'foreignKey' => $productId,
+                'routeName' => 'frontend.detail.page',
+                'pathInfo' => '/detail/'.$productId,
+                'seoPathInfo' => 'jv-suggest-sofa-NON-CANONICAL',
+                'isCanonical' => false,
+                'isDeleted' => false,
+            ],
+            [
+                'id' => Uuid::randomHex(),
+                'languageId' => Defaults::LANGUAGE_SYSTEM,
+                'salesChannelId' => $this->salesChannelId,
+                'foreignKey' => $productId,
+                'routeName' => 'frontend.navigation.page',
+                'pathInfo' => '/navigation/'.$productId,
+                'seoPathInfo' => 'jv-suggest-sofa-WRONG-ROUTE',
+                'isCanonical' => true,
+                'isDeleted' => false,
+            ],
             [
                 'id' => Uuid::randomHex(),
                 'languageId' => Defaults::LANGUAGE_SYSTEM,
@@ -317,5 +340,33 @@ final class JvSearchStoreApiTest extends TestCase
             'keyword' => mb_strtolower($keyword),
             'ranking' => 1000.0,
         ]], Context::createDefaultContext());
+    }
+
+    public function testUnknownOrderDoesNotReturn503(): void
+    {
+        $this->createSearchableProduct('sort', 'Jv Sort Sofa', categoryKey: 'cat-sort', optionKey: 'sort-opt');
+
+        $this->jsonPost('/store-api/jv-search', [
+            'search' => $this->token,
+            'order' => 'this-sorting-does-not-exist',
+        ]);
+
+        // Shopware falls back to default sorting for unknown keys (200), but must never wrap as 503.
+        self::assertSame(200, $this->browser->getResponse()->getStatusCode());
+    }
+
+    public function testPageOutOfRangeReturnsClientErrorNot503(): void
+    {
+        $this->createSearchableProduct('page', 'Jv Page Sofa', categoryKey: 'cat-page', optionKey: 'page-opt');
+
+        $this->jsonPost('/store-api/jv-search', [
+            'search' => $this->token,
+            'page' => 9999,
+            'limit' => 1,
+        ]);
+
+        $status = $this->browser->getResponse()->getStatusCode();
+        self::assertGreaterThanOrEqual(400, $status);
+        self::assertLessThan(500, $status);
     }
 }
