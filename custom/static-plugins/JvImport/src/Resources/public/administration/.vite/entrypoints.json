@@ -2,10 +2,12 @@
   "base": "/bundles/jvimport/administration/",
   "entryPoints": {
     "jv-import": {
-      "css": [],
+      "css": [
+        "/bundles/jvimport/administration/assets/jv-import-C8s561E_.css"
+      ],
       "dynamic": [],
       "js": [
-        "/bundles/jvimport/administration/assets/jv-import-B59TPq_A.js"
+        "/bundles/jvimport/administration/assets/jv-import-DBxsZpIF.js"
       ],
       "legacy": false,
       "preload": []

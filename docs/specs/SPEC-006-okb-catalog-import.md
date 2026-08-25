@@ -142,6 +142,12 @@ Shopware. `VARIATION_THEME` дополнительно отмечает option �
 Shopware получает `null` вместо имени группы и не может отсортировать две
 выбранные группы.
 
+В мастере генерации вариантов Administration плагин использует эту связь
+только для отображения: пустые property groups исключаются, а остальные
+свойства текущей category group показываются тремя разделами — уже
+используемые товаром, помеченные `VARIATION_THEME` и остальные. Это не меняет
+properties, options или configurator settings товара до действия администратора.
+
 Для уже импортированных catalog properties отдельная идемпотентная команда
 `jv:catalog:backfill-property-translations` добавляет только отсутствующие
 переводы групп и options. Она ограничена property groups, на которые ссылается
