@@ -143,6 +143,7 @@
             <argument type="service" id="jv_catalog_category_attribute.repository"/>
             <argument type="service" id="Jv\Import\Service\Catalog\CatalogAttributeMappingSynchronizer"/>
             <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry"/>
         </service>
         <service id="Jv\Import\Integration\Okb\Service\PrepareOkbProductMappingService">
             <argument type="service" id="Jv\Import\Integration\Csv\SemicolonCsvReader"/>

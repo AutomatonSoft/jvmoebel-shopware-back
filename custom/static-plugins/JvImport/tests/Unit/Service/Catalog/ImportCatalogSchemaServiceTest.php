@@ -233,6 +233,57 @@ final class ImportCatalogSchemaServiceTest extends TestCase
         );
     }
 
+    public function testItDoesNotWriteAnythingWhenTheNavigationSnapshotIsStructurallyInvalid(): void
+    {
+        $categoryRepository = $this->createMock(EntityRepository::class);
+        $propertyGroupRepository = $this->createMock(EntityRepository::class);
+        $propertyOptionRepository = $this->createMock(EntityRepository::class);
+        $mappingRepository = $this->createMock(EntityRepository::class);
+
+        $categoryRepository->expects(self::never())->method('upsert');
+        $propertyGroupRepository->expects(self::never())->method('upsert');
+        $propertyOptionRepository->expects(self::never())->method('upsert');
+        $mappingRepository->expects(self::never())->method('upsert');
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('has no navigation parent');
+
+        (new ImportCatalogSchemaService($categoryRepository, $propertyGroupRepository, $propertyOptionRepository, $mappingRepository, new CatalogAttributeMappingSynchronizer()))->execute(
+            new CatalogSchemaSnapshot('source-a', [new CatalogCategoryGroup('sofas', 'Sofas')], [], [], [], [
+                new CatalogNavigationCategory('l1:furniture', null, 'Furniture'),
+                new CatalogNavigationCategory('l2:living-room', 'l1:furniture', 'Living room'),
+            ], []),
+            false,
+            Context::createDefaultContext(),
+        );
+    }
+
+    public function testItRunsTheCategoryIndexerAfterSuccessfulSchemaImport(): void
+    {
+        $categoryRepository = $this->createMock(EntityRepository::class);
+        $propertyGroupRepository = $this->createMock(EntityRepository::class);
+        $propertyOptionRepository = $this->createMock(EntityRepository::class);
+        $mappingRepository = $this->createMock(EntityRepository::class);
+        $indexerRegistry = $this->createMock(EntityIndexerRegistry::class);
+        $context = Context::createDefaultContext();
+
+        $categoryRepository->method('upsert')->willReturn(EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []));
+        $propertyGroupRepository->method('upsert')->willReturn(EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []));
+        $propertyOptionRepository->method('upsert')->willReturn(EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []));
+        $mappingRepository->method('search')->willReturn(new EntitySearchResult('jv_catalog_category_attribute', 0, new CatalogCategoryAttributeCollection(), null, new Criteria(), $context));
+        $mappingRepository->method('upsert')->willReturn(EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []));
+        $indexerRegistry->expects(self::once())->method('index')->with(false, [], ['category.indexer']);
+
+        (new ImportCatalogSchemaService($categoryRepository, $propertyGroupRepository, $propertyOptionRepository, $mappingRepository, new CatalogAttributeMappingSynchronizer(), null, $indexerRegistry))->execute(
+            new CatalogSchemaSnapshot('source-a', [new CatalogCategoryGroup('sofas', 'Sofas')], [], [], [], [
+                new CatalogNavigationCategory('l1:furniture', null, 'Furniture'),
+                new CatalogNavigationCategory('l2:living-room', 'l1:furniture', 'Living room'),
+            ], [new CatalogCategoryGroupNavigationMapping('sofas', 'l2:living-room')]),
+            false,
+            $context,
+        );
+    }
+
     public function testItCreatesAVisibleNonFilterablePropertyForAnOkbProductDetailsAttribute(): void
     {
         $categoryRepository = $this->createMock(EntityRepository::class);

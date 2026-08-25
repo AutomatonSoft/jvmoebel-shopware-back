@@ -37,11 +37,13 @@ final readonly class ImportCatalogSchemaService
         private EntityRepository $categoryAttributeRepository,
         private CatalogAttributeMappingSynchronizer $attributeMappingSynchronizer,
         private ?Connection $connection = null,
+        private ?EntityIndexerRegistry $indexerRegistry = null,
     ) {
     }
 
     public function execute(CatalogSchemaSnapshot $snapshot, bool $dryRun, Context $context): CatalogSchemaImportResult
     {
+        $this->validateStructure($snapshot);
         $context->addState(EntityIndexerRegistry::DISABLE_INDEXING);
         $propertyTranslationLanguageIds = $this->propertyTranslationLanguageIds();
         $this->importNavigationCategories($snapshot, $dryRun, $context);
@@ -49,6 +51,9 @@ final readonly class ImportCatalogSchemaService
         $categories = $this->importCategories($snapshot, $dryRun, $context);
         [$attributeRelations, $propertyGroups, $propertyAttributes] = $this->importAttributeSchema($snapshot, $propertyTranslationLanguageIds, $dryRun, $context);
         $propertyOptions = $this->importAllowedValues($snapshot, $propertyAttributes, $propertyTranslationLanguageIds, $dryRun, $context);
+        if (!$dryRun) {
+            $this->indexerRegistry?->index(false, [], ['category.indexer']);
+        }
 
         return new CatalogSchemaImportResult($categoryGroups, $categories, $attributeRelations, $propertyGroups, $propertyOptions);
     }
@@ -57,27 +62,7 @@ final readonly class ImportCatalogSchemaService
     {
         $parentNavigationKeys = [];
         foreach ($snapshot->categoryGroupNavigationMappings as $mapping) {
-            if (isset($parentNavigationKeys[$mapping->categoryGroupSourceKey])) {
-                throw new \InvalidArgumentException(sprintf('Catalog category group %s has more than one navigation parent.', $mapping->categoryGroupSourceKey));
-            }
             $parentNavigationKeys[$mapping->categoryGroupSourceKey] = $mapping->navigationSourceKey;
-        }
-        if ([] !== $snapshot->navigationCategories) {
-            $navigationParents = [];
-            foreach ($snapshot->navigationCategories as $navigationCategory) {
-                $navigationParents[$navigationCategory->sourceKey] = $navigationCategory->parentSourceKey;
-            }
-            foreach ($snapshot->categoryGroups as $group) {
-                if (!isset($parentNavigationKeys[$group->sourceKey])) {
-                    throw new \InvalidArgumentException(sprintf('Catalog category group %s has no navigation parent.', $group->sourceKey));
-                }
-                if (!array_key_exists($parentNavigationKeys[$group->sourceKey], $navigationParents)) {
-                    throw new \InvalidArgumentException(sprintf('Catalog category group %s references unknown navigation parent %s.', $group->sourceKey, $parentNavigationKeys[$group->sourceKey]));
-                }
-                if (null === $navigationParents[$parentNavigationKeys[$group->sourceKey]]) {
-                    throw new \InvalidArgumentException(sprintf('Catalog category group %s references navigation parent %s that is not on level 2.', $group->sourceKey, $parentNavigationKeys[$group->sourceKey]));
-                }
-            }
         }
         $records = [];
         foreach ($snapshot->categoryGroups as $group) {
@@ -98,17 +83,6 @@ final readonly class ImportCatalogSchemaService
 
     private function importNavigationCategories(CatalogSchemaSnapshot $snapshot, bool $dryRun, Context $context): void
     {
-        $knownKeys = [];
-        foreach ($snapshot->navigationCategories as $navigationCategory) {
-            if (isset($knownKeys[$navigationCategory->sourceKey])) {
-                throw new \InvalidArgumentException(sprintf('Catalog navigation category %s is duplicated.', $navigationCategory->sourceKey));
-            }
-            if (null !== $navigationCategory->parentSourceKey && !isset($knownKeys[$navigationCategory->parentSourceKey])) {
-                throw new \InvalidArgumentException(sprintf('Catalog navigation category %s references an unknown or later parent %s.', $navigationCategory->sourceKey, $navigationCategory->parentSourceKey));
-            }
-            $knownKeys[$navigationCategory->sourceKey] = true;
-        }
-
         $records = [];
         foreach ($snapshot->navigationCategories as $navigationCategory) {
             $records[] = [
@@ -124,6 +98,53 @@ final readonly class ImportCatalogSchemaService
             $this->upsertBatch($this->categoryRepository, $records, $dryRun, $context);
         }
         $this->upsertRemaining($this->categoryRepository, $records, $dryRun, $context);
+    }
+
+    private function validateStructure(CatalogSchemaSnapshot $snapshot): void
+    {
+        if ([] === $snapshot->navigationCategories && [] === $snapshot->categoryGroupNavigationMappings) {
+            return;
+        }
+        $navigationParents = [];
+        foreach ($snapshot->navigationCategories as $navigationCategory) {
+            if (isset($navigationParents[$navigationCategory->sourceKey])) {
+                throw new \InvalidArgumentException(sprintf('Catalog navigation category %s is duplicated.', $navigationCategory->sourceKey));
+            }
+            $navigationParents[$navigationCategory->sourceKey] = $navigationCategory->parentSourceKey;
+        }
+        foreach ($navigationParents as $key => $parentKey) {
+            if (null === $parentKey) {
+                continue;
+            }
+            if (!array_key_exists($parentKey, $navigationParents)) {
+                throw new \InvalidArgumentException(sprintf('Catalog navigation category %s references unknown parent %s.', $key, $parentKey));
+            }
+            if (null !== $navigationParents[$parentKey]) {
+                throw new \InvalidArgumentException(sprintf('Catalog navigation category %s is deeper than level 2.', $key));
+            }
+        }
+        $groups = [];
+        foreach ($snapshot->categoryGroups as $group) {
+            $groups[$group->sourceKey] = true;
+        }
+        $mappedGroups = [];
+        foreach ($snapshot->categoryGroupNavigationMappings as $mapping) {
+            if (!isset($groups[$mapping->categoryGroupSourceKey])) {
+                throw new \InvalidArgumentException(sprintf('Catalog navigation mapping references unknown category group %s.', $mapping->categoryGroupSourceKey));
+            }
+            if (isset($mappedGroups[$mapping->categoryGroupSourceKey])) {
+                throw new \InvalidArgumentException(sprintf('Catalog category group %s has more than one navigation parent.', $mapping->categoryGroupSourceKey));
+            }
+            if (!isset($navigationParents[$mapping->navigationSourceKey])) {
+                throw new \InvalidArgumentException(sprintf('Catalog category group %s references navigation parent %s that is not on level 2.', $mapping->categoryGroupSourceKey, $mapping->navigationSourceKey));
+            }
+            $mappedGroups[$mapping->categoryGroupSourceKey] = true;
+        }
+        foreach ($groups as $groupKey => $_) {
+            if (!isset($mappedGroups[$groupKey])) {
+                throw new \InvalidArgumentException(sprintf('Catalog category group %s has no navigation parent.', $groupKey));
+            }
+        }
     }
 
     private function importCategories(CatalogSchemaSnapshot $snapshot, bool $dryRun, Context $context): int
