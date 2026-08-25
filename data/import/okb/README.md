@@ -12,23 +12,18 @@
 - `okb-attributes.csv` — набор атрибутов, полученный один раз по `attribute_source_category_id` каждой группы; именно он применяется к категориям этой группы.
 - `okb-attribute-allowed-values.csv` — разрешённые значения атрибутов, если OKB их перечисляет.
 - `okb-attribute-fetch-failures.csv` — группы, для которых ответ атрибутов не удалось получить; пустой файл (кроме заголовка) означает успешный снимок.
-- `navigation-categories.csv` — 19 верхних L1 и 111 вложенных L2 category из OTTO taxonomy.
-- `category-group-parent-mapping.csv` — 1478 однозначных связей `category_group_id → L2 navigation key`.
+- `navigation-categories.csv` — 12 верхних L1 и 106 вложенных L2 category из OTTO taxonomy.
+- `category-group-parent-mapping.csv` — 1950 связей `category_group_id → L2 navigation key`: по одной для каждой category group.
 
-Все CSV используют UTF-8 с BOM, разделитель `;` и кавычки CSV. Это source dataset для будущего импортёра, а не прямой Shopware Import/Export profile: детерминированные Shopware ID и маппинг будут добавлены в коде следующей итерации.
+Все CSV используют UTF-8 с BOM, разделитель `;` и кавычки CSV. Это source dataset для команды `jv:catalog:import-okb-schema`; она создаёт детерминированные Shopware ID и применяет маппинг при импорте.
 
-## Порядок будущего импорта
+## Порядок импорта
 
 1. Создать L1/L2 из `navigation-categories.csv` под JVMöbel.
 2. Обновить parent существующих category groups только по `category-group-parent-mapping.csv`.
 3. Прочитать `okb-category-groups.csv` и `okb-categories.csv` для создания/обновления group и дочерних категорий.
 4. Прочитать `okb-attributes.csv` и `okb-attribute-allowed-values.csv`, создать property groups, properties и options Shopware.
 5. Только после этого импортировать товары. Товар получает категорию по своему source category ID, а его значения attributes проверяются по схеме category group.
-
-OTTO taxonomy использует 470 одинаковых `category_group_id` под несколькими
-L2, а два group отсутствуют в источнике. Их нельзя однозначно представить
-одним Shopware parent без дублирования дерева, поэтому они намеренно не входят
-в `category-group-parent-mapping.csv` и остаются без изменения parent.
 
 `attribute_source_category_id` — служебная точка получения данных из OKB. Она не должна становиться ни parent category, ни полем товара.
 
