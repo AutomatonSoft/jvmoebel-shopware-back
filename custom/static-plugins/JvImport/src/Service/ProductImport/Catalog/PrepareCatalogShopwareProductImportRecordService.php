@@ -280,9 +280,27 @@ final class PrepareCatalogShopwareProductImportRecordService
         if (isset($this->existingOptionIdsByPropertyGroup[$propertyGroupId][$optionId])) {
             return true;
         }
-        $this->existingOptionIdsByPropertyGroup[$propertyGroupId][$optionId] = true;
 
         return false;
+    }
+
+    /** @param array<string, mixed> $record */
+    public function markPersistedOptions(array $record): void
+    {
+        $properties = $record['properties'] ?? [];
+        if (!is_array($properties)) {
+            return;
+        }
+        foreach ($properties as $property) {
+            if (!is_array($property)) {
+                continue;
+            }
+            $id = $property['id'] ?? null;
+            $groupId = $property['groupId'] ?? null;
+            if (is_string($id) && Uuid::isValid($id) && is_string($groupId) && Uuid::isValid($groupId)) {
+                $this->existingOptionIdsByPropertyGroup[$groupId][$id] = true;
+            }
+        }
     }
 
     private function childId(\Shopware\Core\Content\Product\ProductEntity $parent, string $ean, Context $context): string

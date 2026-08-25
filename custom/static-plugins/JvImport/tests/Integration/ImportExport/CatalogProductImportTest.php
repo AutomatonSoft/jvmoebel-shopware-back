@@ -23,7 +23,7 @@ use Shopware\Core\System\Tax\TaxCollection;
 
 final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCase
 {
-    public function testItRejectsBothRowsWhenAnOptionValueExceedsTheShopwareLimit(): void
+    public function testItKeepsExistingCatalogRelationsWhenPreparedRowsAreInvalid(): void
     {
         $context = Context::createDefaultContext();
         $suffix = bin2hex(random_bytes(5));
@@ -49,7 +49,8 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
             self::assertStringContainsString('exceeds the 255 character limit', $this->invalidRecordsCsv($progress));
 
             $parent = $this->product($productNumber, $context);
-            self::assertCount(0, $parent->getCategories() ?? []);
+            self::assertCount(1, $parent->getCategories() ?? []);
+            self::assertSame(CatalogIdentity::categoryId('okb', $categoryId), $parent->getCategories()?->first()?->getId());
             self::assertSame(1190.0, $parent->getPrice()?->first()?->getGross());
             self::assertNull($this->productRepository()->search((new Criteria())->addFilter(new EqualsFilter('productNumber', $productNumber.'-1')), $context)->first());
             self::assertSame($validParentId, $this->product($validProductNumber.'-1', $context)->getParentId());
@@ -159,6 +160,7 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
             'stock' => 4,
             'taxId' => $taxId,
             'price' => [['currencyId' => Defaults::CURRENCY, 'net' => 1000.0, 'gross' => 1190.0, 'linked' => false]],
+            'categories' => [['id' => CatalogIdentity::categoryId('okb', $categoryId)]],
             'properties' => [['id' => $manualOptionId]],
         ]], $context);
     }
