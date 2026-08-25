@@ -41,12 +41,16 @@ final readonly class PrepareOkbProductMappingService
         $productCount = 0;
         $attributeCount = 0;
         $failureCount = 0;
+        $processedCount = 0;
 
         try {
             try {
                 foreach ($this->csvReader->rows($sourceCsv, ['product_number', 'ean']) as $row) {
                     $productNumber = $row['product_number'];
                     $ean = $row['ean'];
+                    ++$processedCount;
+                    $variation = null;
+                    $category = null;
                     try {
                         if (!preg_match('/^\d{13}$/D', $ean)) {
                             throw new \InvalidArgumentException('EAN must contain exactly 13 digits.');
@@ -59,19 +63,19 @@ final readonly class PrepareOkbProductMappingService
                     } catch (\Throwable $exception) {
                         $this->write($failures, [$productNumber, $ean, $exception->getMessage()]);
                         ++$failureCount;
-
-                        continue;
                     }
-                    $this->writeVariation($products, $productNumber, $variation, $category);
-                    foreach ($variation->attributes as $attribute) {
-                        if (!isset($attributeNames[$category['categoryGroupId']][$attribute->name])) {
-                            continue;
+                    if (null !== $variation && null !== $category) {
+                        $this->writeVariation($products, $productNumber, $variation, $category);
+                        foreach ($variation->attributes as $attribute) {
+                            if (!isset($attributeNames[$category['categoryGroupId']][$attribute->name])) {
+                                continue;
+                            }
+                            $this->write($attributes, [$productNumber, $ean, $attribute->name, json_encode($attribute->values, \JSON_THROW_ON_ERROR)]);
+                            ++$attributeCount;
                         }
-                        $this->write($attributes, [$productNumber, $ean, $attribute->name, json_encode($attribute->values, \JSON_THROW_ON_ERROR)]);
-                        ++$attributeCount;
+                        ++$productCount;
                     }
-                    ++$productCount;
-                    if (null !== $limit && $limit <= $productCount + $failureCount) {
+                    if (null !== $limit && $limit <= $processedCount) {
                         break;
                     }
                 }

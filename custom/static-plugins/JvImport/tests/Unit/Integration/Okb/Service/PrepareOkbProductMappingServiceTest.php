@@ -12,6 +12,44 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
 
 final class PrepareOkbProductMappingServiceTest extends TestCase
 {
+    public function testItCountsAnInvalidSourceRowTowardsTheLimit(): void
+    {
+        $directory = sys_get_temp_dir().'/jv-okb-product-mapping-'.bin2hex(random_bytes(8));
+        mkdir($directory.'/snapshot', 0775, true);
+        mkdir($directory.'/output', 0775, true);
+        file_put_contents($directory.'/source.csv', "product_number;ean\ninvalid;not-an-ean\n4260454043503;4260454043503\n");
+        file_put_contents($directory.'/snapshot/okb-categories.csv', "category_group_id;category_id;category_name\ngroup-1;category-1;Sofas\n");
+        file_put_contents($directory.'/snapshot/okb-attributes.csv', "category_group_id;attribute_id;attribute_name\ngroup-1;color;Color\n");
+        $httpClient = $this->createMock(HttpClientInterface::class);
+        $httpClient->expects(self::never())->method('request');
+
+        try {
+            $result = (new PrepareOkbProductMappingService(
+                new SemicolonCsvReader(),
+                new OkbProductApiClient($httpClient, new OkbProductResponseNormalizer(), 'https://okb.example'),
+            ))->execute($directory.'/source.csv', $directory.'/snapshot', $directory.'/output', 1);
+
+            self::assertSame(0, $result->products);
+            self::assertSame(1, $result->failures);
+            self::assertSame("product_number;ean;reason\ninvalid;not-an-ean;\"EAN must contain exactly 13 digits.\"\n", file_get_contents($directory.'/output/okb-product-mapping-failures.csv'));
+            self::assertSame("product_number;ean;category_name;category_id;category_group_id;standard_price_amount;currency\n", file_get_contents($directory.'/output/okb-product-mapping.csv'));
+        } finally {
+            $files = glob($directory.'/*/*');
+            if (false !== $files) {
+                foreach ($files as $file) {
+                    unlink($file);
+                }
+            }
+            $paths = glob($directory.'/*');
+            if (false !== $paths) {
+                foreach ($paths as $path) {
+                    is_dir($path) ? rmdir($path) : unlink($path);
+                }
+            }
+            rmdir($directory);
+        }
+    }
+
     public function testItKeepsPreviousOutputsWhenPreparationAborts(): void
     {
         $directory = sys_get_temp_dir().'/jv-okb-product-mapping-'.bin2hex(random_bytes(8));
