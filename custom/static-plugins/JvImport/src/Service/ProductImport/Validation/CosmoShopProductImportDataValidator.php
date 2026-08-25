@@ -42,9 +42,6 @@ final class CosmoShopProductImportDataValidator
         if (null !== $data->listPriceGross && !$this->isZero($data->listPriceGross)) {
             $this->positiveDecimal($data->listPriceGross, 'list_price_gross');
         }
-        if (null !== $data->seoPath && !$this->isRelativePath($data->seoPath)) {
-            throw new InvalidCosmoShopProductImportDataException('CosmoShop urlkey must be a non-empty relative path.');
-        }
         if (null !== $data->description && str_contains($data->description, chr(92).'"')) {
             throw new InvalidCosmoShopProductImportDataException('CosmoShop description contains CSV escape sequences; regenerate the import file.');
         }
@@ -74,14 +71,5 @@ final class CosmoShopProductImportDataValidator
     private function isZero(string $value): bool
     {
         return (bool) preg_match('/^0+(?:\.0+)?$/', $value);
-    }
-
-    private function isRelativePath(string $path): bool
-    {
-        return !str_starts_with($path, '/')
-            && !str_contains($path, '://')
-            && !str_contains($path, '?')
-            && !str_contains($path, '#')
-            && !str_contains($path, '../');
     }
 }

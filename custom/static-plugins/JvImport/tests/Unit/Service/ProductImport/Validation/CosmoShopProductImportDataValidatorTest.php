@@ -52,7 +52,6 @@ final class CosmoShopProductImportDataValidatorTest extends TestCase
             unitId: null,
             listPriceGross: null,
             description: null,
-            seoPath: null,
             mappedRecord: [],
         );
     }
