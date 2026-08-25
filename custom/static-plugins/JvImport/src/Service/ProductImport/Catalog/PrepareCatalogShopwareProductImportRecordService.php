@@ -63,6 +63,7 @@ final class PrepareCatalogShopwareProductImportRecordService
         $this->validateLongValues($attributes, $schemas);
         $this->validatePair($productNumber, $row, $attributes, $schemas, $parent, $context);
         $this->validateBrandInformation($productNumber, $attributes, $parent);
+        $childId = $this->childId($parent, $ean, $context);
 
         if ('parent' === $type) {
             $record = [
@@ -122,7 +123,7 @@ final class PrepareCatalogShopwareProductImportRecordService
         }
 
         return [
-            'id' => $this->childId($parent, $ean, $context),
+            'id' => $childId,
             'parentId' => $parent->getId(),
             'productNumber' => $parent->getProductNumber().'-1',
             'ean' => $ean,
@@ -309,12 +310,18 @@ final class PrepareCatalogShopwareProductImportRecordService
             return $this->childIds[$parent->getId()];
         }
         $productNumber = $parent->getProductNumber().'-1';
-        $existing = $this->productRepository->searchIds((new Criteria())
-            ->addFilter(new EqualsFilter('parentId', $parent->getId()))
+        $existing = $this->productRepository->search((new Criteria())
             ->addFilter(new EqualsFilter('productNumber', $productNumber))
-            ->setLimit(1), $context)->firstId();
+            ->setLimit(1), $context)->first();
+        if ($existing instanceof \Shopware\Core\Content\Product\ProductEntity) {
+            if ($existing->getParentId() !== $parent->getId()) {
+                throw new \InvalidArgumentException(sprintf('Catalog child product number "%s" belongs to another product.', $productNumber));
+            }
 
-        return $this->childIds[$parent->getId()] = $existing ?? CatalogIdentity::childProductId('okb', $parent->getId(), $ean);
+            return $this->childIds[$parent->getId()] = $existing->getId();
+        }
+
+        return $this->childIds[$parent->getId()] = CatalogIdentity::childProductId('okb', $parent->getId(), $ean);
     }
 
     private function currencyId(string $currency, Context $context): string

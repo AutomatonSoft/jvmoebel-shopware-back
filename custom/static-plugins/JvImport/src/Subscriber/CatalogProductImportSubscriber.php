@@ -36,6 +36,6 @@ final readonly class CatalogProductImportSubscriber implements EventSubscriberIn
         }
         $this->preparer->markPersistedOptions($event->getRecord());
         $type = $event->getRow()['record_type'] ?? '';
-        $this->reconciler->execute($event->getRecord(), is_string($type) ? $type : '');
+        $this->reconciler->execute($event->getRecord(), is_string($type) ? $type : '', $event->getContext());
     }
 }

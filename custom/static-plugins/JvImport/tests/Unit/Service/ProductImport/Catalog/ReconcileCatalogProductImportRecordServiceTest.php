@@ -5,6 +5,7 @@ namespace Jv\Import\Tests\Unit\Service\ProductImport\Catalog;
 use Doctrine\DBAL\Connection;
 use Jv\Import\Service\ProductImport\Catalog\ReconcileCatalogProductImportRecordService;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Uuid\Uuid;
 
 final class ReconcileCatalogProductImportRecordServiceTest extends TestCase
@@ -30,7 +31,7 @@ final class ReconcileCatalogProductImportRecordServiceTest extends TestCase
         (new ReconcileCatalogProductImportRecordService($connection))->execute([
             'id' => $productId,
             'categories' => [['id' => $wantedCategoryId]],
-        ], 'parent');
+        ], 'parent', Context::createDefaultContext());
 
         self::assertStringContainsString('DELETE FROM `product_category`', $statements[0][0]);
         self::assertSame([Uuid::fromHexToBytes($trackedCategoryId)], $statements[0][1]['ids']);

@@ -116,6 +116,36 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
         }
     }
 
+    public function testItRejectsBothRowsWhenTheGeneratedChildProductNumberIsGlobalConflict(): void
+    {
+        $context = Context::createDefaultContext();
+        $suffix = bin2hex(random_bytes(5));
+        $productNumber = 'CATALOG-CONFLICT-'.$suffix;
+        $parentId = Uuid::randomHex();
+        $categoryGroupId = 'group-'.$suffix;
+        $categoryId = 'category-'.$suffix;
+        $propertyGroupId = CatalogIdentity::propertyGroupId('Color '.$suffix);
+        $manualGroupId = Uuid::randomHex();
+        $manualOptionId = Uuid::randomHex();
+        $conflictId = Uuid::randomHex();
+        $this->createFixture($parentId, $productNumber, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $manualOptionId, $context);
+        $this->createParent($conflictId, $productNumber.'-1', $context);
+        $this->profileRepository()->upsert([CatalogProductImportProfile::definition()], $context);
+
+        try {
+            $progress = $this->import(CatalogProductImportProfile::definition()['id'], $this->catalogCsv($productNumber, '4260174423463', $categoryId, $categoryGroupId, 1200, 'Brown'));
+            self::assertSame('failed', $progress->getState(), $this->importResult($progress));
+            self::assertStringContainsString('belongs to another product', $this->invalidRecordsCsv($progress));
+            $parent = $this->product($productNumber, $context);
+            self::assertSame(1190.0, $parent->getPrice()?->first()?->getGross());
+            self::assertSame(CatalogIdentity::categoryId('okb', $categoryId), $parent->getCategories()?->first()?->getId());
+            self::assertSame($conflictId, $this->product($productNumber.'-1', $context)->getId());
+        } finally {
+            $this->productRepository()->delete([['id' => $conflictId]], $context);
+            $this->deleteFixture($parentId, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $context);
+        }
+    }
+
     private function deleteFixture(string $parentId, string $categoryGroupId, string $categoryId, string $propertyGroupId, string $manualGroupId, Context $context): void
     {
         $this->productRepository()->delete([['id' => $parentId]], $context);

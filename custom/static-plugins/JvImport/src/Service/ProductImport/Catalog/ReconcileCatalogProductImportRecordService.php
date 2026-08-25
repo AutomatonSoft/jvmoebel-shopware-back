@@ -4,40 +4,52 @@ namespace Jv\Import\Service\ProductImport\Catalog;
 
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
+use Shopware\Core\Content\Product\DataAbstractionLayer\ProductIndexer;
+use Shopware\Core\Content\Product\DataAbstractionLayer\ProductIndexingMessage;
 use Shopware\Core\Defaults;
+use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Uuid\Uuid;
 
 final readonly class ReconcileCatalogProductImportRecordService
 {
-    public function __construct(private Connection $connection)
+    public function __construct(private Connection $connection, private ?ProductIndexer $productIndexer = null)
     {
     }
 
     /** @param array<string, mixed> $record */
-    public function execute(array $record, string $recordType): void
+    public function execute(array $record, string $recordType, Context $context): void
     {
         $id = $record['id'] ?? null;
         if (!is_string($id) || !Uuid::isValid($id)) {
             return;
         }
         if ('parent' === $recordType) {
-            $this->reconcile($id, 'category', $this->ids($record['categories'] ?? []));
+            if ($this->reconcile($id, 'category', $this->ids($record['categories'] ?? []))) {
+                $this->reindex([$id], $context);
+            }
 
             return;
         }
         if ('child' !== $recordType) {
             return;
         }
-        $this->reconcile($id, 'property', $this->ids($record['properties'] ?? []));
-        $this->reconcile($id, 'option', $this->ids($record['options'] ?? []));
+        $reindex = [];
+        $propertiesChanged = $this->reconcile($id, 'property', $this->ids($record['properties'] ?? []));
+        $optionsChanged = $this->reconcile($id, 'option', $this->ids($record['options'] ?? []));
+        if ($propertiesChanged || $optionsChanged) {
+            $reindex[] = $id;
+        }
         $parentId = $record['parentId'] ?? null;
         if (is_string($parentId) && Uuid::isValid($parentId)) {
-            $this->reconcile($parentId, 'configurator', $this->ids($record['options'] ?? []));
+            if ($this->reconcile($parentId, 'configurator', $this->ids($record['options'] ?? []))) {
+                $reindex[] = $parentId;
+            }
         }
+        $this->reindex($reindex, $context);
     }
 
     /** @param list<string> $wanted */
-    private function reconcile(string $productId, string $type, array $wanted): void
+    private function reconcile(string $productId, string $type, array $wanted): bool
     {
         $p = Uuid::fromHexToBytes($productId);
         $v = Uuid::fromHexToBytes(Defaults::LIVE_VERSION);
@@ -59,6 +71,17 @@ final readonly class ReconcileCatalogProductImportRecordService
         foreach ($wanted as $relationId) {
             $this->connection->executeStatement('INSERT IGNORE INTO `jv_catalog_product_relation` (`product_id`,`product_version_id`,`relation_type`,`relation_id`) VALUES (:p,:v,:t,:r)', ['p' => $p, 'v' => $v, 't' => $type, 'r' => Uuid::fromHexToBytes($relationId)]);
         }
+
+        return [] !== $gone;
+    }
+
+    /** @param list<string> $productIds */
+    private function reindex(array $productIds, Context $context): void
+    {
+        if ([] === $productIds || null === $this->productIndexer) {
+            return;
+        }
+        $this->productIndexer->handle(new ProductIndexingMessage(array_values(array_unique($productIds)), null, $context));
     }
 
     /** @return list<string> */
