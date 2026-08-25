@@ -76,6 +76,15 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
         $this->profileRepository()->upsert([CatalogProductImportProfile::definition()], $context);
 
         try {
+            $replacementCategoryId = $categoryId.'-replacement';
+            $replacementCategoryShopwareId = CatalogIdentity::categoryId('okb', $replacementCategoryId);
+            $this->categoryRepository()->create([[
+                'id' => $replacementCategoryShopwareId,
+                'parentId' => CatalogIdentity::categoryGroupId('okb', $categoryGroupId),
+                'name' => 'Replacement category',
+                'type' => 'page',
+                'active' => true,
+            ]], $context);
             $first = $this->import($profileId, $this->catalogCsv($productNumber, '4260174423463', $categoryId, $categoryGroupId, 1200, 'Brown'));
             self::assertSame('succeeded', $first->getState(), $this->importResult($first));
 
@@ -91,7 +100,7 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
                 ['name' => 'Manuell übersetzt', 'optionId' => Uuid::fromHexToBytes($brownOptionId), 'languageId' => Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM)],
             );
 
-            $second = $this->import($profileId, $this->catalogCsv($productNumber, '4260174423464', $categoryId, $categoryGroupId, 1300, 'Black'));
+            $second = $this->import($profileId, $this->catalogCsv($productNumber, '4260174423464', $replacementCategoryId, $categoryGroupId, 1300, 'Black'));
             self::assertSame('succeeded', $second->getState(), $this->importResult($second));
 
             $reloadedChild = $this->product($productNumber.'-1', $context);
@@ -100,8 +109,14 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
             self::assertSame(1300.0, $reloadedChild->getPrice()?->first()?->getGross());
             self::assertCount(1, $reloadedChild->getOptions() ?? []);
             self::assertSame('Black', $reloadedChild->getOptions()?->first()?->getName());
+            $reloadedParent = $this->product($productNumber, $context);
+            self::assertSame($replacementCategoryShopwareId, $reloadedParent->getCategories()?->first()?->getId());
+            self::assertNotContains(CatalogIdentity::categoryId('okb', $categoryId), $reloadedParent->getCategoryTree() ?? []);
+            self::assertContains($replacementCategoryShopwareId, $reloadedParent->getCategoryTree() ?? []);
+            self::assertSame(0, (int) $this->connection()->fetchOne('SELECT COUNT(*) FROM `product_category_tree` WHERE `product_id` = :productId AND `category_id` = :categoryId', ['productId' => Uuid::fromHexToBytes($parentId), 'categoryId' => Uuid::fromHexToBytes(CatalogIdentity::categoryId('okb', $categoryId))]));
+            self::assertSame(1, (int) $this->connection()->fetchOne('SELECT COUNT(*) FROM `product_category_tree` WHERE `product_id` = :productId AND `category_id` = :categoryId', ['productId' => Uuid::fromHexToBytes($parentId), 'categoryId' => Uuid::fromHexToBytes($replacementCategoryShopwareId)]));
 
-            $third = $this->import($profileId, $this->catalogCsv($productNumber, '4260174423464', $categoryId, $categoryGroupId, 1300, 'Brown'));
+            $third = $this->import($profileId, $this->catalogCsv($productNumber, '4260174423464', $replacementCategoryId, $categoryGroupId, 1300, 'Brown'));
             self::assertSame('succeeded', $third->getState(), $this->importResult($third));
             self::assertSame('Manuell übersetzt', $this->connection()->fetchOne(
                 'SELECT `name` FROM `property_group_option_translation` WHERE `property_group_option_id` = :optionId AND `language_id` = :languageId',
