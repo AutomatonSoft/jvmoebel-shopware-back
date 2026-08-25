@@ -26,27 +26,40 @@ final readonly class PrepareOkbProductMappingService
 
         $categories = $this->categoryLookup($snapshotDirectory);
         $attributeNames = $this->attributeNamesByCategoryGroup($snapshotDirectory);
-        $products = $this->openOutput($outputDirectory.'/okb-product-mapping.csv', [
+        $outputs = [
+            'products' => $outputDirectory.'/okb-product-mapping.csv',
+            'attributes' => $outputDirectory.'/okb-product-attributes.csv',
+            'failures' => $outputDirectory.'/okb-product-mapping-failures.csv',
+        ];
+        $temporary = array_map(static fn (string $file): string => $file.'.tmp.'.bin2hex(random_bytes(8)), $outputs);
+        $products = $this->openOutput($temporary['products'], [
             'product_number', 'ean', 'category_name', 'category_id', 'category_group_id', 'standard_price_amount', 'currency',
         ]);
-        $attributes = $this->openOutput($outputDirectory.'/okb-product-attributes.csv', ['product_number', 'ean', 'attribute_name', 'values_json']);
-        $failures = $this->openOutput($outputDirectory.'/okb-product-mapping-failures.csv', ['product_number', 'ean', 'reason']);
+        $attributes = $this->openOutput($temporary['attributes'], ['product_number', 'ean', 'attribute_name', 'values_json']);
+        $failures = $this->openOutput($temporary['failures'], ['product_number', 'ean', 'reason']);
         $productCount = 0;
         $attributeCount = 0;
         $failureCount = 0;
 
         try {
-            foreach ($this->csvReader->rows($sourceCsv, ['product_number', 'ean']) as $row) {
-                $productNumber = $row['product_number'];
-                $ean = $row['ean'];
-                try {
-                    if (!preg_match('/^\d{13}$/D', $ean)) {
-                        throw new \InvalidArgumentException('EAN must contain exactly 13 digits.');
-                    }
-                    $variation = $this->apiClient->findByEan($ean);
-                    $category = $categories[$variation->categoryName] ?? null;
-                    if (null === $category) {
-                        throw new \InvalidArgumentException(sprintf('OKB category "%s" is missing from the supplied snapshot.', $variation->categoryName));
+            try {
+                foreach ($this->csvReader->rows($sourceCsv, ['product_number', 'ean']) as $row) {
+                    $productNumber = $row['product_number'];
+                    $ean = $row['ean'];
+                    try {
+                        if (!preg_match('/^\d{13}$/D', $ean)) {
+                            throw new \InvalidArgumentException('EAN must contain exactly 13 digits.');
+                        }
+                        $variation = $this->apiClient->findByEan($ean);
+                        $category = $categories[$variation->categoryName] ?? null;
+                        if (null === $category) {
+                            throw new \InvalidArgumentException(sprintf('OKB category "%s" is missing from the supplied snapshot.', $variation->categoryName));
+                        }
+                    } catch (\Throwable $exception) {
+                        $this->write($failures, [$productNumber, $ean, $exception->getMessage()]);
+                        ++$failureCount;
+
+                        continue;
                     }
                     $this->writeVariation($products, $productNumber, $variation, $category);
                     foreach ($variation->attributes as $attribute) {
@@ -57,18 +70,28 @@ final readonly class PrepareOkbProductMappingService
                         ++$attributeCount;
                     }
                     ++$productCount;
-                } catch (\Throwable $exception) {
-                    $this->write($failures, [$productNumber, $ean, $exception->getMessage()]);
-                    ++$failureCount;
+                    if (null !== $limit && $limit <= $productCount + $failureCount) {
+                        break;
+                    }
                 }
-                if (null !== $limit && $limit <= $productCount + $failureCount) {
-                    break;
+            } finally {
+                fclose($products);
+                fclose($attributes);
+                fclose($failures);
+            }
+            foreach ($outputs as $key => $output) {
+                if (!rename($temporary[$key], $output)) {
+                    throw new \RuntimeException(sprintf('OKB product mapping output "%s" cannot be published.', $output));
                 }
             }
-        } finally {
-            fclose($products);
-            fclose($attributes);
-            fclose($failures);
+        } catch (\Throwable $exception) {
+            foreach ($temporary as $file) {
+                if (is_file($file)) {
+                    unlink($file);
+                }
+            }
+
+            throw $exception;
         }
 
         return new OkbProductMappingPreparationResult($productCount, $attributeCount, $failureCount);
