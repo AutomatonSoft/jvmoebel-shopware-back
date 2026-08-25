@@ -190,6 +190,9 @@ final readonly class ImportCatalogSchemaService
         [$existingIds, $inactiveMappings] = $this->existingAttributeMappings($snapshot->sourceCode, $observedKeys, $context);
         $mappings = [...$observedMappings, ...$inactiveMappings];
         $propertyGroups = $this->propertyGroups($mappings, $propertyTranslationLanguageIds);
+        if (!$dryRun) {
+            $this->upsertRecords($this->propertyGroupRepository, array_values($propertyGroups), $context);
+        }
         foreach ($mappings as $mapping) {
             $propertyGroupId = $mapping->propertyGroupId;
             if ($mapping->active && $mapping->enabled && null !== $propertyGroupId) {
@@ -206,7 +209,6 @@ final readonly class ImportCatalogSchemaService
         }
         if (!$dryRun) {
             $this->categoryAttributeRepository->upsert($relations, $context);
-            $this->upsertRecords($this->propertyGroupRepository, array_values($propertyGroups), $context);
         }
 
         return [count($snapshot->attributes), count($propertyGroupIds), $propertyAttributeGroups];
@@ -242,6 +244,9 @@ final readonly class ImportCatalogSchemaService
             $translations = $this->missingTranslations($group['name'], $languageIds, $existing[$id] ?? []);
             if ([] !== $translations) {
                 $group['translations'] = $translations;
+            }
+            if (isset($existing[$id][Defaults::LANGUAGE_SYSTEM])) {
+                unset($group['name']);
             }
         }
         unset($group);
@@ -422,6 +427,9 @@ final readonly class ImportCatalogSchemaService
             $translations = $this->missingTranslations($record['name'], $propertyTranslationLanguageIds, $existingTranslations[$id] ?? []);
             if ([] !== $translations) {
                 $record['translations'] = $translations;
+            }
+            if (isset($existingTranslations[$id][Defaults::LANGUAGE_SYSTEM])) {
+                unset($record['name']);
             }
         }
         unset($record);

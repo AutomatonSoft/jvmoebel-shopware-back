@@ -257,6 +257,28 @@ final class ImportCatalogSchemaServiceTest extends TestCase
         );
     }
 
+    public function testItRejectsDuplicateLevelTwoNavigationKeysBeforeWriting(): void
+    {
+        $categoryRepository = $this->createMock(EntityRepository::class);
+        $propertyGroupRepository = $this->createMock(EntityRepository::class);
+        $propertyOptionRepository = $this->createMock(EntityRepository::class);
+        $mappingRepository = $this->createMock(EntityRepository::class);
+        $categoryRepository->expects(self::never())->method('upsert');
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('is duplicated');
+
+        (new ImportCatalogSchemaService($categoryRepository, $propertyGroupRepository, $propertyOptionRepository, $mappingRepository, new CatalogAttributeMappingSynchronizer()))->execute(
+            new CatalogSchemaSnapshot('source-a', [], [], [], [], [
+                new CatalogNavigationCategory('l1:furniture', null, 'Furniture'),
+                new CatalogNavigationCategory('l2:living-room', 'l1:furniture', 'Living room'),
+                new CatalogNavigationCategory('l2:living-room', 'l1:furniture', 'Living room again'),
+            ], []),
+            false,
+            Context::createDefaultContext(),
+        );
+    }
+
     public function testItDoesNotWriteAnythingWhenTheNavigationSnapshotIsStructurallyInvalid(): void
     {
         $categoryRepository = $this->createMock(EntityRepository::class);
@@ -409,6 +431,49 @@ final class ImportCatalogSchemaServiceTest extends TestCase
                 Defaults::LANGUAGE_SYSTEM => ['name' => 'Width'],
             ],
         ]], $propertyGroups);
+    }
+
+    public function testItAggregatesSharedPropertyFlagsAcrossRelationBatches(): void
+    {
+        $categoryRepository = $this->createMock(EntityRepository::class);
+        $propertyGroupRepository = $this->createMock(EntityRepository::class);
+        $propertyOptionRepository = $this->createMock(EntityRepository::class);
+        $mappingRepository = $this->createMock(EntityRepository::class);
+        $context = Context::createDefaultContext();
+        $propertyGroups = [];
+        $attributes = [];
+
+        for ($position = 0; $position <= 500; ++$position) {
+            $attributes[] = new CatalogAttribute(
+                'colour-'.$position,
+                'group-'.$position,
+                'Colour',
+                'STRING',
+                0 === $position ? 'FILTER' : (500 === $position ? 'PRODUCT_DETAILS' : null),
+                false,
+            );
+        }
+        $categoryRepository->method('upsert')->willReturn(EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []));
+        $propertyGroupRepository->expects(self::once())->method('upsert')->willReturnCallback(
+            static function (array $records) use (&$propertyGroups, $context): EntityWrittenContainerEvent {
+                $propertyGroups = $records;
+
+                return EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []);
+            },
+        );
+        $propertyOptionRepository->method('upsert')->willReturn(EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []));
+        $mappingRepository->method('search')->willReturn(new EntitySearchResult('jv_catalog_category_attribute', 0, new CatalogCategoryAttributeCollection(), null, new Criteria(), $context));
+        $mappingRepository->expects(self::exactly(2))->method('upsert')->willReturn(EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []));
+
+        (new ImportCatalogSchemaService($categoryRepository, $propertyGroupRepository, $propertyOptionRepository, $mappingRepository, new CatalogAttributeMappingSynchronizer()))->execute(
+            new CatalogSchemaSnapshot('source-a', [], [], $attributes, []),
+            false,
+            $context,
+        );
+
+        self::assertCount(1, $propertyGroups);
+        self::assertTrue($propertyGroups[0]['filterable']);
+        self::assertTrue($propertyGroups[0]['visibleOnProductDetailPage']);
     }
 
     public function testItStoresTheShopwareCategoryGroupIdWithEachAttributeMapping(): void
