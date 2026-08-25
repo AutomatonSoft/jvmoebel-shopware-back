@@ -57,6 +57,9 @@ final class PrepareOkbProductMappingServiceTest extends TestCase
         file_put_contents($directory.'/source.csv', "product_number;ean\n4260454043503;4260454043503\n");
         file_put_contents($directory.'/snapshot/okb-categories.csv', "category_group_id;category_id;category_name\ngroup-1;category-1;Sofas\n");
         file_put_contents($directory.'/snapshot/okb-attributes.csv', "category_group_id;attribute_id;attribute_name\ngroup-1;color;Color\n");
+        foreach (['okb-product-mapping.csv', 'okb-product-attributes.csv', 'okb-product-mapping-failures.csv'] as $file) {
+            file_put_contents($directory.'/output/'.$file, 'previous '.$file);
+        }
         $response = $this->createMock(ResponseInterface::class);
         $response->method('getStatusCode')->willReturn(200);
         $response->method('toArray')->with(false)->willReturn([
@@ -84,6 +87,9 @@ final class PrepareOkbProductMappingServiceTest extends TestCase
             self::assertSame(0, $result->failures);
             self::assertSame("product_number;ean;reason\n", file_get_contents($directory.'/output/okb-product-mapping-failures.csv'));
             self::assertStringContainsString('4260454043503;4260454043503;Sofas;category-1;group-1', (string) file_get_contents($directory.'/output/okb-product-mapping.csv'));
+            self::assertSame("product_number;ean;attribute_name;values_json\n", file_get_contents($directory.'/output/okb-product-attributes.csv'));
+            self::assertSame([], false !== glob($directory.'/output/*.tmp.*') ? glob($directory.'/output/*.tmp.*') : []);
+            self::assertSame([], false !== glob($directory.'/output/*.backup.*') ? glob($directory.'/output/*.backup.*') : []);
         } finally {
             $files = glob($directory.'/*/*');
             if (false !== $files) {

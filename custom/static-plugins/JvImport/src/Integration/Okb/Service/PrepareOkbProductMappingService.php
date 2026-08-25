@@ -31,7 +31,8 @@ final readonly class PrepareOkbProductMappingService
             'attributes' => $outputDirectory.'/okb-product-attributes.csv',
             'failures' => $outputDirectory.'/okb-product-mapping-failures.csv',
         ];
-        $temporary = array_map(static fn (string $file): string => $file.'.tmp.'.bin2hex(random_bytes(8)), $outputs);
+        $publishToken = bin2hex(random_bytes(8));
+        $temporary = array_map(static fn (string $file): string => $file.'.tmp.'.$publishToken, $outputs);
         $products = $this->openOutput($temporary['products'], [
             'product_number', 'ean', 'category_name', 'category_id', 'category_group_id', 'standard_price_amount', 'currency',
         ]);
@@ -79,11 +80,7 @@ final readonly class PrepareOkbProductMappingService
                 fclose($attributes);
                 fclose($failures);
             }
-            foreach ($outputs as $key => $output) {
-                if (!rename($temporary[$key], $output)) {
-                    throw new \RuntimeException(sprintf('OKB product mapping output "%s" cannot be published.', $output));
-                }
-            }
+            $this->publish($outputs, $temporary, $publishToken);
         } catch (\Throwable $exception) {
             foreach ($temporary as $file) {
                 if (is_file($file)) {
@@ -161,6 +158,50 @@ final readonly class PrepareOkbProductMappingService
     {
         if (false === fputcsv($handle, $row, ';', '"', '\\')) {
             throw new \RuntimeException('OKB product mapping output cannot be written.');
+        }
+    }
+
+    /**
+     * @param array<string, string> $outputs
+     * @param array<string, string> $temporary
+     */
+    private function publish(array $outputs, array $temporary, string $token): void
+    {
+        $backups = [];
+        $published = [];
+        try {
+            foreach ($outputs as $key => $output) {
+                if (!is_file($output)) {
+                    continue;
+                }
+                $backup = $output.'.backup.'.$token;
+                if (!rename($output, $backup)) {
+                    throw new \RuntimeException(sprintf('Existing OKB product mapping output "%s" cannot be backed up.', $output));
+                }
+                $backups[$key] = $backup;
+            }
+            foreach ($outputs as $key => $output) {
+                if (!rename($temporary[$key], $output)) {
+                    throw new \RuntimeException(sprintf('OKB product mapping output "%s" cannot be published.', $output));
+                }
+                $published[$key] = true;
+            }
+            foreach ($backups as $backup) {
+                unlink($backup);
+            }
+        } catch (\Throwable $exception) {
+            foreach (array_keys($published) as $key) {
+                if (is_file($outputs[$key])) {
+                    unlink($outputs[$key]);
+                }
+            }
+            foreach ($backups as $key => $backup) {
+                if (is_file($backup) && !rename($backup, $outputs[$key])) {
+                    throw new \RuntimeException(sprintf('Existing OKB product mapping output "%s" cannot be restored.', $outputs[$key]), 0, $exception);
+                }
+            }
+
+            throw $exception;
         }
     }
 }
