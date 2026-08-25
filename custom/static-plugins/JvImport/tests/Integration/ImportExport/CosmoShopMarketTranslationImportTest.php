@@ -44,6 +44,9 @@ final class CosmoShopMarketTranslationImportTest extends AbstractCosmoShopImport
             self::assertCount(2, $product->getVisibilities());
             self::assertCount(2, $product->getPrice(), json_encode($product->getPrice()->jsonSerialize(), JSON_THROW_ON_ERROR));
             self::assertContains('test-product', array_map(static fn ($seoUrl): string => $seoUrl->getSeoPathInfo(), $product->getSeoUrls()->getElements()));
+            self::assertContains('SEO title', array_map(static fn ($translation): ?string => $translation->getMetaTitle(), $product->getTranslations()->getElements()));
+            self::assertContains('SEO description', array_map(static fn ($translation): ?string => $translation->getMetaDescription(), $product->getTranslations()->getElements()));
+            self::assertContains('seo keyword', array_map(static fn ($translation): ?string => $translation->getKeywords(), $product->getTranslations()->getElements()));
         } finally {
             /** @var EntityRepository<ProductCollection> $repository */
             $repository = static::getContainer()->get('product.repository');

@@ -234,16 +234,16 @@ final class CosmoShopProductImportSubscriberTest extends TestCase
         self::assertSame(100.0, $event->getRecord()['price'][0]['net']);
     }
 
-    public function testItCreatesASeoUrlFromTheExactLegacyPublicPath(): void
+    public function testItMapsUrlkeyToTheProductSeoSlug(): void
     {
         $subscriber = $this->subscriberReturningTaxId('019fcbab6981707eb24dafd08a2ed8c0');
         $event = $this->event(Market::Germany, array_replace($this->validRow(), [
-            'urlkey' => '/product-name-4260174423463.htm',
+            'urlkey' => 'product-name',
         ]), ['productNumber' => '4260174423463']);
 
         $subscriber->validateRecord($event);
 
-        self::assertSame('product-name-4260174423463.htm', $event->getRecord()['seoUrls'][0]['seoPathInfo']);
+        self::assertSame('product-name', $event->getRecord()['seoUrls'][0]['seoPathInfo']);
         self::assertSame(Market::Germany->languageId(), $event->getRecord()['seoUrls'][0]['languageId']);
         self::assertTrue($event->getRecord()['seoUrls'][0]['isCanonical']);
     }
@@ -270,7 +270,7 @@ final class CosmoShopProductImportSubscriberTest extends TestCase
         yield 'invalid source inactive' => [['source_inactive' => '2'], 'CosmoShop source_inactive must be 0 or 1.'];
         yield 'negative dimension' => [['height' => '-1'], 'CosmoShop height must be a non-negative decimal number.'];
         yield 'max below min' => [['min_purchase' => '2', 'max_purchase' => '1'], 'CosmoShop max_purchase must not be lower than min_purchase.'];
-        yield 'absolute url key' => [['urlkey' => 'https://example.test/product'], 'CosmoShop urlkey must be a non-empty legacy product path.'];
+        yield 'absolute url key' => [['urlkey' => 'https://example.test/product'], 'CosmoShop urlkey must be a non-empty relative path.'];
         yield 'literal csv escape' => [['description' => 'broken \\" escape'], 'CosmoShop description contains CSV escape sequences; regenerate the import file.'];
     }
 
