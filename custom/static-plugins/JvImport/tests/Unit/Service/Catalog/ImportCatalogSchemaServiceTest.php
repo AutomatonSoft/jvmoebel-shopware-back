@@ -148,7 +148,7 @@ final class ImportCatalogSchemaServiceTest extends TestCase
         $mappingRepository = $this->createMock(EntityRepository::class);
         $context = Context::createDefaultContext();
 
-        $categoryRepository->expects(self::once())->method('upsert')->willReturnCallback(
+        $categoryRepository->expects(self::exactly(2))->method('upsert')->willReturnCallback(
             static function (array $records, Context $writeContext) use ($context): EntityWrittenContainerEvent {
                 self::assertNotEmpty($records);
                 self::assertTrue($writeContext->hasState(EntityIndexerRegistry::DISABLE_INDEXING));
@@ -176,7 +176,10 @@ final class ImportCatalogSchemaServiceTest extends TestCase
             new CatalogAttributeMappingSynchronizer(),
         ))->execute(new CatalogSchemaSnapshot('source-a', [
             new CatalogCategoryGroup('sofas', 'Sofas'),
-        ], [], [], []), false, $context);
+        ], [], [], [], [
+            new CatalogNavigationCategory('l1:furniture', null, 'Furniture'),
+            new CatalogNavigationCategory('l2:living-room', 'l1:furniture', 'Living room'),
+        ], [new CatalogCategoryGroupNavigationMapping('sofas', 'l2:living-room')]), false, $context);
     }
 
     public function testItImportsNavigationBeforeAssigningItsCategoryGroup(): void
@@ -229,6 +232,27 @@ final class ImportCatalogSchemaServiceTest extends TestCase
                 new CatalogNavigationCategory('l1:furniture', null, 'Furniture'),
             ], [new CatalogCategoryGroupNavigationMapping('sofas', 'l1:furniture')]),
             true,
+            Context::createDefaultContext(),
+        );
+    }
+
+    public function testItRejectsDuplicateLevelOneNavigationKeysBeforeWriting(): void
+    {
+        $categoryRepository = $this->createMock(EntityRepository::class);
+        $propertyGroupRepository = $this->createMock(EntityRepository::class);
+        $propertyOptionRepository = $this->createMock(EntityRepository::class);
+        $mappingRepository = $this->createMock(EntityRepository::class);
+        $categoryRepository->expects(self::never())->method('upsert');
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('is duplicated');
+
+        (new ImportCatalogSchemaService($categoryRepository, $propertyGroupRepository, $propertyOptionRepository, $mappingRepository, new CatalogAttributeMappingSynchronizer()))->execute(
+            new CatalogSchemaSnapshot('source-a', [], [], [], [], [
+                new CatalogNavigationCategory('l1:furniture', null, 'Furniture'),
+                new CatalogNavigationCategory('l1:furniture', null, 'Furniture again'),
+            ], []),
+            false,
             Context::createDefaultContext(),
         );
     }
@@ -425,7 +449,10 @@ final class ImportCatalogSchemaServiceTest extends TestCase
             new CatalogCategoryGroup('sofas', 'Sofas'),
         ], [], [
             new CatalogAttribute('colour', 'sofas', 'Colour', 'STRING', 'FILTER', false),
-        ], []), false, $context);
+        ], [], [
+            new CatalogNavigationCategory('l1:furniture', null, 'Furniture'),
+            new CatalogNavigationCategory('l2:living-room', 'l1:furniture', 'Living room'),
+        ], [new CatalogCategoryGroupNavigationMapping('sofas', 'l2:living-room')]), false, $context);
 
         self::assertSame(CatalogIdentity::categoryGroupId('source-a', 'sofas'), $relations[0]['categoryId']);
         self::assertSame(Defaults::LIVE_VERSION, $relations[0]['categoryVersionId']);

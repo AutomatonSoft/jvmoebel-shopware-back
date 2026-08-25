@@ -2,6 +2,7 @@
 
 namespace Jv\Import\Service\Catalog;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Jv\Import\Core\Content\CatalogCategoryAttribute\CatalogCategoryAttributeCollection;
 use Jv\Import\Core\Content\CatalogCategoryAttribute\CatalogCategoryAttributeEntity;
@@ -19,6 +20,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\Uuid\Uuid;
 
 final readonly class ImportCatalogSchemaService
 {
@@ -102,12 +104,12 @@ final readonly class ImportCatalogSchemaService
 
     private function validateStructure(CatalogSchemaSnapshot $snapshot): void
     {
-        if ([] === $snapshot->navigationCategories && [] === $snapshot->categoryGroupNavigationMappings) {
+        if ([] === $snapshot->categoryGroups && [] === $snapshot->navigationCategories && [] === $snapshot->categoryGroupNavigationMappings) {
             return;
         }
         $navigationParents = [];
         foreach ($snapshot->navigationCategories as $navigationCategory) {
-            if (isset($navigationParents[$navigationCategory->sourceKey])) {
+            if (array_key_exists($navigationCategory->sourceKey, $navigationParents)) {
                 throw new \InvalidArgumentException(sprintf('Catalog navigation category %s is duplicated.', $navigationCategory->sourceKey));
             }
             $navigationParents[$navigationCategory->sourceKey] = $navigationCategory->parentSourceKey;
@@ -174,7 +176,6 @@ final readonly class ImportCatalogSchemaService
     private function importAttributeSchema(CatalogSchemaSnapshot $snapshot, array $propertyTranslationLanguageIds, bool $dryRun, Context $context): array
     {
         $relations = [];
-        $propertyGroups = [];
         $propertyAttributeGroups = [];
         $propertyGroupIds = [];
         $observedMappings = $this->attributeMappingSynchronizer->synchronize(
@@ -188,40 +189,64 @@ final readonly class ImportCatalogSchemaService
         }
         [$existingIds, $inactiveMappings] = $this->existingAttributeMappings($snapshot->sourceCode, $observedKeys, $context);
         $mappings = [...$observedMappings, ...$inactiveMappings];
+        $propertyGroups = $this->propertyGroups($mappings, $propertyTranslationLanguageIds);
         foreach ($mappings as $mapping) {
             $propertyGroupId = $mapping->propertyGroupId;
             if ($mapping->active && $mapping->enabled && null !== $propertyGroupId) {
                 $propertyAttributeGroups[$mapping->attributeId] = $propertyGroupId;
                 $propertyGroupIds[$propertyGroupId] = true;
-                if ($propertyGroupId === CatalogIdentity::propertyGroupId($mapping->attributeName)) {
-                    $propertyGroups[$propertyGroupId] ??= [
-                        'id' => $propertyGroupId,
-                        'name' => $mapping->attributeName,
-                        'displayType' => PropertyGroupDefinition::DISPLAY_TYPE_TEXT,
-                        'sortingType' => PropertyGroupDefinition::SORTING_TYPE_ALPHANUMERIC,
-                        'filterable' => false,
-                        'visibleOnProductDetailPage' => true,
-                        'translations' => $this->translations($mapping->attributeName, $propertyTranslationLanguageIds),
-                    ];
-                    $propertyGroups[$propertyGroupId]['filterable'] = $propertyGroups[$propertyGroupId]['filterable'] || $this->isFilterable($mapping->featureRelevance);
-                }
             }
             $relations[] = $this->attributeRelation($mapping, $existingIds[$this->attributeMappingKey($mapping->categoryGroupId, $mapping->attributeId)] ?? null);
             if (self::BATCH_SIZE <= count($relations)) {
                 if (!$dryRun) {
-                    $this->propertyGroupRepository->upsert(array_values($propertyGroups), $context);
                     $this->categoryAttributeRepository->upsert($relations, $context);
                 }
                 $relations = [];
-                $propertyGroups = [];
             }
         }
         if (!$dryRun) {
-            $this->propertyGroupRepository->upsert(array_values($propertyGroups), $context);
             $this->categoryAttributeRepository->upsert($relations, $context);
+            $this->upsertRecords($this->propertyGroupRepository, array_values($propertyGroups), $context);
         }
 
         return [count($snapshot->attributes), count($propertyGroupIds), $propertyAttributeGroups];
+    }
+
+    /**
+     * @param list<CatalogAttributeMapping> $mappings
+     * @param list<string>                  $languageIds
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private function propertyGroups(array $mappings, array $languageIds): array
+    {
+        $groups = [];
+        foreach ($mappings as $mapping) {
+            $id = $mapping->propertyGroupId;
+            if (!$mapping->active || !$mapping->enabled || null === $id || $id !== CatalogIdentity::propertyGroupId($mapping->attributeName)) {
+                continue;
+            }
+            $groups[$id] ??= [
+                'id' => $id,
+                'name' => $mapping->attributeName,
+                'displayType' => PropertyGroupDefinition::DISPLAY_TYPE_TEXT,
+                'sortingType' => PropertyGroupDefinition::SORTING_TYPE_ALPHANUMERIC,
+                'filterable' => false,
+                'visibleOnProductDetailPage' => false,
+            ];
+            $groups[$id]['filterable'] = $groups[$id]['filterable'] || $this->isFilterable($mapping->featureRelevance);
+            $groups[$id]['visibleOnProductDetailPage'] = $groups[$id]['visibleOnProductDetailPage'] || $this->hasFeature($mapping->featureRelevance, 'PRODUCT_DETAILS');
+        }
+        $existing = $this->existingTranslations('property_group_translation', 'property_group_id', array_keys($groups));
+        foreach ($groups as $id => &$group) {
+            $translations = $this->missingTranslations($group['name'], $languageIds, $existing[$id] ?? []);
+            if ([] !== $translations) {
+                $group['translations'] = $translations;
+            }
+        }
+        unset($group);
+
+        return $groups;
     }
 
     /** @return array<string, mixed> */
@@ -255,6 +280,11 @@ final readonly class ImportCatalogSchemaService
         }
 
         return false;
+    }
+
+    private function hasFeature(?string $featureRelevance, string $feature): bool
+    {
+        return in_array($feature, explode('|', (string) $featureRelevance), true);
     }
 
     /**
@@ -385,11 +415,18 @@ final readonly class ImportCatalogSchemaService
                 'groupId' => $propertyGroupId,
                 'name' => $allowedValue->value,
                 'position' => $allowedValue->position,
-                'translations' => $this->translations($allowedValue->value, $propertyTranslationLanguageIds),
             ];
         }
+        $existingTranslations = $this->existingTranslations('property_group_option_translation', 'property_group_option_id', array_keys($records));
+        foreach ($records as $id => &$record) {
+            $translations = $this->missingTranslations($record['name'], $propertyTranslationLanguageIds, $existingTranslations[$id] ?? []);
+            if ([] !== $translations) {
+                $record['translations'] = $translations;
+            }
+        }
+        unset($record);
         if ([] !== $records && !$dryRun) {
-            $this->propertyOptionRepository->upsert(array_values($records), $context);
+            $this->upsertRecords($this->propertyOptionRepository, array_values($records), $context);
         }
 
         return count($records);
@@ -412,14 +449,56 @@ final readonly class ImportCatalogSchemaService
      *
      * @return array<string, array{name: string}>
      */
-    private function translations(string $name, array $languageIds): array
+    /**
+     * @param list<string>        $languageIds
+     * @param array<string, true> $existingLanguageIds
+     *
+     * @return array<string, array{name: string}>
+     */
+    private function missingTranslations(string $name, array $languageIds, array $existingLanguageIds): array
     {
         $translations = [];
         foreach ($languageIds as $languageId) {
+            if (isset($existingLanguageIds[$languageId])) {
+                continue;
+            }
             $translations[$languageId] = ['name' => $name];
         }
 
         return $translations;
+    }
+
+    /**
+     * @param list<string> $ids
+     *
+     * @return array<string, array<string, true>>
+     */
+    private function existingTranslations(string $table, string $entityColumn, array $ids): array
+    {
+        if (null === $this->connection || [] === $ids) {
+            return [];
+        }
+        $translations = [];
+        foreach (array_chunk($ids, self::BATCH_SIZE) as $batch) {
+            foreach ($this->connection->fetchAllAssociative(sprintf('SELECT LOWER(HEX(`%s`)) AS `entity_id`, LOWER(HEX(`language_id`)) AS `language_id` FROM `%s` WHERE `%s` IN (:ids)', $entityColumn, $table, $entityColumn), ['ids' => array_map(Uuid::fromHexToBytes(...), $batch)], ['ids' => ArrayParameterType::BINARY]) as $row) {
+                $translations[$row['entity_id']][$row['language_id']] = true;
+            }
+        }
+
+        return $translations;
+    }
+
+    /**
+     * @template TEntityCollection of \Shopware\Core\Framework\DataAbstractionLayer\EntityCollection
+     *
+     * @param EntityRepository<TEntityCollection> $repository
+     * @param list<array<string, mixed>>          $records
+     */
+    private function upsertRecords(EntityRepository $repository, array $records, Context $context): void
+    {
+        foreach (array_chunk($records, self::BATCH_SIZE) as $batch) {
+            $repository->upsert($batch, $context);
+        }
     }
 
     /**
