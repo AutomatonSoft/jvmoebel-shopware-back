@@ -292,9 +292,10 @@ final class JvSearchStoreApiTest extends TestCase
                 'foreignKey' => $productId,
                 'routeName' => 'frontend.detail.page',
                 'pathInfo' => '/detail/'.$productId,
-                'seoPathInfo' => 'jv-suggest-sofa-NON-CANONICAL',
+                // Non-canonical + deleted — listed first so a naive "first URL wins" would pick this.
+                'seoPathInfo' => 'jv-suggest-sofa-DELETED-NON-CANONICAL',
                 'isCanonical' => false,
-                'isDeleted' => false,
+                'isDeleted' => true,
             ],
             [
                 'id' => Uuid::randomHex(),
@@ -316,6 +317,7 @@ final class JvSearchStoreApiTest extends TestCase
                 'pathInfo' => '/detail/'.$productId,
                 'seoPathInfo' => 'jv-suggest-sofa-WRONG-CHANNEL',
                 'isCanonical' => true,
+                'isDeleted' => false,
             ],
             [
                 'id' => Uuid::randomHex(),
@@ -326,6 +328,7 @@ final class JvSearchStoreApiTest extends TestCase
                 'pathInfo' => '/detail/'.$productId,
                 'seoPathInfo' => 'jv-suggest-sofa-canonical',
                 'isCanonical' => true,
+                'isDeleted' => false,
             ],
         ], Context::createDefaultContext());
     }

@@ -20,6 +20,8 @@ use Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingResult;
 use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
 use Shopware\Core\Content\Product\SalesChannel\Search\AbstractProductSearchRoute;
 use Shopware\Core\Content\Product\SalesChannel\Search\ProductSearchRouteResponse;
+use Shopware\Core\Content\Seo\SeoUrl\SeoUrlCollection;
+use Shopware\Core\Content\Seo\SeoUrl\SeoUrlEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Uuid\Uuid;
@@ -229,21 +231,80 @@ final class JvProductSearchServiceHardeningTest extends TestCase
         return new ProductSearchRouteResponse($listing);
     }
 
-    private function salesChannelContext(): SalesChannelContext
+    private function salesChannelContext(?string $salesChannelId = null, ?string $languageId = null): SalesChannelContext
     {
         $salesChannel = new SalesChannelEntity();
-        $salesChannel->setId(Uuid::randomHex());
+        $salesChannel->setId($salesChannelId ?? Uuid::randomHex());
         $salesChannel->setUniqueIdentifier($salesChannel->getId());
 
         $context = $this->createMock(SalesChannelContext::class);
         $context->method('getSalesChannelId')->willReturn($salesChannel->getId());
         $context->method('getSalesChannel')->willReturn($salesChannel);
         $context->method('getContext')->willReturn(Context::createDefaultContext());
-        $context->method('getLanguageId')->willReturn(Uuid::randomHex());
+        $context->method('getLanguageId')->willReturn($languageId ?? Uuid::randomHex());
         $context->method('getCurrencyId')->willReturn(Uuid::randomHex());
         $context->method('getTaxState')->willReturn(CartPrice::TAX_STATE_GROSS);
 
         return $context;
+    }
+
+    private function seoUrl(
+        string $languageId,
+        string $salesChannelId,
+        string $routeName,
+        string $seoPathInfo,
+        bool $canonical,
+        bool $deleted,
+    ): SeoUrlEntity {
+        $url = new SeoUrlEntity();
+        $url->setUniqueIdentifier(Uuid::randomHex());
+        $url->setId($url->getUniqueIdentifier());
+        $url->setLanguageId($languageId);
+        $url->setSalesChannelId($salesChannelId);
+        $url->setRouteName($routeName);
+        $url->setForeignKey(Uuid::randomHex());
+        $url->setPathInfo('/detail/'.$url->getForeignKey());
+        $url->setSeoPathInfo($seoPathInfo);
+        $url->setIsCanonical($canonical);
+        $url->setIsDeleted($deleted);
+        $url->setIsModified(false);
+        $url->setUrl('http://example.test/'.$seoPathInfo);
+
+        return $url;
+    }
+
+    public function testSuggestPicksCanonicalNonDeletedDetailSeoUrlForCurrentChannel(): void
+    {
+        $languageId = Uuid::randomHex();
+        $salesChannelId = Uuid::randomHex();
+        $otherChannelId = Uuid::randomHex();
+
+        $product = new SalesChannelProductEntity();
+        $product->setUniqueIdentifier(Uuid::randomHex());
+        $product->setId($product->getUniqueIdentifier());
+        $product->setName('Seo Sofa');
+        $product->setSeoUrls(new SeoUrlCollection([
+            $this->seoUrl($languageId, $salesChannelId, 'frontend.detail.page', 'old-deleted', canonical: false, deleted: true),
+            $this->seoUrl($languageId, $salesChannelId, 'frontend.navigation.page', 'wrong-route', canonical: true, deleted: false),
+            $this->seoUrl($languageId, $otherChannelId, 'frontend.detail.page', 'wrong-channel', canonical: true, deleted: false),
+            $this->seoUrl($languageId, $salesChannelId, 'frontend.detail.page', 'correct-canonical', canonical: true, deleted: false),
+        ]));
+
+        $productSearchRoute = $this->createMock(AbstractProductSearchRoute::class);
+        $productSearchRoute->expects(self::once())
+            ->method('load')
+            ->willReturn($this->searchResponse(new ProductCollection([$product]), 1));
+
+        $service = new JvProductSearchService(
+            new QueryFilterInterpreter([]),
+            $productSearchRoute,
+            new NullLogger(),
+        );
+
+        $result = $service->suggest('sofa', 10, $this->salesChannelContext($salesChannelId, $languageId));
+
+        self::assertCount(1, $result->getProducts());
+        self::assertSame('/correct-canonical', $result->getProducts()[0]->getSeoUrl());
     }
 
     public function testUnknownSortingIsNotWrappedAsSearchUnavailable(): void

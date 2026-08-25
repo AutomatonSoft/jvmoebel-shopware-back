@@ -4,14 +4,14 @@
 
 Реализовать в Shopware backend CMS element/block `jv-global-search` и runtime Store API поиска товаров через OpenSearch так, чтобы:
 
-- редактор Shopping Experiences настраивал placeholder, порог suggest (`suggestMinChars`) и лимиты поля глобального поиска;
-- Store API отдавал нормализованный CMS `data` для Next.js;
+- редактор Shopping Experiences настраивал placeholder, порог suggest (`suggestMinChars`) и лимиты **оболочки** глобального поиска (не весь header как CMS);
+- Store API отдавал нормализованный CMS `data` для Next.js adapter → props Search UI в React-Header;
 - Next.js мог вызывать suggest при `length >= data.suggestMinChars` (дефолт порога 3, диапазон 0…10; лимит товаров 10) и full search с **интерпретацией запроса в property filters** и **кросс-категорийной** выдачей.
 
 Межрепозиторный контракт:  
-`jvmoebel-shopware-docs` / `docs/specs/SPEC-004-cms-global-search.md`.
+`jvmoebel-shopware-docs` / `docs/specs/SPEC-004-cms-global-search.md` (включая разделение Header = Next layout vs CMS-конфиг поиска).
 
-Только backend: Administration (config + canvas-превью оболочки), CMS resolver, structs, search routes/services, словарь синонимов (минимально для v1), тесты. История поиска (включая показ при `length < suggestMinChars` и кнопку очистки), debounce UI, страница results и pixel-perfect — Next.js.
+Только backend: Administration (config + canvas-превью оболочки), CMS resolver, structs, search routes/services, словарь синонимов (минимально для v1), тесты. История поиска (включая показ при `length < suggestMinChars` и кнопку очистки), debounce UI, страница results, React-Header/Footer и pixel-perfect — Next.js.
 
 ## Границы
 
@@ -28,7 +28,9 @@
 
 Не входит:
 
-- Next.js UI, localStorage-история, кнопка очистки истории, debounce, вёрстка overlay;
+- Next.js UI, localStorage-история, кнопка очистки истории, debounce, вёрстка overlay, React-структура Header/Footer;
+- сборка всего header/footer как Shopping Experience; global storefront settings (logo, social, copyright) — отдельная тема;
+- main/footer/service navigation trees (Categories + Sales Channel entry points);
 - поиск категорий `jv-side-navigation` (SPEC-005 / platform SPEC-003); контракт товарного поиска — platform SPEC-004;
 - подсказки категорий внутри `jv-global-search` (v1 — только товары);
 - Twig Storefront search;
@@ -39,11 +41,12 @@
 ## Сценарий
 
 1. Редактор открывает Shopping Experiences → Blocks → **Navigation**.
-2. Ставит block **Global search**.
+2. Ставит block **Global search** (конфиг оболочки поиска; не собирает весь header из CMS-блоков).
 3. Задаёт **placeholder**, при необходимости `suggestMinChars` / `suggestLimit` / `historyMaxItems`.
-4. Сохраняет layout.
+4. Сохраняет.
 5. Store API CMS отдаёт `type: jv-global-search` и `data` по SPEC-004.
-6. Покупатель на витрине:
+6. Next.js Header (layout) через adapter читает `data` и рисует поле поиска.
+7. Покупатель на витрине:
    - открывает поиск при `trim(query).length < data.suggestMinChars` → frontend показывает историю и кнопку очистки (без backend);
    - при `length >= data.suggestMinChars` → Next.js вызывает `/store-api/jv-search/suggest`;
    - видит до `suggestLimit` товаров и CTA «все товары „…“»;
@@ -78,9 +81,9 @@ Config UI:
 - число `suggestLimit` (дефолт 10, hint про 1…20);
 - число `historyMaxItems` (дефолт 8; подсказка, что история хранится на витрине).
 
-Canvas в Shopping Experiences — превью оболочки (поле + placeholder). Живой OpenSearch в Admin canvas **не обязателен** для v1; если нет — статичное превью без вызова suggest. Это не витрина.
+Canvas в Shopping Experiences — превью оболочки (поле + placeholder). Живой OpenSearch в Admin canvas **не обязателен** для v1; если нет — статичное превью без вызова suggest. Это не витрина и не редактор всего header.
 
-Next.js на витрине читает `slot.data`, не raw config.
+Next.js на витрине: adapter читает `slot.data` → props Search UI в Header; сырой `config` не источник правды.
 
 ## Правила
 
@@ -89,9 +92,9 @@ Next.js на витрине читает `slot.data`, не raw config.
 - `getType()` = `jv-global-search` = Administration `registerCmsElement({ name: 'jv-global-search', ... })`.
 - `collect()` возвращает `null` (нет DAL media/criteria для v1).
 - `searchPlaceholder`: trim; пусто → дефолтная непустая строка рынка (например `Wonach suchst du?`), не `null`.
-- `suggestMinChars`: int; default 3; clamp **0…10**.
-- `suggestLimit`: int; default 10; clamp 1…20.
-- `historyMaxItems`: int; default 8; clamp 0…20.
+- `suggestMinChars`: int; default 3; диапазон **0…10**; вне диапазона / не число → **3**.
+- `suggestLimit`: int; default 10; диапазон 1…20; невалид / меньше 1 → **10**; больше 20 → **20** (не default).
+- `historyMaxItems`: int; default 8; диапазон 0…20; вне диапазона / невалид → **8**.
 - `defaultConfig` без demo-seed товаров.
 - После смены Admin source — `bin/build-administration.sh` и закоммитить assets.
 - Плохой config → безопасный `data`, без HTTP 500.
@@ -152,6 +155,8 @@ Next.js на витрине читает `slot.data`, не raw config.
 | Пустой / whitespace placeholder | дефолт в `data` |
 | `suggestMinChars` = -1 / 99 / `"x"` | 3 |
 | `suggestLimit` = -1 / `"x"` | 10 |
+| `suggestLimit` = 999 | **20** (cap to max) |
+| `historyMaxItems` = 999 / невалид | 8 |
 | Suggest без поля `search` | 400 |
 | Suggest `search: ""` | 200, `products: []`, OpenSearch не обязателен |
 | Пустой словарь | filters `[]`, full-text по query |
@@ -200,14 +205,14 @@ Config: placeholder, suggestMinChars, suggestLimit, historyMaxItems.
 | Admin save | config placeholder + suggestMinChars + limits |
 | Store API CMS | `type` + `data` оболочки |
 | Store API search | suggest / full + `interpretedFilters` |
-| Next.js | поле, история + clear (клиент), overlay, results page |
+| Next.js | Header + Search UI (adapter от `data`), история + clear (клиент), overlay, results page |
 
 ## Проверка
 
 Автоматические:
 
 - `getType()`, api alias `cms_jv_global_search`;
-- placeholder trim + fallback; clamp `suggestMinChars` 0…10 (default 3), `suggestLimit`, `historyMaxItems`;
+- placeholder trim + fallback; `suggestMinChars` вне диапазона → 3; `suggestLimit` 999 → 20; `historyMaxItems` вне диапазона → 8;
 - suggest без `search` → 400; `search: ""` → пустой `products`, OpenSearch mock never called;
 - suggest limit default 10;
 - interpreter: color + material synonyms → два filter, remaining product-type token;

@@ -126,6 +126,30 @@ final class GlobalSearchCmsElementResolverTest extends TestCase
         self::assertSame(8, $data->getHistoryMaxItems());
     }
 
+    public function testSuggestLimitOverMaxIsCappedToTwenty(): void
+    {
+        /** @var CmsSlotsDataResolver $slotsResolver */
+        $slotsResolver = static::getContainer()->get(CmsSlotsDataResolver::class);
+
+        $slot = $this->createSlot([
+            'suggestLimit' => 999,
+            'suggestMinChars' => 99,
+        ]);
+
+        $resolved = $slotsResolver->resolve(
+            new CmsSlotCollection([$slot]),
+            new ResolverContext(
+                $this->createMock(SalesChannelContext::class),
+                new Request(),
+            ),
+        );
+
+        $data = $resolved->get($slot->getUniqueIdentifier())?->getData();
+        self::assertInstanceOf(GlobalSearchStruct::class, $data);
+        self::assertSame(20, $data->getSuggestLimit());
+        self::assertSame(3, $data->getSuggestMinChars());
+    }
+
     /**
      * @param array{
      *     searchPlaceholder?: string,

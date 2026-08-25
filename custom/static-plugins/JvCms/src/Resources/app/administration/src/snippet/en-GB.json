@@ -99,19 +99,19 @@
           "searchPlaceholder": {
             "label": "Search placeholder",
             "placeholder": "What are you looking for?",
-            "helpText": "Shown in the storefront search field. Empty uses the default."
+            "helpText": "Config for the Header search field (Next.js layout). Empty uses the default. Does not assemble the whole header as CMS."
           },
           "suggestMinChars": {
             "label": "Min. characters for suggest",
-            "helpText": "0–10. Default: 3. Below this threshold the search history is shown."
+            "helpText": "0–10. Default: 3. Out of range → 3. Below this threshold the storefront shows history."
           },
           "suggestLimit": {
             "label": "Max. suggest results",
-            "helpText": "1–20. Default: 10."
+            "helpText": "1–20. Default: 10. Values above 20 are capped at 20."
           },
           "historyMaxItems": {
             "label": "Max. history items",
-            "helpText": "0–20. Default: 8. 0 disables history (storefront only)."
+            "helpText": "0–20. Default: 8. 0 disables history. Stored only on the storefront (Next.js), not in Shopware."
           }
         }
       }

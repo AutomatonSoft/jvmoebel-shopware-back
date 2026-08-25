@@ -63,36 +63,47 @@ export default {
             this.element.config.searchPlaceholder.value =
                 typeof placeholder === 'string' ? placeholder : '';
 
-            this.element.config.suggestMinChars.value = this.clampNumber(
+            this.element.config.suggestMinChars.value = this.normalizeNumber(
                 this.element.config.suggestMinChars.value,
                 3,
                 0,
                 10,
+                false,
             );
-            this.element.config.suggestLimit.value = this.clampNumber(
+            this.element.config.suggestLimit.value = this.normalizeNumber(
                 this.element.config.suggestLimit.value,
                 10,
                 1,
                 20,
+                true,
             );
-            this.element.config.historyMaxItems.value = this.clampNumber(
+            this.element.config.historyMaxItems.value = this.normalizeNumber(
                 this.element.config.historyMaxItems.value,
                 8,
                 0,
                 20,
+                false,
             );
         },
 
         /**
-         * Snap into [min, max]. Above max must become max (e.g. suggestLimit 999 → 20), not fallback.
+         * Invalid / below min → fallback.
+         * Above max → fallback, unless clampHighToMax (suggestLimit 999 → 20).
+         * Matches GlobalSearchCmsElementResolver / SPEC-004.
          */
-        clampNumber(value, fallback, min, max) {
+        normalizeNumber(value, fallback, min, max, clampHighToMax) {
             if (value === null || value === undefined || value === '') {
                 return fallback;
             }
             const parsed = Number.parseInt(String(value), 10);
-            if (Number.isNaN(parsed) || parsed < min || parsed > max) {
+            if (Number.isNaN(parsed)) {
                 return fallback;
+            }
+            if (parsed < min) {
+                return fallback;
+            }
+            if (parsed > max) {
+                return clampHighToMax ? max : fallback;
             }
             return parsed;
         },

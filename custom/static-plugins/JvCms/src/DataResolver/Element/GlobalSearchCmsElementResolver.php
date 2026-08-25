@@ -43,23 +43,27 @@ final class GlobalSearchCmsElementResolver extends AbstractCmsElementResolver
 
         $slot->setData(new GlobalSearchStruct(
             searchPlaceholder: $this->normalizePlaceholder($config->get('searchPlaceholder')?->getValue()),
-            suggestMinChars: $this->clampInt(
+            suggestMinChars: $this->normalizeInt(
                 $config->get('suggestMinChars')?->getValue(),
                 self::DEFAULT_SUGGEST_MIN_CHARS,
                 0,
                 10,
+                clampHighToMax: false,
             ),
-            suggestLimit: $this->clampInt(
+            suggestLimit: $this->normalizeInt(
                 $config->get('suggestLimit')?->getValue(),
                 self::DEFAULT_SUGGEST_LIMIT,
                 1,
                 20,
+                // SPEC-004 / checklist: over-max → max (999 → 20), not default 10.
+                clampHighToMax: true,
             ),
-            historyMaxItems: $this->clampInt(
+            historyMaxItems: $this->normalizeInt(
                 $config->get('historyMaxItems')?->getValue(),
                 self::DEFAULT_HISTORY_MAX_ITEMS,
                 0,
                 20,
+                clampHighToMax: false,
             ),
         ));
     }
@@ -75,7 +79,12 @@ final class GlobalSearchCmsElementResolver extends AbstractCmsElementResolver
         return '' === $placeholder ? self::DEFAULT_PLACEHOLDER : $placeholder;
     }
 
-    private function clampInt(mixed $value, int $default, int $min, int $max): int
+    /**
+     * Invalid / non-integer → default.
+     * Below min → default.
+     * Above max → default, unless $clampHighToMax (then max).
+     */
+    private function normalizeInt(mixed $value, int $default, int $min, int $max, bool $clampHighToMax): int
     {
         if (\is_bool($value) || (!\is_int($value) && !\is_float($value) && !\is_string($value))) {
             return $default;
@@ -97,8 +106,12 @@ final class GlobalSearchCmsElementResolver extends AbstractCmsElementResolver
             return $default;
         }
 
-        if ($int < $min || $int > $max) {
+        if ($int < $min) {
             return $default;
+        }
+
+        if ($int > $max) {
+            return $clampHighToMax ? $max : $default;
         }
 
         return $int;
