@@ -70,7 +70,9 @@ final class CosmoShopProductImportSubscriberTest extends TestCase
             'productNumber' => '4260174423463',
             'translations' => [
                 '2fbb5fe2e29a4d70aa5854ce7ce3e20b' => [
+                    'metaTitle' => 'SEO title',
                     'metaDescription' => '<p> '.str_repeat('x', 300).' </p>',
+                    'keywords' => 'seo, keywords',
                 ],
             ],
         ]);
@@ -90,6 +92,8 @@ final class CosmoShopProductImportSubscriberTest extends TestCase
             'linked' => false,
         ]], $record['price']);
         self::assertSame(str_repeat('x', 255), $record['translations']['2fbb5fe2e29a4d70aa5854ce7ce3e20b']['metaDescription']);
+        self::assertSame('SEO title', $record['translations']['2fbb5fe2e29a4d70aa5854ce7ce3e20b']['metaTitle']);
+        self::assertSame('seo, keywords', $record['translations']['2fbb5fe2e29a4d70aa5854ce7ce3e20b']['keywords']);
         self::assertSame([[
             'id' => Uuid::fromStringToHex('jvmoebel.product-visibility.'.Market::Germany->salesChannelId().$record['id']),
             'salesChannelId' => Market::Germany->salesChannelId(),
@@ -230,6 +234,20 @@ final class CosmoShopProductImportSubscriberTest extends TestCase
         self::assertSame(100.0, $event->getRecord()['price'][0]['net']);
     }
 
+    public function testItCreatesASeoUrlFromTheExactLegacyPublicPath(): void
+    {
+        $subscriber = $this->subscriberReturningTaxId('019fcbab6981707eb24dafd08a2ed8c0');
+        $event = $this->event(Market::Germany, array_replace($this->validRow(), [
+            'urlkey' => '/product-name-4260174423463.htm',
+        ]), ['productNumber' => '4260174423463']);
+
+        $subscriber->validateRecord($event);
+
+        self::assertSame('product-name-4260174423463.htm', $event->getRecord()['seoUrls'][0]['seoPathInfo']);
+        self::assertSame(Market::Germany->languageId(), $event->getRecord()['seoUrls'][0]['languageId']);
+        self::assertTrue($event->getRecord()['seoUrls'][0]['isCanonical']);
+    }
+
     /** @param array<string, string> $row */
     #[DataProvider('invalidRows')]
     public function testItRejectsInvalidSourceData(array $row, string $message): void
@@ -252,7 +270,7 @@ final class CosmoShopProductImportSubscriberTest extends TestCase
         yield 'invalid source inactive' => [['source_inactive' => '2'], 'CosmoShop source_inactive must be 0 or 1.'];
         yield 'negative dimension' => [['height' => '-1'], 'CosmoShop height must be a non-negative decimal number.'];
         yield 'max below min' => [['min_purchase' => '2', 'max_purchase' => '1'], 'CosmoShop max_purchase must not be lower than min_purchase.'];
-        yield 'absolute url key' => [['urlkey' => 'https://example.test/product'], 'CosmoShop urlkey must be a non-empty relative path.'];
+        yield 'absolute url key' => [['urlkey' => 'https://example.test/product'], 'CosmoShop urlkey must be a non-empty legacy product path.'];
         yield 'literal csv escape' => [['description' => 'broken \\" escape'], 'CosmoShop description contains CSV escape sequences; regenerate the import file.'];
     }
 

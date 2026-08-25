@@ -93,6 +93,7 @@ final class PrepareCosmoShopProductImportRecordService implements ProductImportR
             $translations[$translation->getLanguageId()] = array_filter([
                 'name' => $translation->getName(),
                 'description' => $translation->getDescription(),
+                'metaTitle' => $translation->getMetaTitle(),
                 'metaDescription' => $translation->getMetaDescription(),
                 'keywords' => $translation->getKeywords(),
             ], static fn (?string $value): bool => null !== $value);

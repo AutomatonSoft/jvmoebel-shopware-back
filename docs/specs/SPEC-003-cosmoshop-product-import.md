@@ -8,7 +8,7 @@
 
 ## Границы
 
-Импортируются: общая идентичность товара по SKU, active, stock, EAN, weight, length/width/height, min/max purchase, manufacturer, gross/net и UVP/list price в валюте рынка, translations, visibility, delivery/unit fields и SEO slug `urlkey`.
+Импортируются: общая идентичность товара по SKU, active, stock, EAN, weight, length/width/height, min/max purchase, manufacturer, gross/net и UVP/list price в валюте рынка, translations, visibility, delivery/unit fields и точный старый SEO path `urlkey`.
 
 Категории, OKB attributes и варианты описаны отдельной
 [SPEC-006](SPEC-006-okb-catalog-import.md). Этот CSV остаётся источником
@@ -24,7 +24,8 @@
 
 ```text
 product_number;source_inactive;ean;weight;length;width;height;min_purchase;
-max_purchase;manufacturer_name;name;description;short_description;keywords;urlkey;
+max_purchase;manufacturer_name;name;description;short_description;meta_title;
+meta_description;meta_keywords;urlkey;
 price_gross;list_price_gross;stock;delivery_time_id;unit_id;contents;reference_unit;pack_unit
 ```
 
@@ -50,7 +51,7 @@ Uuid::fromStringToHex('jvmoebel.product.cosmoshop.' . product_number)
 
 Налоги CosmoShop в этой итерации не переносятся. Каждый товар получает штатный default tax Shopware из `core.tax.defaultTaxRate` (сейчас `Standard rate`); net-цена и UVP net вычисляются по его базовой ставке. Country rules этого tax, настроенные в Admin, Shopware применяет при расчёте налогов для страны покупателя. Непрозрачный CosmoShop `mwstid` остаётся вне контракта и может быть обработан отдельной итерацией, когда появится источник его ставки.
 
-Visibility создаётся для sales channel профиля со значением `VISIBILITY_ALL`. Переводы и SEO URL получают детерминированный `Market::languageId()`, а не locale. Первый импорт любого рынка технически инициализирует обязательный system fallback; последующий DE импорт заменяет его немецким содержимым, другие рынки существующий fallback не перезаписывают. Цена обновляет или добавляет только валюту рынка и сохраняет остальные existing currency prices. Если первый рынок не использует default currency Shopware, его цена также технически инициализирует default currency до поступления EUR. Непустой `urlkey` создаёт canonical SEO URL sales channel; домен не передаётся в CSV.
+Visibility создаётся для sales channel профиля со значением `VISIBILITY_ALL`. Переводы и SEO URL получают детерминированный `Market::languageId()`, а не locale. Первый импорт любого рынка технически инициализирует обязательный system fallback; последующий DE импорт заменяет его немецким содержимым, другие рынки существующий fallback не перезаписывают. Цена обновляет или добавляет только валюту рынка и сохраняет остальные existing currency prices. Если первый рынок не использует default currency Shopware, его цена также технически инициализирует default currency до поступления EUR. `meta_title`, `meta_description` и `meta_keywords` записываются в одноимённые translation-поля Shopware; `short_description` пока не импортируется. Непустой `urlkey` передаётся exporter’ом как точный старый публичный path с начальным `/` и суффиксом `.htm` (например `/product-name-4260174423463.htm`) и создаёт canonical SEO URL sales channel; домен не передаётся в CSV.
 
 Числовые delivery time и unit ID локальны для базы конкретного CosmoShop. Их deterministic UUID включает `market.domain()`. Reference upsert получает обязательный `--market=<domain>`. Метка `nicht lieferbar`/`not on stock` не создаёт delivery time `0–0 days`: reference import отклоняется до записи.
 Reference upsert требует label выбранного рынка: `en` для `jvfurniture.co.uk`, `de` для остальных текущих рынков. Отсутствующий или пустой выбранный label отклоняет справочник; label другой локали не используется как fallback.
