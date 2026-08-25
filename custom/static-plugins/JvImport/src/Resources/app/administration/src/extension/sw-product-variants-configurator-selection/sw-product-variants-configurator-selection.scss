@@ -4,6 +4,15 @@
 }
 
 .jv-import-variant-property-groups__heading {
-    margin: 8px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
     font-size: 14px;
+    font-weight: 600;
+}
+
+.jv-import-variant-property-groups__count {
+    color: var(--color-text-secondary-default);
+    font-weight: 400;
 }

@@ -11,6 +11,11 @@ Shopware.Component.override('sw-product-variants-configurator-selection', {
             jvImportAllowedGroupIds: null,
             jvImportGroups: [],
             jvImportRecommendedGroupIds: new Set(),
+            jvImportSectionPages: {
+                used: 1,
+                recommended: 1,
+                other: 1,
+            },
             jvImportUsedGroupIds: new Set(),
         };
     },
@@ -33,9 +38,9 @@ Shopware.Component.override('sw-product-variants-configurator-selection', {
                 && !this.jvImportRecommendedGroupIds.has(group.id));
 
             return [
-                { key: 'used', label: this.$t('jv-import.variantGroups.used'), groups: used },
-                { key: 'recommended', label: this.$t('jv-import.variantGroups.recommended'), groups: recommended },
-                { key: 'other', label: this.$t('jv-import.variantGroups.other'), groups: other },
+                this.jvImportSection('used', this.$t('jv-import.variantGroups.used'), used),
+                this.jvImportSection('recommended', this.$t('jv-import.variantGroups.recommended'), recommended),
+                this.jvImportSection('other', this.$t('jv-import.variantGroups.other'), other),
             ];
         },
 
@@ -176,6 +181,27 @@ Shopware.Component.override('sw-product-variants-configurator-selection', {
             this.currentGroup = group;
             this.optionPage = 1;
             this.loadOptions();
+        },
+
+        jvImportSection(key, label, groups) {
+            const page = this.jvImportSectionPages[key] ?? 1;
+            const limit = 10;
+            const start = (page - 1) * limit;
+
+            return {
+                key,
+                label,
+                groups,
+                page,
+                visibleGroups: groups.slice(start, start + limit),
+            };
+        },
+
+        jvImportChangeSectionPage(key, pagination) {
+            this.jvImportSectionPages = {
+                ...this.jvImportSectionPages,
+                [key]: pagination.page,
+            };
         },
 
         showTree() {

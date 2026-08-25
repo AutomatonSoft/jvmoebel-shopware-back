@@ -2,39 +2,59 @@
 <div class="jv-import-variant-property-groups">
     <template v-for="section in jvImportSections" :key="section.key">
         <template v-if="section.groups.length > 0">
-            <h3 class="jv-import-variant-property-groups__heading">{{ section.label }}</h3>
-            <sw-grid
-                class="sw-property-search__tree-selection__group_grid"
-                :header="false"
-                :all-selectable="false"
-                :show-selection-checkbox="false"
-                :selectable="false"
-                :items="section.groups"
-                :is-fullpage="false"
-                table
-            >
-                <template #columns="{ item }">
-                    <sw-grid-column
-                        truncate
-                        class="group_grid__column-name"
-                        flex="auto"
-                        data-index="name"
-                        @click="selectGroup(item)"
-                    >
-                        <mt-icon name="regular-folder" size="16px" />
-                        {{ item.translated.name }}
-                    </sw-grid-column>
-                    <sw-grid-column
-                        truncate
-                        align="right"
-                        flex="1fr"
-                        class="sw-property-search__tree-selection__column-items-selected"
-                        data-index="assignedOptions"
-                    >
-                        <span v-if="item.optionCount > 0">{{ $t('sw-property-search.selected', { count: item.optionCount }, item.optionCount) }}</span>
-                    </sw-grid-column>
+            <sw-collapse :expand-on-loading="section.key !== 'other'">
+                <template #header="{ expanded }">
+                    <div class="jv-import-variant-property-groups__heading">
+                        <span>{{ section.label }}</span>
+                        <span class="jv-import-variant-property-groups__count">{{ section.groups.length }}</span>
+                        <mt-icon v-if="expanded" name="regular-chevron-down-xs" size="12px" />
+                        <mt-icon v-else name="regular-chevron-right-xs" size="12px" />
+                    </div>
                 </template>
-            </sw-grid>
+                <template #content>
+                    <sw-grid
+                        class="sw-property-search__tree-selection__group_grid"
+                        :header="false"
+                        :all-selectable="false"
+                        :show-selection-checkbox="false"
+                        :selectable="false"
+                        :items="section.visibleGroups"
+                        :is-fullpage="false"
+                        table
+                    >
+                        <template #columns="{ item }">
+                            <sw-grid-column
+                                truncate
+                                class="group_grid__column-name"
+                                flex="auto"
+                                data-index="name"
+                                @click="selectGroup(item)"
+                            >
+                                <mt-icon name="regular-folder" size="16px" />
+                                {{ item.translated.name }}
+                            </sw-grid-column>
+                            <sw-grid-column
+                                truncate
+                                align="right"
+                                flex="1fr"
+                                class="sw-property-search__tree-selection__column-items-selected"
+                                data-index="assignedOptions"
+                            >
+                                <span v-if="item.optionCount > 0">{{ $t('sw-property-search.selected', { count: item.optionCount }, item.optionCount) }}</span>
+                            </sw-grid-column>
+                        </template>
+                    </sw-grid>
+                    <sw-pagination
+                        v-if="section.groups.length > 10"
+                        :page="section.page"
+                        :limit="10"
+                        :total="section.groups.length"
+                        :total-visible="7"
+                        :steps="[10]"
+                        @page-change="jvImportChangeSectionPage(section.key, $event)"
+                    />
+                </template>
+            </sw-collapse>
         </template>
     </template>
 </div>
