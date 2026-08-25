@@ -8,7 +8,6 @@ Shopware.Component.override('sw-product-variants-configurator-selection', {
 
     data() {
         return {
-            jvImportAllowedGroupIds: null,
             jvImportGroups: [],
             jvImportRecommendedGroupIds: new Set(),
             jvImportSectionPages: {
@@ -16,7 +15,7 @@ Shopware.Component.override('sw-product-variants-configurator-selection', {
                 recommended: 1,
                 other: 1,
             },
-            jvImportUsedGroupIds: new Set(),
+            jvImportProductPropertyGroupIds: new Set(),
         };
     },
 
@@ -30,11 +29,12 @@ Shopware.Component.override('sw-product-variants-configurator-selection', {
         },
 
         jvImportSections() {
-            const groups = this.groups.filter((group) => this.jvImportAllowedGroupIds?.includes(group.id));
-            const used = groups.filter((group) => this.jvImportUsedGroupIds.has(group.id));
-            const recommended = groups.filter((group) => !this.jvImportUsedGroupIds.has(group.id)
+            const groups = this.jvImportGroups;
+            const usedGroupIds = this.jvImportUsedGroupIds;
+            const used = groups.filter((group) => usedGroupIds.has(group.id));
+            const recommended = groups.filter((group) => !usedGroupIds.has(group.id)
                 && this.jvImportRecommendedGroupIds.has(group.id));
-            const other = groups.filter((group) => !this.jvImportUsedGroupIds.has(group.id)
+            const other = groups.filter((group) => !usedGroupIds.has(group.id)
                 && !this.jvImportRecommendedGroupIds.has(group.id));
 
             return [
@@ -44,19 +44,16 @@ Shopware.Component.override('sw-product-variants-configurator-selection', {
             ];
         },
 
-        propertyGroupCriteria() {
-            const criteria = this.$super('propertyGroupCriteria');
-            criteria.addAssociation('options');
-            this.jvImportApplyGroupFilter(criteria, 'id');
+        jvImportUsedGroupIds() {
+            const ids = new Set(this.jvImportProductPropertyGroupIds);
 
-            return criteria;
-        },
+            this.options.forEach((setting) => {
+                if (!setting.isDeleted && setting.option?.groupId) {
+                    ids.add(setting.option.groupId);
+                }
+            });
 
-        propertyGroupOptionCriteria() {
-            const criteria = this.$super('propertyGroupOptionCriteria');
-            this.jvImportApplyGroupFilter(criteria, 'groupId');
-
-            return criteria;
+            return ids;
         },
     },
 
@@ -75,27 +72,37 @@ Shopware.Component.override('sw-product-variants-configurator-selection', {
         },
 
         async jvImportLoadGroupSections() {
+            this.jvImportGroups = await this.jvImportLoadNonEmptyGroups();
+
             const productCriteria = new Criteria(1, 1);
             productCriteria.addAssociation('categories');
+            productCriteria.addAssociation('properties');
 
-            const product = await this.jvImportProductRepository.get(this.product.id, Shopware.Context.api, productCriteria);
+            let product;
+            try {
+                product = await this.jvImportProductRepository.get(this.product.id, Shopware.Context.api, productCriteria);
+            } catch (error) {
+                this.jvImportNotifyClassificationFallback();
+
+                return;
+            }
+
             const categoryGroupIds = new Set();
-            product.categories.forEach((category) => {
-                categoryGroupIds.add(category.parentId ?? category.id);
-            });
-
-            const usedGroupIds = new Set();
-            this.options.forEach((setting) => {
-                if (setting.option?.groupId) {
-                    usedGroupIds.add(setting.option.groupId);
+            (product.categories ?? []).forEach((category) => {
+                categoryGroupIds.add(category.id);
+                if (category.parentId) {
+                    categoryGroupIds.add(category.parentId);
                 }
             });
+            const productPropertyGroupIds = new Set();
+            (product.properties ?? []).forEach((property) => {
+                if (property.groupId) {
+                    productPropertyGroupIds.add(property.groupId);
+                }
+            });
+            this.jvImportProductPropertyGroupIds = productPropertyGroupIds;
 
             if (categoryGroupIds.size === 0) {
-                this.jvImportAllowedGroupIds = [...usedGroupIds];
-                this.jvImportGroups = await this.jvImportLoadNonEmptyGroups([...usedGroupIds]);
-                this.jvImportUsedGroupIds = usedGroupIds;
-
                 return;
             }
 
@@ -106,39 +113,26 @@ Shopware.Component.override('sw-product-variants-configurator-selection', {
             criteria.addFilter(Criteria.equals('enabled', true));
             criteria.addFilter(Criteria.equals('storage', 'property'));
 
-            const mappings = await this.jvImportSearchAll(this.jvImportCatalogCategoryAttributeRepository, criteria);
-            const mappedGroupIds = new Set();
-            const recommendedGroupIds = new Set();
-            mappings.forEach((mapping) => {
-                if (!mapping.propertyGroupId) {
-                    return;
-                }
-
-                mappedGroupIds.add(mapping.propertyGroupId);
-                if (mapping.featureRelevance?.includes('VARIATION_THEME')) {
-                    recommendedGroupIds.add(mapping.propertyGroupId);
-                }
-            });
-
-            const groups = await this.jvImportLoadNonEmptyGroups([...mappedGroupIds]);
-            this.jvImportAllowedGroupIds = [...new Set([...usedGroupIds, ...groups.map((group) => group.id)])];
-            this.jvImportGroups = groups;
-            this.jvImportRecommendedGroupIds = recommendedGroupIds;
-            this.jvImportUsedGroupIds = usedGroupIds;
+            try {
+                const mappings = await this.jvImportSearchAll(this.jvImportCatalogCategoryAttributeRepository, criteria);
+                const recommendedGroupIds = new Set();
+                mappings.forEach((mapping) => {
+                    if (mapping.propertyGroupId && mapping.featureRelevance?.includes('VARIATION_THEME')) {
+                        recommendedGroupIds.add(mapping.propertyGroupId);
+                    }
+                });
+                this.jvImportRecommendedGroupIds = recommendedGroupIds;
+            } catch (error) {
+                this.jvImportNotifyClassificationFallback();
+            }
         },
 
-        async jvImportLoadNonEmptyGroups(groupIds) {
-            if (groupIds.length === 0) {
-                return [];
-            }
-
-            const groups = [];
-            for (let offset = 0; offset < groupIds.length; offset += 500) {
-                const criteria = new Criteria(1, 500);
-                criteria.addFilter(Criteria.equalsAny('id', groupIds.slice(offset, offset + 500)));
-                criteria.addAssociation('options');
-                groups.push(...await this.jvImportSearchAll(this.propertyGroupRepository, criteria));
-            }
+        async jvImportLoadNonEmptyGroups() {
+            const criteria = new Criteria(1, 500);
+            criteria.addSorting(Criteria.sort('name', 'ASC', false));
+            criteria.addFilter(Criteria.not('AND', [Criteria.equals('options.id', null)]));
+            criteria.addAssociation('options');
+            const groups = await this.jvImportSearchAll(this.propertyGroupRepository, criteria);
 
             return groups.filter((group) => group.options?.length > 0);
         },
@@ -157,18 +151,10 @@ Shopware.Component.override('sw-product-variants-configurator-selection', {
             return pages.flatMap((page) => page);
         },
 
-        jvImportApplyGroupFilter(criteria, field) {
-            if (this.jvImportAllowedGroupIds === null) {
-                return;
-            }
-
-            if (this.jvImportAllowedGroupIds.length === 0) {
-                criteria.addFilter(Criteria.equals(field, '00000000000000000000000000000000'));
-
-                return;
-            }
-
-            criteria.addFilter(Criteria.equalsAny(field, this.jvImportAllowedGroupIds));
+        jvImportNotifyClassificationFallback() {
+            this.createNotificationWarning({
+                message: this.$t('jv-import.variantGroups.classificationUnavailable'),
+            });
         },
 
         selectGroup(group) {
