@@ -9,6 +9,7 @@ Shopware.Component.override('sw-product-variants-configurator-selection', {
     data() {
         return {
             jvImportAllowedGroupIds: null,
+            jvImportGroups: [],
             jvImportRecommendedGroupIds: new Set(),
             jvImportUsedGroupIds: new Set(),
         };
@@ -41,7 +42,6 @@ Shopware.Component.override('sw-product-variants-configurator-selection', {
         propertyGroupCriteria() {
             const criteria = this.$super('propertyGroupCriteria');
             criteria.addAssociation('options');
-            criteria.setLimit(500);
             this.jvImportApplyGroupFilter(criteria, 'id');
 
             return criteria;
@@ -88,6 +88,7 @@ Shopware.Component.override('sw-product-variants-configurator-selection', {
 
             if (categoryGroupIds.size === 0) {
                 this.jvImportAllowedGroupIds = [...usedGroupIds];
+                this.jvImportGroups = await this.jvImportLoadNonEmptyGroups([...usedGroupIds]);
                 this.jvImportUsedGroupIds = usedGroupIds;
 
                 return;
@@ -100,7 +101,7 @@ Shopware.Component.override('sw-product-variants-configurator-selection', {
             criteria.addFilter(Criteria.equals('enabled', true));
             criteria.addFilter(Criteria.equals('storage', 'property'));
 
-            const mappings = await this.jvImportCatalogCategoryAttributeRepository.search(criteria, Shopware.Context.api);
+            const mappings = await this.jvImportSearchAll(this.jvImportCatalogCategoryAttributeRepository, criteria);
             const mappedGroupIds = new Set();
             const recommendedGroupIds = new Set();
             mappings.forEach((mapping) => {
@@ -116,6 +117,7 @@ Shopware.Component.override('sw-product-variants-configurator-selection', {
 
             const groups = await this.jvImportLoadNonEmptyGroups([...mappedGroupIds]);
             this.jvImportAllowedGroupIds = [...new Set([...usedGroupIds, ...groups.map((group) => group.id)])];
+            this.jvImportGroups = groups;
             this.jvImportRecommendedGroupIds = recommendedGroupIds;
             this.jvImportUsedGroupIds = usedGroupIds;
         },
@@ -125,13 +127,29 @@ Shopware.Component.override('sw-product-variants-configurator-selection', {
                 return [];
             }
 
-            const criteria = new Criteria(1, 500);
-            criteria.addFilter(Criteria.equalsAny('id', groupIds));
-            criteria.addAssociation('options');
-
-            const groups = await this.propertyGroupRepository.search(criteria, Shopware.Context.api);
+            const groups = [];
+            for (let offset = 0; offset < groupIds.length; offset += 500) {
+                const criteria = new Criteria(1, 500);
+                criteria.addFilter(Criteria.equalsAny('id', groupIds.slice(offset, offset + 500)));
+                criteria.addAssociation('options');
+                groups.push(...await this.jvImportSearchAll(this.propertyGroupRepository, criteria));
+            }
 
             return groups.filter((group) => group.options?.length > 0);
+        },
+
+        async jvImportSearchAll(repository, criteria) {
+            const firstPage = await repository.search(criteria, Shopware.Context.api);
+            const limit = criteria.limit ?? firstPage.length ?? 25;
+            const totalPages = Math.ceil((firstPage.total ?? firstPage.length) / limit);
+            const pages = [firstPage];
+
+            for (let page = 2; page <= totalPages; page++) {
+                const nextCriteria = Criteria.fromCriteria(criteria).setPage(page).setLimit(limit);
+                pages.push(await repository.search(nextCriteria, Shopware.Context.api));
+            }
+
+            return pages.flatMap((page) => page);
         },
 
         jvImportApplyGroupFilter(criteria, field) {
@@ -160,9 +178,14 @@ Shopware.Component.override('sw-product-variants-configurator-selection', {
             this.loadOptions();
         },
 
-        async loadGroups() {
-            await this.$super('loadGroups');
-            this.groups = this.groups.filter((group) => group.options?.length > 0);
+        showTree() {
+            this.displaySearch = false;
+            this.displayTree = true;
+            this.groupPage = 1;
+            this.optionPage = 1;
+            this.groupOptions = [];
+            this.groups = this.jvImportGroups;
+            this.addOptionCount();
         },
     },
 });
