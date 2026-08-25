@@ -114,6 +114,48 @@
             "helpText": "0–20. Standard: 8. 0 deaktiviert die Historie. Nur Storefront (Next.js), nicht in Shopware."
           }
         }
+      },
+      "jv-hero": {
+        "label": "Hero",
+        "component": {
+          "emptyTitle": "Hero-Titel"
+        },
+        "config": {
+          "title": {
+            "label": "Titel",
+            "placeholder": "Ein Zuhause, das zu dir passt."
+          },
+          "eyebrow": {
+            "label": "Eyebrow",
+            "placeholder": "Die neue Wohnkollektion"
+          },
+          "description": {
+            "label": "Beschreibung",
+            "placeholder": "Möbel für den Alltag."
+          },
+          "imageMedia": {
+            "label": "Hintergrundbild",
+            "caption": "Hero-Hintergrundbild hochladen"
+          },
+          "primaryLink": {
+            "title": "Primärer CTA"
+          },
+          "secondaryLink": {
+            "title": "Sekundärer CTA"
+          },
+          "link": {
+            "label": "Beschriftung",
+            "labelPlaceholder": "Jetzt entdecken",
+            "url": "Link",
+            "urlPlaceholder": "/new-in oder https://…",
+            "size": {
+              "label": "Größe",
+              "small": "Klein",
+              "medium": "Mittel",
+              "large": "Groß"
+            }
+          }
+        }
       }
     },
     "blocks": {
@@ -131,6 +173,9 @@
       },
       "jv-global-search": {
         "label": "Globale Suche"
+      },
+      "jv-hero": {
+        "label": "Hero"
       }
     }
   },
@@ -140,7 +185,8 @@
         "label": {
           "blockCategory": {
             "button": "Button",
-            "navigation": "Navigation"
+            "navigation": "Navigation",
+            "hero": "Hero"
           }
         }
       }

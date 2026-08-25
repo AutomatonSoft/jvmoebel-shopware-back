@@ -6,6 +6,8 @@ import './module/sw-cms/elements/jv-side-navigation';
 import './module/sw-cms/blocks/jv-side-navigation/jv-side-navigation';
 import './module/sw-cms/elements/jv-global-search';
 import './module/sw-cms/blocks/jv-global-search/jv-global-search';
+import './module/sw-cms/elements/jv-hero';
+import './module/sw-cms/blocks/jv-hero/jv-hero';
 import deDE from './snippet/de-DE.json';
 import enGB from './snippet/en-GB.json';
 

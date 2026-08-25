@@ -1,0 +1,10 @@
+{% block sw_cms_element_jv_hero %}
+	<div class="sw-cms-el-jv-hero" :class="{ 'has-image': hasImage }">
+		<p v-if="previewEyebrow" class="sw-cms-el-jv-hero__eyebrow">
+			{{ previewEyebrow }}
+		</p>
+		<strong class="sw-cms-el-jv-hero__title">
+			{{ previewTitle }}
+		</strong>
+	</div>
+{% endblock %}

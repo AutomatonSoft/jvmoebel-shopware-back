@@ -81,3 +81,5 @@ SPEC-NNN-short-name.md
 | [SPEC-004-sales-channel-delivery-times](SPEC-004-sales-channel-delivery-times.md) | Хранение и применение сроков поставки по sales channel |
 | [SPEC-005-cms-side-navigation](SPEC-005-cms-side-navigation.md) | Backend CMS element/block `jv-side-navigation` (поиск категорий, дерево 4 уровней; без табов); контракт — platform SPEC-003 |
 | [SPEC-006-cms-global-search](SPEC-006-cms-global-search.md) | Backend CMS element/block `jv-global-search` + Store API suggest/full search (OpenSearch, `suggestMinChars`, интерпретация property filters); контракт — platform SPEC-004 |
+| [SPEC-007-cms-product-filter](SPEC-007-cms-product-filter.md) | Backend CMS element/block `jv-product-filter` + фасеты PLP; контракт — platform SPEC-005 |
+| [SPEC-008-cms-hero](SPEC-008-cms-hero.md) | Backend CMS element/block `jv-hero` (баннер); контракт — platform SPEC-006 |
