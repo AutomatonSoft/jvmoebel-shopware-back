@@ -1,0 +1,136 @@
+<?php declare(strict_types=1);
+
+namespace Jv\Import\Service\ProductImport\Catalog;
+
+use Jv\Import\Integration\CosmoShop\Profile\MarketImportProfile;
+use Jv\Import\Integration\Okb\Profile\CatalogProductImportProfile;
+use Jv\Import\Integration\Okb\Service\PrepareOkbProductMappingService;
+use League\Flysystem\FilesystemOperator;
+use Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogEntity;
+use Shopware\Core\Content\ImportExport\Message\ImportExportMessage;
+use Shopware\Core\Content\ImportExport\Service\ImportExportService;
+use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\Messenger\MessageBusInterface;
+
+final readonly class EnrichCosmoShopImportService
+{
+    public function __construct(
+        private ImportExportService $importExportService,
+        private FilesystemOperator $privateFilesystem,
+        private PrepareOkbProductMappingService $mappingService,
+        private PrepareCatalogShopwareImportCsvService $csvService,
+        /** @var EntityRepository<EntityCollection<\Shopware\Core\Content\ImportExport\ImportExportProfileEntity>> */
+        private EntityRepository $profileRepository,
+        private MessageBusInterface $messageBus,
+        private string $projectDir,
+    ) {
+    }
+
+    public function execute(string $sourceImportLogId, Context $context): void
+    {
+        $sourceLog = $this->importExportService->findLog($context, $sourceImportLogId);
+        $this->assertSourceLog($sourceLog);
+        $sourceFile = $sourceLog->getFile();
+        if (null === $sourceFile) {
+            throw new \InvalidArgumentException(sprintf('CosmoShop import log "%s" has no source file.', $sourceImportLogId));
+        }
+
+        $directory = $this->createTemporaryDirectory($sourceImportLogId);
+        try {
+            $sourceCsv = $directory.'/source.csv';
+            $this->copySourceFile($sourceFile->getPath(), $sourceCsv);
+            $mappingDirectory = $directory.'/mapping';
+            if (!mkdir($mappingDirectory, 0775) && !is_dir($mappingDirectory)) {
+                throw new \RuntimeException(sprintf('Could not create OKB mapping directory "%s".', $mappingDirectory));
+            }
+            $this->mappingService->execute($sourceCsv, $this->projectDir.'/data/import/okb', $mappingDirectory, null);
+            $catalogCsv = $directory.'/catalog-products.csv';
+            $this->csvService->execute(
+                $mappingDirectory.'/okb-product-mapping.csv',
+                $mappingDirectory.'/okb-product-attributes.csv',
+                $catalogCsv,
+                $mappingDirectory.'/okb-product-mapping-failures.csv',
+            );
+            $this->profileRepository->upsert([CatalogProductImportProfile::definition()], $context);
+            $catalogLog = $this->importExportService->prepareImport(
+                $context,
+                CatalogProductImportProfile::definition()['id'],
+                new \DateTimeImmutable('+1 day'),
+                new UploadedFile($catalogCsv, 'okb-catalog-products.csv', 'text/csv', null, true),
+            );
+            $this->messageBus->dispatch(new ImportExportMessage($context, $catalogLog->getId(), $catalogLog->getActivity()));
+        } finally {
+            $this->removeDirectory($directory);
+        }
+    }
+
+    private function assertSourceLog(ImportExportLogEntity $log): void
+    {
+        if (
+            ImportExportLogEntity::ACTIVITY_IMPORT !== $log->getActivity()
+            || null === MarketImportProfile::marketForTechnicalName($log->getProfile()?->getTechnicalName())
+        ) {
+            throw new \InvalidArgumentException(sprintf('Import log "%s" is not a CosmoShop product import.', $log->getId()));
+        }
+    }
+
+    private function createTemporaryDirectory(string $sourceImportLogId): string
+    {
+        $baseDirectory = $this->projectDir.'/var/import/okb-enrichment';
+        if (!is_dir($baseDirectory) && !mkdir($baseDirectory, 0775, true) && !is_dir($baseDirectory)) {
+            throw new \RuntimeException(sprintf('Could not create OKB enrichment base directory "%s".', $baseDirectory));
+        }
+        $directory = $baseDirectory.'/'.$sourceImportLogId.'-'.bin2hex(random_bytes(8));
+        if (!mkdir($directory, 0775)) {
+            throw new \RuntimeException(sprintf('Could not create OKB enrichment directory "%s".', $directory));
+        }
+
+        return $directory;
+    }
+
+    private function copySourceFile(string $path, string $target): void
+    {
+        $source = $this->privateFilesystem->readStream($path);
+        if (!is_resource($source)) {
+            throw new \RuntimeException(sprintf('Could not read source import file "%s".', $path));
+        }
+        $destination = fopen($target, 'w+b');
+        if (!is_resource($destination)) {
+            fclose($source);
+            throw new \RuntimeException(sprintf('Could not create temporary source file "%s".', $target));
+        }
+
+        try {
+            stream_copy_to_stream($source, $destination);
+        } finally {
+            fclose($source);
+            fclose($destination);
+        }
+    }
+
+    private function removeDirectory(string $directory): void
+    {
+        if (!is_dir($directory)) {
+            return;
+        }
+        $items = scandir($directory);
+        if (false === $items) {
+            return;
+        }
+        foreach ($items as $item) {
+            if ('.' === $item || '..' === $item) {
+                continue;
+            }
+            $path = $directory.'/'.$item;
+            if (is_dir($path)) {
+                $this->removeDirectory($path);
+            } elseif (is_file($path)) {
+                unlink($path);
+            }
+        }
+        rmdir($directory);
+    }
+}

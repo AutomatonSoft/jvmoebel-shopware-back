@@ -1,0 +1,120 @@
+<?php declare(strict_types=1);
+
+namespace Jv\Import\Tests\Unit\Service\ProductImport\Catalog;
+
+use Jv\Import\Integration\Csv\SemicolonCsvReader;
+use Jv\Import\Integration\Okb\OkbProductApiClient;
+use Jv\Import\Integration\Okb\OkbProductResponseNormalizer;
+use Jv\Import\Integration\Okb\Profile\CatalogProductImportProfile;
+use Jv\Import\Integration\Okb\Service\PrepareOkbProductMappingService;
+use Jv\Import\Service\ProductImport\Catalog\EnrichCosmoShopImportService;
+use Jv\Import\Service\ProductImport\Catalog\PrepareCatalogShopwareImportCsvService;
+use League\Flysystem\FilesystemOperator;
+use PHPUnit\Framework\TestCase;
+use Shopware\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFileEntity;
+use Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogEntity;
+use Shopware\Core\Content\ImportExport\ImportExportProfileEntity;
+use Shopware\Core\Content\ImportExport\Message\ImportExportMessage;
+use Shopware\Core\Content\ImportExport\Service\ImportExportService;
+use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Contracts\HttpClient\ResponseInterface;
+
+final class EnrichCosmoShopImportServiceTest extends TestCase
+{
+    public function testItBuildsAndQueuesAStandardCatalogImportForTheFinishedSourceImport(): void
+    {
+        $context = Context::createDefaultContext();
+        $source = $this->sourceLog();
+        $importExport = $this->createMock(ImportExportService::class);
+        $importExport->expects(self::once())->method('findLog')->with($context, $source->getId())->willReturn($source);
+        $importExport->expects(self::once())->method('prepareImport')->with(
+            $context,
+            CatalogProductImportProfile::definition()['id'],
+            self::isInstanceOf(\DateTimeInterface::class),
+            self::callback(function (UploadedFile $file): bool {
+                $csv = file_get_contents($file->getPathname());
+
+                return is_string($csv)
+                    && str_contains($csv, 'parent;COSMO-1;4260454042902;14423;1951')
+                    && str_contains($csv, 'child;COSMO-1;4260454042902;14423;1951');
+            }),
+        )->willReturn($this->catalogLog());
+
+        $filesystem = $this->createMock(FilesystemOperator::class);
+        $filesystem->expects(self::once())->method('readStream')->with('source/import.csv')->willReturn($this->stream("product_number;ean\nCOSMO-1;4260454042902\n"));
+
+        $profiles = $this->createMock(EntityRepository::class);
+        $profiles->expects(self::once())->method('upsert')->with([CatalogProductImportProfile::definition()], $context);
+
+        $messageBus = $this->createMock(MessageBusInterface::class);
+        $messageBus->expects(self::once())->method('dispatch')->with(self::callback(static fn (object $message): bool => $message instanceof ImportExportMessage && '019fe6386ca771b29f5a8412a8cc3d96' === $message->getLogId()))->willReturn(new Envelope(new \stdClass()));
+
+        $service = new EnrichCosmoShopImportService(
+            $importExport,
+            $filesystem,
+            new PrepareOkbProductMappingService(new SemicolonCsvReader(), $this->apiClient()),
+            new PrepareCatalogShopwareImportCsvService(new SemicolonCsvReader()),
+            $profiles,
+            $messageBus,
+            (string) getcwd(),
+        );
+        $service->execute($source->getId(), $context);
+
+        self::assertSame([], glob((string) getcwd().'/var/import/okb-enrichment/'.$source->getId().'-*'));
+    }
+
+    private function apiClient(): OkbProductApiClient
+    {
+        $response = $this->createMock(ResponseInterface::class);
+        $response->method('getStatusCode')->willReturn(200);
+        $response->method('toArray')->with(false)->willReturn(['productVariations' => [[
+            'sku' => '4260454042902',
+            'ean' => '4260454042902',
+            'productDescription' => ['category' => '3D-Brille', 'attributes' => []],
+        ]]]);
+        $client = $this->createMock(HttpClientInterface::class);
+        $client->expects(self::once())->method('request')->willReturn($response);
+
+        return new OkbProductApiClient($client, new OkbProductResponseNormalizer(), 'https://okb.example');
+    }
+
+    private function sourceLog(): ImportExportLogEntity
+    {
+        $profile = new ImportExportProfileEntity();
+        $profile->setTechnicalName('jv_cosmoshop_product_jvmoebel_de');
+        $file = new ImportExportFileEntity();
+        $file->setPath('source/import.csv');
+        $log = new ImportExportLogEntity();
+        $log->setId('019fe6386ca771b29f5a8412a8cc3d95');
+        $log->setActivity(ImportExportLogEntity::ACTIVITY_IMPORT);
+        $log->setProfile($profile);
+        $log->setFile($file);
+
+        return $log;
+    }
+
+    private function catalogLog(): ImportExportLogEntity
+    {
+        $log = new ImportExportLogEntity();
+        $log->setId('019fe6386ca771b29f5a8412a8cc3d96');
+        $log->setActivity(ImportExportLogEntity::ACTIVITY_IMPORT);
+
+        return $log;
+    }
+
+    /** @return resource */
+    private function stream(string $contents)
+    {
+        $stream = fopen('php://temp', 'w+b');
+        self::assertIsResource($stream);
+        fwrite($stream, $contents);
+        rewind($stream);
+
+        return $stream;
+    }
+}

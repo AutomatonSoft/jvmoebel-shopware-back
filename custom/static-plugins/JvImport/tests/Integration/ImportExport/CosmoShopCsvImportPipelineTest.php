@@ -90,7 +90,7 @@ final class CosmoShopCsvImportPipelineTest extends AbstractCosmoShopImportExport
         $progress = $this->dryRun($profileId, $csv);
 
         self::assertSame(Progress::STATE_FAILED, $progress->getState());
-        self::assertStringContainsString('CosmoShop CSV product row has 11 columns; expected 23.', $this->importResult($progress));
+        self::assertStringContainsString('CosmoShop CSV product row has 11 columns; expected 25.', $this->importResult($progress));
     }
 
     public function testItContinuesAfterAMalformedFirstProductRow(): void
@@ -104,6 +104,6 @@ final class CosmoShopCsvImportPipelineTest extends AbstractCosmoShopImportExport
 
         self::assertSame(Progress::STATE_FAILED, $progress->getState());
         self::assertSame(1, $progress->getProcessedRecords());
-        self::assertStringContainsString('CosmoShop CSV product row has 11 columns; expected 23.', $this->importResult($progress));
+        self::assertStringContainsString('CosmoShop CSV product row has 11 columns; expected 25.', $this->importResult($progress));
     }
 }

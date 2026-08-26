@@ -18,12 +18,6 @@ use Shopware\Core\System\Currency\CurrencyCollection;
 
 final class PrepareCatalogShopwareProductImportRecordService
 {
-    /** @var array<string, \Shopware\Core\Content\Product\ProductEntity> */
-    private array $parents = [];
-
-    /** @var array<string, string> */
-    private array $childIds = [];
-
     /** @var array<string, array<string, CatalogCategoryAttributeSchema>> */
     private array $schemas = [];
 
@@ -44,6 +38,7 @@ final class PrepareCatalogShopwareProductImportRecordService
         private EntityRepository $currencyRepository,
         private CatalogCategoryAttributeSchemaProvider $schemaProvider,
         private Connection $connection,
+        private CatalogProductImportLookupCache $lookupCache,
     ) {
     }
 
@@ -53,6 +48,9 @@ final class PrepareCatalogShopwareProductImportRecordService
     public function execute(array $row, Context $context): array
     {
         $type = $this->required($row, 'record_type');
+        if ('invalid' === $type) {
+            throw new \InvalidArgumentException($this->required($row, 'failure_reason'));
+        }
         $productNumber = $this->required($row, 'product_number');
         $ean = $this->required($row, 'ean');
         $categoryId = $this->required($row, 'category_id');
@@ -226,15 +224,16 @@ final class PrepareCatalogShopwareProductImportRecordService
 
     private function parent(string $productNumber, Context $context): \Shopware\Core\Content\Product\ProductEntity
     {
-        if (isset($this->parents[$productNumber])) {
-            return $this->parents[$productNumber];
+        $cached = $this->lookupCache->parent($productNumber);
+        if ($cached instanceof \Shopware\Core\Content\Product\ProductEntity) {
+            return $cached;
         }
         $product = $this->productRepository->search((new Criteria())->addFilter(new EqualsFilter('productNumber', $productNumber))->addAssociation('price')->addAssociation('tax')->addAssociation('manufacturer')->setLimit(1), $context)->first();
         if (!$product instanceof \Shopware\Core\Content\Product\ProductEntity) {
             throw new \InvalidArgumentException(sprintf('Shopware product number "%s" does not exist.', $productNumber));
         }
 
-        return $this->parents[$productNumber] = $product;
+        return $this->lookupCache->rememberParent($productNumber, $product);
     }
 
     /** @return array<string, CatalogCategoryAttributeSchema> */
@@ -306,8 +305,9 @@ final class PrepareCatalogShopwareProductImportRecordService
 
     private function childId(\Shopware\Core\Content\Product\ProductEntity $parent, string $ean, Context $context): string
     {
-        if (isset($this->childIds[$parent->getId()])) {
-            return $this->childIds[$parent->getId()];
+        $cached = $this->lookupCache->childId($parent->getId());
+        if (null !== $cached) {
+            return $cached;
         }
         $productNumber = $parent->getProductNumber().'-1';
         $existing = $this->productRepository->search((new Criteria())
@@ -318,10 +318,10 @@ final class PrepareCatalogShopwareProductImportRecordService
                 throw new \InvalidArgumentException(sprintf('Catalog child product number "%s" belongs to another product.', $productNumber));
             }
 
-            return $this->childIds[$parent->getId()] = $existing->getId();
+            return $this->lookupCache->rememberChildId($parent->getId(), $existing->getId());
         }
 
-        return $this->childIds[$parent->getId()] = CatalogIdentity::childProductId('okb', $parent->getId(), $ean);
+        return $this->lookupCache->rememberChildId($parent->getId(), CatalogIdentity::childProductId('okb', $parent->getId(), $ean));
     }
 
     private function currencyId(string $currency, Context $context): string
