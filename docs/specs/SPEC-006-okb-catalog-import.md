@@ -72,10 +72,11 @@ EAN: повтор EAN сам по себе разрешён.
 У задачи есть Redis distributed lock по source import log ID. Он обновляется
 после обработки каждой исходной строки. Созданный catalog import сохраняет этот
 ID в своём техническом config, поэтому повторная доставка сообщения не создаёт
-второй catalog import. Если `prepareImport` уже создал log, но отправка core
-сообщения временно не удалась, повтор доставляет в очередь именно этот log со
-state `progress`; завершённый log повторно не запускается. Для параллельных
-Messenger workers используются уникальные Redis consumer names и keepalive.
+второй catalog import и не отправляет второй `ImportExportMessage` для уже
+созданного log. Если dispatch core-сообщения бросает исключение, созданный, но
+не запущенный catalog log удаляется; повтор source-сообщения повторно готовит
+и ставит в очередь ровно один новый log. Для параллельных Messenger workers
+используются уникальные Redis consumer names и keepalive.
 Stateful lookup и preparation caches сбрасываются ядром между Messenger
 messages; они не переносят ProductEntity, child IDs, schemas или option IDs в
 следующий import job.

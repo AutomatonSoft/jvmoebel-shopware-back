@@ -11,7 +11,6 @@ use Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLog
 use Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogEntity;
 use Shopware\Core\Content\ImportExport\Message\ImportExportMessage;
 use Shopware\Core\Content\ImportExport\Service\ImportExportService;
-use Shopware\Core\Content\ImportExport\Struct\Progress;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -50,11 +49,6 @@ final readonly class EnrichCosmoShopImportService
         try {
             $catalogLogId = $this->catalogImportLogId($sourceImportLogId, $context);
             if (null !== $catalogLogId) {
-                $catalogLog = $this->importExportService->findLog($context, $catalogLogId);
-                if (Progress::STATE_PROGRESS === $catalogLog->getState()) {
-                    $this->messageBus->dispatch(new ImportExportMessage($context, $catalogLogId, ImportExportLogEntity::ACTIVITY_IMPORT));
-                }
-
                 return;
             }
             $this->enrich($sourceImportLogId, $context, static fn () => $lock->refresh(7200.0));
@@ -97,7 +91,14 @@ final readonly class EnrichCosmoShopImportService
                 new UploadedFile($catalogCsv, 'okb-catalog-products.csv', 'text/csv', null, true),
                 ['parameters' => [self::SOURCE_IMPORT_LOG_PARAMETER => $sourceImportLogId]],
             );
-            $this->messageBus->dispatch(new ImportExportMessage($context, $catalogLog->getId(), $catalogLog->getActivity()));
+            try {
+                $this->messageBus->dispatch(new ImportExportMessage($context, $catalogLog->getId(), $catalogLog->getActivity()));
+            } catch (\Throwable $exception) {
+                // A source-message retry must prepare a new log instead of dispatching this one twice.
+                $this->logRepository->delete([['id' => $catalogLog->getId()]], $context);
+
+                throw $exception;
+            }
         } finally {
             $this->removeDirectory($directory);
         }
