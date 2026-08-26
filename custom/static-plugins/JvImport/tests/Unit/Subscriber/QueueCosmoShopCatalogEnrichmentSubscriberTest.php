@@ -12,7 +12,6 @@ use Shopware\Core\Content\ImportExport\Struct\Progress;
 use Shopware\Core\Framework\Context;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
-use Symfony\Component\Messenger\Stamp\TransportNamesStamp;
 
 final class QueueCosmoShopCatalogEnrichmentSubscriberTest extends TestCase
 {
@@ -20,10 +19,7 @@ final class QueueCosmoShopCatalogEnrichmentSubscriberTest extends TestCase
     {
         $log = $this->log('jv_cosmoshop_product_jvmoebel_de');
         $messageBus = $this->createMock(MessageBusInterface::class);
-        $messageBus->expects(self::once())->method('dispatch')->with(
-            self::callback(static fn (object $message): bool => $message instanceof CosmoShopCatalogEnrichmentMessage && $log->getId() === $message->sourceImportLogId),
-            self::callback(static fn (array $stamps): bool => 1 === count($stamps) && $stamps[0] instanceof TransportNamesStamp && ['low_priority'] === $stamps[0]->getTransportNames()),
-        )->willReturn(new Envelope(new \stdClass()));
+        $messageBus->expects(self::once())->method('dispatch')->with(self::callback(static fn (object $message): bool => $message instanceof CosmoShopCatalogEnrichmentMessage && $log->getId() === $message->sourceImportLogId))->willReturn(new Envelope(new \stdClass()));
 
         (new QueueCosmoShopCatalogEnrichmentSubscriber($messageBus))->queue(new ImportExportAfterProcessFinishedEvent(Context::createDefaultContext(), $log, new Progress($log->getId(), Progress::STATE_SUCCEEDED)));
     }
@@ -44,10 +40,7 @@ final class QueueCosmoShopCatalogEnrichmentSubscriberTest extends TestCase
     {
         $log = $this->log('jv_cosmoshop_product_jvmoebel_de');
         $messageBus = $this->createMock(MessageBusInterface::class);
-        $messageBus->expects(self::once())->method('dispatch')->with(
-            self::callback(static fn (object $message): bool => $message instanceof CosmoShopCatalogEnrichmentMessage && $log->getId() === $message->sourceImportLogId),
-            self::callback(static fn (array $stamps): bool => 1 === count($stamps) && $stamps[0] instanceof TransportNamesStamp && ['low_priority'] === $stamps[0]->getTransportNames()),
-        )->willReturn(new Envelope(new \stdClass()));
+        $messageBus->expects(self::once())->method('dispatch')->with(self::callback(static fn (object $message): bool => $message instanceof CosmoShopCatalogEnrichmentMessage && $log->getId() === $message->sourceImportLogId))->willReturn(new Envelope(new \stdClass()));
         $progress = new Progress($log->getId(), Progress::STATE_FAILED);
         $progress->addProcessedRecords(99);
 

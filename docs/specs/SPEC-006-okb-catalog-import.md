@@ -76,9 +76,7 @@ ID в своём техническом config, поэтому повторна�
 созданного log. Если dispatch core-сообщения бросает исключение, созданный, но
 не запущенный catalog log удаляется; повтор source-сообщения повторно готовит
 и ставит в очередь ровно один новый log. Для параллельных Messenger workers
-используются уникальные Redis consumer names и keepalive. Сообщение enrichment
-явно ставится в transport `low_priority`, который потребляет отдельный worker;
-полный category indexing из `async` не может задержать импорт товара.
+используются уникальные Redis consumer names и keepalive.
 Stateful lookup и preparation caches сбрасываются ядром между Messenger
 messages; они не переносят ProductEntity, child IDs, schemas или option IDs в
 следующий import job.

@@ -9,7 +9,6 @@ use Shopware\Core\Content\ImportExport\Event\ImportExportAfterProcessFinishedEve
 use Shopware\Core\Content\ImportExport\Struct\Progress;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
-use Symfony\Component\Messenger\Stamp\TransportNamesStamp;
 
 final readonly class QueueCosmoShopCatalogEnrichmentSubscriber implements EventSubscriberInterface
 {
@@ -34,9 +33,6 @@ final readonly class QueueCosmoShopCatalogEnrichmentSubscriber implements EventS
             return;
         }
 
-        $this->messageBus->dispatch(
-            new CosmoShopCatalogEnrichmentMessage($log->getId()),
-            [new TransportNamesStamp(['low_priority'])],
-        );
+        $this->messageBus->dispatch(new CosmoShopCatalogEnrichmentMessage($log->getId()));
     }
 }
