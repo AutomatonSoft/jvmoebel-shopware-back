@@ -32,6 +32,7 @@ final class CosmoShopMarketDeliveryTimeCartOrderTest extends AbstractCosmoShopIm
         $context = Context::createDefaultContext();
         $productNumber = 'MARKET-DELIVERY-CART-001';
         $productId = CosmoShopProductIdentity::fromProductNumber($productNumber);
+        $variantProductId = Uuid::randomHex();
         $references = static::getContainer()->get(UpsertProductImportLookupDataService::class);
         self::assertInstanceOf(UpsertProductImportLookupDataService::class, $references);
         $profileId = $this->configureMarketProfile(Market::UnitedKingdom, $context);
@@ -39,13 +40,21 @@ final class CosmoShopMarketDeliveryTimeCartOrderTest extends AbstractCosmoShopIm
 
         try {
             self::assertSame(Progress::STATE_SUCCEEDED, $this->import($profileId, $this->csv(productNumber: $productNumber, deliveryTimeId: '2', urlKey: 'market-delivery-cart-001'))->getState());
+            /** @var EntityRepository<ProductCollection> $productRepository */
+            $productRepository = static::getContainer()->get('product.repository');
+            $productRepository->create([[
+                'id' => $variantProductId,
+                'parentId' => $productId,
+                'productNumber' => $productNumber.'-1',
+                'stock' => 1,
+            ]], $context);
             $contextFactory = static::getContainer()->get(CachedSalesChannelContextFactory::class);
             self::assertInstanceOf(AbstractSalesChannelContextFactory::class, $contextFactory);
             $salesChannelContext = $contextFactory->create(Uuid::randomHex(), Market::UnitedKingdom->salesChannelId());
             $cartService = static::getContainer()->get(CartService::class);
             self::assertInstanceOf(CartService::class, $cartService);
             $cart = $cartService->createNew($salesChannelContext->getToken());
-            $cart = $cartService->add($cart, new LineItem($productId, LineItem::PRODUCT_LINE_ITEM_TYPE, $productId), $salesChannelContext);
+            $cart = $cartService->add($cart, new LineItem($variantProductId, LineItem::PRODUCT_LINE_ITEM_TYPE, $variantProductId), $salesChannelContext);
             $deliveryTime = $cart->getLineItems()->first()?->getDeliveryInformation()?->getDeliveryTime();
             self::assertNotNull($deliveryTime);
             self::assertSame(6, $deliveryTime->getMin());
@@ -69,7 +78,7 @@ final class CosmoShopMarketDeliveryTimeCartOrderTest extends AbstractCosmoShopIm
         } finally {
             /** @var EntityRepository<ProductCollection> $productRepository */
             $productRepository = static::getContainer()->get('product.repository');
-            $productRepository->delete([['id' => $productId]], $context);
+            $productRepository->delete([['id' => $variantProductId], ['id' => $productId]], $context);
         }
     }
 }

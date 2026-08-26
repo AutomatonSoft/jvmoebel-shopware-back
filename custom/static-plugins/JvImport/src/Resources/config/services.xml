@@ -53,6 +53,7 @@
         <service id="Jv\Import\Service\ProductImport\BuildShopwareProductImportRecordService"/>
         <service id="Jv\Import\Service\ProductDeliveryTime\ResolveSalesChannelProductDeliveryTimesService">
             <argument type="service" id="jv_import_product_sales_channel_delivery_time.repository"/>
+            <argument type="service" id="product.repository"/>
         </service>
         <service id="Jv\Import\Service\ProductDeliveryTime\AttachSalesChannelProductDeliveryTimesToStoreApiProductsService"/>
         <service id="Jv\Import\Service\ProductDeliveryTime\ApplySalesChannelProductDeliveryTimesToCartService"/>

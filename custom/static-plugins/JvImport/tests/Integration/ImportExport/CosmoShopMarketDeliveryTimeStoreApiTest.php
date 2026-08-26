@@ -45,6 +45,7 @@ final class CosmoShopMarketDeliveryTimeStoreApiTest extends AbstractCosmoShopImp
         $context = Context::createDefaultContext();
         $productNumber = 'MARKET-DELIVERY-STORE-API-001';
         $productId = CosmoShopProductIdentity::fromProductNumber($productNumber);
+        $variantProductId = Uuid::randomHex();
         $crossSellingProductNumber = 'MARKET-DELIVERY-STORE-API-002';
         $crossSellingProductId = CosmoShopProductIdentity::fromProductNumber($crossSellingProductNumber);
         $references = static::getContainer()->get(UpsertProductImportLookupDataService::class);
@@ -52,7 +53,10 @@ final class CosmoShopMarketDeliveryTimeStoreApiTest extends AbstractCosmoShopImp
         $germanyProfileId = $this->configureMarketProfile(Market::Germany, $context);
         $unitedKingdomProfileId = $this->configureMarketProfile(Market::UnitedKingdom, $context);
         $references->execute(Market::Germany, new ProductImportLookupData([new ProductImportLookupItemData('2', ['de' => 'Lieferzeit: 4-8 Wochen'])], []), $context);
-        $references->execute(Market::UnitedKingdom, new ProductImportLookupData([new ProductImportLookupItemData('2', ['en' => 'Delivery time: 6-10 weeks'])], []), $context);
+        $references->execute(Market::UnitedKingdom, new ProductImportLookupData([
+            new ProductImportLookupItemData('2', ['en' => 'Delivery time: 6-10 weeks']),
+            new ProductImportLookupItemData('3', ['en' => 'Delivery time: 2-3 weeks']),
+        ], []), $context);
 
         try {
             self::assertSame(Progress::STATE_SUCCEEDED, $this->import($germanyProfileId, $this->csv(productNumber: $productNumber, deliveryTimeId: '2'))->getState());
@@ -78,7 +82,6 @@ final class CosmoShopMarketDeliveryTimeStoreApiTest extends AbstractCosmoShopImp
             self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::UnitedKingdom, 2), $britishProduct->getDeliveryTimeId());
             self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::Germany, 2), $this->storeApiDeliveryTimeId($productId, Market::Germany));
             self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::UnitedKingdom, 2), $this->storeApiDeliveryTimeId($productId, Market::UnitedKingdom));
-
             $searchRoute = static::getContainer()->get(ProductSearchRoute::class);
             self::assertInstanceOf(AbstractProductSearchRoute::class, $searchRoute);
             $searchProduct = $searchRoute->load(new Request(), $contextFactory->create(Uuid::randomHex(), Market::UnitedKingdom->salesChannelId()), new Criteria([$productId]))->getListingResult()->first();
@@ -125,10 +128,30 @@ final class CosmoShopMarketDeliveryTimeStoreApiTest extends AbstractCosmoShopImp
             $fallbackProduct = $detailRoute->load($productId, new Request(), $contextFactory->create(Uuid::randomHex(), Market::UnitedKingdom->salesChannelId()), new Criteria())->getProduct();
             self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::Germany, 2), $fallbackProduct->getDeliveryTimeId());
             self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::Germany, 2), $this->storeApiDeliveryTimeId($productId, Market::UnitedKingdom));
+
+            /** @var EntityRepository<ProductCollection> $productRepository */
+            $productRepository = static::getContainer()->get('product.repository');
+            $productRepository->create([[
+                'id' => $variantProductId,
+                'parentId' => $productId,
+                'productNumber' => $productNumber.'-1',
+                'stock' => 1,
+            ]], $context);
+            $variant = $detailRoute->load($variantProductId, new Request(), $contextFactory->create(Uuid::randomHex(), Market::UnitedKingdom->salesChannelId()), new Criteria())->getProduct();
+            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::Germany, 2), $variant->getDeliveryTimeId());
+            $deliveryTimeRepository->create([[
+                'id' => Uuid::randomHex(),
+                'productId' => $variantProductId,
+                'productVersionId' => Defaults::LIVE_VERSION,
+                'salesChannelId' => Market::UnitedKingdom->salesChannelId(),
+                'deliveryTimeId' => CosmoShopReferenceIdentity::deliveryTimeId(Market::UnitedKingdom, 3),
+            ]], $context);
+            $variantWithOverride = $detailRoute->load($variantProductId, new Request(), $contextFactory->create(Uuid::randomHex(), Market::UnitedKingdom->salesChannelId()), new Criteria())->getProduct();
+            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::UnitedKingdom, 3), $variantWithOverride->getDeliveryTimeId());
         } finally {
             /** @var EntityRepository<ProductCollection> $productRepository */
             $productRepository = static::getContainer()->get('product.repository');
-            $productRepository->delete([['id' => $productId], ['id' => $crossSellingProductId]], $context);
+            $productRepository->delete([['id' => $variantProductId], ['id' => $productId], ['id' => $crossSellingProductId]], $context);
         }
     }
 }
