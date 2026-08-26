@@ -11,6 +11,12 @@ if [ "${SHOPWARE_INITIAL_INSTALL:-0}" = "1" ]; then
         --shop-currency=EUR \
         --skip-first-run-wizard \
         --no-interaction
+
+    php bin/console user:create \
+        "${SHOPWARE_ADMIN_USERNAME:?SHOPWARE_ADMIN_USERNAME is required}" \
+        --admin \
+        --password="${SHOPWARE_ADMIN_PASSWORD:?SHOPWARE_ADMIN_PASSWORD is required}" \
+        --no-interaction
 fi
 
 php bin/console database:migrate --all --no-interaction
