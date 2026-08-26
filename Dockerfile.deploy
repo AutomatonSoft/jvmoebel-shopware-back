@@ -17,7 +17,7 @@ RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoload
 FROM php:8.5-apache-bookworm
 
 RUN apt-get update \
-    && apt-get install --no-install-recommends -y libicu72 libzip4 \
+    && apt-get install --no-install-recommends -y libicu-dev libzip-dev \
     && docker-php-ext-install -j"$(nproc)" intl opcache pdo_mysql zip \
     && a2enmod expires headers rewrite \
     && sed -ri 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf \
