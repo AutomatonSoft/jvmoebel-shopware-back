@@ -156,7 +156,7 @@ final class EnrichCosmoShopImportServiceTest extends TestCase
             },
         );
         $messageBus = $this->createMock(MessageBusInterface::class);
-        $messageBus->expects(self::once())->method('dispatch')->willReturn(new Envelope(new \stdClass()));
+        $messageBus->expects(self::exactly(2))->method('dispatch')->willReturn(new Envelope(new \stdClass()));
 
         $service = new EnrichCosmoShopImportService(
             $importExport,
@@ -171,6 +171,42 @@ final class EnrichCosmoShopImportServiceTest extends TestCase
             (string) getcwd(),
         );
         $service->execute($source->getId(), $context);
+        $service->execute($source->getId(), $context);
+    }
+
+    public function testItQueuesTheExistingCatalogImportAfterTheFirstDispatchFails(): void
+    {
+        $context = Context::createDefaultContext();
+        $source = $this->sourceLog();
+        $importExport = $this->createMock(ImportExportService::class);
+        $importExport->expects(self::once())->method('findLog')->willReturn($source);
+        $importExport->expects(self::once())->method('prepareImport')->willReturn($this->catalogLog());
+        $filesystem = $this->createMock(FilesystemOperator::class);
+        $filesystem->expects(self::once())->method('readStream')->willReturn($this->stream("product_number;ean\nCOSMO-1;4260454042902\n"));
+        $profiles = $this->createMock(EntityRepository::class);
+        $profiles->expects(self::once())->method('upsert');
+        $catalogLogs = $this->createMock(EntityRepository::class);
+        $searches = 0;
+        $catalogLogs->expects(self::exactly(2))->method('searchIds')->willReturnCallback(
+            static function (Criteria $criteria, Context $queryContext) use (&$searches): IdSearchResult {
+                ++$searches;
+
+                return IdSearchResult::fromIds(1 === $searches ? [] : ['019fe6386ca771b29f5a8412a8cc3d96'], $criteria, $queryContext);
+            },
+        );
+        $messageBus = $this->createMock(MessageBusInterface::class);
+        $messageBus->expects(self::exactly(2))->method('dispatch')->willReturnOnConsecutiveCalls(
+            self::throwException(new \RuntimeException('Redis is unavailable.')),
+            new Envelope(new \stdClass()),
+        );
+        $service = new EnrichCosmoShopImportService($importExport, $filesystem, new SemicolonCsvReader(), new PrepareOkbProductMappingService(new SemicolonCsvReader(), $this->apiClient()), new PrepareCatalogShopwareImportCsvService(new SemicolonCsvReader()), $profiles, $catalogLogs, $messageBus, new LockFactory(new InMemoryStore()), (string) getcwd());
+
+        try {
+            $service->execute($source->getId(), $context);
+            self::fail('The first dispatch must fail.');
+        } catch (\RuntimeException $exception) {
+            self::assertSame('Redis is unavailable.', $exception->getMessage());
+        }
         $service->execute($source->getId(), $context);
     }
 

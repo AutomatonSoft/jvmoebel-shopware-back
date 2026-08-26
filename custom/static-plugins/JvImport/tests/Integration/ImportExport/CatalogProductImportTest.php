@@ -23,6 +23,33 @@ use Shopware\Core\System\Tax\TaxCollection;
 
 final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCase
 {
+    public function testItFindsExactlyOneCatalogImportForAnEnrichmentSourceLog(): void
+    {
+        $context = Context::createDefaultContext();
+        $sourceLogId = Uuid::randomHex();
+        $catalogLogId = Uuid::randomHex();
+        $this->profileRepository()->upsert([CatalogProductImportProfile::definition()], $context);
+        /** @var EntityRepository<EntityCollection<ImportExportProfileEntity>> $logRepository */
+        $logRepository = static::getContainer()->get('import_export_log.repository');
+        $logRepository->create([[
+            'id' => $catalogLogId,
+            'activity' => 'import',
+            'state' => 'progress',
+            'records' => 0,
+            'profileId' => CatalogProductImportProfile::definition()['id'],
+            'profileName' => CatalogProductImportProfile::definition()['technicalName'],
+            'config' => ['parameters' => ['jvCatalogEnrichmentSourceImportLogId' => $sourceLogId]],
+        ]], $context);
+        try {
+            $criteria = (new Criteria())
+                ->addFilter(new EqualsFilter('profileId', CatalogProductImportProfile::definition()['id']))
+                ->addFilter(new EqualsFilter('config.parameters.jvCatalogEnrichmentSourceImportLogId', $sourceLogId));
+            self::assertSame([$catalogLogId], $logRepository->searchIds($criteria, $context)->getIds());
+        } finally {
+            $logRepository->delete([['id' => $catalogLogId]], $context);
+        }
+    }
+
     public function testItKeepsExistingCatalogRelationsWhenPreparedRowsAreInvalid(): void
     {
         $context = Context::createDefaultContext();

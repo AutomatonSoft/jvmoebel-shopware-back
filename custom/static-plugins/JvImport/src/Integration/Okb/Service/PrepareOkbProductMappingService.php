@@ -15,7 +15,7 @@ final readonly class PrepareOkbProductMappingService
     ) {
     }
 
-    public function execute(string $sourceCsv, string $snapshotDirectory, string $outputDirectory, ?int $limit): OkbProductMappingPreparationResult
+    public function execute(string $sourceCsv, string $snapshotDirectory, string $outputDirectory, ?int $limit, ?\Closure $onProcessed = null): OkbProductMappingPreparationResult
     {
         if (null !== $limit && $limit <= 0) {
             throw new \InvalidArgumentException('--limit must be greater than zero.');
@@ -49,6 +49,7 @@ final readonly class PrepareOkbProductMappingService
                     $productNumber = $row['product_number'];
                     $ean = $row['ean'];
                     ++$processedCount;
+                    $onProcessed?->__invoke();
                     $variation = null;
                     $category = null;
                     try {

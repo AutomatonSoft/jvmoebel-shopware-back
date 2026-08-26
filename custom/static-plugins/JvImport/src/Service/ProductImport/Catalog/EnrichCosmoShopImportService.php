@@ -47,16 +47,19 @@ final readonly class EnrichCosmoShopImportService
             return;
         }
         try {
-            if ($this->catalogImportAlreadyExists($sourceImportLogId, $context)) {
+            $catalogLogId = $this->catalogImportLogId($sourceImportLogId, $context);
+            if (null !== $catalogLogId) {
+                $this->messageBus->dispatch(new ImportExportMessage($context, $catalogLogId, ImportExportLogEntity::ACTIVITY_IMPORT));
+
                 return;
             }
-            $this->enrich($sourceImportLogId, $context);
+            $this->enrich($sourceImportLogId, $context, static fn () => $lock->refresh(7200.0));
         } finally {
             $lock->release();
         }
     }
 
-    private function enrich(string $sourceImportLogId, Context $context): void
+    private function enrich(string $sourceImportLogId, Context $context, \Closure $refreshLock): void
     {
         $sourceLog = $this->importExportService->findLog($context, $sourceImportLogId);
         $this->assertSourceLog($sourceLog);
@@ -74,7 +77,7 @@ final readonly class EnrichCosmoShopImportService
             if (!mkdir($mappingDirectory, 0775) && !is_dir($mappingDirectory)) {
                 throw new \RuntimeException(sprintf('Could not create OKB mapping directory "%s".', $mappingDirectory));
             }
-            $this->mappingService->execute($mappingSourceCsv, $this->projectDir.'/data/import/okb', $mappingDirectory, null);
+            $this->mappingService->execute($mappingSourceCsv, $this->projectDir.'/data/import/okb', $mappingDirectory, null, $refreshLock);
             $catalogCsv = $directory.'/catalog-products.csv';
             $this->csvService->execute(
                 $mappingDirectory.'/okb-product-mapping.csv',
@@ -96,14 +99,14 @@ final readonly class EnrichCosmoShopImportService
         }
     }
 
-    private function catalogImportAlreadyExists(string $sourceImportLogId, Context $context): bool
+    private function catalogImportLogId(string $sourceImportLogId, Context $context): ?string
     {
         $criteria = (new Criteria())
             ->addFilter(new EqualsFilter('profileId', CatalogProductImportProfile::definition()['id']))
             ->addFilter(new EqualsFilter('config.parameters.'.self::SOURCE_IMPORT_LOG_PARAMETER, $sourceImportLogId))
             ->setLimit(1);
 
-        return null !== $this->logRepository->searchIds($criteria, $context)->firstId();
+        return $this->logRepository->searchIds($criteria, $context)->firstId();
     }
 
     private function assertSourceLog(ImportExportLogEntity $log): void
