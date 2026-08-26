@@ -1,0 +1,23 @@
+{
+  "base": "/bundles/jvimport/administration/",
+  "entryPoints": {
+    "jv-import": {
+      "css": [],
+      "dynamic": [],
+      "js": [
+        "/bundles/jvimport/administration/assets/jv-import-B59TPq_A.js"
+      ],
+      "legacy": false,
+      "preload": []
+    }
+  },
+  "legacy": false,
+  "metadatas": {},
+  "version": [
+    "7.1.0",
+    7,
+    1,
+    0
+  ],
+  "viteServer": null
+}

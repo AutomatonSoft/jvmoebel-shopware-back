@@ -1,0 +1,18 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services https://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <defaults autowire="true" autoconfigure="true" public="false"/>
+
+        <service id="Jv\Cms\DataResolver\Element\ButtonCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\SideNavigationCmsElementResolver">
+            <argument type="service" id="Shopware\Core\Content\Category\Service\NavigationLoader"/>
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+    </services>
+</container>

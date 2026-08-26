@@ -1,0 +1,43 @@
+/.idea
+/.DS_Store
+**/.DS_Store
+/.shopware-cli
+/.env.dev
+/.uniqueid.txt
+/custom/plugins/
+/vendor
+###> shopware/core ###
+.env.local
+.env.local.php
+.env.*.local
+/public/bundles/*
+/public/media/*
+/public/theme/*
+/public/thumbnail/*
+/public/sitemap/*
+/files/*
+!/files/.htaccess
+/var/*
+!/var/.htaccess
+/auth.json
+/install.lock
+/public/asset-manifest.json
+.env
+###< shopware/core ###
+
+###> php-cs-fixer/shim ###
+/.php-cs-fixer.php
+/.php-cs-fixer.cache
+###< php-cs-fixer/shim ###
+
+###> phpstan/phpstan ###
+phpstan.neon
+###< phpstan/phpstan ###
+
+###> phpunit/phpunit ###
+/phpunit.xml
+/.phpunit.cache/
+###< phpunit/phpunit ###
+
+# Shopware Administration build temp
+custom/static-plugins/*/src/Resources/app/administration/.tmp/

@@ -1,0 +1,2 @@
+const s=`{% block sw_cms_block_jv_side_navigation_preview %} <div class="sw-cms-preview-jv-side-navigation"> <span class="sw-cms-preview-jv-side-navigation__title">{{ $t('cms.blocks.jv-side-navigation.label') }}</span> <span class="sw-cms-preview-jv-side-navigation__line"></span> <span class="sw-cms-preview-jv-side-navigation__line"></span> <span class="sw-cms-preview-jv-side-navigation__line"></span> </div> {% endblock %}`,i={template:s};export{i as default};
+//# sourceMappingURL=index-K5gcHN1P.js.map

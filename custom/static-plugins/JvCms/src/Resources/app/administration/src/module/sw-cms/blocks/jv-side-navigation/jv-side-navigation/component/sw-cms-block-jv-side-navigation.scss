@@ -1,0 +1,13 @@
+.sw-cms-block-jv-side-navigation {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+/* Shopware wrappers around this block */
+.sw-cms-block:has(.sw-cms-el-jv-side-navigation),
+.sw-cms-slot:has(.sw-cms-el-jv-side-navigation) {
+    min-width: 0;
+    max-width: 100%;
+}

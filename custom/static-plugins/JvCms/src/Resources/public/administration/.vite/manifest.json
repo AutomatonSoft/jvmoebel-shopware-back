@@ -1,0 +1,138 @@
+{
+  "main.js": {
+    "file": "assets/jv-cms-C2EiVkkO.js",
+    "name": "jv-cms",
+    "src": "main.js",
+    "isEntry": true,
+    "dynamicImports": [
+      "module/sw-cms/elements/jv-button/preview/index.js",
+      "module/sw-cms/elements/jv-button/config/index.js",
+      "module/sw-cms/elements/jv-button/component/index.js",
+      "module/sw-cms/blocks/jv-button/jv-button-primary/preview/index.js",
+      "module/sw-cms/blocks/jv-button/jv-button-primary/component/index.js",
+      "module/sw-cms/blocks/jv-button/jv-button-secondary/preview/index.js",
+      "module/sw-cms/blocks/jv-button/jv-button-secondary/component/index.js",
+      "module/sw-cms/blocks/jv-button/jv-button-link/preview/index.js",
+      "module/sw-cms/blocks/jv-button/jv-button-link/component/index.js",
+      "module/sw-cms/elements/jv-side-navigation/preview/index.js",
+      "module/sw-cms/elements/jv-side-navigation/config/index.js",
+      "module/sw-cms/elements/jv-side-navigation/component/index.js",
+      "module/sw-cms/blocks/jv-side-navigation/jv-side-navigation/preview/index.js",
+      "module/sw-cms/blocks/jv-side-navigation/jv-side-navigation/component/index.js"
+    ]
+  },
+  "module/sw-cms/blocks/jv-button/jv-button-link/component/index.js": {
+    "file": "assets/index-Dkq-YXWg.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-button/jv-button-link/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-button/jv-button-link/preview/index.js": {
+    "file": "assets/index-CnQI0VhM.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-button/jv-button-link/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-oa01MR05.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-button/jv-button-primary/component/index.js": {
+    "file": "assets/index-CEyP9olc.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-button/jv-button-primary/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-button/jv-button-primary/preview/index.js": {
+    "file": "assets/index-i4eM4r5p.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-button/jv-button-primary/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DgPnFv4b.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-button/jv-button-secondary/component/index.js": {
+    "file": "assets/index-ObOHta0Z.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-button/jv-button-secondary/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-button/jv-button-secondary/preview/index.js": {
+    "file": "assets/index-nJxTJg3t.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-button/jv-button-secondary/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DKrLRM_7.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-side-navigation/jv-side-navigation/component/index.js": {
+    "file": "assets/index-CrA-vDtU.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-side-navigation/jv-side-navigation/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CAN2EAYv.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-side-navigation/jv-side-navigation/preview/index.js": {
+    "file": "assets/index-K5gcHN1P.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-side-navigation/jv-side-navigation/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-C855RAsj.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-button/component/index.js": {
+    "file": "assets/index-BrzD2l7m.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-button/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CRB0531x.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-button/config/index.js": {
+    "file": "assets/index-CgBpReOW.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-button/config/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/elements/jv-button/preview/index.js": {
+    "file": "assets/index-BG8c_r_5.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-button/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-D4IckMm7.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-side-navigation/component/index.js": {
+    "file": "assets/index-Dr_0zyGm.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-side-navigation/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CQHiCmcp.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-side-navigation/config/index.js": {
+    "file": "assets/index-HtzK8l56.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-side-navigation/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-B_0ZfQKT.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-side-navigation/preview/index.js": {
+    "file": "assets/index-CQWoCPB7.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-side-navigation/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DB4fQlLF.css"
+    ]
+  }
+}

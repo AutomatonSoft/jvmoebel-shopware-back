@@ -1,0 +1,3 @@
+parameters:
+    env(JV_MARKET_SALES_CHANNEL_URL_TEMPLATE): 'https://{domain}'
+    jv_market_configuration.sales_channel_url_template: '%env(JV_MARKET_SALES_CHANNEL_URL_TEMPLATE)%'
