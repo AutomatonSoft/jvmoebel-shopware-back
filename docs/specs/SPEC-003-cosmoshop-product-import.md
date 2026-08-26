@@ -20,7 +20,8 @@
 
 ## CSV-контракт
 
-Профиль рынка создаётся командой `jv:catalog:bootstrap-import-profiles` с именем `jv_cosmoshop_product_<domain>`.
+Профиль рынка с именем `jv_cosmoshop_product_<domain>` создаётся при техническом
+развёртывании. Контент-менеджер его не создаёт и не запускает CLI-команду.
 
 Источник передаёт как минимум следующие колонки:
 
@@ -68,9 +69,23 @@ Reference upsert требует label выбранного рынка: `en` дл
 
 До массового прогона проверяются product CSV: dry-run, реальный импорт, завершение фонового EAN-обогащения и повторный запуск без новых product assignments. Cross-sell проверяется в своей последующей итерации.
 
-## Запуск product-итерации
+## Пользовательский сценарий
 
-`JvImport` устанавливается и активируется через `bin/setup-local`. Exporter к CosmoShop — внешний инструмент и не входит в backend-репозиторий. До запуска команд ниже он должен получить доступ к нужной CosmoShop DB и сформировать два локальных входных файла: JSON справочников и product CSV по этому контракту. Путь к ним выбирает оператор; файлы не хранятся в Git.
+Контент-менеджер выбирает уже созданный профиль нужного рынка в штатном
+Shopware Administration Import/Export и загружает product CSV. После завершения
+этого import плагин автоматически ставит OKB enrichment в Messenger: он создаёт
+ровно один связанный catalog import для данного source import log. Повторная
+доставка Messenger message не создаёт второй catalog import. Invalid records
+остаются в обычном интерфейсе и отчёте Shopware; дополнительных команд, CSV или
+кнопок для связывания категорий и attributes контент-менеджеру не требуется.
+
+## Техническая подготовка и проверка
+
+`JvImport` устанавливается и активируется через `bin/setup-local`. Exporter к
+CosmoShop — внешний инструмент и не входит в backend-репозиторий. Команды ниже
+предназначены только для разработчика или оператора: первичной подготовки
+справочников, диагностики и воспроизведения проблемы. Они не являются
+пользовательским процессом импорта.
 
 ```bash
 # 1. Сначала reference data: внешний exporter сформировал JSON справочников
@@ -83,7 +98,7 @@ bin/console jv:catalog:upsert-cosmoshop-references \
 bin/console jv:catalog:bootstrap-import-profiles --no-interaction
 
 # 2. Внешний exporter сформировал product CSV для того же рынка.
-#    Проверка, затем реальный запуск и его повтор тем же файлом.
+#    Техническая проверка profile и повторного запуска.
 bin/console import:entity /path/to/cosmoshop-products-de.csv '+1 day' --profile-technical-name jv_cosmoshop_product_jvmoebel_de --dryRun --printErrors --no-interaction
 bin/console import:entity /path/to/cosmoshop-products-de.csv '+1 day' --profile-technical-name jv_cosmoshop_product_jvmoebel_de --printErrors --no-interaction
 bin/console import:entity /path/to/cosmoshop-products-de.csv '+1 day' --profile-technical-name jv_cosmoshop_product_jvmoebel_de --printErrors --no-interaction

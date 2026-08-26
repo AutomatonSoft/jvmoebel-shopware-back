@@ -24,6 +24,18 @@ final class CatalogProductImportLookupCacheTest extends TestCase
         self::assertSame('child-3', $cache->childId('parent-3'));
     }
 
+    public function testItForgetsLookupsBetweenImportJobs(): void
+    {
+        $cache = new CatalogProductImportLookupCache();
+        $cache->rememberParent('product-1', $this->parent('parent-1'));
+        $cache->rememberChildId('parent-1', 'child-1');
+
+        $cache->reset();
+
+        self::assertNull($cache->parent('product-1'));
+        self::assertNull($cache->childId('parent-1'));
+    }
+
     private function parent(string $id): ProductEntity
     {
         $parent = new ProductEntity();

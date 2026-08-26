@@ -128,8 +128,11 @@
             <argument type="service" id="Jv\Import\Service\ProductImport\Catalog\CatalogCategoryAttributeSchemaProvider"/>
             <argument type="service" id="Doctrine\DBAL\Connection"/>
             <argument type="service" id="Jv\Import\Service\ProductImport\Catalog\CatalogProductImportLookupCache"/>
+            <tag name="kernel.reset" method="reset"/>
         </service>
-        <service id="Jv\Import\Service\ProductImport\Catalog\CatalogProductImportLookupCache"/>
+        <service id="Jv\Import\Service\ProductImport\Catalog\CatalogProductImportLookupCache">
+            <tag name="kernel.reset" method="reset"/>
+        </service>
         <service id="Jv\Import\Service\ProductImport\Catalog\EnrichCosmoShopImportService">
             <argument type="service" id="Shopware\Core\Content\ImportExport\Service\ImportExportService"/>
             <argument type="service" id="shopware.filesystem.private"/>
@@ -137,7 +140,9 @@
             <argument type="service" id="Jv\Import\Integration\Okb\Service\PrepareOkbProductMappingService"/>
             <argument type="service" id="Jv\Import\Service\ProductImport\Catalog\PrepareCatalogShopwareImportCsvService"/>
             <argument type="service" id="import_export_profile.repository"/>
+            <argument type="service" id="import_export_log.repository"/>
             <argument type="service" id="messenger.bus.default"/>
+            <argument type="service" id="lock.factory"/>
             <argument key="$projectDir">%kernel.project_dir%</argument>
         </service>
         <service id="Jv\Import\Service\ProductImport\Catalog\ReconcileCatalogProductImportRecordService">

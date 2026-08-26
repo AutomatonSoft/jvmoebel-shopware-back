@@ -3,8 +3,9 @@
 namespace Jv\Import\Service\ProductImport\Catalog;
 
 use Shopware\Core\Content\Product\ProductEntity;
+use Symfony\Contracts\Service\ResetInterface;
 
-final class CatalogProductImportLookupCache
+final class CatalogProductImportLookupCache implements ResetInterface
 {
     /** @var array<string, ProductEntity> */
     private array $parents = [];
@@ -48,6 +49,13 @@ final class CatalogProductImportLookupCache
         $this->childIds[$parentId] = $childId;
 
         return $childId;
+    }
+
+    public function reset(): void
+    {
+        $this->parents = [];
+        $this->childIds = [];
+        $this->order = [];
     }
 
     private function evict(): void

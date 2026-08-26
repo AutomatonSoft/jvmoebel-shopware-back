@@ -18,7 +18,11 @@ use Shopware\Core\Content\ImportExport\Message\ImportExportMessage;
 use Shopware\Core\Content\ImportExport\Service\ImportExportService;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\IdSearchResult;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Lock\Store\InMemoryStore;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -43,6 +47,7 @@ final class EnrichCosmoShopImportServiceTest extends TestCase
                     && str_contains($csv, 'parent;COSMO-1;4260454042902;14423;1951')
                     && str_contains($csv, 'child;COSMO-1;4260454042902;14423;1951');
             }),
+            ['parameters' => ['jvCatalogEnrichmentSourceImportLogId' => $source->getId()]],
         )->willReturn($this->catalogLog());
 
         $filesystem = $this->createMock(FilesystemOperator::class);
@@ -50,6 +55,7 @@ final class EnrichCosmoShopImportServiceTest extends TestCase
 
         $profiles = $this->createMock(EntityRepository::class);
         $profiles->expects(self::once())->method('upsert')->with([CatalogProductImportProfile::definition()], $context);
+        $catalogLogs = $this->catalogLogs();
 
         $messageBus = $this->createMock(MessageBusInterface::class);
         $messageBus->expects(self::once())->method('dispatch')->with(self::callback(static fn (object $message): bool => $message instanceof ImportExportMessage && '019fe6386ca771b29f5a8412a8cc3d96' === $message->getLogId()))->willReturn(new Envelope(new \stdClass()));
@@ -61,7 +67,9 @@ final class EnrichCosmoShopImportServiceTest extends TestCase
             new PrepareOkbProductMappingService(new SemicolonCsvReader(), $this->apiClient()),
             new PrepareCatalogShopwareImportCsvService(new SemicolonCsvReader()),
             $profiles,
+            $catalogLogs,
             $messageBus,
+            new LockFactory(new InMemoryStore()),
             (string) getcwd(),
         );
         $service->execute($source->getId(), $context);
@@ -95,6 +103,7 @@ final class EnrichCosmoShopImportServiceTest extends TestCase
                     && str_contains($csv, 'COSMO-1')
                     && !str_contains($csv, 'COSMO-INVALID');
             }),
+            ['parameters' => ['jvCatalogEnrichmentSourceImportLogId' => $source->getId()]],
         )->willReturn($this->catalogLog());
         $filesystem = $this->createMock(FilesystemOperator::class);
         $filesystem->expects(self::exactly(2))->method('readStream')->willReturnCallback(fn (string $path) => $this->stream(match ($path) {
@@ -104,6 +113,7 @@ final class EnrichCosmoShopImportServiceTest extends TestCase
         }));
         $profiles = $this->createMock(EntityRepository::class);
         $profiles->expects(self::once())->method('upsert');
+        $catalogLogs = $this->catalogLogs();
         $messageBus = $this->createMock(MessageBusInterface::class);
         $messageBus->expects(self::once())->method('dispatch')->willReturn(new Envelope(new \stdClass()));
 
@@ -114,9 +124,65 @@ final class EnrichCosmoShopImportServiceTest extends TestCase
             new PrepareOkbProductMappingService(new SemicolonCsvReader(), $this->apiClient()),
             new PrepareCatalogShopwareImportCsvService(new SemicolonCsvReader()),
             $profiles,
+            $catalogLogs,
             $messageBus,
+            new LockFactory(new InMemoryStore()),
             (string) getcwd(),
         ))->execute($source->getId(), $context);
+    }
+
+    public function testItDoesNotQueueAnotherCatalogImportForTheSameSourceImport(): void
+    {
+        $context = Context::createDefaultContext();
+        $source = $this->sourceLog();
+        $importExport = $this->createMock(ImportExportService::class);
+        $importExport->expects(self::once())->method('findLog')->with($context, $source->getId())->willReturn($source);
+        $importExport->expects(self::once())->method('prepareImport')->willReturn($this->catalogLog());
+        $filesystem = $this->createMock(FilesystemOperator::class);
+        $filesystem->expects(self::once())->method('readStream')->willReturn($this->stream("product_number;ean\nCOSMO-1;4260454042902\n"));
+        $profiles = $this->createMock(EntityRepository::class);
+        $profiles->expects(self::once())->method('upsert');
+        $catalogLogs = $this->createMock(EntityRepository::class);
+        $catalogLogSearches = 0;
+        $catalogLogs->expects(self::exactly(2))->method('searchIds')->willReturnCallback(
+            static function (Criteria $criteria, Context $queryContext) use (&$catalogLogSearches): IdSearchResult {
+                ++$catalogLogSearches;
+
+                return IdSearchResult::fromIds(
+                    1 === $catalogLogSearches ? [] : ['019fe6386ca771b29f5a8412a8cc3d96'],
+                    $criteria,
+                    $queryContext,
+                );
+            },
+        );
+        $messageBus = $this->createMock(MessageBusInterface::class);
+        $messageBus->expects(self::once())->method('dispatch')->willReturn(new Envelope(new \stdClass()));
+
+        $service = new EnrichCosmoShopImportService(
+            $importExport,
+            $filesystem,
+            new SemicolonCsvReader(),
+            new PrepareOkbProductMappingService(new SemicolonCsvReader(), $this->apiClient()),
+            new PrepareCatalogShopwareImportCsvService(new SemicolonCsvReader()),
+            $profiles,
+            $catalogLogs,
+            $messageBus,
+            new LockFactory(new InMemoryStore()),
+            (string) getcwd(),
+        );
+        $service->execute($source->getId(), $context);
+        $service->execute($source->getId(), $context);
+    }
+
+    /** @return EntityRepository<\Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogCollection> */
+    private function catalogLogs(): EntityRepository
+    {
+        $repository = $this->createMock(EntityRepository::class);
+        $repository->expects(self::once())->method('searchIds')->willReturnCallback(
+            static fn (Criteria $criteria, Context $queryContext): IdSearchResult => IdSearchResult::fromIds([], $criteria, $queryContext),
+        );
+
+        return $repository;
     }
 
     private function apiClient(): OkbProductApiClient

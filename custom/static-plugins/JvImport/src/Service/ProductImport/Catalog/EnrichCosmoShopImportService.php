@@ -7,17 +7,23 @@ use Jv\Import\Integration\Csv\SemicolonCsvReader;
 use Jv\Import\Integration\Okb\Profile\CatalogProductImportProfile;
 use Jv\Import\Integration\Okb\Service\PrepareOkbProductMappingService;
 use League\Flysystem\FilesystemOperator;
+use Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogCollection;
 use Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogEntity;
 use Shopware\Core\Content\ImportExport\Message\ImportExportMessage;
 use Shopware\Core\Content\ImportExport\Service\ImportExportService;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\MessageBusInterface;
 
 final readonly class EnrichCosmoShopImportService
 {
+    private const string SOURCE_IMPORT_LOG_PARAMETER = 'jvCatalogEnrichmentSourceImportLogId';
+
     public function __construct(
         private ImportExportService $importExportService,
         private FilesystemOperator $privateFilesystem,
@@ -26,12 +32,31 @@ final readonly class EnrichCosmoShopImportService
         private PrepareCatalogShopwareImportCsvService $csvService,
         /** @var EntityRepository<EntityCollection<\Shopware\Core\Content\ImportExport\ImportExportProfileEntity>> */
         private EntityRepository $profileRepository,
+        /** @var EntityRepository<ImportExportLogCollection> */
+        private EntityRepository $logRepository,
         private MessageBusInterface $messageBus,
+        private LockFactory $lockFactory,
         private string $projectDir,
     ) {
     }
 
     public function execute(string $sourceImportLogId, Context $context): void
+    {
+        $lock = $this->lockFactory->createLock('jv_catalog_enrichment_'.$sourceImportLogId, 7200.0);
+        if (!$lock->acquire()) {
+            return;
+        }
+        try {
+            if ($this->catalogImportAlreadyExists($sourceImportLogId, $context)) {
+                return;
+            }
+            $this->enrich($sourceImportLogId, $context);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function enrich(string $sourceImportLogId, Context $context): void
     {
         $sourceLog = $this->importExportService->findLog($context, $sourceImportLogId);
         $this->assertSourceLog($sourceLog);
@@ -63,11 +88,22 @@ final readonly class EnrichCosmoShopImportService
                 CatalogProductImportProfile::definition()['id'],
                 new \DateTimeImmutable('+1 day'),
                 new UploadedFile($catalogCsv, 'okb-catalog-products.csv', 'text/csv', null, true),
+                ['parameters' => [self::SOURCE_IMPORT_LOG_PARAMETER => $sourceImportLogId]],
             );
             $this->messageBus->dispatch(new ImportExportMessage($context, $catalogLog->getId(), $catalogLog->getActivity()));
         } finally {
             $this->removeDirectory($directory);
         }
+    }
+
+    private function catalogImportAlreadyExists(string $sourceImportLogId, Context $context): bool
+    {
+        $criteria = (new Criteria())
+            ->addFilter(new EqualsFilter('profileId', CatalogProductImportProfile::definition()['id']))
+            ->addFilter(new EqualsFilter('config.parameters.'.self::SOURCE_IMPORT_LOG_PARAMETER, $sourceImportLogId))
+            ->setLimit(1);
+
+        return null !== $this->logRepository->searchIds($criteria, $context)->firstId();
     }
 
     private function assertSourceLog(ImportExportLogEntity $log): void

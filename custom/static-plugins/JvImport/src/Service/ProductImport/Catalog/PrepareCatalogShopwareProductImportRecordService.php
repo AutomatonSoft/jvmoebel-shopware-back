@@ -15,8 +15,9 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\Currency\CurrencyCollection;
+use Symfony\Contracts\Service\ResetInterface;
 
-final class PrepareCatalogShopwareProductImportRecordService
+final class PrepareCatalogShopwareProductImportRecordService implements ResetInterface
 {
     /** @var array<string, array<string, CatalogCategoryAttributeSchema>> */
     private array $schemas = [];
@@ -301,6 +302,14 @@ final class PrepareCatalogShopwareProductImportRecordService
                 $this->existingOptionIdsByPropertyGroup[$groupId][$id] = true;
             }
         }
+    }
+
+    public function reset(): void
+    {
+        $this->schemas = [];
+        $this->languageIds = null;
+        $this->manufacturerDescriptions = [];
+        $this->existingOptionIdsByPropertyGroup = [];
     }
 
     private function childId(\Shopware\Core\Content\Product\ProductEntity $parent, string $ean, Context $context): string
