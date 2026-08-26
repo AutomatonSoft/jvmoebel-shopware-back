@@ -25,7 +25,8 @@ final readonly class QueueCosmoShopCatalogEnrichmentSubscriber implements EventS
     {
         $log = $event->getLogEntity();
         if (
-            Progress::STATE_SUCCEEDED !== $event->getProgress()->getState()
+            !in_array($event->getProgress()->getState(), [Progress::STATE_SUCCEEDED, Progress::STATE_FAILED], true)
+            || (Progress::STATE_FAILED === $event->getProgress()->getState() && 0 === $event->getProgress()->getProcessedRecords())
             || ImportExportLogEntity::ACTIVITY_IMPORT !== $log->getActivity()
             || null === MarketImportProfile::marketForTechnicalName($log->getProfile()?->getTechnicalName())
         ) {

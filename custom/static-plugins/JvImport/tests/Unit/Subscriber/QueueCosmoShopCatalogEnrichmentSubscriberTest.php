@@ -36,6 +36,17 @@ final class QueueCosmoShopCatalogEnrichmentSubscriberTest extends TestCase
         $subscriber->queue(new ImportExportAfterProcessFinishedEvent(Context::createDefaultContext(), $other, new Progress($other->getId(), Progress::STATE_SUCCEEDED)));
     }
 
+    public function testItQueuesTheProcessedRecordsWhenOneSourceRowIsInvalid(): void
+    {
+        $log = $this->log('jv_cosmoshop_product_jvmoebel_de');
+        $messageBus = $this->createMock(MessageBusInterface::class);
+        $messageBus->expects(self::once())->method('dispatch')->with(self::callback(static fn (object $message): bool => $message instanceof CosmoShopCatalogEnrichmentMessage && $log->getId() === $message->sourceImportLogId))->willReturn(new Envelope(new \stdClass()));
+        $progress = new Progress($log->getId(), Progress::STATE_FAILED);
+        $progress->addProcessedRecords(99);
+
+        (new QueueCosmoShopCatalogEnrichmentSubscriber($messageBus))->queue(new ImportExportAfterProcessFinishedEvent(Context::createDefaultContext(), $log, $progress));
+    }
+
     private function log(string $technicalName): ImportExportLogEntity
     {
         $profile = new ImportExportProfileEntity();
