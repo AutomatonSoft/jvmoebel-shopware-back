@@ -11,6 +11,7 @@ use Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLog
 use Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogEntity;
 use Shopware\Core\Content\ImportExport\Message\ImportExportMessage;
 use Shopware\Core\Content\ImportExport\Service\ImportExportService;
+use Shopware\Core\Content\ImportExport\Struct\Progress;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -49,7 +50,10 @@ final readonly class EnrichCosmoShopImportService
         try {
             $catalogLogId = $this->catalogImportLogId($sourceImportLogId, $context);
             if (null !== $catalogLogId) {
-                $this->messageBus->dispatch(new ImportExportMessage($context, $catalogLogId, ImportExportLogEntity::ACTIVITY_IMPORT));
+                $catalogLog = $this->importExportService->findLog($context, $catalogLogId);
+                if (Progress::STATE_PROGRESS === $catalogLog->getState()) {
+                    $this->messageBus->dispatch(new ImportExportMessage($context, $catalogLogId, ImportExportLogEntity::ACTIVITY_IMPORT));
+                }
 
                 return;
             }

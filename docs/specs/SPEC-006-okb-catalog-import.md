@@ -69,12 +69,16 @@ EAN: повтор EAN сам по себе разрешён.
 очередь временная папка удаляется. Эти промежуточные CSV не являются входом
 для контент-менеджера и не накапливаются между запусками.
 
-У задачи есть distributed lock по source import log ID. Созданный catalog import
-сохраняет этот ID в своём техническом config, поэтому повторная доставка
-сообщения не создаёт второй catalog import. Для параллельных Messenger workers
-используются уникальные Redis consumer names и keepalive. Stateful lookup и
-preparation caches сбрасываются ядром между Messenger messages; они не переносят
-ProductEntity, child IDs, schemas или option IDs в следующий import job.
+У задачи есть Redis distributed lock по source import log ID. Он обновляется
+после обработки каждой исходной строки. Созданный catalog import сохраняет этот
+ID в своём техническом config, поэтому повторная доставка сообщения не создаёт
+второй catalog import. Если `prepareImport` уже создал log, но отправка core
+сообщения временно не удалась, повтор доставляет в очередь именно этот log со
+state `progress`; завершённый log повторно не запускается. Для параллельных
+Messenger workers используются уникальные Redis consumer names и keepalive.
+Stateful lookup и preparation caches сбрасываются ядром между Messenger
+messages; они не переносят ProductEntity, child IDs, schemas или option IDs в
+следующий import job.
 
 ## Дерево и схема category
 
