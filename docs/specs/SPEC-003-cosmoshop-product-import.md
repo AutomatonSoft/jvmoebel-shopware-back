@@ -11,7 +11,9 @@
 Импортируются: общая идентичность товара по SKU, active, stock, EAN, weight, length/width/height, min/max purchase, manufacturer, gross/net и UVP/list price в валюте рынка, translations, visibility и delivery/unit fields.
 
 Категории, OKB attributes и варианты описаны отдельной
-[SPEC-006](SPEC-006-okb-catalog-import.md). Этот CSV остаётся источником
+[SPEC-006](SPEC-006-okb-catalog-import.md). После успешного штатного импорта
+этого CSV фоновая задача автоматически обогащает только его строки по EAN и
+ставит итоговый parent/child CSV в штатную очередь Import/Export. Этот CSV остаётся источником
 базовой CosmoShop карточки и SKU; его категории и старые публикуемые attributes
 не становятся целевой моделью. Media описаны отдельно в SPEC-005. Cross-sell
 намеренно отложен до завершения media, категорий и атрибутов.
@@ -64,7 +66,7 @@ Reference upsert требует label выбранного рынка: `en` дл
 
 Проверка выполняется dry-run, затем реальным импортом. Invalid records экспортируются штатным механизмом Shopware. Реальный повторный запуск должен завершаться только update-операциями.
 
-До массового прогона проверяются product CSV: dry-run, реальный импорт и повторный запуск без новых product assignments. Cross-sell проверяется в своей последующей итерации.
+До массового прогона проверяются product CSV: dry-run, реальный импорт, завершение фонового EAN-обогащения и повторный запуск без новых product assignments. Cross-sell проверяется в своей последующей итерации.
 
 ## Запуск product-итерации
 
