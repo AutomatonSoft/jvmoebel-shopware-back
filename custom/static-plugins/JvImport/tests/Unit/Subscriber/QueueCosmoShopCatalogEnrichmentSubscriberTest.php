@@ -6,10 +6,12 @@ use Jv\Import\Message\CosmoShopCatalogEnrichmentMessage;
 use Jv\Import\Subscriber\QueueCosmoShopCatalogEnrichmentSubscriber;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogEntity;
-use Shopware\Core\Content\ImportExport\Event\ImportExportAfterProcessFinishedEvent;
 use Shopware\Core\Content\ImportExport\ImportExportProfileEntity;
+use Shopware\Core\Content\ImportExport\Service\ImportExportService;
 use Shopware\Core\Content\ImportExport\Struct\Progress;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityWriteResult;
+use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenEvent;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 
@@ -20,31 +22,54 @@ final class QueueCosmoShopCatalogEnrichmentSubscriberTest extends TestCase
         $log = $this->log('jv_cosmoshop_product_jvmoebel_de');
         $messageBus = $this->createMock(MessageBusInterface::class);
         $messageBus->expects(self::once())->method('dispatch')->with(self::callback(static fn (object $message): bool => $message instanceof CosmoShopCatalogEnrichmentMessage && $log->getId() === $message->sourceImportLogId))->willReturn(new Envelope(new \stdClass()));
+        $importExport = $this->importExport($log);
 
-        (new QueueCosmoShopCatalogEnrichmentSubscriber($messageBus))->queue(new ImportExportAfterProcessFinishedEvent(Context::createDefaultContext(), $log, new Progress($log->getId(), Progress::STATE_SUCCEEDED)));
+        (new QueueCosmoShopCatalogEnrichmentSubscriber($messageBus, $importExport))->queue($this->written($log->getId(), Progress::STATE_SUCCEEDED));
     }
 
-    public function testItIgnoresFailedAndUnrelatedImports(): void
+    public function testItIgnoresProgressFailedWithoutRecordsAndUnrelatedImports(): void
     {
         $messageBus = $this->createMock(MessageBusInterface::class);
         $messageBus->expects(self::never())->method('dispatch');
-        $subscriber = new QueueCosmoShopCatalogEnrichmentSubscriber($messageBus);
 
         $failed = $this->log('jv_cosmoshop_product_jvmoebel_de');
-        $subscriber->queue(new ImportExportAfterProcessFinishedEvent(Context::createDefaultContext(), $failed, new Progress($failed->getId(), Progress::STATE_FAILED)));
         $other = $this->log('default_product');
-        $subscriber->queue(new ImportExportAfterProcessFinishedEvent(Context::createDefaultContext(), $other, new Progress($other->getId(), Progress::STATE_SUCCEEDED)));
+        $subscriber = new QueueCosmoShopCatalogEnrichmentSubscriber($messageBus, $this->importExport($failed, $other));
+        $subscriber->queue($this->written($failed->getId(), Progress::STATE_PROGRESS));
+        $subscriber->queue($this->written($failed->getId(), Progress::STATE_FAILED));
+        $subscriber->queue($this->written($other->getId(), Progress::STATE_SUCCEEDED));
     }
 
     public function testItQueuesTheProcessedRecordsWhenOneSourceRowIsInvalid(): void
     {
         $log = $this->log('jv_cosmoshop_product_jvmoebel_de');
+        $log->setRecords(99);
         $messageBus = $this->createMock(MessageBusInterface::class);
         $messageBus->expects(self::once())->method('dispatch')->with(self::callback(static fn (object $message): bool => $message instanceof CosmoShopCatalogEnrichmentMessage && $log->getId() === $message->sourceImportLogId))->willReturn(new Envelope(new \stdClass()));
-        $progress = new Progress($log->getId(), Progress::STATE_FAILED);
-        $progress->addProcessedRecords(99);
 
-        (new QueueCosmoShopCatalogEnrichmentSubscriber($messageBus))->queue(new ImportExportAfterProcessFinishedEvent(Context::createDefaultContext(), $log, $progress));
+        (new QueueCosmoShopCatalogEnrichmentSubscriber($messageBus, $this->importExport($log)))->queue($this->written($log->getId(), Progress::STATE_FAILED));
+    }
+
+    private function importExport(ImportExportLogEntity ...$logs): ImportExportService
+    {
+        $logsById = [];
+        foreach ($logs as $log) {
+            $logsById[$log->getId()] = $log;
+        }
+
+        $service = $this->createMock(ImportExportService::class);
+        $service->method('findLog')->willReturnCallback(static fn (Context $context, string $id): ImportExportLogEntity => $logsById[$id]);
+
+        return $service;
+    }
+
+    private function written(string $logId, string $state): EntityWrittenEvent
+    {
+        return new EntityWrittenEvent(
+            'import_export_log',
+            [new EntityWriteResult($logId, ['state' => $state], 'import_export_log', EntityWriteResult::OPERATION_UPDATE)],
+            Context::createDefaultContext(),
+        );
     }
 
     private function log(string $technicalName): ImportExportLogEntity
