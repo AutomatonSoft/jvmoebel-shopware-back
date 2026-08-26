@@ -1,0 +1,80 @@
+services:
+  bootstrap:
+    build:
+      context: .
+      dockerfile: Dockerfile.deploy
+    restart: "no"
+    command: ["/usr/local/bin/stage-bootstrap"]
+    environment: &shopware_environment
+      APP_ENV: prod
+      APP_DEBUG: "0"
+      APP_SECRET: ${APP_SECRET:?APP_SECRET is required}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN:?MESSENGER_TRANSPORT_DSN is required}
+      MESSENGER_TRANSPORT_LOW_PRIORITY_DSN: ${MESSENGER_TRANSPORT_LOW_PRIORITY_DSN:?MESSENGER_TRANSPORT_LOW_PRIORITY_DSN is required}
+      MESSENGER_TRANSPORT_FAILURE_DSN: ${MESSENGER_TRANSPORT_FAILURE_DSN:?MESSENGER_TRANSPORT_FAILURE_DSN is required}
+      SHOPWARE_ES_ENABLED: "0"
+      SHOPWARE_ES_INDEXING_ENABLED: "0"
+      SHOPWARE_HTTP_CACHE_ENABLED: "1"
+      TRUSTED_PROXIES: REMOTE_ADDR
+      SYMFONY_TRUSTED_PROXIES: REMOTE_ADDR
+      JV_MARKET_SALES_CHANNEL_URL_TEMPLATE: https://{domain}
+      SHOPWARE_INITIAL_INSTALL: ${SHOPWARE_INITIAL_INSTALL:?SHOPWARE_INITIAL_INSTALL is required}
+      SHOPWARE_SHOP_NAME: ${SHOPWARE_SHOP_NAME:?SHOPWARE_SHOP_NAME is required}
+      SHOPWARE_SHOP_EMAIL: ${SHOPWARE_SHOP_EMAIL:?SHOPWARE_SHOP_EMAIL is required}
+    networks: [database]
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.deploy
+    restart: unless-stopped
+    init: true
+    environment: *shopware_environment
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+    networks:
+      database: {}
+      application:
+        aliases: [shopware-stage]
+    healthcheck:
+      test: ["CMD-SHELL", "php -r 'exit((int)!@file_get_contents(\"http://127.0.0.1/\"));'"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.deploy
+    restart: unless-stopped
+    init: true
+    command: ["php", "bin/console", "messenger:consume", "async", "low_priority", "--memory-limit=512M", "--time-limit=3600"]
+    environment: *shopware_environment
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+    networks: [database]
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.deploy
+    restart: unless-stopped
+    init: true
+    command: ["php", "bin/console", "scheduled-task:run", "--memory-limit=512M", "--time-limit=3600"]
+    environment: *shopware_environment
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+    networks: [database]
+
+networks:
+  database:
+    external: true
+    name: ${DATA_NETWORK:?DATA_NETWORK is required}
+  application:
+    external: true
+    name: ${APP_NETWORK:?APP_NETWORK is required}

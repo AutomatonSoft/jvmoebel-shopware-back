@@ -1,0 +1,40 @@
+FROM php:8.5-cli-bookworm AS build
+
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y git libicu-dev libzip-dev unzip zlib1g-dev \
+    && docker-php-ext-install -j"$(nproc)" intl opcache pdo_mysql zip \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
+
+WORKDIR /var/www/html
+
+COPY . .
+
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts \
+    && rm -rf var/cache var/log
+
+FROM php:8.5-apache-bookworm
+
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y libicu72 libzip4 \
+    && docker-php-ext-install -j"$(nproc)" intl opcache pdo_mysql zip \
+    && a2enmod expires headers rewrite \
+    && sed -ri 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /var/www/html
+
+COPY --from=build /var/www/html ./
+
+COPY docker/stage-bootstrap /usr/local/bin/stage-bootstrap
+
+RUN chmod 0755 /usr/local/bin/stage-bootstrap \
+    && chown -R www-data:www-data var public
+
+ENV APP_ENV=prod
+ENV APP_DEBUG=0
+
+EXPOSE 80
+
+CMD ["apache2-foreground"]
