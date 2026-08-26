@@ -57,6 +57,7 @@ final class EnrichCosmoShopImportServiceTest extends TestCase
         $service = new EnrichCosmoShopImportService(
             $importExport,
             $filesystem,
+            new SemicolonCsvReader(),
             new PrepareOkbProductMappingService(new SemicolonCsvReader(), $this->apiClient()),
             new PrepareCatalogShopwareImportCsvService(new SemicolonCsvReader()),
             $profiles,
@@ -66,6 +67,56 @@ final class EnrichCosmoShopImportServiceTest extends TestCase
         $service->execute($source->getId(), $context);
 
         self::assertSame([], glob((string) getcwd().'/var/import/okb-enrichment/'.$source->getId().'-*'));
+    }
+
+    public function testItExcludesSourceRowsAlreadyReportedAsInvalid(): void
+    {
+        $context = Context::createDefaultContext();
+        $source = $this->sourceLog();
+        $source->setInvalidRecordsLogId('019fe6386ca771b29f5a8412a8cc3d97');
+        $invalid = new ImportExportLogEntity();
+        $invalid->setId('019fe6386ca771b29f5a8412a8cc3d97');
+        $invalidFile = new ImportExportFileEntity();
+        $invalidFile->setPath('source/invalid.csv');
+        $invalid->setFile($invalidFile);
+        $importExport = $this->createMock(ImportExportService::class);
+        $importExport->expects(self::exactly(2))->method('findLog')->willReturnMap([
+            [$context, $source->getId(), $source],
+            [$context, $invalid->getId(), $invalid],
+        ]);
+        $importExport->expects(self::once())->method('prepareImport')->with(
+            $context,
+            CatalogProductImportProfile::definition()['id'],
+            self::isInstanceOf(\DateTimeInterface::class),
+            self::callback(function (UploadedFile $file): bool {
+                $csv = file_get_contents($file->getPathname());
+
+                return is_string($csv)
+                    && str_contains($csv, 'COSMO-1')
+                    && !str_contains($csv, 'COSMO-INVALID');
+            }),
+        )->willReturn($this->catalogLog());
+        $filesystem = $this->createMock(FilesystemOperator::class);
+        $filesystem->expects(self::exactly(2))->method('readStream')->willReturnCallback(fn (string $path) => $this->stream(match ($path) {
+            'source/import.csv' => "product_number;ean\nCOSMO-1;4260454042902\nCOSMO-INVALID;4260454043503\n",
+            'source/invalid.csv' => "product_number;_error\nCOSMO-INVALID;invalid\n",
+            default => throw new \LogicException(sprintf('Unexpected source file "%s".', $path)),
+        }));
+        $profiles = $this->createMock(EntityRepository::class);
+        $profiles->expects(self::once())->method('upsert');
+        $messageBus = $this->createMock(MessageBusInterface::class);
+        $messageBus->expects(self::once())->method('dispatch')->willReturn(new Envelope(new \stdClass()));
+
+        (new EnrichCosmoShopImportService(
+            $importExport,
+            $filesystem,
+            new SemicolonCsvReader(),
+            new PrepareOkbProductMappingService(new SemicolonCsvReader(), $this->apiClient()),
+            new PrepareCatalogShopwareImportCsvService(new SemicolonCsvReader()),
+            $profiles,
+            $messageBus,
+            (string) getcwd(),
+        ))->execute($source->getId(), $context);
     }
 
     private function apiClient(): OkbProductApiClient

@@ -133,6 +133,7 @@
         <service id="Jv\Import\Service\ProductImport\Catalog\EnrichCosmoShopImportService">
             <argument type="service" id="Shopware\Core\Content\ImportExport\Service\ImportExportService"/>
             <argument type="service" id="shopware.filesystem.private"/>
+            <argument type="service" id="Jv\Import\Integration\Csv\SemicolonCsvReader"/>
             <argument type="service" id="Jv\Import\Integration\Okb\Service\PrepareOkbProductMappingService"/>
             <argument type="service" id="Jv\Import\Service\ProductImport\Catalog\PrepareCatalogShopwareImportCsvService"/>
             <argument type="service" id="import_export_profile.repository"/>

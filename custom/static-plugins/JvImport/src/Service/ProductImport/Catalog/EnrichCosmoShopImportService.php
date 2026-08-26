@@ -3,6 +3,7 @@
 namespace Jv\Import\Service\ProductImport\Catalog;
 
 use Jv\Import\Integration\CosmoShop\Profile\MarketImportProfile;
+use Jv\Import\Integration\Csv\SemicolonCsvReader;
 use Jv\Import\Integration\Okb\Profile\CatalogProductImportProfile;
 use Jv\Import\Integration\Okb\Service\PrepareOkbProductMappingService;
 use League\Flysystem\FilesystemOperator;
@@ -20,6 +21,7 @@ final readonly class EnrichCosmoShopImportService
     public function __construct(
         private ImportExportService $importExportService,
         private FilesystemOperator $privateFilesystem,
+        private SemicolonCsvReader $csvReader,
         private PrepareOkbProductMappingService $mappingService,
         private PrepareCatalogShopwareImportCsvService $csvService,
         /** @var EntityRepository<EntityCollection<\Shopware\Core\Content\ImportExport\ImportExportProfileEntity>> */
@@ -42,11 +44,12 @@ final readonly class EnrichCosmoShopImportService
         try {
             $sourceCsv = $directory.'/source.csv';
             $this->copySourceFile($sourceFile->getPath(), $sourceCsv);
+            $mappingSourceCsv = $this->withoutInvalidSourceRows($sourceCsv, $sourceLog, $context, $directory);
             $mappingDirectory = $directory.'/mapping';
             if (!mkdir($mappingDirectory, 0775) && !is_dir($mappingDirectory)) {
                 throw new \RuntimeException(sprintf('Could not create OKB mapping directory "%s".', $mappingDirectory));
             }
-            $this->mappingService->execute($sourceCsv, $this->projectDir.'/data/import/okb', $mappingDirectory, null);
+            $this->mappingService->execute($mappingSourceCsv, $this->projectDir.'/data/import/okb', $mappingDirectory, null);
             $catalogCsv = $directory.'/catalog-products.csv';
             $this->csvService->execute(
                 $mappingDirectory.'/okb-product-mapping.csv',
@@ -109,6 +112,61 @@ final readonly class EnrichCosmoShopImportService
             fclose($source);
             fclose($destination);
         }
+    }
+
+    private function withoutInvalidSourceRows(string $sourceCsv, ImportExportLogEntity $sourceLog, Context $context, string $directory): string
+    {
+        $invalidLogId = $sourceLog->getInvalidRecordsLogId();
+        if (null === $invalidLogId) {
+            return $sourceCsv;
+        }
+        $invalidLog = $this->importExportService->findLog($context, $invalidLogId);
+        $invalidFile = $invalidLog->getFile();
+        if (null === $invalidFile) {
+            throw new \InvalidArgumentException(sprintf('Invalid-record log "%s" has no file.', $invalidLogId));
+        }
+        $invalidCsv = $directory.'/source-invalid.csv';
+        $this->copySourceFile($invalidFile->getPath(), $invalidCsv);
+        $invalidProductNumbers = [];
+        foreach ($this->csvReader->rows($invalidCsv, ['product_number']) as $row) {
+            $invalidProductNumbers[$row['product_number']] = true;
+        }
+        if ([] === $invalidProductNumbers) {
+            return $sourceCsv;
+        }
+
+        $filtered = $directory.'/source-valid.csv';
+        $input = fopen($sourceCsv, 'rb');
+        $output = fopen($filtered, 'wb');
+        if (false === $input || false === $output) {
+            if (is_resource($input)) {
+                fclose($input);
+            }
+            if (is_resource($output)) {
+                fclose($output);
+            }
+            throw new \RuntimeException('Could not prepare the valid source rows for catalog enrichment.');
+        }
+        try {
+            $headers = fgetcsv($input, 0, ';', '"', '\\');
+            if (false === $headers || false === fputcsv($output, $headers, ';', '"', '\\')) {
+                throw new \RuntimeException('Could not read the source CSV header for catalog enrichment.');
+            }
+            $productNumberColumn = array_search('product_number', array_map(static fn (string $header): string => trim($header), $headers), true);
+            if (false === $productNumberColumn) {
+                throw new \InvalidArgumentException('Source CSV has no product_number column.');
+            }
+            while (false !== ($row = fgetcsv($input, 0, ';', '"', '\\'))) {
+                if (!isset($invalidProductNumbers[trim($row[$productNumberColumn] ?? '')]) && false === fputcsv($output, $row, ';', '"', '\\')) {
+                    throw new \RuntimeException('Could not write valid source rows for catalog enrichment.');
+                }
+            }
+        } finally {
+            fclose($input);
+            fclose($output);
+        }
+
+        return $filtered;
     }
 
     private function removeDirectory(string $directory): void
