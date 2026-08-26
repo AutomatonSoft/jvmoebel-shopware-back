@@ -41,6 +41,7 @@ final readonly class ReconcileCatalogProductImportRecordService
         }
         $parentId = $record['parentId'] ?? null;
         if (is_string($parentId) && Uuid::isValid($parentId)) {
+            $this->ensureConfiguratorSettings($parentId, $this->ids($record['options'] ?? []));
             if ($this->reconcile($parentId, 'configurator', $this->ids($record['options'] ?? []))) {
                 $reindex[] = $parentId;
             }
@@ -73,6 +74,25 @@ final readonly class ReconcileCatalogProductImportRecordService
         }
 
         return [] !== $gone;
+    }
+
+    /** @param list<string> $optionIds */
+    private function ensureConfiguratorSettings(string $productId, array $optionIds): void
+    {
+        $product = Uuid::fromHexToBytes($productId);
+        $version = Uuid::fromHexToBytes(Defaults::LIVE_VERSION);
+        foreach ($optionIds as $optionId) {
+            $this->connection->executeStatement(
+                'INSERT IGNORE INTO `product_configurator_setting` (`id`, `version_id`, `product_id`, `product_version_id`, `property_group_option_id`, `position`, `created_at`) VALUES (:id, :versionId, :productId, :productVersionId, :optionId, 0, NOW(3))',
+                [
+                    'id' => Uuid::fromHexToBytes(Uuid::fromStringToHex('jvmoebel.catalog.configurator.'.$productId.'.'.$optionId)),
+                    'versionId' => $version,
+                    'productId' => $product,
+                    'productVersionId' => $version,
+                    'optionId' => Uuid::fromHexToBytes($optionId),
+                ],
+            );
+        }
     }
 
     /** @param list<string> $productIds */

@@ -95,6 +95,10 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
             self::assertCount(1, $child->getOptions() ?? []);
             $brownOptionId = $child->getOptions()?->first()?->getId();
             self::assertIsString($brownOptionId);
+            self::assertSame(1, (int) $this->connection()->fetchOne(
+                'SELECT COUNT(*) FROM `product_configurator_setting` WHERE `product_id` = :productId AND `product_version_id` = :versionId AND `property_group_option_id` = :optionId',
+                ['productId' => Uuid::fromHexToBytes($parentId), 'versionId' => Uuid::fromHexToBytes(Defaults::LIVE_VERSION), 'optionId' => Uuid::fromHexToBytes($brownOptionId)],
+            ));
             $this->connection()->executeStatement(
                 'UPDATE `property_group_option_translation` SET `name` = :name WHERE `property_group_option_id` = :optionId AND `language_id` = :languageId',
                 ['name' => 'Manuell übersetzt', 'optionId' => Uuid::fromHexToBytes($brownOptionId), 'languageId' => Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM)],
@@ -109,6 +113,10 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
             self::assertSame(1300.0, $reloadedChild->getPrice()?->first()?->getGross());
             self::assertCount(1, $reloadedChild->getOptions() ?? []);
             self::assertSame('Black', $reloadedChild->getOptions()?->first()?->getName());
+            self::assertSame(1, (int) $this->connection()->fetchOne(
+                'SELECT COUNT(*) FROM `product_configurator_setting` WHERE `product_id` = :productId AND `product_version_id` = :versionId',
+                ['productId' => Uuid::fromHexToBytes($parentId), 'versionId' => Uuid::fromHexToBytes(Defaults::LIVE_VERSION)],
+            ));
             $reloadedParent = $this->product($productNumber, $context);
             self::assertSame($replacementCategoryShopwareId, $reloadedParent->getCategories()?->first()?->getId());
             self::assertNotContains(CatalogIdentity::categoryId('okb', $categoryId), $reloadedParent->getCategoryTree() ?? []);
