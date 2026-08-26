@@ -1,0 +1,28 @@
+{
+  "name": "jvmoebel/lead-management",
+  "description": "JVMöbel lead management",
+  "type": "shopware-platform-plugin",
+  "license": "proprietary",
+  "version": "0.1.0",
+  "require": {
+    "php": "^8.5",
+    "shopware/core": "~6.7.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Jv\\LeadManagement\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Jv\\LeadManagement\\Tests\\": "tests/"
+    }
+  },
+  "extra": {
+    "shopware-plugin-class": "Jv\\LeadManagement\\JvLeadManagement",
+    "label": {
+      "de-DE": "JVMöbel Lead Management",
+      "en-GB": "JVMöbel Lead Management"
+    }
+  }
+}

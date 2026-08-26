@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a56ad30754c979bb1af83c49bdfa7bc4",
+    "content-hash": "c2e2432ad5aebae0c39e597bff70acd0",
     "packages": [
         {
             "name": "async-aws/core",
@@ -2759,6 +2759,45 @@
                 "proprietary"
             ],
             "description": "JVMöbel import integrations",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "jvmoebel/lead-management",
+            "version": "0.1.0",
+            "dist": {
+                "type": "path",
+                "url": "custom/static-plugins/JvLeadManagement",
+                "reference": "c3b7f016ecf4402d1f7fda9e0cad23825b1f02cb"
+            },
+            "require": {
+                "php": "^8.5",
+                "shopware/core": "~6.7.0"
+            },
+            "type": "shopware-platform-plugin",
+            "extra": {
+                "shopware-plugin-class": "Jv\\LeadManagement\\JvLeadManagement",
+                "label": {
+                    "de-DE": "JVMöbel Lead Management",
+                    "en-GB": "JVMöbel Lead Management"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Jv\\LeadManagement\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Jv\\LeadManagement\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "description": "JVMöbel lead management",
             "transport-options": {
                 "symlink": true,
                 "relative": true
