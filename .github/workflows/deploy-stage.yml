@@ -90,12 +90,7 @@ jobs:
           docker build -f Dockerfile.deploy -t jvmoebel-back-stage-validation .
           docker run --rm jvmoebel-back-stage-validation apachectl -t
 
-      - name: Build deployment image
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          docker build -f Dockerfile.deploy -t jvmoebel-back-stage-validation .
-          docker run --rm jvmoebel-back-stage-validation apachectl -t
+
 
   deploy:
     name: deploy back to stage
@@ -122,7 +117,7 @@ jobs:
 
       EXPECTED_DEPLOY_HOST: 85.215.147.19
       EXPECTED_COMPOSE_SHA256: 250e4af35921e808876ada4f1ce0b8d414f7e5cc45179f67c9e2cf4d7f7974bb
-      EXPECTED_HELPER_SHA256: 09a324dedfacffd91b10e3f07c14b447cabe03918a87ea0f386c069934936dd0
+      EXPECTED_HELPER_SHA256: ${{ vars.BACKEND_DEPLOY_HELPER_SHA256 }}
 
       EXPECTED_DEPLOY_KEY_FINGERPRINT: SHA256:Q3JQh8Yqz7EEoRVZXUufLmx160pk9ptugi+Zsj6qSU4
       EXPECTED_HOST_KEY_FINGERPRINT: SHA256:6BHoasAuc7ptnN/HhXaP3C/BtklHPtP85WZ2fAXcAzI
