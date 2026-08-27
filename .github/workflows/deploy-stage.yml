@@ -468,7 +468,7 @@ jobs:
             ssh \
               "${ssh_options[@]}" \
               "${DEPLOY_USER}@${DEPLOY_HOST}" \
-              "sha256sum /usr/local/sbin/deploy-jvmoebel-stage-back | awk '{print \$1}'"
+              "sudo -n /usr/bin/sha256sum /usr/local/sbin/deploy-jvmoebel-stage-back | awk '{print \$1}'"
           )"
 
           echo "remote helper SHA256: ${helper_sha}"
