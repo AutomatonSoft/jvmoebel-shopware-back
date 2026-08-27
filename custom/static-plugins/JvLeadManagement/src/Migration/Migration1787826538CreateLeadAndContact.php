@@ -106,7 +106,7 @@ class Migration1787826538CreateLeadAndContact extends MigrationStep
                 KEY `idx.jv_lead_management_contact.tracking_reference`
                     (`tracking_reference`),
 
-                KEY `idx.jv_lead_management_contact.provider_reference`
+                UNIQUE KEY `uniq.jv_lead_management_contact.provider_reference`
                     (`provider`, `provider_reference`),
 
                 CONSTRAINT `fk.jv_lead_management_contact.lead`
