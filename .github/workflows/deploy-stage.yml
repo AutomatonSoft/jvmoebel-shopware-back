@@ -27,7 +27,7 @@ jobs:
         run: |
           set -Eeuo pipefail
 
-          readonly EXPECTED_COMPOSE_SHA256="250e4af35921e808876ada4f1ce0b8d414f7e5cc45179f67c9e2cf4d7f7974bb"
+          readonly EXPECTED_COMPOSE_SHA256="80cbb1792d865230676b4ce5511517ada70e14242c004105c2c7764f47038f37"
 
           actual_compose_sha="$(
             sha256sum compose.deploy.yml |
