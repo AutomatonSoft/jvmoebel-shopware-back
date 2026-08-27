@@ -19,6 +19,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\System\DeliveryTime\DeliveryTimeCollection;
 use Shopware\Core\System\Tax\TaxCollection;
 
 final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCase
@@ -98,7 +99,21 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
         $propertyGroupId = CatalogIdentity::propertyGroupId('Color '.$suffix);
         $manualGroupId = Uuid::randomHex();
         $manualOptionId = Uuid::randomHex();
+        $deliveryTimeId = Uuid::randomHex();
         $this->createFixture($parentId, $productNumber, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $manualOptionId, $context);
+        /** @var EntityRepository<DeliveryTimeCollection> $deliveryTimeRepository */
+        $deliveryTimeRepository = static::getContainer()->get('delivery_time.repository');
+        $deliveryTimeRepository->create([[
+            'id' => $deliveryTimeId,
+            'min' => 3,
+            'max' => 5,
+            'unit' => 'week',
+            'translations' => [
+                $context->getLanguageId() => ['name' => 'Test delivery time'],
+                Defaults::LANGUAGE_SYSTEM => ['name' => 'Test delivery time'],
+            ],
+        ]], $context);
+        $this->productRepository()->update([['id' => $parentId, 'deliveryTimeId' => $deliveryTimeId]], $context);
         $profileId = CatalogProductImportProfile::definition()['id'];
         $this->profileRepository()->upsert([CatalogProductImportProfile::definition()], $context);
 
@@ -117,6 +132,7 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
 
             $child = $this->product($productNumber.'-1', $context);
             self::assertSame($parentId, $child->getParentId());
+            self::assertSame($deliveryTimeId, $child->getDeliveryTimeId());
             self::assertSame('4260174423463', $child->getEan());
             self::assertSame(1200.0, $child->getPrice()?->first()?->getGross());
             self::assertCount(1, $child->getOptions() ?? []);
@@ -136,6 +152,7 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
 
             $reloadedChild = $this->product($productNumber.'-1', $context);
             self::assertSame($child->getId(), $reloadedChild->getId());
+            self::assertSame($deliveryTimeId, $reloadedChild->getDeliveryTimeId());
             self::assertSame('4260174423464', $reloadedChild->getEan());
             self::assertSame(1300.0, $reloadedChild->getPrice()?->first()?->getGross());
             self::assertCount(1, $reloadedChild->getOptions() ?? []);
@@ -163,6 +180,7 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
             self::assertSame($manualOptionId, $parent->getProperties()?->first()?->getId());
         } finally {
             $this->deleteFixture($parentId, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $context);
+            $deliveryTimeRepository->delete([['id' => $deliveryTimeId]], $context);
         }
     }
 

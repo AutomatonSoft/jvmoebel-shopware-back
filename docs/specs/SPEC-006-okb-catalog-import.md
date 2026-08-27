@@ -202,6 +202,11 @@ Parent сохраняет цену CosmoShop: это базовая карточ
 Валюта должна совпадать с
 рынком; несовпадающая или отсутствующая цена является ошибкой строки.
 
+Child копирует стандартный Shopware `deliveryTimeId` parent, поэтому он
+отображается в Administration так же, как parent. Это глобальный срок по
+умолчанию (из DE CosmoShop import); market-specific сроки продолжают
+разрешаться отдельно по sales channel и не копируются как child overrides.
+
 ## Внутренний код администратора
 
 Миграция плагина создаёт product custom field
