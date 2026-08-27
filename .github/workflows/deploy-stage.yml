@@ -1,7 +1,9 @@
 name: Deploy stage
 
 on:
-  pull_request:`n    branches: [develop]`n    paths: ["**"]
+  pull_request:
+    branches: [develop]
+    paths: ['**']
   push:
     branches:
       - stage
