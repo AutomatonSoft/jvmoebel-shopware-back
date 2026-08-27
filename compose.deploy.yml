@@ -1,3 +1,29 @@
+x-shopware-runtime: &shopware-runtime
+  APP_ENV: prod
+  APP_DEBUG: "0"
+  APP_SECRET: ${APP_SECRET:?APP_SECRET is required}
+  DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+  MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN:?MESSENGER_TRANSPORT_DSN is required}
+  MESSENGER_TRANSPORT_LOW_PRIORITY_DSN: ${MESSENGER_TRANSPORT_LOW_PRIORITY_DSN:?MESSENGER_TRANSPORT_LOW_PRIORITY_DSN is required}
+  MESSENGER_TRANSPORT_FAILURE_DSN: ${MESSENGER_TRANSPORT_FAILURE_DSN:?MESSENGER_TRANSPORT_FAILURE_DSN is required}
+  JWT_PRIVATE_KEY: /var/www/html/config/jwt/private.pem
+  JWT_PUBLIC_KEY: /var/www/html/config/jwt/public.pem
+  SHOPWARE_ES_ENABLED: "0"
+  SHOPWARE_ES_INDEXING_ENABLED: "0"
+  SHOPWARE_HTTP_CACHE_ENABLED: "1"
+  TRUSTED_PROXIES: REMOTE_ADDR
+  SYMFONY_TRUSTED_PROXIES: REMOTE_ADDR
+  JV_MARKET_SALES_CHANNEL_URL_TEMPLATE: https://{domain}
+
+x-shopware-storage: &shopware-storage
+  - ${SHOPWARE_STORAGE_PATH:?SHOPWARE_STORAGE_PATH is required}/files:/var/www/html/files
+  - ${SHOPWARE_STORAGE_PATH:?SHOPWARE_STORAGE_PATH is required}/media:/var/www/html/public/media
+  - ${SHOPWARE_STORAGE_PATH:?SHOPWARE_STORAGE_PATH is required}/thumbnail:/var/www/html/public/thumbnail
+  - ${SHOPWARE_STORAGE_PATH:?SHOPWARE_STORAGE_PATH is required}/theme:/var/www/html/public/theme
+  - ${SHOPWARE_STORAGE_PATH:?SHOPWARE_STORAGE_PATH is required}/sitemap:/var/www/html/public/sitemap
+  - ${SHOPWARE_JWT_PATH:?SHOPWARE_JWT_PATH is required}/private.pem:/var/www/html/config/jwt/private.pem:ro
+  - ${SHOPWARE_JWT_PATH:?SHOPWARE_JWT_PATH is required}/public.pem:/var/www/html/config/jwt/public.pem:ro
+
 services:
   bootstrap:
     build:
@@ -16,6 +42,58 @@ services:
       SALES_CHANNEL_URL: ${SALES_CHANNEL_URL:?SALES_CHANNEL_URL is required}
     volumes: *shopware-storage
     networks: [database]
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.deploy
+    restart: unless-stopped
+    init: true
+    environment: *shopware-runtime
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+    volumes: *shopware-storage
+    networks:
+      database: {}
+      application:
+        aliases: [shopware-stage]
+    healthcheck:
+      test: ["CMD-SHELL", "php -r 'exit((int)!@file_get_contents(\"http://127.0.0.1/api/_info/health-check\"));'"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.deploy
+    restart: unless-stopped
+    init: true
+    command: ["php", "bin/console", "messenger:consume", "async", "low_priority", "--memory-limit=512M", "--time-limit=3600"]
+    environment: *shopware-runtime
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+    volumes: *shopware-storage
+    networks: [database, application]
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile.deploy
+    restart: unless-stopped
+    init: true
+    command: ["php", "bin/console", "scheduled-task:run", "--memory-limit=512M", "--time-limit=3600"]
+    environment: *shopware-runtime
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+    volumes: *shopware-storage
+    networks: [database, application]
+
+networks: [database]
 
   web:
     build:
