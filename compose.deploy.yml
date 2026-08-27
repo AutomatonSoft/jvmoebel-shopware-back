@@ -33,6 +33,7 @@ services:
   bootstrap:
     build: { context: ., dockerfile: Dockerfile.deploy }
     restart: "no"
+    user: "33:33"
     command: ["vendor/bin/shopware-deployment-helper", "run", "--timeout=900"]
     environment:
       <<: *shopware-runtime
