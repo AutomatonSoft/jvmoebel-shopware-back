@@ -12,6 +12,8 @@ use Jv\Import\Service\ProductImport\Contract\ProductImportRecordPreparer;
 use Jv\Import\Service\ProductImport\PrepareCosmoShopProductImportRecordService;
 use Jv\Import\Service\ProductImport\ResolveDefaultProductTaxService;
 use Jv\Import\Service\ProductImport\Validation\CosmoShopProductImportDataValidator;
+use Jv\Import\Service\ProductMediaImport\PrepareCosmoShopProductMediaRecordService;
+use Jv\Import\Service\ProductMediaImport\ValidateCosmoShopProductMediaCoverService;
 use Jv\Import\Subscriber\CosmoShopProductImportSubscriber;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -41,7 +43,11 @@ final class CosmoShopProductImportSubscriberTest extends TestCase
             ->method('execute')
             ->with(Market::Germany, ['stock' => '2'], ['productNumber' => 'SKU-001'], Market::Germany->languageId(), self::isInstanceOf(Context::class))
             ->willReturn(['id' => 'prepared-product']);
-        $subscriber = new CosmoShopProductImportSubscriber($preparer);
+        $subscriber = new CosmoShopProductImportSubscriber(
+            $preparer,
+            new ValidateCosmoShopProductMediaCoverService(),
+            new PrepareCosmoShopProductMediaRecordService(),
+        );
         $event = $this->event(Market::Germany, ['stock' => '2'], ['productNumber' => 'SKU-001']);
 
         $subscriber->validateRecord($event);
@@ -343,6 +349,8 @@ final class CosmoShopProductImportSubscriberTest extends TestCase
                 $this->productRepositoryWithoutExistingProducts(),
                 $currencyRepository ?? $this->currencyRepository(),
             ),
+            new ValidateCosmoShopProductMediaCoverService(),
+            new PrepareCosmoShopProductMediaRecordService(),
         );
     }
 

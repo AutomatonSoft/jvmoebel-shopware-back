@@ -112,6 +112,17 @@ final class MarketImportProfileTest extends TestCase
         self::assertNotContains('delivery_time_id', array_column(MarketImportProfile::mapping(Market::Germany), 'mappedKey'));
     }
 
+    public function testItImportsMediaThroughTheMainProductProfile(): void
+    {
+        $mapping = MarketImportProfile::mapping(Market::Germany);
+
+        self::assertContains(
+            ['key' => 'media', 'mappedKey' => 'media', 'position' => 23],
+            $mapping,
+        );
+        self::assertNotContains('cover', array_column($mapping, 'mappedKey'));
+    }
+
     #[DataProvider('marketLocales')]
     public function testItMapsThePriceToTheMarketCurrency(Market $market, string $locale): void
     {

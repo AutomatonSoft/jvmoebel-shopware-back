@@ -15,8 +15,8 @@
 этого CSV фоновая задача автоматически обогащает только его строки по EAN и
 ставит итоговый parent/child CSV в штатную очередь Import/Export. Этот CSV остаётся источником
 базовой CosmoShop карточки и SKU; его категории и старые публикуемые attributes
-не становятся целевой моделью. Media описаны отдельно в SPEC-005. Cross-sell
-намеренно отложен до завершения media, категорий и атрибутов.
+не становятся целевой моделью. Gallery и cover импортируются тем же product CSV.
+Cross-sell намеренно отложен до завершения media, категорий и атрибутов.
 
 ## CSV-контракт
 
@@ -29,12 +29,15 @@
 product_number;source_inactive;ean;weight;length;width;height;min_purchase;
 max_purchase;manufacturer_name;name;description;short_description;meta_title;
 meta_description;meta_keywords;urlkey;
-price_gross;list_price_gross;stock;delivery_time_id;unit_id;contents;reference_unit;pack_unit
+price_gross;list_price_gross;stock;delivery_time_id;unit_id;contents;reference_unit;pack_unit;
+media;cover
 ```
 
 Внешний экспортёр читает базовые товары (`artikelbaseid = 0`), немецкий content, gross price `brutto/default/EUR` и default stock; язык и валюта передаются параметрами. Он переносит source-значения без фильтрации и без бизнес-валидации: обязательность SKU/названия/цены, допустимость налогов, единиц и коллизии SKU выявляет Shopware importer и помещает ошибочные строки в invalid-records. Внутренний `artikelid` в CSV не попадает.
 
 `product_number`, `ean`, `price_gross` и `name` обязательны на уровне mapping профиля. SKU — единственная идентичность товара; EAN обязателен как проверка полноты карточки. `stock` не использует штатный `requiredByUser`: Shopware считает строку `0` пустой, хотя это допустимый остаток. `min_purchase` получает CSV default `'1'`. `urlkey` остаётся raw-колонкой экспортного контракта для отдельной SEO/redirect итерации и не маппится в товар.
+
+`media` — необязательный список исходных доступных URL, разделённый `|`. Порядок URL является порядком gallery. Он маппится прямо в штатное поле `product.media`: Shopware сам скачивает файл и создаёт media entity. Плагин до штатного DAL upsert назначает стабильные IDs product-media relations и порядок gallery; поэтому повтор того же CSV обновляет эти relations без дублей. Уже сохранённое media Shopware может переиспользовать по hash. `cover` — необязательный URL обложки. Если он заполнен, он обязан точно входить в `media`; плагин назначает `coverId` той же already-prepared product-media relation и не маппит `cover` в `cover.media.url`, поэтому файл не скачивается второй раз. Недоступный media URL делает только эту product row invalid-record; остальные строки продолжают штатную обработку. Правила удаления либо замены ранее импортированной gallery при изменившемся наборе URL этой итерацией не определяются.
 
 До обработки строк reader проверяет структуру файла: непустой файл, header, отсутствие пустых и повторяющихся названий колонок, все обязательные колонки и хотя бы одну товарную строку. При потоковом чтении каждая product row должна иметь ровно столько же CSV-колонок, сколько header; malformed row становится invalid-record без сдвига значений. EAN не уникален: source CosmoShop содержит повторяющиеся EAN у разных SKU, поэтому его уникальность не навязывается импортом. SKU уникален глобально.
 

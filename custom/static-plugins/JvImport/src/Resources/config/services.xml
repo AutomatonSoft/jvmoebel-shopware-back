@@ -8,6 +8,8 @@
 
         <service id="Jv\Import\Subscriber\CosmoShopProductImportSubscriber">
             <argument type="service" id="Jv\Import\Service\ProductImport\PrepareCosmoShopProductImportRecordService"/>
+            <argument type="service" id="Jv\Import\Service\ProductMediaImport\ValidateCosmoShopProductMediaCoverService"/>
+            <argument type="service" id="Jv\Import\Service\ProductMediaImport\PrepareCosmoShopProductMediaRecordService"/>
         </service>
         <service id="Jv\Import\Subscriber\QueueCosmoShopCatalogEnrichmentSubscriber"/>
         <service id="Jv\Import\MessageHandler\CosmoShopCatalogEnrichmentMessageHandler"/>
@@ -51,6 +53,8 @@
         <service id="Jv\Import\Integration\CosmoShop\Normalizer\CosmoShopProductImportDataNormalizer"/>
         <service id="Jv\Import\Service\ProductImport\Validation\CosmoShopProductImportDataValidator"/>
         <service id="Jv\Import\Service\ProductImport\BuildShopwareProductImportRecordService"/>
+        <service id="Jv\Import\Service\ProductMediaImport\ValidateCosmoShopProductMediaCoverService"/>
+        <service id="Jv\Import\Service\ProductMediaImport\PrepareCosmoShopProductMediaRecordService"/>
         <service id="Jv\Import\Service\ProductDeliveryTime\ResolveSalesChannelProductDeliveryTimesService">
             <argument type="service" id="jv_import_product_sales_channel_delivery_time.repository"/>
             <argument type="service" id="product.repository"/>

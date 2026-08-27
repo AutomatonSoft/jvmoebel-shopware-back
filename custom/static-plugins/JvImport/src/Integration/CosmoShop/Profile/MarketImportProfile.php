@@ -84,6 +84,7 @@ final class MarketImportProfile
             ['key' => 'purchaseUnit', 'mappedKey' => 'contents', 'position' => 20],
             ['key' => 'referenceUnit', 'mappedKey' => 'reference_unit', 'position' => 21],
             ['key' => 'packUnit', 'mappedKey' => 'pack_unit', 'position' => 22],
+            ['key' => 'media', 'mappedKey' => 'media', 'position' => 23],
         ];
     }
 }
