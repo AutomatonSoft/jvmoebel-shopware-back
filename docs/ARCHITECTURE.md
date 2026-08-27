@@ -34,7 +34,7 @@ Sales channels имеют штатный тип Storefront, чтобы Shopware 
 
 Плагин объединяет одну связанную функциональную область. Не создаём один общий плагин для всего проекта, но и не выделяем новый плагин для каждой небольшой задачи. Граница плагина определяется по ответственности, данным и внешним зависимостям функции.
 
-Пользовательские Shopping Experiences elements живут в плагине `JvCms`. Редактор настраивает их в Administration; Store API отдаёт нормализованный `data`. Публичную вёрстку рисует Next.js, а не Twig Storefront. Контракты элементов, от которых зависит frontend, фиксируются в `jvmoebel-shopware-docs` (например SPEC-001 cms-button); backend-детали реализации — в `docs/specs/` этого репозитория (например SPEC-002).
+Пользовательские Shopping Experiences elements живут в плагине `JvCms`. Редактор настраивает их в Administration; Store API отдаёт нормализованный `data`. Публичную вёрстку рисует Next.js, а не Twig Storefront. Контракты элементов, от которых зависит frontend, фиксируются в `jvmoebel-shopware-docs` (например platform SPEC-003 для `jv-side-navigation`); backend-детали реализации — в `docs/specs/` этого репозитория (например SPEC-002 для `jv-button`, SPEC-005 для `jv-side-navigation`).
 
 Базовая структура собственного плагина соответствует Shopware:
 

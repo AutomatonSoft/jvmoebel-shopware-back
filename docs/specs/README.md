@@ -79,4 +79,5 @@ SPEC-NNN-short-name.md
 | [SPEC-002-cms-button](SPEC-002-cms-button.md) | Backend CMS element/blocks `jv-button` (плагин `JvCms`); контракт Store API — platform SPEC-001 |
 | [SPEC-003-cosmoshop-product-import](SPEC-003-cosmoshop-product-import.md) | Импорт товаров CosmoShop через штатный Shopware Import/Export |
 | [SPEC-004-sales-channel-delivery-times](SPEC-004-sales-channel-delivery-times.md) | Хранение и применение сроков поставки по sales channel |
+| [SPEC-005-cms-side-navigation](SPEC-005-cms-side-navigation.md) | Backend CMS element/block `jv-side-navigation` (поиск категорий, дерево 4 уровней; без табов); контракт — platform SPEC-003 |
 | [SPEC-006-okb-catalog-import](SPEC-006-okb-catalog-import.md) | Дерево OKB, schema attributes и EAN-обогащение CosmoShop товаров |

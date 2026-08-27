@@ -22,6 +22,70 @@
                         "label": "In neuem Tab öffnen"
                     }
                 }
+            },
+            "jv-side-navigation": {
+                "label": "Seitennavigation",
+                "component": {
+                    "previewHint": "Interaktive Vorschau — Suche über alle 4 Kategorie-Ebenen. Klick auf › öffnet die nächste Ebene.",
+                    "logoOff": "Kein Logo",
+                    "logoLoading": "Logo wird geladen…",
+                    "noFooter": "Keine Footer-Einträge",
+                    "noRoot": "Keine Root-Kategorie gewählt",
+                    "noChildLinks": "Keine Unterkategorien",
+                    "loadingCategories": "Kategorien werden geladen…",
+                    "emptyCategoryTree": "Keine Kind-Kategorien unter dieser Root (siehe Katalog → Kategorien)",
+                    "allLinkForCategory": "Alle {name}",
+                    "searchClear": "Suche löschen",
+                    "searchNoSuggestions": "Keine passenden Kategorien",
+                    "visibility": {
+                        "always": "immer",
+                        "guest": "Gast",
+                        "customer": "Kunde"
+                    }
+                },
+                "config": {
+                    "logoMedia": {
+                        "label": "Logo",
+                        "caption": "Logo für die Seitennavigation hochladen"
+                    },
+                    "logoLink": {
+                        "label": "Logo-Link",
+                        "placeholder": ""
+                    },
+                    "searchPlaceholder": {
+                        "label": "Such-Platzhalter",
+                        "placeholder": "Kategorie suchen",
+                        "helpText": "Text im Suchfeld der Storefront. Leer = Standard."
+                    },
+                    "rootCategoryId": {
+                        "label": "Wurzelkategorie",
+                        "placeholder": "Katalogwurzel wählen"
+                    },
+                    "showIcons": {
+                        "label": "Kategorie-Icons anzeigen"
+                    },
+                    "footer": {
+                        "title": "Footer",
+                        "add": "Footer-Eintrag hinzufügen",
+                        "remove": "Eintrag entfernen",
+                        "id": {
+                            "label": "ID"
+                        },
+                        "label": {
+                            "label": "Beschriftung"
+                        },
+                        "href": {
+                            "label": "Link"
+                        },
+                        "icon": {
+                            "label": "Icon",
+                            "none": "Kein Icon"
+                        },
+                        "visibility": {
+                            "label": "Sichtbarkeit"
+                        }
+                    }
+                }
             }
         },
         "blocks": {
@@ -33,6 +97,9 @@
             },
             "jv-button-link": {
                 "label": "Button · Link"
+            },
+            "jv-side-navigation": {
+                "label": "Seitennavigation"
             }
         }
     },
@@ -41,7 +108,8 @@
             "detail": {
                 "label": {
                     "blockCategory": {
-                        "button": "Button"
+                        "button": "Button",
+                        "navigation": "Navigation"
                     }
                 }
             }

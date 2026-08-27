@@ -1,0 +1,121 @@
+{#
+  Sidebar config: logo, search placeholder, root category, showIcons, footer.
+  No tabs / maxDepth. Bound to config/index.js.
+#}
+{% block sw_cms_el_config_jv_side_navigation %}
+	<div class="sw-cms-el-config-jv-side-navigation">
+		<div class="sw-cms-el-config-jv-side-navigation__logo">
+			<label class="sw-cms-el-config-jv-side-navigation__logo-label">
+				{{ $t('cms.elements.jv-side-navigation.config.logoMedia.label') }}
+			</label>
+
+			<sw-media-upload-v2
+				variant="regular"
+				:upload-tag="logoUploadTag"
+				:source="logoPreviewSource"
+				:allow-multi-select="false"
+				:default-folder="cmsPageState.pageEntityName"
+				:caption="$t('cms.elements.jv-side-navigation.config.logoMedia.caption')"
+				@media-upload-sidebar-open="onOpenLogoMediaModal"
+				@media-upload-remove-image="onLogoRemove"
+			/>
+
+			<sw-upload-listener
+				:upload-tag="logoUploadTag"
+				auto-upload
+				@media-upload-finish="onLogoUpload"
+			/>
+
+			<sw-media-modal-v2
+				v-if="mediaModalIsOpen"
+				variant="full"
+				:caption="$t('cms.elements.jv-side-navigation.config.logoMedia.caption')"
+				:entity-context="cmsPageState.entityName"
+				:allow-multi-select="false"
+				:initial-folder-id="cmsPageState.defaultMediaFolderId"
+				@media-modal-selection-change="onLogoSelectionChanges"
+				@modal-close="onCloseLogoMediaModal"
+			/>
+		</div>
+
+		<mt-text-field
+			v-model:model-value="element.config.logoLink.value"
+			:label="$t('cms.elements.jv-side-navigation.config.logoLink.label')"
+			:placeholder="$t('cms.elements.jv-side-navigation.config.logoLink.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-text-field
+			v-model:model-value="element.config.searchPlaceholder.value"
+			:label="$t('cms.elements.jv-side-navigation.config.searchPlaceholder.label')"
+			:placeholder="$t('cms.elements.jv-side-navigation.config.searchPlaceholder.placeholder')"
+			:help-text="$t('cms.elements.jv-side-navigation.config.searchPlaceholder.helpText')"
+			@update:model-value="onUpdate"
+		/>
+
+		<sw-entity-single-select
+			v-model:value="element.config.rootCategoryId.value"
+			entity="category"
+			:label="$t('cms.elements.jv-side-navigation.config.rootCategoryId.label')"
+			:placeholder="$t('cms.elements.jv-side-navigation.config.rootCategoryId.placeholder')"
+			show-clearable-button
+			@update:value="onUpdate"
+		/>
+
+		<mt-switch
+			v-model:model-value="element.config.showIcons.value"
+			:label="$t('cms.elements.jv-side-navigation.config.showIcons.label')"
+			@update:model-value="onUpdate"
+		/>
+
+		<div class="sw-cms-el-config-jv-side-navigation__section">
+			<div class="sw-cms-el-config-jv-side-navigation__section-header">
+				<h4>{{ $t('cms.elements.jv-side-navigation.config.footer.title') }}</h4>
+				<mt-button size="small" variant="secondary" @click="addFooterItem">
+					{{ $t('cms.elements.jv-side-navigation.config.footer.add') }}
+				</mt-button>
+			</div>
+
+			<div
+				v-for="(item, itemIndex) in footerItems"
+				:key="item.id || itemIndex"
+				class="sw-cms-el-config-jv-side-navigation__card"
+			>
+				<mt-text-field
+					v-model:model-value="item.id"
+					:label="$t('cms.elements.jv-side-navigation.config.footer.id.label')"
+					@update:model-value="onUpdate"
+				/>
+				<mt-text-field
+					v-model:model-value="item.label"
+					:label="$t('cms.elements.jv-side-navigation.config.footer.label.label')"
+					@update:model-value="onUpdate"
+				/>
+				<mt-text-field
+					v-model:model-value="item.href"
+					:label="$t('cms.elements.jv-side-navigation.config.footer.href.label')"
+					@update:model-value="onUpdate"
+				/>
+				<mt-select
+					v-model:model-value="item.icon"
+					:label="$t('cms.elements.jv-side-navigation.config.footer.icon.label')"
+					:options="footerIconOptions"
+					@update:model-value="onUpdate"
+				/>
+				<mt-select
+					v-model:model-value="item.visibility"
+					:label="$t('cms.elements.jv-side-navigation.config.footer.visibility.label')"
+					:options="[
+						{ value: 'always', label: 'always' },
+						{ value: 'guest', label: 'guest' },
+						{ value: 'customer', label: 'customer' },
+					]"
+					@update:model-value="onUpdate"
+				/>
+				<mt-button size="small" variant="critical" @click="removeFooterItem(itemIndex)">
+					{{ $t('cms.elements.jv-side-navigation.config.footer.remove') }}
+				</mt-button>
+			</div>
+		</div>
+	</div>
+{% endblock %}

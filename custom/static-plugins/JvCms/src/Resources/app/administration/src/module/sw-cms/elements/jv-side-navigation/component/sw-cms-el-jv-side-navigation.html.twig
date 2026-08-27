@@ -1,0 +1,191 @@
+{#
+  Shopping Experiences canvas only. Public drawer = Next.js.
+
+  Layout: logo → category search (overlay over L1) → drill-down columns → footer.
+#}
+{% block sw_cms_element_jv_side_navigation %}
+	<div class="sw-cms-el-jv-side-navigation">
+		<p class="sw-cms-el-jv-side-navigation__hint">
+			{{ $t('cms.elements.jv-side-navigation.component.previewHint') }}
+		</p>
+
+		<div class="sw-cms-el-jv-side-navigation__drawer">
+			<header class="sw-cms-el-jv-side-navigation__chrome">
+				<div class="sw-cms-el-jv-side-navigation__logo-wrap">
+					<img
+						v-if="logoUrl"
+						class="sw-cms-el-jv-side-navigation__logo-img"
+						:src="logoUrl"
+						alt=""
+					>
+					<span
+						v-else
+						class="sw-cms-el-jv-side-navigation__logo-fallback"
+					>
+						{{ logoMediaId
+							? $t('cms.elements.jv-side-navigation.component.logoLoading')
+							: $t('cms.elements.jv-side-navigation.component.logoOff') }}
+					</span>
+					<span
+						v-if="logoLink"
+						class="sw-cms-el-jv-side-navigation__logo-link"
+						:title="logoLink"
+					>
+						{{ logoLink }}
+					</span>
+				</div>
+			</header>
+
+			<div class="sw-cms-el-jv-side-navigation__search">
+				<div class="sw-cms-el-jv-side-navigation__search-field">
+					<input
+						v-model="searchQuery"
+						type="text"
+						class="sw-cms-el-jv-side-navigation__search-input"
+						:placeholder="searchPlaceholder"
+						@focus="onSearchFocus"
+						@input="onSearchInput"
+						@keydown="onSearchKeydown"
+					>
+					<button
+						v-if="showSearchClear"
+						type="button"
+						class="sw-cms-el-jv-side-navigation__search-clear"
+						:aria-label="$t('cms.elements.jv-side-navigation.component.searchClear')"
+						@click.stop="clearSearch"
+					>
+						×
+					</button>
+				</div>
+
+				<ul
+					v-if="searchOpen"
+					class="sw-cms-el-jv-side-navigation__search-overlay"
+				>
+					<li
+						v-for="suggestion in searchSuggestions"
+						:key="suggestion.id"
+						class="sw-cms-el-jv-side-navigation__search-suggestion"
+					>
+						<button
+							type="button"
+							class="sw-cms-el-jv-side-navigation__search-suggestion-btn"
+							@click.stop="onSuggestionClick(suggestion)"
+						>
+							<img
+								v-if="suggestion.iconUrl"
+								class="sw-cms-el-jv-side-navigation__search-suggestion-icon"
+								:src="suggestion.iconUrl"
+								alt=""
+							>
+							<span>{{ suggestion.label }}</span>
+						</button>
+					</li>
+					<li
+						v-if="searchQuery.trim() && !searchSuggestions.length"
+						class="sw-cms-el-jv-side-navigation__search-empty"
+					>
+						{{ $t('cms.elements.jv-side-navigation.component.searchNoSuggestions') }}
+					</li>
+				</ul>
+			</div>
+
+			<div
+				v-if="canGoBack"
+				class="sw-cms-el-jv-side-navigation__back-bar"
+			>
+				<button
+					type="button"
+					class="sw-cms-el-jv-side-navigation__back"
+					@click.stop="goBack"
+				>
+					← {{ columns[columns.length - 1].title }}
+				</button>
+			</div>
+
+			<div
+				ref="columnsScroller"
+				class="sw-cms-el-jv-side-navigation__columns"
+			>
+				<section
+					v-for="(column, columnIndex) in columns"
+					:key="column.id"
+					class="sw-cms-el-jv-side-navigation__column"
+				>
+					<ul class="sw-cms-el-jv-side-navigation__list">
+						<li
+							v-for="row in column.rows"
+							:key="row.id"
+							class="sw-cms-el-jv-side-navigation__row"
+							:class="{
+								'is-empty': row.kind === 'empty',
+								'is-all-link': row.kind === 'all-link',
+								'is-link': row.kind === 'link',
+								'is-inactive': row.kind === 'link' && row.active === false,
+								'is-active': isRowActive(columnIndex, row),
+								'has-children': row.hasChildren
+							}"
+						>
+							<template v-if="row.kind === 'empty'">
+								<span class="sw-cms-el-jv-side-navigation__empty-label">
+									{{ row.label }}
+								</span>
+							</template>
+
+							<template v-else-if="row.kind === 'all-link'">
+								<span class="sw-cms-el-jv-side-navigation__all-link">
+									{{ row.label }}
+								</span>
+							</template>
+
+							<button
+								v-else
+								type="button"
+								class="sw-cms-el-jv-side-navigation__link"
+								@click.stop="onRowClick(row, columnIndex)"
+							>
+								<span class="sw-cms-el-jv-side-navigation__link-icon">
+									<img
+										v-if="row.iconUrl"
+										:src="row.iconUrl"
+										alt=""
+									>
+								</span>
+								<span class="sw-cms-el-jv-side-navigation__link-label">
+									{{ row.label }}
+								</span>
+								<span
+									v-if="row.hasChildren"
+									class="sw-cms-el-jv-side-navigation__chevron"
+									aria-hidden="true"
+								>›</span>
+							</button>
+						</li>
+					</ul>
+				</section>
+			</div>
+
+			<footer class="sw-cms-el-jv-side-navigation__footer">
+				<ul
+					v-if="footerItems.length"
+					class="sw-cms-el-jv-side-navigation__footer-list"
+				>
+					<li
+						v-for="item in footerItems"
+						:key="item.id || item.label"
+						class="sw-cms-el-jv-side-navigation__footer-item"
+					>
+						<span>{{ item.label || item.id || '—' }}</span>
+						<small>{{ footerVisibilityLabel(item.visibility) }}</small>
+					</li>
+				</ul>
+				<p
+					v-else
+					class="sw-cms-el-jv-side-navigation__empty-label"
+				>
+					{{ $t('cms.elements.jv-side-navigation.component.noFooter') }}
+				</p>
+			</footer>
+		</div>
+	</div>
+{% endblock %}
