@@ -13,9 +13,23 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Symfony\Component\Process\Process;
 
 final class CosmoShopProductMediaImportTest extends AbstractCosmoShopImportExportTestCase
 {
+    private static ?Process $fixtureServer = null;
+
+    private static ?string $fixtureBaseUrl = null;
+
+    public static function tearDownAfterClass(): void
+    {
+        self::$fixtureServer?->stop(1.0);
+        self::$fixtureServer = null;
+        self::$fixtureBaseUrl = null;
+
+        parent::tearDownAfterClass();
+    }
+
     public function testMainProductImportCreatesAnOrderedGalleryAndCoverWithoutDuplicates(): void
     {
         $context = Context::createDefaultContext();
@@ -71,7 +85,7 @@ final class CosmoShopProductMediaImportTest extends AbstractCosmoShopImportExpor
         [$validPath, $validUrl] = $this->createPublicImage('available');
         [$header, $invalidRow] = explode("\n", $this->csv(
             productNumber: $invalidProductNumber,
-            media: 'http://127.0.0.1:8000/jv-import-missing-'.bin2hex(random_bytes(4)).'.png',
+            media: $this->publicImageUrl('jv-import-missing-'.bin2hex(random_bytes(4)).'.png'),
         ));
         [, $validRow] = explode("\n", $this->csv(
             productNumber: $validProductNumber,
@@ -171,6 +185,68 @@ final class CosmoShopProductMediaImportTest extends AbstractCosmoShopImportExpor
         self::assertIsString($image);
         file_put_contents($path, $image.random_bytes(8));
 
-        return [$path, 'http://127.0.0.1:8000/'.$fileName, $fileName];
+        return [$path, $this->publicImageUrl($fileName), $fileName];
+    }
+
+    private function publicImageUrl(string $fileName): string
+    {
+        if (null === self::$fixtureServer || !self::$fixtureServer->isRunning() || null === self::$fixtureBaseUrl) {
+            $projectDirectory = static::getContainer()->getParameter('kernel.project_dir');
+            self::assertIsString($projectDirectory);
+            self::startFixtureServer($projectDirectory);
+        }
+
+        return self::$fixtureBaseUrl.'/'.ltrim($fileName, '/');
+    }
+
+    private static function startFixtureServer(string $projectDirectory): void
+    {
+        $errorCode = 0;
+        $errorMessage = '';
+        $socket = stream_socket_server('tcp://127.0.0.1:0', $errorCode, $errorMessage);
+        if (false === $socket) {
+            throw new \RuntimeException(sprintf('Cannot reserve an HTTP fixture port: %s (%d).', $errorMessage, $errorCode));
+        }
+
+        $address = stream_socket_get_name($socket, false);
+        fclose($socket);
+        if (false === $address || false === ($separator = strrpos($address, ':'))) {
+            throw new \RuntimeException('Cannot determine the reserved HTTP fixture port.');
+        }
+
+        $port = (int) substr($address, $separator + 1);
+        $process = new Process([
+            PHP_BINARY,
+            '-S',
+            '127.0.0.1:'.$port,
+            '-t',
+            $projectDirectory.'/public',
+        ]);
+        $process->setTimeout(null);
+        $process->start();
+
+        $deadline = microtime(true) + 5.0;
+        do {
+            $connectionErrorCode = 0;
+            $connectionErrorMessage = '';
+            $connection = @fsockopen('127.0.0.1', $port, $connectionErrorCode, $connectionErrorMessage, 0.1);
+            if (false !== $connection) {
+                fclose($connection);
+                self::$fixtureServer = $process;
+                self::$fixtureBaseUrl = 'http://127.0.0.1:'.$port;
+
+                return;
+            }
+
+            if (!$process->isRunning()) {
+                throw new \RuntimeException('HTTP fixture server stopped during startup: '.$process->getErrorOutput());
+            }
+
+            usleep(50_000);
+        } while (microtime(true) < $deadline);
+
+        $process->stop(1.0);
+
+        throw new \RuntimeException(sprintf('HTTP fixture server did not start: %s (%d).', $connectionErrorMessage, $connectionErrorCode));
     }
 }
