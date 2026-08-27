@@ -11,7 +11,7 @@ environments:
 deployment:
   extension-management:
     enabled: true
-    forceUpdates:
+    force-update:
       - JvMarketConfiguration
       - JvCms
       - JvImport
