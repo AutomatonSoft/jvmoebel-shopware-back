@@ -27,7 +27,7 @@ jobs:
         run: |
           set -Eeuo pipefail
 
-          readonly EXPECTED_COMPOSE_SHA256="05a7fa96af0f33fc3eb8213d74354c99890a1562d3328f05e45f7c3a8bb26cc5"
+          readonly EXPECTED_COMPOSE_SHA256="250e4af35921e808876ada4f1ce0b8d414f7e5cc45179f67c9e2cf4d7f7974bb"
 
           actual_compose_sha="$(
             sha256sum compose.deploy.yml |
@@ -64,7 +64,7 @@ jobs:
             exit 1
           fi
 
-          if tar -tzf "${archive}" | grep -Eq '^\./?\.git(/|$)'; then echo "::error::deployment archive contains Git metadata"; exit 1; fi`n`n          tar -tzf "${archive}" > "${archive_list}"
+          if tar -tzf "${archive}" | grep -Eq '^\./?\.git(/|$)'; then echo "::error::deployment archive contains Git metadata"; exit 1; fi`n`n          if tar -tzf "${archive}" | grep -Eq '^\./?\.git(/|$)'; then echo "::error::deployment archive contains Git metadata"; exit 1; fi`n`n          tar -tzf "${archive}" > "${archive_list}"
 
           for required in \
             "./Dockerfile.deploy" \
