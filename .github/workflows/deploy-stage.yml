@@ -89,6 +89,7 @@ jobs:
           set -Eeuo pipefail
           docker build -f Dockerfile.deploy -t jvmoebel-back-stage-validation .
           docker run --rm jvmoebel-back-stage-validation apachectl -t
+          docker run --rm --user 33:33 jvmoebel-back-stage-validation sh -ceu 'test -r /var/www/html/bin/console; test -x /var/www/html/bin/console; test -r /var/www/html/vendor/autoload.php'
 
 
 
