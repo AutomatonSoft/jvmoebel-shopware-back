@@ -27,7 +27,7 @@ jobs:
         run: |
           set -Eeuo pipefail
 
-          readonly EXPECTED_COMPOSE_SHA256="80cbb1792d865230676b4ce5511517ada70e14242c004105c2c7764f47038f37"
+          readonly EXPECTED_COMPOSE_SHA256="925b3333347656f0112910e8058732df6c291573e0e89e7477ba9807d25cc189"
 
           actual_compose_sha="$(
             sha256sum compose.deploy.yml |
@@ -116,7 +116,7 @@ jobs:
       SIGNATURE_NAMESPACE: jvmoebel-stage-back@automatonsoft
 
       EXPECTED_DEPLOY_HOST: 85.215.147.19
-      EXPECTED_COMPOSE_SHA256: 80cbb1792d865230676b4ce5511517ada70e14242c004105c2c7764f47038f37
+      EXPECTED_COMPOSE_SHA256: 925b3333347656f0112910e8058732df6c291573e0e89e7477ba9807d25cc189
       EXPECTED_HELPER_SHA256: ${{ vars.BACKEND_DEPLOY_HELPER_SHA256 }}
 
       EXPECTED_DEPLOY_KEY_FINGERPRINT: SHA256:Q3JQh8Yqz7EEoRVZXUufLmx160pk9ptugi+Zsj6qSU4
@@ -160,6 +160,10 @@ jobs:
             fi
           done
 
+          if [[ ! "${EXPECTED_HELPER_SHA256:-}" =~ ^[0-9a-f]{64}$ ]]; then
+            echo "::error::BACKEND_DEPLOY_HELPER_SHA256 must be a lowercase 64-character SHA256"
+            exit 1
+          fi
           if [[ ! "${GITHUB_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
             echo "::error::GITHUB_SHA is not a lowercase 40-character Git SHA"
             exit 1
