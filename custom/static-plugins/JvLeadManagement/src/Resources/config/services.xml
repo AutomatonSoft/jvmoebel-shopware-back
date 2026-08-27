@@ -5,5 +5,13 @@
            xsi:schemaLocation="http://symfony.com/schema/dic/services https://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
         <defaults autowire="true" autoconfigure="true" public="false"/>
+
+        <service id="Jv\LeadManagement\Core\Content\Lead\LeadDefinition">
+            <tag name="shopware.entity.definition" entity="jv_lead_management_lead"/>
+        </service>
+
+        <service id="Jv\LeadManagement\Core\Content\Contact\ContactDefinition">
+            <tag name="shopware.entity.definition" entity="jv_lead_management_contact"/>
+        </service>
     </services>
 </container>
