@@ -88,6 +88,13 @@ jobs:
 
           echo "Deployment artifact validation passed."
 
+      - name: Build deployment image
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker build -f Dockerfile.deploy -t jvmoebel-back-stage-validation .
+          docker run --rm jvmoebel-back-stage-validation apachectl -t
+
   deploy:
     name: deploy back to stage
     if: github.event_name == 'push' && github.ref == 'refs/heads/stage'
@@ -112,7 +119,7 @@ jobs:
       SIGNATURE_NAMESPACE: jvmoebel-stage-back@automatonsoft
 
       EXPECTED_DEPLOY_HOST: 85.215.147.19
-      EXPECTED_COMPOSE_SHA256: 05a7fa96af0f33fc3eb8213d74354c99890a1562d3328f05e45f7c3a8bb26cc5
+      EXPECTED_COMPOSE_SHA256: 49bfa5e27f8cae23c447b6959ea65d24d376fad4dc9f46ba5fdd6b204d60ce5c
       EXPECTED_HELPER_SHA256: 09a324dedfacffd91b10e3f07c14b447cabe03918a87ea0f386c069934936dd0
 
       EXPECTED_DEPLOY_KEY_FINGERPRINT: SHA256:Q3JQh8Yqz7EEoRVZXUufLmx160pk9ptugi+Zsj6qSU4
@@ -341,12 +348,16 @@ jobs:
           manifest_path="${RUNNER_TEMP}/${manifest_name}"
           signature_path="${RUNNER_TEMP}/${signature_name}"
 
-          tar \
-            -C . \
-            -czf "${archive_path}" \
-            .
+          tar --exclude-vcs -C . -czf "${archive_path}" .
 
           test -s "${archive_path}"
+          if tar -tzf "${archive_path}" | grep -Eq '"'"'^(\./)?\.git(/|$)'"'"'; then
+            echo "::error::deployment archive contains Git metadata"
+            exit 1
+          fi
+          for required in ./Dockerfile.deploy ./compose.deploy.yml ./composer.json ./composer.lock ./bin/console ./config/bundles.php ./public/index.php; do
+            tar -tzf "${archive_path}" | grep -Fxq "${required}" || { echo "::error::deployment archive is missing ${required}"; exit 1; }
+          done
 
           archive_size="$(
             stat -c '%s' "${archive_path}"
