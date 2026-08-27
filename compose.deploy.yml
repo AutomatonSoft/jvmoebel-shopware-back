@@ -7,8 +7,8 @@ x-shopware-runtime: &shopware-runtime
   INSTANCE_ID: ${INSTANCE_ID:?INSTANCE_ID is required}
   BLUE_GREEN_DEPLOYMENT: "0"
   DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
-  MAILER_DSN: "null://null"
-  LOCK_DSN: ${LOCK_DSN:?LOCK_DSN is required}
+  # Stage mail delivery is intentionally disabled.`n  MAILER_DSN: "null://null"
+  # Must identify a shared lock backend across web, worker, and scheduler.`n  LOCK_DSN: ${LOCK_DSN:?LOCK_DSN is required}
   MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN:?MESSENGER_TRANSPORT_DSN is required}
   MESSENGER_TRANSPORT_LOW_PRIORITY_DSN: ${MESSENGER_TRANSPORT_LOW_PRIORITY_DSN:?MESSENGER_TRANSPORT_LOW_PRIORITY_DSN is required}
   MESSENGER_TRANSPORT_FAILURE_DSN: ${MESSENGER_TRANSPORT_FAILURE_DSN:?MESSENGER_TRANSPORT_FAILURE_DSN is required}
