@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 use Shopware\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
 use Shopware\Core\TestBootstrapper;
-use Symfony\Component\Cache\Adapter\RedisAdapter;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Output\NullOutput;
+use Symfony\Component\Messenger\Bridge\Redis\Transport\Connection;
 
 /**
  * The suite shares a Redis server with local development, but must not retain
@@ -20,26 +21,13 @@ function clearTestMessengerStreams(): void
         'test_failed' => $_SERVER['MESSENGER_TRANSPORT_FAILURE_DSN'] ?? null,
     ];
 
-    $connectionDsn = null;
     foreach ($transportDsns as $stream => $dsn) {
         if (!\is_string($dsn) || !str_ends_with($dsn, '/'.$stream)) {
-            throw new \RuntimeException(\sprintf('Test Messenger transport must use the dedicated "%s" stream.', $stream));
+            throw new RuntimeException(\sprintf('Test Messenger transport must use the dedicated "%s" stream.', $stream));
         }
 
-        $currentConnectionDsn = substr($dsn, 0, -\strlen('/'.$stream));
-        if ($connectionDsn !== null && $connectionDsn !== $currentConnectionDsn) {
-            throw new \RuntimeException('Test Messenger transports must use one Redis connection.');
-        }
-
-        $connectionDsn = $currentConnectionDsn;
+        Connection::fromDsn($dsn)->cleanup();
     }
-
-    if ($connectionDsn === null) {
-        throw new \RuntimeException('Test Messenger transport DSNs are missing.');
-    }
-
-    $redis = RedisAdapter::createConnection($connectionDsn);
-    $redis->del(...array_keys($transportDsns));
 }
 
 clearTestMessengerStreams();
@@ -52,6 +40,6 @@ $bootstrapper->bootstrap();
 
 (new Application(KernelLifecycleManager::getKernel()))->doRun(
     new ArrayInput(['command' => 'cache:clear', '--no-warmup' => true, '--no-interaction' => true]),
-    new \Symfony\Component\Console\Output\NullOutput(),
+    new NullOutput(),
 );
 KernelLifecycleManager::ensureKernelShutdown();
