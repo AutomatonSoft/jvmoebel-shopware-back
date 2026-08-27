@@ -354,12 +354,15 @@ jobs:
           tar --exclude-vcs -C . -czf "${archive_path}" .
 
           test -s "${archive_path}"
-          if tar -tzf "${archive_path}" | grep -Eq '"'"'^(\./)?\.git(/|$)'"'"'; then
+          archive_list="${RUNNER_TEMP}/back-release.list"
+          tar -tzf "${archive_path}" > "${archive_list}"
+
+          if grep -Eq '^(\./)?\.git(/|$)' "${archive_list}"; then
             echo "::error::deployment archive contains Git metadata"
             exit 1
           fi
           for required in ./Dockerfile.deploy ./compose.deploy.yml ./composer.json ./composer.lock ./bin/console ./config/bundles.php ./public/index.php; do
-            tar -tzf "${archive_path}" | grep -Fxq "${required}" || { echo "::error::deployment archive is missing ${required}"; exit 1; }
+            grep -Fxq "${required}" "${archive_list}" || { echo "::error::deployment archive is missing ${required}"; exit 1; }
           done
 
           archive_size="$(
