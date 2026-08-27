@@ -1,13 +1,17 @@
+# Shopware 6.7 signs API JWTs with the stable server-side APP_SECRET (HMAC); no RSA JWT files are used.
 x-shopware-runtime: &shopware-runtime
   APP_ENV: prod
   APP_DEBUG: "0"
   APP_SECRET: ${APP_SECRET:?APP_SECRET is required}
+  APP_URL: ${APP_URL:?APP_URL is required}
+  INSTANCE_ID: ${INSTANCE_ID:?INSTANCE_ID is required}
+  BLUE_GREEN_DEPLOYMENT: "0"
   DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+  MAILER_DSN: "null://null"
+  LOCK_DSN: ${LOCK_DSN:?LOCK_DSN is required}
   MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN:?MESSENGER_TRANSPORT_DSN is required}
   MESSENGER_TRANSPORT_LOW_PRIORITY_DSN: ${MESSENGER_TRANSPORT_LOW_PRIORITY_DSN:?MESSENGER_TRANSPORT_LOW_PRIORITY_DSN is required}
   MESSENGER_TRANSPORT_FAILURE_DSN: ${MESSENGER_TRANSPORT_FAILURE_DSN:?MESSENGER_TRANSPORT_FAILURE_DSN is required}
-  JWT_PRIVATE_KEY: /var/www/html/config/jwt/private.pem
-  JWT_PUBLIC_KEY: /var/www/html/config/jwt/public.pem
   SHOPWARE_ES_ENABLED: "0"
   SHOPWARE_ES_INDEXING_ENABLED: "0"
   SHOPWARE_HTTP_CACHE_ENABLED: "1"
@@ -17,12 +21,11 @@ x-shopware-runtime: &shopware-runtime
 
 x-shopware-storage: &shopware-storage
   - ${SHOPWARE_STORAGE_PATH:?SHOPWARE_STORAGE_PATH is required}/files:/var/www/html/files
+  - ${SHOPWARE_STORAGE_PATH:?SHOPWARE_STORAGE_PATH is required}/bundles:/var/www/html/public/bundles
   - ${SHOPWARE_STORAGE_PATH:?SHOPWARE_STORAGE_PATH is required}/media:/var/www/html/public/media
   - ${SHOPWARE_STORAGE_PATH:?SHOPWARE_STORAGE_PATH is required}/thumbnail:/var/www/html/public/thumbnail
   - ${SHOPWARE_STORAGE_PATH:?SHOPWARE_STORAGE_PATH is required}/theme:/var/www/html/public/theme
   - ${SHOPWARE_STORAGE_PATH:?SHOPWARE_STORAGE_PATH is required}/sitemap:/var/www/html/public/sitemap
-  - ${SHOPWARE_JWT_PATH:?SHOPWARE_JWT_PATH is required}/private.pem:/var/www/html/config/jwt/private.pem:ro
-  - ${SHOPWARE_JWT_PATH:?SHOPWARE_JWT_PATH is required}/public.pem:/var/www/html/config/jwt/public.pem:ro
 
 services:
   bootstrap:
@@ -36,7 +39,6 @@ services:
       INSTALL_ADMIN_USERNAME: ${INSTALL_ADMIN_USERNAME:?INSTALL_ADMIN_USERNAME is required}
       INSTALL_ADMIN_PASSWORD: ${INSTALL_ADMIN_PASSWORD:?INSTALL_ADMIN_PASSWORD is required}
       INSTALL_ADMIN_EMAIL: ${INSTALL_ADMIN_EMAIL:?INSTALL_ADMIN_EMAIL is required}
-      APP_URL: ${APP_URL:?APP_URL is required}
       SALES_CHANNEL_URL: ${SALES_CHANNEL_URL:?SALES_CHANNEL_URL is required}
     volumes: *shopware-storage
     networks: [database]
