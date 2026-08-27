@@ -1,0 +1,94 @@
+# Shopware 6.7 signs API JWTs with the stable server-side APP_SECRET (HMAC); no RSA JWT files are used.
+x-shopware-runtime: &shopware-runtime
+  APP_ENV: prod
+  APP_DEBUG: "0"
+  APP_SECRET: ${APP_SECRET:?APP_SECRET is required}
+  APP_URL: ${APP_URL:?APP_URL is required}
+  INSTANCE_ID: ${INSTANCE_ID:?INSTANCE_ID is required}
+  BLUE_GREEN_DEPLOYMENT: "0"
+  DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+  # Stage mail delivery is intentionally disabled.
+  MAILER_DSN: "null://null"
+  # Must identify a shared lock backend across web, worker, and scheduler.
+  LOCK_DSN: ${LOCK_DSN:?LOCK_DSN is required}
+  MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN:?MESSENGER_TRANSPORT_DSN is required}
+  MESSENGER_TRANSPORT_LOW_PRIORITY_DSN: ${MESSENGER_TRANSPORT_LOW_PRIORITY_DSN:?MESSENGER_TRANSPORT_LOW_PRIORITY_DSN is required}
+  MESSENGER_TRANSPORT_FAILURE_DSN: ${MESSENGER_TRANSPORT_FAILURE_DSN:?MESSENGER_TRANSPORT_FAILURE_DSN is required}
+  SHOPWARE_ES_ENABLED: "0"
+  SHOPWARE_ES_INDEXING_ENABLED: "0"
+  SHOPWARE_HTTP_CACHE_ENABLED: "1"
+  TRUSTED_PROXIES: REMOTE_ADDR
+  SYMFONY_TRUSTED_PROXIES: REMOTE_ADDR
+  JV_MARKET_SALES_CHANNEL_URL_TEMPLATE: https://{domain}
+
+x-shopware-storage: &shopware-storage
+  - ${SHOPWARE_STORAGE_PATH:?SHOPWARE_STORAGE_PATH is required}/files:/var/www/html/files
+  - ${SHOPWARE_STORAGE_PATH:?SHOPWARE_STORAGE_PATH is required}/bundles:/var/www/html/public/bundles
+  - ${SHOPWARE_STORAGE_PATH:?SHOPWARE_STORAGE_PATH is required}/media:/var/www/html/public/media
+  - ${SHOPWARE_STORAGE_PATH:?SHOPWARE_STORAGE_PATH is required}/thumbnail:/var/www/html/public/thumbnail
+  - ${SHOPWARE_STORAGE_PATH:?SHOPWARE_STORAGE_PATH is required}/theme:/var/www/html/public/theme
+  - ${SHOPWARE_STORAGE_PATH:?SHOPWARE_STORAGE_PATH is required}/sitemap:/var/www/html/public/sitemap
+
+services:
+  bootstrap:
+    build: { context: ., dockerfile: Dockerfile.deploy }
+    restart: "no"
+    user: "33:33"
+    command: ["vendor/bin/shopware-deployment-helper", "run", "--timeout=900"]
+    environment:
+      <<: *shopware-runtime
+      INSTALL_LOCALE: ${INSTALL_LOCALE:?INSTALL_LOCALE is required}
+      INSTALL_CURRENCY: ${INSTALL_CURRENCY:?INSTALL_CURRENCY is required}
+      INSTALL_ADMIN_USERNAME: ${INSTALL_ADMIN_USERNAME:?INSTALL_ADMIN_USERNAME is required}
+      INSTALL_ADMIN_PASSWORD: ${INSTALL_ADMIN_PASSWORD:?INSTALL_ADMIN_PASSWORD is required}
+      INSTALL_ADMIN_EMAIL: ${INSTALL_ADMIN_EMAIL:?INSTALL_ADMIN_EMAIL is required}
+      SALES_CHANNEL_URL: ${SALES_CHANNEL_URL:?SALES_CHANNEL_URL is required}
+    volumes: *shopware-storage
+    networks: [database]
+
+  web:
+    build: { context: ., dockerfile: Dockerfile.deploy }
+    restart: unless-stopped
+    init: true
+    environment: *shopware-runtime
+    depends_on: { bootstrap: { condition: service_completed_successfully } }
+    volumes: *shopware-storage
+    networks:
+      database: {}
+      application: { aliases: [shopware-stage] }
+    healthcheck:
+      test: ["CMD-SHELL", "php -r 'exit((int)!@file_get_contents(\"http://127.0.0.1/api/_info/health-check\"));'"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  worker:
+    user: "33:33"
+    build: { context: ., dockerfile: Dockerfile.deploy }
+    restart: unless-stopped
+    init: true
+    command: ["php", "bin/console", "messenger:consume", "async", "low_priority", "--memory-limit=512M", "--time-limit=3600"]
+    environment: *shopware-runtime
+    depends_on: { bootstrap: { condition: service_completed_successfully } }
+    volumes: *shopware-storage
+    networks: [database, application]
+
+  scheduler:
+    user: "33:33"
+    build: { context: ., dockerfile: Dockerfile.deploy }
+    restart: unless-stopped
+    init: true
+    command: ["php", "bin/console", "scheduled-task:run", "--memory-limit=512M", "--time-limit=3600"]
+    environment: *shopware-runtime
+    depends_on: { bootstrap: { condition: service_completed_successfully } }
+    volumes: *shopware-storage
+    networks: [database, application]
+
+networks:
+  database:
+    external: true
+    name: ${DATA_NETWORK:?DATA_NETWORK is required}
+  application:
+    external: true
+    name: ${APP_NETWORK:?APP_NETWORK is required}

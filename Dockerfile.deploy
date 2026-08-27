@@ -1,0 +1,32 @@
+FROM php:8.5-cli-bookworm AS build
+
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y git libfreetype6-dev libicu-dev libjpeg62-turbo-dev libpng-dev libzip-dev unzip zlib1g-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j1 gd intl pdo_mysql zip \
+    && pecl install redis-6.3.0 \
+    && docker-php-ext-enable redis \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
+WORKDIR /var/www/html
+COPY . .
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts \
+    && rm -rf var/cache var/log
+
+FROM php:8.5-apache-bookworm
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y libfreetype6-dev libicu-dev libjpeg62-turbo-dev libpng-dev libzip-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j1 gd intl pdo_mysql zip \
+    && pecl install redis-6.3.0 \
+    && docker-php-ext-enable redis \
+    && a2enmod expires headers rewrite \
+    && sed -ri 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /var/www/html
+COPY --from=build /var/www/html ./
+RUN chown -R www-data:www-data var public
+ENV APP_ENV=prod APP_DEBUG=0
+EXPOSE 80
+CMD ["apache2-foreground"]
