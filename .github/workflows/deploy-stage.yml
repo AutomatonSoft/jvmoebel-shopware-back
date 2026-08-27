@@ -64,7 +64,9 @@ jobs:
             exit 1
           fi
 
-          if tar -tzf "${archive}" | grep -Eq '^\./?\.git(/|$)'; then echo "::error::deployment archive contains Git metadata"; exit 1; fi`n`n          if tar -tzf "${archive}" | grep -Eq '^\./?\.git(/|$)'; then echo "::error::deployment archive contains Git metadata"; exit 1; fi`n`n          tar -tzf "${archive}" > "${archive_list}"
+          if tar -tzf "${archive}" | grep -Eq '^\./?\.git(/|$)'; then echo "::error::deployment archive contains Git metadata"; exit 1; fi
+
+          tar -tzf "${archive}" > "${archive_list}"
 
           for required in \
             "./Dockerfile.deploy" \
@@ -79,7 +81,14 @@ jobs:
             fi
           done
 
-          echo "Deployment artifact validation passed."`n`n      - name: Build deployment image`n        shell: bash`n        run: |`n          set -Eeuo pipefail`n          docker build -f Dockerfile.deploy -t jvmoebel-back-stage-validation .`n          docker run --rm jvmoebel-back-stage-validation apachectl -t
+          echo "Deployment artifact validation passed."
+
+      - name: Build deployment image
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker build -f Dockerfile.deploy -t jvmoebel-back-stage-validation .
+          docker run --rm jvmoebel-back-stage-validation apachectl -t
 
       - name: Build deployment image
         shell: bash
