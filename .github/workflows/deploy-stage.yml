@@ -1,13 +1,7 @@
 name: Deploy stage
 
 on:
-  pull_request:
-    branches:
-      - develop
-    paths:
-      - .github/workflows/deploy-stage.yml
-      - ar/**
-
+  pull_request:`n    branches: [develop]`n    paths: ["**"]
   push:
     branches:
       - stage
@@ -53,10 +47,7 @@ jobs:
           archive="${RUNNER_TEMP}/back-validation.tar.gz"
           archive_list="${RUNNER_TEMP}/back-validation.list"
 
-          tar \
-            -C . \
-            -czf "${archive}" \
-            .
+          tar --exclude-vcs -C . -czf "${archive}" .
 
           test -s "${archive}"
 
@@ -71,7 +62,7 @@ jobs:
             exit 1
           fi
 
-          tar -tzf "${archive}" > "${archive_list}"
+          if tar -tzf "${archive}" | grep -Eq '^\./?\.git(/|$)'; then echo "::error::deployment archive contains Git metadata"; exit 1; fi`n`n          tar -tzf "${archive}" > "${archive_list}"
 
           for required in \
             "./Dockerfile.deploy" \
@@ -86,7 +77,7 @@ jobs:
             fi
           done
 
-          echo "Deployment artifact validation passed."
+          echo "Deployment artifact validation passed."`n`n      - name: Build deployment image`n        shell: bash`n        run: |`n          set -Eeuo pipefail`n          docker build -f Dockerfile.deploy -t jvmoebel-back-stage-validation .`n          docker run --rm jvmoebel-back-stage-validation apachectl -t
 
       - name: Build deployment image
         shell: bash
@@ -106,7 +97,7 @@ jobs:
 
     concurrency:
       group: jvmoebel-back-stage
-      cancel-in-progress: false
+      queue: max
 
     env:
       DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
@@ -119,7 +110,7 @@ jobs:
       SIGNATURE_NAMESPACE: jvmoebel-stage-back@automatonsoft
 
       EXPECTED_DEPLOY_HOST: 85.215.147.19
-      EXPECTED_COMPOSE_SHA256: 49bfa5e27f8cae23c447b6959ea65d24d376fad4dc9f46ba5fdd6b204d60ce5c
+      EXPECTED_COMPOSE_SHA256: 250e4af35921e808876ada4f1ce0b8d414f7e5cc45179f67c9e2cf4d7f7974bb
       EXPECTED_HELPER_SHA256: 09a324dedfacffd91b10e3f07c14b447cabe03918a87ea0f386c069934936dd0
 
       EXPECTED_DEPLOY_KEY_FINGERPRINT: SHA256:Q3JQh8Yqz7EEoRVZXUufLmx160pk9ptugi+Zsj6qSU4
@@ -129,6 +120,8 @@ jobs:
     steps:
       - name: Checkout exact stage commit
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Initialize runner paths
         shell: bash
