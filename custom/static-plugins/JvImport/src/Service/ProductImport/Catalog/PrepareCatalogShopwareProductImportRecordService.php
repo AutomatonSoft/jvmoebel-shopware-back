@@ -129,7 +129,6 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
             'name' => $parent->getName() ?? $parent->getProductNumber(),
             'stock' => $parent->getStock(),
             'taxId' => $parent->getTaxId(),
-            'deliveryTimeId' => $parent->getDeliveryTimeId(),
             'price' => $this->prices($parent->getPrice()->getElements(), $currencyId, $gross, $parent->getTax()->getTaxRate()),
             'properties' => array_values($optionRecords),
             'options' => array_values(array_intersect_key($optionRecords, $variantOptionIds)),

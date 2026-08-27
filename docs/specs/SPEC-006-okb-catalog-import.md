@@ -202,10 +202,12 @@ Parent сохраняет цену CosmoShop: это базовая карточ
 Валюта должна совпадать с
 рынком; несовпадающая или отсутствующая цена является ошибкой строки.
 
-Child копирует стандартный Shopware `deliveryTimeId` parent, поэтому он
-отображается в Administration так же, как parent. Это глобальный срок по
-умолчанию (из DE CosmoShop import); market-specific сроки продолжают
-разрешаться отдельно по sales channel и не копируются как child overrides.
+Child не получает физическую копию `deliveryTimeId` parent. Для market-specific
+срока Administration и Store API разрешают значение в одном порядке: override
+child для текущего sales channel, затем relation parent для этого sales channel,
+затем глобальный inherited fallback Shopware. Изменение срока parent поэтому
+сразу видно child; изменение child создаёт только его собственный market
+override, а удаление override возвращает child к сроку parent.
 
 ## Внутренний код администратора
 

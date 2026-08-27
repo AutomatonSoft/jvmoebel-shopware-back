@@ -123,12 +123,6 @@ final class CosmoShopMarketDeliveryTimeStoreApiTest extends AbstractCosmoShopImp
             self::assertInstanceOf(ProductEntity::class, $listingProduct);
             self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::UnitedKingdom, 2), $listingProduct->getDeliveryTimeId());
 
-            $britishLink = $links->filterByProperty('salesChannelId', Market::UnitedKingdom->salesChannelId())->first();
-            $deliveryTimeRepository->delete([['id' => $britishLink->getId()]], $context);
-            $fallbackProduct = $detailRoute->load($productId, new Request(), $contextFactory->create(Uuid::randomHex(), Market::UnitedKingdom->salesChannelId()), new Criteria())->getProduct();
-            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::Germany, 2), $fallbackProduct->getDeliveryTimeId());
-            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::Germany, 2), $this->storeApiDeliveryTimeId($productId, Market::UnitedKingdom));
-
             /** @var EntityRepository<ProductCollection> $productRepository */
             $productRepository = static::getContainer()->get('product.repository');
             $productRepository->create([[
@@ -138,7 +132,7 @@ final class CosmoShopMarketDeliveryTimeStoreApiTest extends AbstractCosmoShopImp
                 'stock' => 1,
             ]], $context);
             $variant = $detailRoute->load($variantProductId, new Request(), $contextFactory->create(Uuid::randomHex(), Market::UnitedKingdom->salesChannelId()), new Criteria())->getProduct();
-            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::Germany, 2), $variant->getDeliveryTimeId());
+            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::UnitedKingdom, 2), $variant->getDeliveryTimeId());
             $deliveryTimeRepository->create([[
                 'id' => Uuid::randomHex(),
                 'productId' => $variantProductId,
@@ -148,6 +142,19 @@ final class CosmoShopMarketDeliveryTimeStoreApiTest extends AbstractCosmoShopImp
             ]], $context);
             $variantWithOverride = $detailRoute->load($variantProductId, new Request(), $contextFactory->create(Uuid::randomHex(), Market::UnitedKingdom->salesChannelId()), new Criteria())->getProduct();
             self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::UnitedKingdom, 3), $variantWithOverride->getDeliveryTimeId());
+            $variantOverride = $deliveryTimeRepository->search((new Criteria())->addFilter(new EqualsFilter('productId', $variantProductId)), $context)->first();
+            self::assertNotNull($variantOverride);
+            $deliveryTimeRepository->delete([['id' => $variantOverride->getId()]], $context);
+            $variantWithoutOverride = $detailRoute->load($variantProductId, new Request(), $contextFactory->create(Uuid::randomHex(), Market::UnitedKingdom->salesChannelId()), new Criteria())->getProduct();
+            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::UnitedKingdom, 2), $variantWithoutOverride->getDeliveryTimeId());
+
+            $britishLink = $links->filterByProperty('salesChannelId', Market::UnitedKingdom->salesChannelId())->first();
+            $deliveryTimeRepository->delete([['id' => $britishLink->getId()]], $context);
+            $fallbackProduct = $detailRoute->load($productId, new Request(), $contextFactory->create(Uuid::randomHex(), Market::UnitedKingdom->salesChannelId()), new Criteria())->getProduct();
+            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::Germany, 2), $fallbackProduct->getDeliveryTimeId());
+            $fallbackVariant = $detailRoute->load($variantProductId, new Request(), $contextFactory->create(Uuid::randomHex(), Market::UnitedKingdom->salesChannelId()), new Criteria())->getProduct();
+            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::Germany, 2), $fallbackVariant->getDeliveryTimeId());
+            self::assertSame(CosmoShopReferenceIdentity::deliveryTimeId(Market::Germany, 2), $this->storeApiDeliveryTimeId($productId, Market::UnitedKingdom));
         } finally {
             /** @var EntityRepository<ProductCollection> $productRepository */
             $productRepository = static::getContainer()->get('product.repository');

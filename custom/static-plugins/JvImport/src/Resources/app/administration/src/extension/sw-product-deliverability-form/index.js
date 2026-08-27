@@ -18,6 +18,8 @@ Shopware.Component.override('sw-product-deliverability-form', {
         return {
             jvImportMarketSalesChannelId: null,
             jvImportDeliveryTimeLink: null,
+            jvImportParentDeliveryTimeLink: null,
+            jvImportParentProduct: null,
             jvImportPendingDeliveryTimeId: undefined,
             jvImportDeliveryTimeLoading: false,
             jvImportLoadRequest: 0,
@@ -38,7 +40,11 @@ Shopware.Component.override('sw-product-deliverability-form', {
                 return this.jvImportPendingDeliveryTimeId;
             }
 
-            return pendingChange?.deliveryTimeId ?? this.jvImportDeliveryTimeLink?.deliveryTimeId ?? this.product.deliveryTimeId;
+            return pendingChange?.deliveryTimeId
+                ?? this.jvImportDeliveryTimeLink?.deliveryTimeId
+                ?? this.jvImportParentDeliveryTimeLink?.deliveryTimeId
+                ?? this.product.deliveryTimeId
+                ?? this.jvImportParentProduct?.deliveryTimeId;
         },
 
         jvImportSalesChannelRepository() {
@@ -51,6 +57,10 @@ Shopware.Component.override('sw-product-deliverability-form', {
 
         jvImportDeliveryTimeLinkRepository() {
             return this.repositoryFactory.create('jv_import_product_sales_channel_delivery_time');
+        },
+
+        jvImportProductRepository() {
+            return this.repositoryFactory.create('product');
         },
     },
 
@@ -74,6 +84,8 @@ Shopware.Component.override('sw-product-deliverability-form', {
             const productId = this.product.id;
             this.jvImportMarketSalesChannelId = null;
             this.jvImportDeliveryTimeLink = null;
+            this.jvImportParentDeliveryTimeLink = null;
+            this.jvImportParentProduct = null;
             this.jvImportPendingDeliveryTimeId = undefined;
             this.jvImportDeliveryTimeLoading = true;
 
@@ -107,17 +119,34 @@ Shopware.Component.override('sw-product-deliverability-form', {
                 return;
             }
 
-            const linkCriteria = new Criteria(1, 1);
-            linkCriteria.addFilter(Criteria.equals('productId', productId));
-            linkCriteria.addFilter(Criteria.equals('productVersionId', Shopware.Defaults.versionId));
-            linkCriteria.addFilter(Criteria.equals('salesChannelId', salesChannel.id));
-            const link = (await this.jvImportDeliveryTimeLinkRepository.search(linkCriteria, Shopware.Context.api)).first() ?? null;
+            const link = await this.jvImportFindDeliveryTimeLink(productId, salesChannel.id);
             if (request !== this.jvImportLoadRequest || languageId !== this.jvImportLanguageId || productId !== this.product.id) {
                 return;
             }
 
             this.jvImportDeliveryTimeLink = link;
+            if (!link && this.product.parentId) {
+                const parent = await this.jvImportProductRepository.get(this.product.parentId, Shopware.Context.api);
+                if (request !== this.jvImportLoadRequest || languageId !== this.jvImportLanguageId || productId !== this.product.id) {
+                    return;
+                }
+
+                this.jvImportParentProduct = parent;
+                this.jvImportParentDeliveryTimeLink = await this.jvImportFindDeliveryTimeLink(parent.id, salesChannel.id);
+                if (request !== this.jvImportLoadRequest || languageId !== this.jvImportLanguageId || productId !== this.product.id) {
+                    return;
+                }
+            }
             this.jvImportDeliveryTimeLoading = false;
+        },
+
+        async jvImportFindDeliveryTimeLink(productId, salesChannelId) {
+            const criteria = new Criteria(1, 1);
+            criteria.addFilter(Criteria.equals('productId', productId));
+            criteria.addFilter(Criteria.equals('productVersionId', Shopware.Defaults.versionId));
+            criteria.addFilter(Criteria.equals('salesChannelId', salesChannelId));
+
+            return (await this.jvImportDeliveryTimeLinkRepository.search(criteria, Shopware.Context.api)).first() ?? null;
         },
 
         jvImportUpdateDeliveryTime(deliveryTimeId) {
