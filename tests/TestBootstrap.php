@@ -15,17 +15,21 @@ use Symfony\Component\Messenger\Bridge\Redis\Transport\Connection;
  */
 function clearTestMessengerStreams(): void
 {
+    $redisDsn = $_SERVER['TEST_REDIS_DSN'] ?? $_ENV['TEST_REDIS_DSN'] ?? getenv('TEST_REDIS_DSN');
+    if (!\is_string($redisDsn) || !preg_match('#^rediss?://[^/]+/?$#', $redisDsn)) {
+        throw new RuntimeException('TEST_REDIS_DSN must be a Redis base DSN without a stream path.');
+    }
+    $redisDsn = rtrim($redisDsn, '/');
     $transportDsns = [
-        'test_messages' => $_SERVER['MESSENGER_TRANSPORT_DSN'] ?? null,
-        'test_low_priority' => $_SERVER['MESSENGER_TRANSPORT_LOW_PRIORITY_DSN'] ?? null,
-        'test_failed' => $_SERVER['MESSENGER_TRANSPORT_FAILURE_DSN'] ?? null,
+        'MESSENGER_TRANSPORT_DSN' => $redisDsn.'/test_messages',
+        'MESSENGER_TRANSPORT_LOW_PRIORITY_DSN' => $redisDsn.'/test_low_priority',
+        'MESSENGER_TRANSPORT_FAILURE_DSN' => $redisDsn.'/test_failed',
     ];
 
-    foreach ($transportDsns as $stream => $dsn) {
-        if (!\is_string($dsn) || !str_ends_with($dsn, '/'.$stream)) {
-            throw new RuntimeException(\sprintf('Test Messenger transport must use the dedicated "%s" stream.', $stream));
-        }
-
+    foreach ($transportDsns as $name => $dsn) {
+        $_SERVER[$name] = $dsn;
+        $_ENV[$name] = $dsn;
+        putenv($name.'='.$dsn);
         Connection::fromDsn($dsn)->cleanup();
     }
 }

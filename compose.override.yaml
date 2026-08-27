@@ -4,6 +4,7 @@ services:
             - .env.local
         environment:
             LOCK_DSN: redis://redis:6379
+            TEST_REDIS_DSN: redis://redis:6379
             HOST: !reset null
             DATABASE_URL: !reset null
             MAILER_DSN: !reset null
