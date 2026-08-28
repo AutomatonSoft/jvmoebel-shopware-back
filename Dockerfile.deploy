@@ -1,9 +1,9 @@
 FROM php:8.5-cli-bookworm AS build
 
 RUN apt-get update \
-    && apt-get install --no-install-recommends -y git libcurl4-openssl-dev libfreetype6-dev libicu-dev libjpeg62-turbo-dev libonig-dev libpng-dev libsodium-dev libxml2-dev libzip-dev unzip zlib1g-dev \
+    && apt-get install --no-install-recommends -y git libfreetype6-dev libicu-dev libjpeg62-turbo-dev libonig-dev libpng-dev libzip-dev unzip zlib1g-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j1 curl dom gd intl mbstring pdo_mysql simplexml sodium xml xmlreader zip \
+    && docker-php-ext-install -j1 gd intl mbstring pdo_mysql zip \
     && pecl install redis-6.3.0 \
     && docker-php-ext-enable redis \
     && rm -rf /var/lib/apt/lists/*
@@ -17,9 +17,9 @@ RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoload
 
 FROM php:8.5-apache-bookworm
 RUN apt-get update \
-    && apt-get install --no-install-recommends -y libcurl4-openssl-dev libfreetype6-dev libicu-dev libjpeg62-turbo-dev libonig-dev libpng-dev libsodium-dev libxml2-dev libzip-dev zlib1g-dev \
+    && apt-get install --no-install-recommends -y libfreetype6-dev libicu-dev libjpeg62-turbo-dev libonig-dev libpng-dev libzip-dev zlib1g-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j1 curl dom gd intl mbstring pdo_mysql simplexml sodium xml xmlreader zip \
+    && docker-php-ext-install -j1 gd intl mbstring pdo_mysql zip \
     && pecl install redis-6.3.0 \
     && docker-php-ext-enable redis \
     && a2enmod expires headers rewrite \
