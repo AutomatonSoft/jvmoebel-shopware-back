@@ -4,11 +4,11 @@ namespace Jv\Import\Tests\Integration\ImportExport;
 
 require_once __DIR__.'/AbstractCosmoShopImportExportTestCase.php';
 
-use Jv\Import\Integration\CosmoShop\CosmoShopProductIdentity;
 use Jv\Import\Integration\CosmoShop\CosmoShopReferenceIdentity;
 use Jv\Import\Service\ProductImport\LookupData\Dto\ProductImportLookupData;
 use Jv\Import\Service\ProductImport\LookupData\Dto\ProductImportLookupItemData;
 use Jv\Import\Service\ProductImport\LookupData\UpsertProductImportLookupDataService;
+use Jv\Import\Service\ProductImport\ProductImportIdentity;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use Shopware\Core\Content\ImportExport\Struct\Progress;
 use Shopware\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufacturerCollection;
@@ -28,7 +28,7 @@ final class CosmoShopProductImportTest extends AbstractCosmoShopImportExportTest
     {
         $context = Context::createDefaultContext();
         $profileId = $this->configureGermanyProfile($context);
-        $productId = CosmoShopProductIdentity::fromProductNumber('DUPLICATE-SKU-001');
+        $productId = ProductImportIdentity::fromProductNumber('DUPLICATE-SKU-001');
         [$header, $firstRow] = explode("\n", $this->csv(productNumber: 'DUPLICATE-SKU-001'));
         $csv = $header."\n".$firstRow."\n".str_replace('Test product', 'Updated product name', $firstRow);
 
@@ -51,7 +51,7 @@ final class CosmoShopProductImportTest extends AbstractCosmoShopImportExportTest
     public function testItImportsAllCoreCosmoShopProductFields(): void
     {
         $context = Context::createDefaultContext();
-        $productId = CosmoShopProductIdentity::fromProductNumber('CORE-FIELDS-001');
+        $productId = ProductImportIdentity::fromProductNumber('CORE-FIELDS-001');
         $profileId = $this->configureGermanyProfile($context);
         $references = static::getContainer()->get(UpsertProductImportLookupDataService::class);
         self::assertInstanceOf(UpsertProductImportLookupDataService::class, $references);
@@ -115,7 +115,7 @@ final class CosmoShopProductImportTest extends AbstractCosmoShopImportExportTest
     {
         $context = Context::createDefaultContext();
         $productNumber = 'REPEAT-IMPORT-001';
-        $productId = CosmoShopProductIdentity::fromProductNumber($productNumber);
+        $productId = ProductImportIdentity::fromProductNumber($productNumber);
         $manufacturerName = 'Idempotent manufacturer '.bin2hex(random_bytes(4));
         $profileId = $this->configureGermanyProfile($context);
 
@@ -197,7 +197,7 @@ final class CosmoShopProductImportTest extends AbstractCosmoShopImportExportTest
     {
         $context = Context::createDefaultContext();
         $productNumber = 'DEFAULT-MIN-PURCHASE-001';
-        $productId = CosmoShopProductIdentity::fromProductNumber($productNumber);
+        $productId = ProductImportIdentity::fromProductNumber($productNumber);
 
         try {
             $progress = $this->import(

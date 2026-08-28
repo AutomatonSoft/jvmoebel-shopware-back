@@ -4,11 +4,11 @@ namespace Jv\Import\Tests\Integration\ImportExport;
 
 require_once __DIR__.'/AbstractCosmoShopImportExportTestCase.php';
 
-use Jv\Import\Integration\CosmoShop\CosmoShopProductIdentity;
 use Jv\Import\Integration\CosmoShop\CosmoShopReferenceIdentity;
 use Jv\Import\Service\ProductImport\LookupData\Dto\ProductImportLookupData;
 use Jv\Import\Service\ProductImport\LookupData\Dto\ProductImportLookupItemData;
 use Jv\Import\Service\ProductImport\LookupData\UpsertProductImportLookupDataService;
+use Jv\Import\Service\ProductImport\ProductImportIdentity;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockCollection;
 use Shopware\Core\Content\Cms\Aggregate\CmsBlock\CmsBlockEntity;
@@ -38,7 +38,7 @@ final class CosmoShopMarketDeliveryTimeCmsTest extends AbstractCosmoShopImportEx
     {
         $context = Context::createDefaultContext();
         $productNumber = 'MARKET-DELIVERY-CMS-001';
-        $productId = CosmoShopProductIdentity::fromProductNumber($productNumber);
+        $productId = ProductImportIdentity::fromProductNumber($productNumber);
         $references = static::getContainer()->get(UpsertProductImportLookupDataService::class);
         self::assertInstanceOf(UpsertProductImportLookupDataService::class, $references);
         $profileId = $this->configureMarketProfile(Market::UnitedKingdom, $context);

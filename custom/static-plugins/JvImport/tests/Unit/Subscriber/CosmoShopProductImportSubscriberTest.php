@@ -3,13 +3,13 @@
 namespace Jv\Import\Tests\Unit\Subscriber;
 
 use Jv\Import\Integration\CosmoShop\CosmoShopManufacturerIdentity;
-use Jv\Import\Integration\CosmoShop\CosmoShopProductIdentity;
 use Jv\Import\Integration\CosmoShop\CosmoShopReferenceIdentity;
 use Jv\Import\Integration\CosmoShop\Normalizer\CosmoShopProductImportDataNormalizer;
 use Jv\Import\Integration\CosmoShop\Profile\MarketImportProfile;
 use Jv\Import\Service\ProductImport\BuildShopwareProductImportRecordService;
 use Jv\Import\Service\ProductImport\Contract\ProductImportRecordPreparer;
 use Jv\Import\Service\ProductImport\PrepareCosmoShopProductImportRecordService;
+use Jv\Import\Service\ProductImport\ProductImportIdentity;
 use Jv\Import\Service\ProductImport\ResolveDefaultProductTaxService;
 use Jv\Import\Service\ProductImport\Validation\CosmoShopProductImportDataValidator;
 use Jv\Import\Service\ProductMediaImport\PrepareCosmoShopProductMediaRecordService;
@@ -86,7 +86,7 @@ final class CosmoShopProductImportSubscriberTest extends TestCase
         $subscriber->validateRecord($event);
 
         $record = $event->getRecord();
-        self::assertSame(CosmoShopProductIdentity::fromProductNumber('4260174423463'), $record['id']);
+        self::assertSame(ProductImportIdentity::fromProductNumber('4260174423463'), $record['id']);
         self::assertTrue($record['active']);
         self::assertSame(0, $record['stock']);
         self::assertSame(1, $record['minPurchase']);
