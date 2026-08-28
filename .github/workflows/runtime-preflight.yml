@@ -214,6 +214,42 @@ jobs:
             "${image}" \
             vendor/bin/shopware-deployment-helper run --timeout=900
 
+      - name: Validate web healthcheck empty-200 regression
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          image="jvmoebel-back-runtime-preflight:${GITHUB_SHA}"
+
+          grep -Fq 'preg_grep(\"#^HTTP/\\S+ 200 #\", @get_headers(\"http://127.0.0.1/api/_info/health-check\") ?: [])' compose.deploy.yml
+          ! grep -Fq 'file_get_contents(\"http://127.0.0.1/api/_info/health-check\")' compose.deploy.yml
+
+          docker run --rm "${image}" sh -ceu '
+            root=/tmp/healthcheck-regression
+
+            mkdir -p "${root}/api/_info"
+            : > "${root}/api/_info/health-check"
+
+            php -S 127.0.0.1:80 -t "${root}" \
+              >/tmp/health-server.log 2>&1 &
+
+            server_pid=$!
+            trap "kill ${server_pid} >/dev/null 2>&1 || true" EXIT
+
+            for attempt in $(seq 1 20); do
+              if php -r '"'"'exit(empty(preg_grep("#^HTTP/\S+ 200 #", @get_headers("http://127.0.0.1/api/_info/health-check") ?: [])));'"'"'; then
+                echo "PASS: HTTP 200 with empty body is healthy"
+                exit 0
+              fi
+
+              sleep 0.25
+            done
+
+            cat /tmp/health-server.log >&2 || true
+            echo "Healthcheck rejected empty HTTP 200" >&2
+            exit 1
+          '
+
       - name: Remove validation image
         if: always()
         shell: bash
