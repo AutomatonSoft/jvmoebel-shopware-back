@@ -1,9 +1,9 @@
 FROM php:8.5-cli-bookworm AS build
 
 RUN apt-get update \
-    && apt-get install --no-install-recommends -y git libfreetype6-dev libicu-dev libjpeg62-turbo-dev libpng-dev libzip-dev unzip zlib1g-dev \
+    && apt-get install --no-install-recommends -y git libcurl4-openssl-dev libfreetype6-dev libicu-dev libjpeg62-turbo-dev libonig-dev libpng-dev libsodium-dev libxml2-dev libzip-dev unzip zlib1g-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j1 gd intl pdo_mysql zip \
+    && docker-php-ext-install -j1 curl dom gd intl mbstring pdo_mysql simplexml sodium xml xmlreader zip \
     && pecl install redis-6.3.0 \
     && docker-php-ext-enable redis \
     && rm -rf /var/lib/apt/lists/*
@@ -12,22 +12,24 @@ COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
 WORKDIR /var/www/html
 COPY . .
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts \
+    && composer check-platform-reqs --no-dev \
     && rm -rf var/cache var/log
 
 FROM php:8.5-apache-bookworm
 RUN apt-get update \
-    && apt-get install --no-install-recommends -y libfreetype6-dev libicu-dev libjpeg62-turbo-dev libpng-dev libzip-dev \
+    && apt-get install --no-install-recommends -y libcurl4-openssl-dev libfreetype6-dev libicu-dev libjpeg62-turbo-dev libonig-dev libpng-dev libsodium-dev libxml2-dev libzip-dev zlib1g-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j1 gd intl pdo_mysql zip \
+    && docker-php-ext-install -j1 curl dom gd intl mbstring pdo_mysql simplexml sodium xml xmlreader zip \
     && pecl install redis-6.3.0 \
     && docker-php-ext-enable redis \
     && a2enmod expires headers rewrite \
     && sed -ri 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf \
+    && printf '%s\n' 'memory_limit=512M' > "${PHP_INI_DIR}/conf.d/zz-shopware-runtime.ini" \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /var/www/html
 COPY --from=build --chown=root:www-data /var/www/html ./
 RUN chmod -R g+rX,o-rwx /var/www/html \
     && chown -R www-data:www-data var public
-ENV APP_ENV=prod APP_DEBUG=0
+ENV APP_ENV=prod APP_DEBUG=0 SHOPWARE_SKIP_WEBINSTALLER=1
 EXPOSE 80
 CMD ["apache2-foreground"]
