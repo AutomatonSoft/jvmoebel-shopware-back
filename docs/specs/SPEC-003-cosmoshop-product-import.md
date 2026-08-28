@@ -48,10 +48,14 @@ media;cover
 ID товара детерминированно вычисляется из нормализованного `product_number`:
 
 ```text
-Uuid::fromStringToHex('jvmoebel.product.cosmoshop.' . product_number)
+Uuid::fromStringToHex('jvmoebel.product.' . product_number)
 ```
 
-Домен или locale не входят в этот ID. Повтор того же CSV обновляет product, translation и visibility, не создавая дубли. Exporter не отбрасывает и не склеивает source-строки. Если SKU повторяется в одном упорядоченном CSV, применяется последняя строка.
+Это общий source-independent product identity, который используют CosmoShop и
+другие импорты базовой карточки. Домен, locale и тип источника не входят в ID.
+Повтор того же CSV обновляет product, translation и visibility, не создавая
+дубли. Exporter не отбрасывает и не склеивает source-строки. Если SKU
+повторяется в одном упорядоченном CSV, применяется последняя строка.
 
 ## Данные Shopware
 
