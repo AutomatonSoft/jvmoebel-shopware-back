@@ -107,6 +107,23 @@ jobs:
 
           docker run --rm "${image}" apachectl -t
 
+      - name: Prepare staging-like writable storage
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          storage_root="${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage"
+
+          sudo rm -rf "${storage_root}"
+
+          sudo install -d -o 33 -g 33 -m 0770 \
+            "${storage_root}/files" \
+            "${storage_root}/public/bundles" \
+            "${storage_root}/public/media" \
+            "${storage_root}/public/thumbnail" \
+            "${storage_root}/public/theme" \
+            "${storage_root}/public/sitemap"
+
       - name: Run clean Shopware deployment-helper installation
         shell: bash
         run: |
@@ -142,6 +159,12 @@ jobs:
           docker run --rm \
             --network host \
             --user 33:33 \
+            --mount "type=bind,source=${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage/files,target=/var/www/html/files" \
+            --mount "type=bind,source=${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage/public/bundles,target=/var/www/html/public/bundles" \
+            --mount "type=bind,source=${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage/public/media,target=/var/www/html/public/media" \
+            --mount "type=bind,source=${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage/public/thumbnail,target=/var/www/html/public/thumbnail" \
+            --mount "type=bind,source=${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage/public/theme,target=/var/www/html/public/theme" \
+            --mount "type=bind,source=${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage/public/sitemap,target=/var/www/html/public/sitemap" \
             "${runtime_env[@]}" \
             "${image}" \
             vendor/bin/shopware-deployment-helper run --timeout=900
@@ -181,6 +204,12 @@ jobs:
           docker run --rm \
             --network host \
             --user 33:33 \
+            --mount "type=bind,source=${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage/files,target=/var/www/html/files" \
+            --mount "type=bind,source=${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage/public/bundles,target=/var/www/html/public/bundles" \
+            --mount "type=bind,source=${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage/public/media,target=/var/www/html/public/media" \
+            --mount "type=bind,source=${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage/public/thumbnail,target=/var/www/html/public/thumbnail" \
+            --mount "type=bind,source=${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage/public/theme,target=/var/www/html/public/theme" \
+            --mount "type=bind,source=${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage/public/sitemap,target=/var/www/html/public/sitemap" \
             "${runtime_env[@]}" \
             "${image}" \
             vendor/bin/shopware-deployment-helper run --timeout=900
