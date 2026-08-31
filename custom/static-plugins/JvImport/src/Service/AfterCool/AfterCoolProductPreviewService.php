@@ -2,14 +2,14 @@
 
 namespace Jv\Import\Service\AfterCool;
 
-use Jv\Import\Integration\AfterCool\AfterCoolApiClient;
+use Jv\Import\Integration\AfterCool\Contract\AfterCoolProductPageReaderInterface;
 use Jv\Import\Integration\AfterCool\Dto\AfterCoolInvalidProductItem;
 use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductItem;
 use Jv\Import\Integration\AfterCool\Mapper\AfterCoolProductPageMapper;
 
 final readonly class AfterCoolProductPreviewService
 {
-    public function __construct(private AfterCoolApiClient $client, private AfterCoolProductPageMapper $mapper)
+    public function __construct(private AfterCoolProductPageReaderInterface $client, private AfterCoolProductPageMapper $mapper)
     {
     }
 

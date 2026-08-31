@@ -96,6 +96,7 @@
         </service>
         <service id="Jv\Import\Integration\AfterCool\AfterCoolApiClientInterface" alias="Jv\Import\Integration\AfterCool\AfterCoolApiClient"/>
         <service id="Jv\Import\Integration\AfterCool\Contract\AfterCoolApiClientInterface" alias="Jv\Import\Integration\AfterCool\AfterCoolApiClient"/>
+        <service id="Jv\Import\Integration\AfterCool\Contract\AfterCoolProductPageReaderInterface" alias="Jv\Import\Integration\AfterCool\AfterCoolApiClient"/>
         <service id="Jv\Import\Service\AfterCool\Contract\AfterCoolImportRunStore" alias="Jv\Import\Service\AfterCool\AfterCoolImportRunStoreService"/>
         <service id="Jv\Import\Service\AfterCool\AfterCoolSyncBatchWriter">
             <argument type="service" id="Shopware\Core\Framework\Api\Sync\SyncService"/>
