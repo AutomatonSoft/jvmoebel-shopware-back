@@ -14,6 +14,8 @@ export default {
             run: null,
             errors: [],
             errorsTotal: 0,
+            errorsPage: 1,
+            errorsLimit: 50,
             polling: null,
             httpClient: null,
         };
@@ -78,10 +80,15 @@ export default {
 
         async loadErrors(id) {
             const response = await this.httpClient.get(`/_action/jv-import/aftercool/runs/${id}/errors`, {
-                params: { limit: 50, offset: 0 },
+                params: { limit: this.errorsLimit, offset: (this.errorsPage - 1) * this.errorsLimit },
             });
             this.errors = response.data.data;
             this.errorsTotal = response.data.total;
+        },
+
+        async onErrorsPageChange({ page }) {
+            this.errorsPage = page;
+            await this.loadErrors(this.run.id);
         },
     },
 };

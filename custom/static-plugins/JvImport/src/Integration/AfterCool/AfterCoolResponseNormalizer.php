@@ -53,6 +53,9 @@ final class AfterCoolResponseNormalizer
 
         $normalized = [];
         foreach ($items as $item) {
+            if (is_array($item) && ($account !== ($item['account'] ?? null) || $dataset !== ($item['dataset'] ?? null) || $factoryId !== ($item['factory_id'] ?? null))) {
+                throw new AfterCoolResponseContractException('Aftercool product item does not match the requested page.');
+            }
             try {
                 if (!is_array($item)) {
                     throw new AfterCoolResponseContractException('Aftercool product item must be an object.');

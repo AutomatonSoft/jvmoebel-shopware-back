@@ -4,6 +4,8 @@ namespace Jv\Import\Tests\Unit\Integration\AfterCool;
 
 use Jv\Import\Integration\AfterCool\AfterCoolResponseNormalizer;
 use Jv\Import\Integration\AfterCool\Exception\AfterCoolResponseContractException;
+use Jv\Import\Integration\AfterCool\Mapper\AfterCoolListerProductMapper;
+use Jv\Import\Integration\AfterCool\Mapper\AfterCoolProductPageMapper;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -63,6 +65,9 @@ final class AfterCoolResponseNormalizerTest extends TestCase
             'items' => $payload['items'] = 'not-a-list',
             'limit' => $payload['limit'] = 500,
             'offset' => $payload['offset'] = 100,
+            'account' => $payload['items'][0]['account'] = 'OTHER',
+            'dataset' => $payload['items'][0]['dataset'] = 'product',
+            'factory' => $payload['items'][0]['factory_id'] = 999999,
             default => throw new \LogicException(sprintf('Unknown test case "%s".', $case)),
         };
 
@@ -77,6 +82,9 @@ final class AfterCoolResponseNormalizerTest extends TestCase
         yield 'items must be a list' => ['items'];
         yield 'limit must remain 100' => ['limit'];
         yield 'response offset must match the request' => ['offset'];
+        yield 'item account must match the request' => ['account'];
+        yield 'item dataset must match the request' => ['dataset'];
+        yield 'item factory must match the request' => ['factory'];
     }
 
     public function testItKeepsValidItemsWhenAnotherItemHasAnInvalidStructure(): void
@@ -86,10 +94,16 @@ final class AfterCoolResponseNormalizerTest extends TestCase
 
         $page = (new AfterCoolResponseNormalizer())->normalizeProductPage($payload, 'JV', 'lister', 504034, 0);
 
-        self::assertCount(2, $page->items);
-        self::assertSame('900001', $page->items[0]->productId);
-        self::assertInstanceOf(\Jv\Import\Integration\AfterCool\Dto\AfterCoolInvalidProductItem::class, $page->items[1]);
-        self::assertSame('invalid_product_item', $page->items[1]->code);
+        $result = (new AfterCoolProductPageMapper(new AfterCoolListerProductMapper()))->map($page);
+
+        self::assertSame(['900001'], array_column($result->products, 'sourceProductId'));
+        self::assertCount(1, $result->issues);
+        self::assertSame('900002', $result->issues[0]->productId);
+        self::assertSame('900002', $result->issues[0]->artikelnummer);
+        self::assertSame('4260454042902', $result->issues[0]->ean);
+        self::assertSame(2, $result->issues[0]->rowNo);
+        self::assertSame('failed', $result->issues[0]->result);
+        self::assertSame('invalid_product_item', $result->issues[0]->code);
     }
 
     public function testItDoesNotTrustTotalAsThePaginationStopCondition(): void
@@ -112,14 +126,14 @@ final class AfterCoolResponseNormalizerTest extends TestCase
     }
 
     #[DataProvider('invalidFactoryIdProvider')]
-    public function testProductFactoryIdIsReportedAtItemLevelInsteadOfBeingCoerced(mixed $id): void
+    public function testProductFactoryIdMustMatchTheRequestedPage(mixed $id): void
     {
         $payload = $this->fixture('products-page-0.json');
         $payload['items'][0]['factory_id'] = $id;
 
-        $page = (new AfterCoolResponseNormalizer())->normalizeProductPage($payload, 'JV', 'lister', 504034, 0);
+        $this->expectException(AfterCoolResponseContractException::class);
 
-        self::assertInstanceOf(\Jv\Import\Integration\AfterCool\Dto\AfterCoolInvalidProductItem::class, $page->items[0]);
+        (new AfterCoolResponseNormalizer())->normalizeProductPage($payload, 'JV', 'lister', 504034, 0);
     }
 
     /** @return iterable<string, array{mixed}> */

@@ -35,7 +35,7 @@ final readonly class AfterCoolExternalMediaLinkService
                 if (null === $existingCoverId && null === $coverId) {
                     $coverId = $relationId;
                 }
-            } catch (MediaException | \RuntimeException) {
+            } catch (MediaException|\RuntimeException) {
                 $issues[] = new AfterCoolSyncWriteFailure($url, 'external_media_link_failed', 'External media link could not be created.');
             }
         }

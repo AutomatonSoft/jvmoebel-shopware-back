@@ -34,5 +34,13 @@
                 </sw-data-grid-column>
             </template>
         </sw-data-grid>
+        <sw-pagination
+            v-if="errorsTotal > errorsLimit"
+            :page="errorsPage"
+            :limit="errorsLimit"
+            :total="errorsTotal"
+            :steps="[errorsLimit]"
+            @page-change="onErrorsPageChange"
+        />
     </sw-card>
 </sw-card-view>
