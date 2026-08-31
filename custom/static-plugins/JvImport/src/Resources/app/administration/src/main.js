@@ -17,13 +17,26 @@ if (!importExportModule) {
     throw new Error('Shopware Import/Export module is not registered.');
 }
 
-importExportModule.manifest.routes.index.children.aftercool = {
+const importExportIndexRoute = importExportModule.routes.get('sw.import.export.index');
+
+if (!importExportIndexRoute || !Array.isArray(importExportIndexRoute.children)) {
+    throw new Error('Shopware Import/Export index route is not available.');
+}
+
+const aftercoolRoute = {
+    name: 'sw.import.export.index.aftercool',
+    path: `${importExportIndexRoute.path}/aftercool`,
     component: 'jv-aftercool-import',
-    path: 'aftercool',
     meta: {
         privilege: 'system.import_export',
     },
+    isChildren: true,
+    routeKey: 'aftercool',
 };
+
+importExportModule.manifest.routes.index.children.aftercool = aftercoolRoute;
+importExportIndexRoute.children.push(aftercoolRoute);
+importExportModule.routes.set(aftercoolRoute.name, aftercoolRoute);
 
 Shopware.Component.register('jv-aftercool-import', aftercoolImport);
 

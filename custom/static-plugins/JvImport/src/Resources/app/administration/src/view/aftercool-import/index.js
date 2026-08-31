@@ -1,9 +1,13 @@
 import template from './aftercool-import.html.twig';
 
+const { Mixin } = Shopware;
+
 export default {
     template,
 
     inject: ['acl'],
+
+    mixins: [Mixin.getByName('notification')],
 
     data() {
         return {
