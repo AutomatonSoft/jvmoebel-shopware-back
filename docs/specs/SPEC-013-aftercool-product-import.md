@@ -69,9 +69,9 @@ GET /api/import/factories?account=JV&dataset=lister
 
 ID фабрики является идентичностью выбора и lock key. Название используется
 только для отображения: Aftercool допускает одинаковые названия у разных ID.
-Aftercool передаёт `id` фабрики как каноническую положительную десятичную JSON
-строку (например, `"504034"`); normalizer преобразует её на границе API в
-`int`. `factory_id` товара имеет тип JSON integer. Внутри PHP
+Aftercool передаёт `id` фабрики и `factory_id` товара как каноническую
+положительную десятичную JSON строку (например, `"504034"`) либо JSON integer;
+normalizer преобразует их на границе API в `int`. Внутри PHP
 `AfterCoolFactory::id`, `factoryId` в DTO, клиенте и сервисах имеют тип `int`.
 Start body использует число: `{"factoryId":504034}`. В DAL и таблицах run,
 source link и error ID фабрики хранится целочисленным полем, не строкой.
@@ -94,6 +94,13 @@ GET /api/products
     &offset=<offset>
     &include_row=1
 ```
+
+Для Administration preview используется тот же endpoint и клиент, но с
+`limit=25` или `50`, серверным `offset` и необязательным `q`. Ответ preview
+отдаёт только нормализованные безопасные поля: preview image, name, EAN,
+source identity, manufacturer, EUR price, stock, dimensions, weight,
+source metadata, importable status и validation issues. Он не запускает run и
+не раскрывает credentials, cookie либо raw response Aftercool.
 
 Ожидаемый ответ:
 
@@ -361,7 +368,8 @@ Profiles продолжают работать без изменения.
 Вкладка позволяет:
 
 - загрузить и обновить список фабрик;
-- выбрать фабрику по ID;
+- выбрать фабрику по ID через searchable dropdown и до запуска увидеть preview первой страницы;
+- искать товары preview по name, artikelnummer, EAN или product_id и листать их серверной пагинацией;
 - увидеть доступные status, updated и items count;
 - запустить импорт;
 - увидеть запрет второго активного запуска этой фабрики;
@@ -373,6 +381,7 @@ Backend предоставляет тонкие Administration API entry points:
 
 ```text
 GET  /api/_action/jv-import/aftercool/factories
+GET  /api/_action/jv-import/aftercool/products?factoryId=<id>&q=<query>&limit=<limit>&offset=<offset>
 POST /api/_action/jv-import/aftercool/runs
 GET  /api/_action/jv-import/aftercool/runs/<run-id>
 GET  /api/_action/jv-import/aftercool/runs/<run-id>/errors

@@ -7,6 +7,9 @@ use Jv\Import\Core\Content\AfterCoolImportError\AfterCoolImportErrorEntity;
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunCollection;
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunEntity;
 use Jv\Import\Integration\AfterCool\AfterCoolApiClientInterface;
+use Jv\Import\Integration\AfterCool\Exception\AfterCoolApiException;
+use Jv\Import\Integration\AfterCool\Exception\AfterCoolResponseContractException;
+use Jv\Import\Service\AfterCool\AfterCoolProductPreviewService;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolFactoryImportAlreadyRunningException;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolFactoryNotFoundException;
 use Jv\Import\Service\AfterCool\StartAfterCoolImportService;
@@ -31,7 +34,29 @@ final class AfterCoolImportController extends AbstractController
         private readonly StartAfterCoolImportService $startImport,
         private readonly EntityRepository $runRepository,
         private readonly EntityRepository $errorRepository,
+        private readonly AfterCoolProductPreviewService $preview,
     ) {
+    }
+
+    #[Route(path: '/api/_action/jv-import/aftercool/products', name: 'api.action.jv_import.aftercool.products', methods: ['GET'])]
+    public function products(Request $request): JsonResponse
+    {
+        $factoryId = $request->query->getInt('factoryId');
+        $limit = min(50, max(1, $request->query->getInt('limit', 25)));
+        $offset = max(0, $request->query->getInt('offset', 0));
+        if ($factoryId < 1) {
+            return new JsonResponse(['errors' => [['code' => 'invalid_factory_id', 'detail' => 'factoryId must be a positive integer.']]], Response::HTTP_BAD_REQUEST);
+        }
+
+        $query = $request->query->getString('q');
+
+        try {
+            $data = $this->preview->preview($factoryId, $limit, $offset, '' === $query ? null : $query);
+        } catch (AfterCoolApiException|AfterCoolResponseContractException $exception) {
+            return new JsonResponse(['errors' => [['code' => $exception instanceof AfterCoolApiException ? $exception->safeCode() : 'aftercool_invalid_response', 'detail' => 'Aftercool products could not be loaded.']]], Response::HTTP_BAD_GATEWAY);
+        }
+
+        return new JsonResponse(['data' => $data['items'], 'total' => $data['total'], 'limit' => $data['limit'], 'offset' => $data['offset'], 'hasMore' => $data['hasMore']]);
     }
 
     #[Route(path: '/api/_action/jv-import/aftercool/factories', name: 'api.action.jv_import.aftercool.factories', methods: ['GET'])]

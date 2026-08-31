@@ -11,7 +11,35 @@
         <sw-button class="jv-aftercool-import__refresh" :disabled="loadingFactories" @click="loadFactories">
             {{ $t('jv-import.aftercool.refresh') }}
         </sw-button>
+        <p v-if="previewReady">{{ $tc('jv-import.aftercool.importWholeFactory', previewTotal, { count: previewTotal }) }}</p>
     </sw-card>
+
+    <sw-card v-if="factoryId" :title="$t('jv-import.aftercool.preview')" :is-loading="previewLoading">
+        <sw-text-field v-model:value="previewQuery" :label="$t('jv-import.aftercool.search')" @update:value="onPreviewSearch" />
+        <sw-data-grid :data-source="preview" :columns="previewColumns" :show-selection="false" :show-actions="false">
+            <template #column-previewImage="{ item }"><img v-if="item.previewImage" :src="item.previewImage" width="40" :alt="item.name || ''"></template>
+            <template #column-name="{ item }">{{ item.name || '—' }}</template>
+            <template #column-ean="{ item }">{{ item.ean || '—' }}</template>
+            <template #column-source="{ item }">{{ item.artikelnummer || '—' }} / {{ item.productId || '—' }}</template>
+            <template #column-manufacturer="{ item }">{{ item.manufacturer || '—' }}</template>
+            <template #column-price="{ item }">{{ item.price === null ? '—' : item.price }}</template>
+            <template #column-stock="{ item }">{{ item.stock === null ? '—' : item.stock }}</template>
+            <template #column-dimensions="{ item }">{{ item.dimensions || '—' }}</template>
+            <template #column-weight="{ item }">{{ item.weight || '—' }}</template>
+            <template #column-updatedAt="{ item }">{{ item.updatedAt || '—' }}</template>
+            <template #column-status="{ item }">{{ item.importable ? $t('jv-import.aftercool.ready') : item.issues.join(', ') }}</template>
+            <template #column-details="{ item }"><sw-button size="small" @click="previewDetail = item">{{ $t('jv-import.aftercool.details') }}</sw-button></template>
+        </sw-data-grid>
+        <sw-pagination :page="previewPage" :limit="previewLimit" :total="previewTotal" :steps="[previewLimit]" @page-change="onPreviewPageChange" />
+    </sw-card>
+
+    <sw-modal v-if="previewDetail" :title="previewDetail.name || previewDetail.productId" @modal-close="previewDetail = null">
+        <p><strong>{{ $t('jv-import.aftercool.source') }}:</strong> {{ previewDetail.sourceFile || '—' }} / {{ previewDetail.sourceKind || '—' }}</p>
+        <p v-if="previewDetail.description" v-html="previewDetail.description"></p>
+        <ul v-if="previewDetail.mediaUrls.length">
+            <li v-for="url in previewDetail.mediaUrls" :key="url"><a :href="url" target="_blank" rel="noopener noreferrer">{{ url }}</a></li>
+        </ul>
+    </sw-modal>
 
     <sw-card v-if="run" :title="$t('jv-import.aftercool.progress')">
         <sw-progress-bar :value="run.total ? (run.processed / run.total) * 100 : 0" />
@@ -21,18 +49,10 @@
 
     <sw-card v-if="run && errorsTotal > 0" :title="$t('jv-import.aftercool.errors')">
         <p>{{ $tc('jv-import.aftercool.errorsTotal', errorsTotal, { count: errorsTotal }) }}</p>
-        <sw-data-grid :data-source="errors" :show-selection="false" :show-actions="false">
-            <template #columns="{ item }">
-                <sw-data-grid-column :label="$t('jv-import.aftercool.errorCode')" property="code">
-                    {{ item.code }}
-                </sw-data-grid-column>
-                <sw-data-grid-column :label="$t('jv-import.aftercool.errorProduct')" property="ean">
-                    {{ item.ean || item.artikelnummer || item.productId || '—' }}
-                </sw-data-grid-column>
-                <sw-data-grid-column :label="$t('jv-import.aftercool.errorMessage')" property="message">
-                    {{ item.message }}
-                </sw-data-grid-column>
-            </template>
+        <sw-data-grid :data-source="errors" :columns="errorColumns" :show-selection="false" :show-actions="false">
+            <template #column-code="{ item }">{{ item.code }}</template>
+            <template #column-ean="{ item }">{{ item.ean || item.artikelnummer || item.productId || '—' }}</template>
+            <template #column-message="{ item }">{{ item.message }}</template>
         </sw-data-grid>
         <sw-pagination
             v-if="errorsTotal > errorsLimit"

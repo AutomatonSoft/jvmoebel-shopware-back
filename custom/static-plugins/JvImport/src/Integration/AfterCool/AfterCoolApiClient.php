@@ -30,11 +30,18 @@ final class AfterCoolApiClient implements AfterCoolApiClientInterface
         return $factories;
     }
 
-    public function getProductPage(int $factoryId, int $offset): AfterCoolProductPage
+    public function getProductPage(int $factoryId, int $offset, int $limit = 100, ?string $query = null): AfterCoolProductPage
     {
-        $context = ['operation' => 'aftercool_api_products_page', 'account' => 'JV', 'dataset' => 'lister', 'factoryId' => $factoryId, 'offset' => $offset, 'limit' => 100];
+        if ($limit < 1 || $limit > 100) {
+            throw new \InvalidArgumentException('Aftercool product page limit must be between 1 and 100.');
+        }
+        $context = ['operation' => 'aftercool_api_products_page', 'account' => 'JV', 'dataset' => 'lister', 'factoryId' => $factoryId, 'offset' => $offset, 'limit' => $limit];
         $this->logger->info('AfterCool product page request started.', $context);
-        $page = $this->normalizer->normalizeProductPage($this->request('GET', '/api/products', ['account' => 'JV', 'dataset' => 'lister', 'factory_id' => $factoryId, 'limit' => 100, 'offset' => $offset, 'include_row' => 1]), 'JV', 'lister', $factoryId, $offset);
+        $parameters = ['account' => 'JV', 'dataset' => 'lister', 'factory_id' => $factoryId, 'limit' => $limit, 'offset' => $offset, 'include_row' => 1];
+        if (null !== $query && '' !== trim($query)) {
+            $parameters['q'] = trim($query);
+        }
+        $page = $this->normalizer->normalizeProductPage($this->request('GET', '/api/products', $parameters), 'JV', 'lister', $factoryId, $offset, $limit);
         $this->logger->info('AfterCool product page request completed.', [...$context, 'itemsCount' => count($page->items), 'hasMore' => $page->hasMore]);
 
         return $page;

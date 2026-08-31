@@ -173,7 +173,8 @@ final class AfterCoolResponseNormalizerTest extends TestCase
     /** @return iterable<string, array{mixed}> */
     public static function invalidProductFactoryIdProvider(): iterable
     {
-        yield 'numeric string' => ['504034'];
+        yield 'leading zero string' => ['0504034'];
+        yield 'zero string' => ['0'];
         yield 'float' => [504034.0];
         yield 'boolean' => [true];
         yield 'missing value' => [null];

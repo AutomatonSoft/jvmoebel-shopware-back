@@ -102,6 +102,7 @@
         </service>
         <service id="Jv\Import\Service\AfterCool\AfterCoolExternalMediaLinkService"/>
         <service id="Jv\Import\Service\AfterCool\BuildAfterCoolShopwareProductRecordService"/>
+        <service id="Jv\Import\Service\AfterCool\AfterCoolProductPreviewService"/>
         <service id="Jv\Import\Service\AfterCool\AfterCoolImportPageProcessorService">
             <argument type="service" id="Jv\Import\Integration\AfterCool\AfterCoolApiClientInterface"/>
             <argument type="service" id="Jv\Import\Integration\AfterCool\Mapper\AfterCoolProductPageMapper"/>
@@ -133,6 +134,7 @@
             <argument type="service" id="Jv\Import\Service\AfterCool\StartAfterCoolImportService"/>
             <argument type="service" id="jv_aftercool_import_run.repository"/>
             <argument type="service" id="jv_aftercool_import_error.repository"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\AfterCoolProductPreviewService"/>
         </service>
 
         <service id="Jv\Import\Service\ProductImport\PrepareCosmoShopProductImportRecordService">

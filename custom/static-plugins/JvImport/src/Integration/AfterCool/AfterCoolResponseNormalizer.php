@@ -56,7 +56,7 @@ final class AfterCoolResponseNormalizer
     }
 
     /** @param array<string, mixed>|list<mixed> $response */
-    public function normalizeProductPage(array $response, string $account, string $dataset, int $factoryId, int $expectedOffset): AfterCoolProductPage
+    public function normalizeProductPage(array $response, string $account, string $dataset, int $factoryId, int $expectedOffset, int $expectedLimit = 100): AfterCoolProductPage
     {
         if (array_is_list($response)) {
             throw new AfterCoolResponseContractException('Aftercool product page must be an object.');
@@ -67,14 +67,23 @@ final class AfterCoolResponseNormalizer
         $offset = $response['offset'] ?? null;
         $hasMore = $response['has_more'] ?? null;
 
-        if (!is_array($items) || !array_is_list($items) || !is_int($total) || !is_int($limit) || !is_int($offset) || !is_bool($hasMore) || $total < 0 || 100 !== $limit || $offset !== $expectedOffset) {
+        if (!is_array($items) || !array_is_list($items) || !is_int($total) || !is_int($limit) || !is_int($offset) || !is_bool($hasMore) || $total < 0 || $expectedLimit !== $limit || $offset !== $expectedOffset) {
             throw new AfterCoolResponseContractException('Aftercool product page has invalid fields');
         }
 
         $normalized = [];
         foreach ($items as $item) {
-            if (is_array($item) && ($account !== ($item['account'] ?? null) || $dataset !== ($item['dataset'] ?? null) || $factoryId !== ($item['factory_id'] ?? null))) {
-                throw new AfterCoolResponseContractException('Aftercool product item does not match the requested page.');
+            if (is_array($item)) {
+                $item['factory_id'] = $this->factoryId($item['factory_id'] ?? null);
+            }
+            if (is_array($item) && $account !== ($item['account'] ?? null)) {
+                throw new AfterCoolResponseContractException('Aftercool product item account does not match the requested page.');
+            }
+            if (is_array($item) && $dataset !== ($item['dataset'] ?? null)) {
+                throw new AfterCoolResponseContractException('Aftercool product item dataset does not match the requested page.');
+            }
+            if (is_array($item) && $factoryId !== ($item['factory_id'] ?? null)) {
+                throw new AfterCoolResponseContractException('Aftercool product item factory does not match the requested page.');
             }
             try {
                 if (!is_array($item)) {

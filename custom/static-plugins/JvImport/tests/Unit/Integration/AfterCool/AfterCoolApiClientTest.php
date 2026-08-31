@@ -92,6 +92,27 @@ final class AfterCoolApiClientTest extends TestCase
         self::assertSame('aftercool_session=fresh', $this->cookieHeader($calls[3][2]));
     }
 
+    public function testItRequestsPreviewPageWithSearchAndRequestedPagination(): void
+    {
+        $payload = $this->fixture('products-page-0.json');
+        $payload['limit'] = 25;
+        $payload['offset'] = 25;
+        $calls = [];
+        $httpClient = $this->createMock(HttpClientInterface::class);
+        $httpClient->expects(self::exactly(2))->method('request')->willReturnCallback(
+            function (string $method, string $url, array $options) use (&$calls, $payload): ResponseInterface {
+                $calls[] = [$method, $url, $options];
+
+                return 'POST' === $method ? $this->response(200, [], ['set-cookie' => ['aftercool_session=session; Path=/']]) : $this->response(200, $payload);
+            },
+        );
+
+        $page = $this->client($httpClient)->getProductPage(504034, 25, 25, 'sofa');
+
+        self::assertSame(25, $page->limit);
+        self::assertSame(['account' => 'JV', 'dataset' => 'lister', 'factory_id' => 504034, 'limit' => 25, 'offset' => 25, 'include_row' => 1, 'q' => 'sofa'], $calls[1][2]['query']);
+    }
+
     public function testItDoesNotEnterAnAuthenticationLoopAfterASecondUnauthorizedResponse(): void
     {
         $httpClient = $this->createMock(HttpClientInterface::class);
