@@ -35,7 +35,7 @@
 
     <sw-modal v-if="previewDetail" :title="previewDetail.name || previewDetail.productId" @modal-close="previewDetail = null">
         <p><strong>{{ $t('jv-import.aftercool.source') }}:</strong> {{ previewDetail.sourceFile || '—' }} / {{ previewDetail.sourceKind || '—' }}</p>
-        <p v-if="previewDetail.description" v-html="previewDetail.description"></p>
+        <p v-if="previewDetail.description">{{ previewDetail.description }}</p>
         <ul v-if="previewDetail.mediaUrls.length">
             <li v-for="url in previewDetail.mediaUrls" :key="url"><a :href="url" target="_blank" rel="noopener noreferrer">{{ url }}</a></li>
         </ul>
