@@ -11,7 +11,13 @@ Shopware.Locale.extend('en-GB', enGB);
 
 const { Module } = Shopware;
 
-Module.getModuleByName('sw-import-export').routes.index.children.aftercool = {
+const importExportModule = Module.getModuleRegistry().get('sw-import-export');
+
+if (!importExportModule) {
+    throw new Error('Shopware Import/Export module is not registered.');
+}
+
+importExportModule.manifest.routes.index.children.aftercool = {
     component: 'jv-aftercool-import',
     path: 'aftercool',
     meta: {
