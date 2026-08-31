@@ -7,8 +7,8 @@ x-shopware-runtime: &shopware-runtime
   INSTANCE_ID: ${INSTANCE_ID:?INSTANCE_ID is required}
   BLUE_GREEN_DEPLOYMENT: "0"
   DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
-  # Stage mail delivery is intentionally disabled.
-  MAILER_DSN: "null://null"
+  # Stage may use null://null; production must provide its real mail transport.
+  MAILER_DSN: ${MAILER_DSN:?MAILER_DSN is required}
   # Must identify a shared lock backend across web, worker, and scheduler.
   LOCK_DSN: ${LOCK_DSN:?LOCK_DSN is required}
   MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN:?MESSENGER_TRANSPORT_DSN is required}
@@ -33,6 +33,9 @@ services:
   bootstrap:
     build: { context: ., dockerfile: Dockerfile.deploy }
     restart: "no"
+    mem_limit: ${BOOTSTRAP_MEMORY_LIMIT:-1536m}
+    cpus: ${BOOTSTRAP_CPU_LIMIT:-2.0}
+    pids_limit: ${BOOTSTRAP_PIDS_LIMIT:-512}
     user: "33:33"
     command: ["vendor/bin/shopware-deployment-helper", "run", "--timeout=900"]
     environment:
@@ -50,12 +53,18 @@ services:
     build: { context: ., dockerfile: Dockerfile.deploy }
     restart: unless-stopped
     init: true
+    mem_limit: ${WEB_MEMORY_LIMIT:-1536m}
+    cpus: ${WEB_CPU_LIMIT:-2.0}
+    pids_limit: ${WEB_PIDS_LIMIT:-512}
+    stop_grace_period: 30s
     environment: *shopware-runtime
     depends_on: { bootstrap: { condition: service_completed_successfully } }
     volumes: *shopware-storage
     networks:
       database: {}
-      application: { aliases: [shopware-stage] }
+      application:
+        aliases:
+          - ${SHOPWARE_NETWORK_ALIAS:?SHOPWARE_NETWORK_ALIAS is required}
     healthcheck:
       test: ["CMD-SHELL", "php -r 'exit(empty(preg_grep(\"#^HTTP/\\S+ 200 #\", @get_headers(\"http://127.0.0.1/api/_info/health-check\") ?: [])));'"]
       interval: 15s
@@ -68,6 +77,10 @@ services:
     build: { context: ., dockerfile: Dockerfile.deploy }
     restart: unless-stopped
     init: true
+    mem_limit: ${WORKER_MEMORY_LIMIT:-768m}
+    cpus: ${WORKER_CPU_LIMIT:-1.0}
+    pids_limit: ${WORKER_PIDS_LIMIT:-256}
+    stop_grace_period: 60s
     command: ["php", "bin/console", "messenger:consume", "async", "low_priority", "--memory-limit=512M", "--time-limit=3600"]
     environment: *shopware-runtime
     depends_on: { bootstrap: { condition: service_completed_successfully } }
@@ -79,6 +92,10 @@ services:
     build: { context: ., dockerfile: Dockerfile.deploy }
     restart: unless-stopped
     init: true
+    mem_limit: ${SCHEDULER_MEMORY_LIMIT:-768m}
+    cpus: ${SCHEDULER_CPU_LIMIT:-1.0}
+    pids_limit: ${SCHEDULER_PIDS_LIMIT:-256}
+    stop_grace_period: 60s
     command: ["php", "bin/console", "scheduled-task:run", "--memory-limit=512M", "--time-limit=3600"]
     environment: *shopware-runtime
     depends_on: { bootstrap: { condition: service_completed_successfully } }
