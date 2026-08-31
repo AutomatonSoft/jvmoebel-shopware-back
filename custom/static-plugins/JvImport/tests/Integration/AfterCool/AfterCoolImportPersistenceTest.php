@@ -2,16 +2,26 @@
 
 namespace Jv\Import\Tests\Integration\AfterCool;
 
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Jv\Import\Integration\AfterCool\AfterCoolApiClientInterface;
+use Jv\Import\Integration\AfterCool\Dto\AfterCoolFactory;
+use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductPage;
+use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunCollection;
+use Jv\Import\Service\AfterCool\AfterCoolImportRunStoreService;
+use Jv\Import\Service\AfterCool\Exception\AfterCoolFactoryImportAlreadyRunningException;
+use Jv\Import\Service\AfterCool\StartAfterCoolImportService;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopware\Core\Framework\DataAbstractionLayer\Write\WriteException;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\Tax\TaxCollection;
+use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 final class AfterCoolImportPersistenceTest extends TestCase
 {
@@ -27,14 +37,14 @@ final class AfterCoolImportPersistenceTest extends TestCase
 
         try {
             $repository->create([
-                $this->runPayload($firstId, '504034', 'queued'),
-                $this->runPayload($otherFactoryId, '504000', 'running'),
+                $this->runPayload($firstId, 504034, 'queued'),
+                $this->runPayload($otherFactoryId, 504000, 'running'),
             ], $context);
 
             try {
-                $repository->create([$this->runPayload(Uuid::randomHex(), '504034', 'queued')], $context);
+                $repository->create([$this->runPayload(Uuid::randomHex(), 504034, 'queued')], $context);
                 self::fail('A second active import for the same factory must violate the database constraint.');
-            } catch (WriteException) {
+            } catch (UniqueConstraintViolationException) {
                 self::addToAssertionCount(1);
             }
 
@@ -44,7 +54,7 @@ final class AfterCoolImportPersistenceTest extends TestCase
                 'activeFactoryKey' => null,
                 'finishedAt' => new \DateTimeImmutable(),
             ]], $context);
-            $repository->create([$this->runPayload($nextId, '504034', 'queued')], $context);
+            $repository->create([$this->runPayload($nextId, 504034, 'queued')], $context);
             self::assertTrue($repository->searchIds(new \Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria([$nextId]), $context)->has($nextId));
         } finally {
             $repository->delete([
@@ -52,6 +62,38 @@ final class AfterCoolImportPersistenceTest extends TestCase
                 ['id' => $otherFactoryId],
                 ['id' => $nextId],
             ], $context);
+        }
+    }
+
+    public function testStartingTheSameFactoryTwiceThroughTheRealRunStoreRaisesTheDomainException(): void
+    {
+        $context = Context::createDefaultContext();
+        $factoryId = 504034;
+        $messageBus = $this->createMock(MessageBusInterface::class);
+        $messageBus->expects(self::once())->method('dispatch')->willReturn(new Envelope(new \stdClass()));
+        $service = new StartAfterCoolImportService(
+            new class implements AfterCoolApiClientInterface {
+                public function getFactories(): array
+                {
+                    return [new AfterCoolFactory(504034, 'Test factory')];
+                }
+
+                public function getProductPage(int $factoryId, int $offset): AfterCoolProductPage
+                {
+                    throw new \LogicException('Not used while starting a run.');
+                }
+            },
+            new AfterCoolImportRunStoreService($this->runRepository()),
+            $messageBus,
+            static::getContainer()->get(LockFactory::class),
+        );
+
+        $runId = $service->start($factoryId, $context);
+        try {
+            $this->expectException(AfterCoolFactoryImportAlreadyRunningException::class);
+            $service->start($factoryId, $context);
+        } finally {
+            $this->runRepository()->delete([['id' => $runId]], $context);
         }
     }
 
@@ -76,7 +118,7 @@ final class AfterCoolImportPersistenceTest extends TestCase
                 'id' => $firstSourceId,
                 'account' => 'JV',
                 'dataset' => 'lister',
-                'factoryId' => '504034',
+                'factoryId' => 504034,
                 'sourceProductId' => '900001',
                 'productId' => $firstProductId,
                 'sourceArtikelnummer' => '900001',
@@ -88,7 +130,7 @@ final class AfterCoolImportPersistenceTest extends TestCase
                 'id' => $sameEanSourceId,
                 'account' => 'JV',
                 'dataset' => 'lister',
-                'factoryId' => '504000',
+                'factoryId' => 504000,
                 'sourceProductId' => '900099',
                 'productId' => $secondProductId,
                 'sourceArtikelnummer' => '900099',
@@ -102,7 +144,7 @@ final class AfterCoolImportPersistenceTest extends TestCase
                     'id' => Uuid::randomHex(),
                     'account' => 'JV',
                     'dataset' => 'lister',
-                    'factoryId' => '504034',
+                    'factoryId' => 504034,
                     'sourceProductId' => '900001',
                     'productId' => $secondProductId,
                     'sourceArtikelnummer' => 'different-value-must-not-matter',
@@ -110,7 +152,7 @@ final class AfterCoolImportPersistenceTest extends TestCase
                     'lastSeenAt' => new \DateTimeImmutable(),
                 ]], $context);
                 self::fail('The same account/dataset/factory/product identity must not be linked twice.');
-            } catch (WriteException) {
+            } catch (UniqueConstraintViolationException) {
                 self::addToAssertionCount(1);
             }
         } finally {
@@ -120,7 +162,7 @@ final class AfterCoolImportPersistenceTest extends TestCase
     }
 
     /** @return array<string, mixed> */
-    private function runPayload(string $id, string $factoryId, string $status): array
+    private function runPayload(string $id, int $factoryId, string $status): array
     {
         return [
             'id' => $id,
@@ -164,7 +206,7 @@ final class AfterCoolImportPersistenceTest extends TestCase
         ];
     }
 
-    /** @return EntityRepository<EntityCollection<\Shopware\Core\Framework\DataAbstractionLayer\Entity>> */
+    /** @return EntityRepository<AfterCoolImportRunCollection> */
     private function runRepository(): EntityRepository
     {
         return static::getContainer()->get('jv_aftercool_import_run.repository');
