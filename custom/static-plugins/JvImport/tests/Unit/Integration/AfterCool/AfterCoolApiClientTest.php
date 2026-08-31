@@ -7,6 +7,7 @@ use Jv\Import\Integration\AfterCool\AfterCoolResponseNormalizer;
 use Jv\Import\Integration\AfterCool\Exception\AfterCoolApiException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\NullLogger;
 use Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -33,12 +34,12 @@ final class AfterCoolApiClientTest extends TestCase
         $client = $this->client($httpClient);
 
         $factories = $client->getFactories();
-        $page = $client->getProductPage('504034', 0);
+        $page = $client->getProductPage(504034, 0);
 
         self::assertCount(2, $factories);
-        self::assertSame('504034', $factories[0]->id);
+        self::assertSame(504034, $factories[0]->id);
         self::assertSame('NEW_Person_046_Nurai', $factories[0]->name);
-        self::assertSame('504000', $factories[1]->id, 'Factory identity must not be derived from a non-unique name.');
+        self::assertSame(504000, $factories[1]->id, 'Factory identity must not be derived from a non-unique name.');
         self::assertSame(102, $page->total);
         self::assertTrue($page->hasMore);
 
@@ -57,7 +58,7 @@ final class AfterCoolApiClientTest extends TestCase
         self::assertSame([
             'account' => 'JV',
             'dataset' => 'lister',
-            'factory_id' => '504034',
+            'factory_id' => 504034,
             'limit' => 100,
             'offset' => 0,
             'include_row' => 1,
@@ -83,7 +84,7 @@ final class AfterCoolApiClientTest extends TestCase
             },
         );
 
-        $page = $this->client($httpClient)->getProductPage('504034', 100);
+        $page = $this->client($httpClient)->getProductPage(504034, 100);
 
         self::assertFalse($page->hasMore);
         self::assertSame(['POST', 'GET', 'POST', 'GET'], array_column($calls, 0));
@@ -186,6 +187,7 @@ final class AfterCoolApiClientTest extends TestCase
     {
         return new AfterCoolApiClient(
             $httpClient,
+            new NullLogger(),
             new AfterCoolResponseNormalizer(),
             'https://aftercool.example/',
             'api-user',

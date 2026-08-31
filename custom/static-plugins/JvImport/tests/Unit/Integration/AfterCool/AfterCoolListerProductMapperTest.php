@@ -19,7 +19,7 @@ final class AfterCoolListerProductMapperTest extends TestCase
 
         self::assertSame('JV', $product->account);
         self::assertSame('lister', $product->dataset);
-        self::assertSame('504034', $product->factoryId);
+        self::assertSame(504034, $product->factoryId);
         self::assertSame('900001', $product->sourceProductId);
         self::assertSame('900001', $product->sourceArtikelnummer);
         self::assertSame('4260174423463', $product->ean);
@@ -54,7 +54,7 @@ final class AfterCoolListerProductMapperTest extends TestCase
             'file:///etc/passwd',
             'https://images.example.test/safe.jpg',
         ];
-        $page = $this->normalizer()->normalizeProductPage($payload, 'JV', 'lister', '504034', 0);
+        $page = $this->normalizer()->normalizeProductPage($payload, 'JV', 'lister', 504034, 0);
 
         $product = (new AfterCoolListerProductMapper())->map($page->items[0]);
 
@@ -71,7 +71,7 @@ final class AfterCoolListerProductMapperTest extends TestCase
         } else {
             $payload['items'][0][$field] = $value;
         }
-        $item = $this->normalizer()->normalizeProductPage($payload, 'JV', 'lister', '504034', 0)->items[0];
+        $item = $this->normalizer()->normalizeProductPage($payload, 'JV', 'lister', 504034, 0)->items[0];
 
         try {
             (new AfterCoolListerProductMapper())->map($item);
@@ -101,7 +101,7 @@ final class AfterCoolListerProductMapperTest extends TestCase
         $duplicate['artikelnummer'] = '900003';
         $duplicate['row']['ID'] = '900003';
         $payload['items'][] = $duplicate;
-        $page = $this->normalizer()->normalizeProductPage($payload, 'JV', 'lister', '504034', 0);
+        $page = $this->normalizer()->normalizeProductPage($payload, 'JV', 'lister', 504034, 0);
 
         $result = (new AfterCoolProductPageMapper(new AfterCoolListerProductMapper()))->map($page);
 
@@ -119,7 +119,7 @@ final class AfterCoolListerProductMapperTest extends TestCase
 
     private function page(): object
     {
-        return $this->normalizer()->normalizeProductPage($this->fixture(), 'JV', 'lister', '504034', 0);
+        return $this->normalizer()->normalizeProductPage($this->fixture(), 'JV', 'lister', 504034, 0);
     }
 
     private function normalizer(): AfterCoolResponseNormalizer

@@ -14,8 +14,8 @@ final class AfterCoolResponseNormalizerTest extends TestCase
         $factories = (new AfterCoolResponseNormalizer())->normalizeFactories($this->fixture('factories.json'));
 
         self::assertCount(2, $factories);
-        self::assertSame('504034', $factories[0]->id);
-        self::assertSame('504000', $factories[1]->id);
+        self::assertSame(504034, $factories[0]->id);
+        self::assertSame(504000, $factories[1]->id);
         self::assertSame($factories[0]->name, $factories[1]->name);
     }
 
@@ -25,7 +25,7 @@ final class AfterCoolResponseNormalizerTest extends TestCase
             $this->fixture('products-page-0.json'),
             'JV',
             'lister',
-            '504034',
+            504034,
             0,
         );
 
@@ -35,6 +35,7 @@ final class AfterCoolResponseNormalizerTest extends TestCase
         self::assertTrue($page->hasMore);
         self::assertCount(2, $page->items);
         self::assertSame('900001', $page->items[0]->productId);
+        self::assertSame(504034, $page->items[0]->factoryId);
         self::assertSame('4260174423463', $page->items[0]->ean);
         self::assertSame('900001', $page->items[0]->artikelnummer);
         self::assertSame('183975801', $page->items[0]->row['I_stammartikel']);
@@ -46,7 +47,7 @@ final class AfterCoolResponseNormalizerTest extends TestCase
             $this->fixture('products-page-100.json'),
             'JV',
             'lister',
-            '504034',
+            504034,
             100,
         );
 
@@ -71,7 +72,7 @@ final class AfterCoolResponseNormalizerTest extends TestCase
 
         $this->expectException(AfterCoolResponseContractException::class);
 
-        (new AfterCoolResponseNormalizer())->normalizeProductPage($payload, 'JV', 'lister', '504034', 0);
+        (new AfterCoolResponseNormalizer())->normalizeProductPage($payload, 'JV', 'lister', 504034, 0);
     }
 
     /** @return iterable<string, array{string}> */
@@ -92,9 +93,36 @@ final class AfterCoolResponseNormalizerTest extends TestCase
         $payload['total'] = 1;
         $payload['has_more'] = true;
 
-        $page = (new AfterCoolResponseNormalizer())->normalizeProductPage($payload, 'JV', 'lister', '504034', 0);
+        $page = (new AfterCoolResponseNormalizer())->normalizeProductPage($payload, 'JV', 'lister', 504034, 0);
 
         self::assertTrue($page->hasMore, 'Only the explicit has_more flag controls traversal.');
+    }
+
+    #[DataProvider('invalidFactoryIdProvider')]
+    public function testFactoryIdMustBeAnIntegerInTheFactoryList(mixed $id): void
+    {
+        $this->expectException(AfterCoolResponseContractException::class);
+
+        (new AfterCoolResponseNormalizer())->normalizeFactories([['id' => $id, 'name' => 'Factory A']]);
+    }
+
+    #[DataProvider('invalidFactoryIdProvider')]
+    public function testProductFactoryIdIsNotSilentlyCoercedToAnInteger(mixed $id): void
+    {
+        $payload = $this->fixture('products-page-0.json');
+        $payload['items'][0]['factory_id'] = $id;
+        $this->expectException(AfterCoolResponseContractException::class);
+
+        (new AfterCoolResponseNormalizer())->normalizeProductPage($payload, 'JV', 'lister', 504034, 0);
+    }
+
+    /** @return iterable<string, array{mixed}> */
+    public static function invalidFactoryIdProvider(): iterable
+    {
+        yield 'numeric string' => ['504034'];
+        yield 'float' => [504034.0];
+        yield 'boolean' => [true];
+        yield 'missing value' => [null];
     }
 
     /** @return array<mixed> */

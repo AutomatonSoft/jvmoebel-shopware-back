@@ -69,6 +69,14 @@ GET /api/import/factories?account=JV&dataset=lister
 
 ID фабрики является идентичностью выбора и lock key. Название используется
 только для отображения: Aftercool допускает одинаковые названия у разных ID.
+`id` фабрики и `factory_id` товара имеют тип JSON integer; внутри PHP
+`AfterCoolFactory::id`, `factoryId` в DTO, клиенте и сервисах имеют тип `int`.
+Start body использует число: `{"factoryId":504034}`. В DAL и таблицах run,
+source link и error ID фабрики хранится целочисленным полем, не строкой.
+Нормализатор проверяет тип без приведения: строка `"504034"`, дробное число
+и boolean не принимаются как ID фабрики. Только составной lock key
+`JV:lister:504034` остаётся строкой. UUID запусков и товаров, source product ID,
+артикулы и EAN этим изменением не затрагиваются.
 Дополнительные `status`, `updated` и `items_count` могут читаться из
 `GET /api/factories?fast=1`, но их отсутствие не меняет identity фабрики.
 
