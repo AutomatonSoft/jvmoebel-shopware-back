@@ -78,8 +78,8 @@ export default {
             try {
                 const response = await this.httpClient.get('/_action/jv-import/aftercool/factories');
                 this.factories = response.data.data;
-            } catch {
-                this.createNotificationError({ message: this.$t('jv-import.aftercool.factoriesError') });
+            } catch (error) {
+                this.createNotificationError({ message: this.afterCoolError(error, 'jv-import.aftercool.factoriesError') });
             } finally {
                 this.loadingFactories = false;
             }
@@ -93,8 +93,8 @@ export default {
                 });
                 await this.loadRun(response.data.data.id);
                 this.polling = window.setInterval(() => this.loadRun(this.run.id), 3000);
-            } catch {
-                this.createNotificationError({ message: this.$t('jv-import.aftercool.startError') });
+            } catch (error) {
+                this.createNotificationError({ message: this.afterCoolError(error, 'jv-import.aftercool.startError') });
             } finally {
                 this.starting = false;
             }
@@ -111,13 +111,18 @@ export default {
                 this.preview = response.data.data;
                 this.previewTotal = response.data.total;
                 this.previewReady = true;
-            } catch {
-                if (request === this.previewRequest) this.createNotificationError({ message: this.$t('jv-import.aftercool.previewError') });
+            } catch (error) {
+                if (request === this.previewRequest) this.createNotificationError({ message: this.afterCoolError(error, 'jv-import.aftercool.previewError') });
             } finally { if (request === this.previewRequest) this.previewLoading = false; }
         },
 
         async onPreviewSearch() { this.previewPage = 1; await this.loadPreview(); },
         async onPreviewPageChange({ page }) { this.previewPage = page; await this.loadPreview(); },
+
+        afterCoolError(error, fallbackKey) {
+            const detail = error?.response?.data?.errors?.[0]?.detail;
+            return typeof detail === 'string' && detail.length > 0 ? detail : this.$t(fallbackKey);
+        },
 
         async loadRun(id) {
             const response = await this.httpClient.get(`/_action/jv-import/aftercool/runs/${id}`);
