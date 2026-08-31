@@ -21,6 +21,23 @@ final class AfterCoolResponseNormalizerTest extends TestCase
         self::assertSame($factories[0]->name, $factories[1]->name);
     }
 
+    /** @param array<mixed> $payload */
+    #[DataProvider('invalidFactoriesEnvelopeProvider')]
+    public function testItRejectsFactoriesOutsideTheDocumentedEnvelope(array $payload): void
+    {
+        $this->expectException(AfterCoolResponseContractException::class);
+
+        (new AfterCoolResponseNormalizer())->normalizeFactories($payload);
+    }
+
+    /** @return iterable<string, array{array<mixed>}> */
+    public static function invalidFactoriesEnvelopeProvider(): iterable
+    {
+        yield 'top-level list' => [[['id' => 504034, 'name' => 'Factory A']]];
+        yield 'items missing' => [[]];
+        yield 'items is not a list' => [['items' => ['id' => 504034, 'name' => 'Factory A']]];
+    }
+
     public function testItNormalizesTheListerPageWithoutPersistingTheRawResponse(): void
     {
         $page = (new AfterCoolResponseNormalizer())->normalizeProductPage(
@@ -117,15 +134,15 @@ final class AfterCoolResponseNormalizerTest extends TestCase
         self::assertTrue($page->hasMore, 'Only the explicit has_more flag controls traversal.');
     }
 
-    #[DataProvider('invalidFactoryIdProvider')]
-    public function testFactoryIdMustBeAnIntegerInTheFactoryList(mixed $id): void
+    #[DataProvider('invalidFactoryWireIdProvider')]
+    public function testItRejectsInvalidFactoryIdsFromTheAftercoolWireFormat(mixed $id): void
     {
         $this->expectException(AfterCoolResponseContractException::class);
 
-        (new AfterCoolResponseNormalizer())->normalizeFactories([['id' => $id, 'name' => 'Factory A']]);
+        (new AfterCoolResponseNormalizer())->normalizeFactories(['items' => [['id' => $id, 'name' => 'Factory A']]]);
     }
 
-    #[DataProvider('invalidFactoryIdProvider')]
+    #[DataProvider('invalidProductFactoryIdProvider')]
     public function testProductFactoryIdMustMatchTheRequestedPage(mixed $id): void
     {
         $payload = $this->fixture('products-page-0.json');
@@ -137,7 +154,24 @@ final class AfterCoolResponseNormalizerTest extends TestCase
     }
 
     /** @return iterable<string, array{mixed}> */
-    public static function invalidFactoryIdProvider(): iterable
+    public static function invalidFactoryWireIdProvider(): iterable
+    {
+        yield 'empty string' => [''];
+        yield 'leading zero' => ['0504034'];
+        yield 'zero string' => ['0'];
+        yield 'negative string' => ['-504034'];
+        yield 'decimal string' => ['504034.0'];
+        yield 'non-numeric string' => ['factory-504034'];
+        yield 'overflow string' => ['999999999999999999999999999999'];
+        yield 'zero integer' => [0];
+        yield 'negative integer' => [-504034];
+        yield 'float' => [504034.0];
+        yield 'boolean' => [true];
+        yield 'missing value' => [null];
+    }
+
+    /** @return iterable<string, array{mixed}> */
+    public static function invalidProductFactoryIdProvider(): iterable
     {
         yield 'numeric string' => ['504034'];
         yield 'float' => [504034.0];

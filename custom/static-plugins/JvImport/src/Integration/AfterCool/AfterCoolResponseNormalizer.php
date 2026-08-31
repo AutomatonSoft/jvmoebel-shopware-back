@@ -15,24 +15,44 @@ final class AfterCoolResponseNormalizer
      */
     public function normalizeFactories(array $response): array
     {
-        if (!array_is_list($response)) {
-            throw new AfterCoolResponseContractException('Aftercool factories response must be a list.');
+        if (array_is_list($response)) {
+            throw new AfterCoolResponseContractException('Aftercool factories response must be an object.');
+        }
+        $items = $response['items'] ?? null;
+        if (!is_array($items) || !array_is_list($items)) {
+            throw new AfterCoolResponseContractException('Aftercool factories response must contain an items list.');
         }
 
         $factories = [];
-        foreach ($response as $factory) {
+        foreach ($items as $factory) {
             if (!is_array($factory)) {
                 throw new AfterCoolResponseContractException('Aftercool factories response must be an object.');
             }
             $id = $factory['id'] ?? null;
             $name = $factory['name'] ?? null;
-            if (!is_int($id) || !is_string($name) || '' === trim($name)) {
+            if (!is_string($name) || '' === trim($name)) {
                 throw new AfterCoolResponseContractException('Aftercool factories has invalid identity fields');
             }
-            $factories[] = new AfterCoolFactory($id, trim($name));
+            $factories[] = new AfterCoolFactory($this->factoryId($id), trim($name));
         }
 
         return $factories;
+    }
+
+    private function factoryId(mixed $id): int
+    {
+        if (is_int($id) && $id > 0) {
+            return $id;
+        }
+        if (!is_string($id) || 1 !== preg_match('/^[1-9][0-9]*$/D', $id)) {
+            throw new AfterCoolResponseContractException('Aftercool factories has invalid identity fields');
+        }
+        $max = (string) PHP_INT_MAX;
+        if (strlen($id) > strlen($max) || (strlen($id) === strlen($max) && strcmp($id, $max) > 0)) {
+            throw new AfterCoolResponseContractException('Aftercool factories has invalid identity fields');
+        }
+
+        return (int) $id;
     }
 
     /** @param array<string, mixed>|list<mixed> $response */
