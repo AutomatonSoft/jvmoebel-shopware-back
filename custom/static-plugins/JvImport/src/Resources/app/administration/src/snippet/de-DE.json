@@ -4,6 +4,17 @@
             "title": "Import",
             "description": "JVMöbel-Importe"
         },
+        "aftercool": {
+            "tab": "Aftercool",
+            "title": "Aftercool-Produktimport",
+            "factory": "Lister-Fabrik",
+            "start": "Import starten",
+            "refresh": "Fabriken aktualisieren",
+            "progress": "Importfortschritt",
+            "counters": "Erstellt: {created}, aktualisiert: {updated}, übersprungen: {skipped}, fehlgeschlagen: {failed}",
+            "factoriesError": "Aftercool-Fabriken konnten nicht geladen werden.",
+            "startError": "Aftercool-Import konnte nicht gestartet werden."
+        },
         "variantGroups": {
             "used": "Vom Produkt verwendet",
             "recommended": "Für Varianten empfohlen",

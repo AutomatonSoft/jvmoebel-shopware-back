@@ -3,11 +3,23 @@ import enGB from './snippet/en-GB.json';
 import './extension/sw-product-deliverability-form';
 import './extension/sw-product-detail';
 import './extension/sw-product-variants-configurator-selection';
+import './extension/sw-import-export';
+import aftercoolImport from './view/aftercool-import';
 
 Shopware.Locale.extend('de-DE', deDE);
 Shopware.Locale.extend('en-GB', enGB);
 
 const { Module } = Shopware;
+
+Module.getModuleByName('sw-import-export').routes.index.children.aftercool = {
+    component: 'jv-aftercool-import',
+    path: 'aftercool',
+    meta: {
+        privilege: 'system.import_export',
+    },
+};
+
+Shopware.Component.register('jv-aftercool-import', aftercoolImport);
 
 Module.register('jv-import', {
     type: 'plugin',

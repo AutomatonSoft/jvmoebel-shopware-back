@@ -1,0 +1,21 @@
+<sw-card-view>
+    <sw-card :title="$t('jv-import.aftercool.title')" :is-loading="loadingFactories">
+        <sw-single-select
+            v-model:value="factoryId"
+            :options="factories.map((factory) => ({ value: factory.id, label: `${factory.name} (${factory.id})` }))"
+            :label="$t('jv-import.aftercool.factory')"
+        />
+        <sw-button variant="primary" :disabled="!canStart" @click="start">
+            {{ $t('jv-import.aftercool.start') }}
+        </sw-button>
+        <sw-button class="jv-aftercool-import__refresh" :disabled="loadingFactories" @click="loadFactories">
+            {{ $t('jv-import.aftercool.refresh') }}
+        </sw-button>
+    </sw-card>
+
+    <sw-card v-if="run" :title="$t('jv-import.aftercool.progress')">
+        <sw-progress-bar :value="run.total ? (run.processed / run.total) * 100 : 0" />
+        <p>{{ run.status }} — {{ run.processed }} / {{ run.total || '?' }}</p>
+        <p>{{ $t('jv-import.aftercool.counters', run) }}</p>
+    </sw-card>
+</sw-card-view>

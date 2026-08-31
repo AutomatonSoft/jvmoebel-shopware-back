@@ -4,6 +4,17 @@
             "title": "Import",
             "description": "JVMöbel imports"
         },
+        "aftercool": {
+            "tab": "Aftercool",
+            "title": "Aftercool product import",
+            "factory": "Lister factory",
+            "start": "Start import",
+            "refresh": "Refresh factories",
+            "progress": "Import progress",
+            "counters": "Created: {created}, updated: {updated}, skipped: {skipped}, failed: {failed}",
+            "factoriesError": "Aftercool factories could not be loaded.",
+            "startError": "Aftercool import could not be started."
+        },
         "variantGroups": {
             "used": "Used by product",
             "recommended": "Recommended for variants",
