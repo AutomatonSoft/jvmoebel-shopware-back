@@ -6,8 +6,9 @@ use Jv\Import\Integration\AfterCool\Contract\AfterCoolProductPageReaderInterface
 use Jv\Import\Integration\AfterCool\Dto\AfterCoolInvalidProductItem;
 use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductItem;
 use Jv\Import\Integration\AfterCool\Mapper\AfterCoolProductPageMapper;
+use Jv\Import\Service\AfterCool\Contract\AfterCoolProductPreviewProviderInterface;
 
-final readonly class AfterCoolProductPreviewService
+final readonly class AfterCoolProductPreviewService implements AfterCoolProductPreviewProviderInterface
 {
     public function __construct(private AfterCoolProductPageReaderInterface $client, private AfterCoolProductPageMapper $mapper)
     {

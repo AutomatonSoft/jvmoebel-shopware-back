@@ -9,7 +9,7 @@ use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunEntity;
 use Jv\Import\Integration\AfterCool\AfterCoolApiClientInterface;
 use Jv\Import\Integration\AfterCool\Exception\AfterCoolApiException;
 use Jv\Import\Integration\AfterCool\Exception\AfterCoolResponseContractException;
-use Jv\Import\Service\AfterCool\AfterCoolProductPreviewService;
+use Jv\Import\Service\AfterCool\Contract\AfterCoolProductPreviewProviderInterface;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolFactoryImportAlreadyRunningException;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolFactoryNotFoundException;
 use Jv\Import\Service\AfterCool\StartAfterCoolImportService;
@@ -34,7 +34,7 @@ final class AfterCoolImportController extends AbstractController
         private readonly StartAfterCoolImportService $startImport,
         private readonly EntityRepository $runRepository,
         private readonly EntityRepository $errorRepository,
-        private readonly AfterCoolProductPreviewService $preview,
+        private readonly AfterCoolProductPreviewProviderInterface $preview,
     ) {
     }
 
