@@ -25,12 +25,12 @@ final class StartAfterCoolImportServiceTest extends TestCase
         $runId = Uuid::randomHex();
         $api = $this->createMock(AfterCoolApiClientInterface::class);
         $api->expects(self::once())->method('getFactories')->willReturn([
-            new AfterCoolFactory('504034', 'Factory A'),
-            new AfterCoolFactory('504000', 'Factory B'),
+            new AfterCoolFactory(504034, 'Factory A'),
+            new AfterCoolFactory(504000, 'Factory B'),
         ]);
         $runs = $this->createMock(AfterCoolImportRunStore::class);
         $runs->expects(self::once())->method('createQueued')->with(
-            '504034',
+            504034,
             'Factory A',
             'JV:lister:504034',
             $context,
@@ -43,7 +43,7 @@ final class StartAfterCoolImportServiceTest extends TestCase
                 && ['runId', 'offset'] === array_keys(get_object_vars($message)),
         ))->willReturn(new Envelope(new \stdClass()));
 
-        $createdRunId = $this->service($api, $runs, $messageBus)->start('504034', $context);
+        $createdRunId = $this->service($api, $runs, $messageBus)->start(504034, $context);
 
         self::assertSame($runId, $createdRunId);
     }
@@ -51,7 +51,7 @@ final class StartAfterCoolImportServiceTest extends TestCase
     public function testItRejectsAFactoryThatWasNotReturnedByAftercool(): void
     {
         $api = $this->createMock(AfterCoolApiClientInterface::class);
-        $api->expects(self::once())->method('getFactories')->willReturn([new AfterCoolFactory('504034', 'Factory A')]);
+        $api->expects(self::once())->method('getFactories')->willReturn([new AfterCoolFactory(504034, 'Factory A')]);
         $runs = $this->createMock(AfterCoolImportRunStore::class);
         $runs->expects(self::never())->method('createQueued');
         $messageBus = $this->createMock(MessageBusInterface::class);
@@ -59,22 +59,22 @@ final class StartAfterCoolImportServiceTest extends TestCase
 
         $this->expectException(AfterCoolFactoryNotFoundException::class);
 
-        $this->service($api, $runs, $messageBus)->start('999999', Context::createDefaultContext());
+        $this->service($api, $runs, $messageBus)->start(999999, Context::createDefaultContext());
     }
 
     public function testItDoesNotDispatchWhenTheFactoryAlreadyHasAnActiveRun(): void
     {
         $context = Context::createDefaultContext();
         $api = $this->createMock(AfterCoolApiClientInterface::class);
-        $api->method('getFactories')->willReturn([new AfterCoolFactory('504034', 'Factory A')]);
+        $api->method('getFactories')->willReturn([new AfterCoolFactory(504034, 'Factory A')]);
         $runs = $this->createMock(AfterCoolImportRunStore::class);
-        $runs->expects(self::once())->method('createQueued')->willThrowException(new AfterCoolFactoryImportAlreadyRunningException('504034'));
+        $runs->expects(self::once())->method('createQueued')->willThrowException(new AfterCoolFactoryImportAlreadyRunningException(504034));
         $messageBus = $this->createMock(MessageBusInterface::class);
         $messageBus->expects(self::never())->method('dispatch');
 
         $this->expectException(AfterCoolFactoryImportAlreadyRunningException::class);
 
-        $this->service($api, $runs, $messageBus)->start('504034', $context);
+        $this->service($api, $runs, $messageBus)->start(504034, $context);
     }
 
     public function testItReleasesThePersistentFactoryGuardWhenInitialDispatchFails(): void
@@ -82,7 +82,7 @@ final class StartAfterCoolImportServiceTest extends TestCase
         $context = Context::createDefaultContext();
         $runId = Uuid::randomHex();
         $api = $this->createMock(AfterCoolApiClientInterface::class);
-        $api->method('getFactories')->willReturn([new AfterCoolFactory('504034', 'Factory A')]);
+        $api->method('getFactories')->willReturn([new AfterCoolFactory(504034, 'Factory A')]);
         $runs = $this->createMock(AfterCoolImportRunStore::class);
         $runs->method('createQueued')->willReturn($runId);
         $runs->expects(self::once())->method('markFailed')->with(
@@ -97,7 +97,7 @@ final class StartAfterCoolImportServiceTest extends TestCase
 
         $this->expectExceptionObject($failure);
 
-        $this->service($api, $runs, $messageBus)->start('504034', $context);
+        $this->service($api, $runs, $messageBus)->start(504034, $context);
     }
 
     private function service(

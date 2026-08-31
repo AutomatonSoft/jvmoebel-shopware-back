@@ -104,7 +104,7 @@ final class BuildAfterCoolShopwareProductRecordServiceTest extends TestCase
         if (null !== $price) {
             $payload['items'][$index]['row']['Startpreis'] = $price;
         }
-        $page = (new AfterCoolResponseNormalizer())->normalizeProductPage($payload, 'JV', 'lister', '504034', 0);
+        $page = (new AfterCoolResponseNormalizer())->normalizeProductPage($payload, 'JV', 'lister', 504034, 0);
 
         return (new AfterCoolListerProductMapper())->map($page->items[$index]);
     }
