@@ -5,6 +5,7 @@ namespace Jv\Import\Tests\Unit\Message;
 use Jv\Import\Message\AfterCoolImportPageMessage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Framework\MessageQueue\AsyncMessageInterface;
 use Shopware\Core\Framework\Uuid\Uuid;
 
 final class AfterCoolImportPageMessageTest extends TestCase
@@ -19,6 +20,7 @@ final class AfterCoolImportPageMessageTest extends TestCase
         self::assertSame(['runId', 'offset'], array_keys(get_object_vars($message)));
         self::assertStringNotContainsString('items', serialize($message));
         self::assertStringNotContainsString('row', serialize($message));
+        self::assertContains(AsyncMessageInterface::class, class_implements($message));
     }
 
     #[DataProvider('invalidMessageProvider')]

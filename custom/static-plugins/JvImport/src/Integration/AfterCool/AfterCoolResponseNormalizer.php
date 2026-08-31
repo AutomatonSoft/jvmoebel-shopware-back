@@ -3,6 +3,7 @@
 namespace Jv\Import\Integration\AfterCool;
 
 use Jv\Import\Integration\AfterCool\Dto\AfterCoolFactory;
+use Jv\Import\Integration\AfterCool\Dto\AfterCoolInvalidProductItem;
 use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductItem;
 use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductPage;
 use Jv\Import\Integration\AfterCool\Exception\AfterCoolResponseContractException;
@@ -52,10 +53,14 @@ final class AfterCoolResponseNormalizer
 
         $normalized = [];
         foreach ($items as $item) {
-            if (!is_array($item)) {
-                throw new AfterCoolResponseContractException('Aftercool product item must be an object.');
+            try {
+                if (!is_array($item)) {
+                    throw new AfterCoolResponseContractException('Aftercool product item must be an object.');
+                }
+                $normalized[] = $this->normalizeItem($item, $account, $dataset, $factoryId);
+            } catch (AfterCoolResponseContractException) {
+                $normalized[] = $this->invalidItem($item);
             }
-            $normalized[] = $this->normalizeItem($item, $account, $dataset, $factoryId);
         }
 
         return new AfterCoolProductPage($normalized, $total, $limit, $offset, $hasMore);
@@ -119,5 +124,27 @@ final class AfterCoolResponseNormalizer
         }
 
         return $value;
+    }
+
+    private function invalidItem(mixed $item): AfterCoolInvalidProductItem
+    {
+        if (!is_array($item)) {
+            return new AfterCoolInvalidProductItem(null, null, null, null);
+        }
+
+        return new AfterCoolInvalidProductItem(
+            $this->optionalString($item, 'product_id'),
+            $this->optionalString($item, 'artikelnummer'),
+            $this->optionalString($item, 'ean'),
+            isset($item['row_no']) && is_int($item['row_no']) && 0 <= $item['row_no'] ? $item['row_no'] : null,
+        );
+    }
+
+    /** @param array<string, mixed> $record */
+    private function optionalString(array $record, string $field): ?string
+    {
+        $value = $record[$field] ?? null;
+
+        return is_string($value) && '' !== trim($value) ? trim($value) : null;
     }
 }

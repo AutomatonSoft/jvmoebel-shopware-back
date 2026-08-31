@@ -15,6 +15,11 @@ final readonly class AfterCoolImportProgress
         return new self('queued', null, 0, 0, 0, 0, 0, 0, false);
     }
 
+    public static function fromPersisted(string $status, ?int $total, int $nextOffset, int $processed, int $created, int $updated, int $skipped, int $failed): self
+    {
+        return new self($status, $total, $nextOffset, $processed, $created, $updated, $skipped, $failed, false);
+    }
+
     public function checkpoint(AfterCoolPageOutcome $outcome): self
     {
         if ($outcome->offset < $this->nextOffset) {
@@ -33,5 +38,12 @@ final readonly class AfterCoolImportProgress
         $status = $outcome->hasMore ? 'running' : (($totalChanged || 0 < $skipped || 0 < $failed) ? 'completed_with_errors' : 'completed');
 
         return new self($status, $total, $this->nextOffset + 100, $processed, $created, $updated, $skipped, $failed, $totalChanged);
+    }
+
+    public function withTerminalErrors(): self
+    {
+        return 'completed' === $this->status
+            ? new self('completed_with_errors', $this->total, $this->nextOffset, $this->processed, $this->created, $this->updated, $this->skipped, $this->failed, $this->totalChanged)
+            : $this;
     }
 }

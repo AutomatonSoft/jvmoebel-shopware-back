@@ -12,6 +12,8 @@ export default {
             loadingFactories: false,
             starting: false,
             run: null,
+            errors: [],
+            errorsTotal: 0,
             polling: null,
             httpClient: null,
         };
@@ -67,10 +69,19 @@ export default {
         async loadRun(id) {
             const response = await this.httpClient.get(`/_action/jv-import/aftercool/runs/${id}`);
             this.run = response.data.data;
+            await this.loadErrors(id);
             if (['completed', 'completed_with_errors', 'failed'].includes(this.run.status)) {
                 window.clearInterval(this.polling);
                 this.polling = null;
             }
+        },
+
+        async loadErrors(id) {
+            const response = await this.httpClient.get(`/_action/jv-import/aftercool/runs/${id}/errors`, {
+                params: { limit: 50, offset: 0 },
+            });
+            this.errors = response.data.data;
+            this.errorsTotal = response.data.total;
         },
     },
 };

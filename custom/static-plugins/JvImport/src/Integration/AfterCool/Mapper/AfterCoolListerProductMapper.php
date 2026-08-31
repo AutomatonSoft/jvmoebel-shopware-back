@@ -27,6 +27,7 @@ final class AfterCoolListerProductMapper
             $item->ean,
             $item->ean,
             $item->name,
+            $item->rowNo,
             $price,
             $stock,
             $this->description($item),
@@ -96,7 +97,7 @@ final class AfterCoolListerProductMapper
         foreach ($candidates as $url) {
             $scheme = parse_url($url, PHP_URL_SCHEME);
             if (!is_string($scheme) || !in_array(strtolower($scheme), ['http', 'https'], true) || false === filter_var($url, FILTER_VALIDATE_URL)) {
-                $issues[] = new AfterCoolProductIssue($item->productId, 'failed', 'invalid_media_url', 'External media URL is invalid.');
+                $issues[] = new AfterCoolProductIssue($item->productId, 'failed', 'invalid_media_url', 'External media URL is invalid.', $item->artikelnummer, $item->ean, $item->rowNo);
 
                 continue;
             }

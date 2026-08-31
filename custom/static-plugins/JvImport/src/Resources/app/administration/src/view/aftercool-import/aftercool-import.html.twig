@@ -18,4 +18,21 @@
         <p>{{ run.status }} — {{ run.processed }} / {{ run.total || '?' }}</p>
         <p>{{ $t('jv-import.aftercool.counters', run) }}</p>
     </sw-card>
+
+    <sw-card v-if="run && errorsTotal > 0" :title="$t('jv-import.aftercool.errors')">
+        <p>{{ $tc('jv-import.aftercool.errorsTotal', errorsTotal, { count: errorsTotal }) }}</p>
+        <sw-data-grid :data-source="errors" :show-selection="false" :show-actions="false">
+            <template #columns="{ item }">
+                <sw-data-grid-column :label="$t('jv-import.aftercool.errorCode')" property="code">
+                    {{ item.code }}
+                </sw-data-grid-column>
+                <sw-data-grid-column :label="$t('jv-import.aftercool.errorProduct')" property="ean">
+                    {{ item.ean || item.artikelnummer || item.productId || '—' }}
+                </sw-data-grid-column>
+                <sw-data-grid-column :label="$t('jv-import.aftercool.errorMessage')" property="message">
+                    {{ item.message }}
+                </sw-data-grid-column>
+            </template>
+        </sw-data-grid>
+    </sw-card>
 </sw-card-view>

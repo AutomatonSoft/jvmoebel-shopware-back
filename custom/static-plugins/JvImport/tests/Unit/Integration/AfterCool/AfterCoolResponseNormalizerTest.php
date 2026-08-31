@@ -55,7 +55,7 @@ final class AfterCoolResponseNormalizerTest extends TestCase
         self::assertFalse($page->hasMore);
     }
 
-    #[DataProvider('invalidPageProvider')]
+    #[DataProvider('invalidEnvelopeProvider')]
     public function testItRejectsAResponseOutsideTheRequestedPageContract(string $case): void
     {
         $payload = $this->fixture('products-page-0.json');
@@ -63,10 +63,6 @@ final class AfterCoolResponseNormalizerTest extends TestCase
             'items' => $payload['items'] = 'not-a-list',
             'limit' => $payload['limit'] = 500,
             'offset' => $payload['offset'] = 100,
-            'account' => $payload['items'][0]['account'] = 'OTHER',
-            'dataset' => $payload['items'][0]['dataset'] = 'product',
-            'factory' => $payload['items'][0]['factory_id'] = 999999,
-            'row' => $payload['items'][0]['row'] = null,
             default => throw new \LogicException(sprintf('Unknown test case "%s".', $case)),
         };
 
@@ -76,15 +72,24 @@ final class AfterCoolResponseNormalizerTest extends TestCase
     }
 
     /** @return iterable<string, array{string}> */
-    public static function invalidPageProvider(): iterable
+    public static function invalidEnvelopeProvider(): iterable
     {
         yield 'items must be a list' => ['items'];
         yield 'limit must remain 100' => ['limit'];
         yield 'response offset must match the request' => ['offset'];
-        yield 'item account must match the request' => ['account'];
-        yield 'item dataset must match the request' => ['dataset'];
-        yield 'item factory must match the request' => ['factory'];
-        yield 'include_row must provide an object' => ['row'];
+    }
+
+    public function testItKeepsValidItemsWhenAnotherItemHasAnInvalidStructure(): void
+    {
+        $payload = $this->fixture('products-page-0.json');
+        $payload['items'][1]['row'] = null;
+
+        $page = (new AfterCoolResponseNormalizer())->normalizeProductPage($payload, 'JV', 'lister', 504034, 0);
+
+        self::assertCount(2, $page->items);
+        self::assertSame('900001', $page->items[0]->productId);
+        self::assertInstanceOf(\Jv\Import\Integration\AfterCool\Dto\AfterCoolInvalidProductItem::class, $page->items[1]);
+        self::assertSame('invalid_product_item', $page->items[1]->code);
     }
 
     public function testItDoesNotTrustTotalAsThePaginationStopCondition(): void
@@ -107,13 +112,14 @@ final class AfterCoolResponseNormalizerTest extends TestCase
     }
 
     #[DataProvider('invalidFactoryIdProvider')]
-    public function testProductFactoryIdIsNotSilentlyCoercedToAnInteger(mixed $id): void
+    public function testProductFactoryIdIsReportedAtItemLevelInsteadOfBeingCoerced(mixed $id): void
     {
         $payload = $this->fixture('products-page-0.json');
         $payload['items'][0]['factory_id'] = $id;
-        $this->expectException(AfterCoolResponseContractException::class);
 
-        (new AfterCoolResponseNormalizer())->normalizeProductPage($payload, 'JV', 'lister', 504034, 0);
+        $page = (new AfterCoolResponseNormalizer())->normalizeProductPage($payload, 'JV', 'lister', 504034, 0);
+
+        self::assertInstanceOf(\Jv\Import\Integration\AfterCool\Dto\AfterCoolInvalidProductItem::class, $page->items[0]);
     }
 
     /** @return iterable<string, array{mixed}> */

@@ -114,6 +114,7 @@
             <argument type="service" id="product.repository"/>
             <argument type="service" id="jv_aftercool_import_error.repository"/>
             <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="lock.factory"/>
         </service>
         <service id="Jv\Import\Service\AfterCool\Contract\AfterCoolImportPageProcessor" alias="Jv\Import\Service\AfterCool\AfterCoolImportPageProcessorService"/>
         <service id="Jv\Import\Service\AfterCool\StartAfterCoolImportService">

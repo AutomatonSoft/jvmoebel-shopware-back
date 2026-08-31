@@ -10,7 +10,12 @@
             "factory": "Lister-Fabrik",
             "start": "Import starten",
             "refresh": "Fabriken aktualisieren",
-            "progress": "Importfortschritt",
+        "progress": "Importfortschritt",
+        "errors": "Fehler und Konflikte",
+        "errorsTotal": "{count} Einträge",
+        "errorCode": "Code",
+        "errorProduct": "Produkt",
+        "errorMessage": "Meldung",
             "counters": "Erstellt: {created}, aktualisiert: {updated}, übersprungen: {skipped}, fehlgeschlagen: {failed}",
             "factoriesError": "Aftercool-Fabriken konnten nicht geladen werden.",
             "startError": "Aftercool-Import konnte nicht gestartet werden."

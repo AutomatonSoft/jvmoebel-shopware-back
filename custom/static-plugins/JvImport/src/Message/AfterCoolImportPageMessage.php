@@ -2,9 +2,10 @@
 
 namespace Jv\Import\Message;
 
+use Shopware\Core\Framework\MessageQueue\AsyncMessageInterface;
 use Shopware\Core\Framework\Uuid\Uuid;
 
-final readonly class AfterCoolImportPageMessage
+final readonly class AfterCoolImportPageMessage implements AsyncMessageInterface
 {
     public function __construct(public string $runId, public int $offset)
     {

@@ -16,6 +16,7 @@ final readonly class AfterCoolMappedProduct
         public string $ean,
         public string $productNumber,
         public string $name,
+        public int $rowNo,
         public float $grossPrice,
         public int $stock,
         public ?string $description,

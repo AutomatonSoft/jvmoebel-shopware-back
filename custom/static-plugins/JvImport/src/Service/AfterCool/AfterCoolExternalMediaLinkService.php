@@ -2,6 +2,7 @@
 
 namespace Jv\Import\Service\AfterCool;
 
+use Shopware\Core\Content\Media\MediaException;
 use Shopware\Core\Content\Media\Upload\MediaUploadParameters;
 use Shopware\Core\Content\Media\Upload\MediaUploadService;
 use Shopware\Core\Framework\Context;
@@ -20,15 +21,21 @@ final readonly class AfterCoolExternalMediaLinkService
         $issues = [];
         $coverId = null;
         foreach ($urls as $position => $url) {
+            $mimeType = $this->mimeType($url);
+            if (null === $mimeType) {
+                $issues[] = new AfterCoolSyncWriteFailure($url, 'unknown_media_mime_type', 'External media MIME type could not be determined.');
+
+                continue;
+            }
             try {
                 $mediaId = Uuid::fromStringToHex('jvmoebel.aftercool.media.'.$url);
-                $this->mediaUpload->linkURL($url, $context, new MediaUploadParameters(id: $mediaId, mimeType: $this->mimeType($url), deduplicate: true));
+                $this->mediaUpload->linkURL($url, $context, new MediaUploadParameters(id: $mediaId, mimeType: $mimeType, deduplicate: true));
                 $relationId = Uuid::fromStringToHex('jvmoebel.aftercool.product-media.'.$productId.'.'.$mediaId);
                 $media[] = ['id' => $relationId, 'productId' => $productId, 'mediaId' => $mediaId, 'position' => $position];
                 if (null === $existingCoverId && null === $coverId) {
                     $coverId = $relationId;
                 }
-            } catch (\Throwable) {
+            } catch (MediaException | \RuntimeException) {
                 $issues[] = new AfterCoolSyncWriteFailure($url, 'external_media_link_failed', 'External media link could not be created.');
             }
         }
@@ -36,10 +43,14 @@ final readonly class AfterCoolExternalMediaLinkService
         return new AfterCoolExternalMediaLinkResult($media, $coverId, $issues);
     }
 
-    private function mimeType(string $url): string
+    private function mimeType(string $url): ?string
     {
         return match (strtolower(pathinfo(parse_url($url, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION))) {
-            'png' => 'image/png', 'gif' => 'image/gif', 'webp' => 'image/webp', default => 'image/jpeg',
+            'jpg', 'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            default => null,
         };
     }
 }

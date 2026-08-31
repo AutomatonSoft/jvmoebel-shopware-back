@@ -2,6 +2,7 @@
 
 namespace Jv\Import\Integration\AfterCool\Mapper;
 
+use Jv\Import\Integration\AfterCool\Dto\AfterCoolInvalidProductItem;
 use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductIssue;
 use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductPage;
 use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductPageMappingResult;
@@ -19,15 +20,20 @@ final readonly class AfterCoolProductPageMapper
         $issues = [];
         $seenEans = [];
         foreach ($page->items as $item) {
+            if ($item instanceof AfterCoolInvalidProductItem) {
+                $issues[] = new AfterCoolProductIssue($item->productId, 'failed', $item->code, 'Aftercool product data is invalid.', $item->artikelnummer, $item->ean, $item->rowNo);
+
+                continue;
+            }
             try {
                 $product = $this->productMapper->map($item);
             } catch (AfterCoolProductMappingException $exception) {
-                $issues[] = new AfterCoolProductIssue($exception->productId(), 'failed', $exception->safeCode(), 'Aftercool product data is invalid.');
+                $issues[] = new AfterCoolProductIssue($exception->productId(), 'failed', $exception->safeCode(), 'Aftercool product data is invalid.', $item->artikelnummer, $item->ean, $item->rowNo);
 
                 continue;
             }
             if (isset($seenEans[$product->ean])) {
-                $issues[] = new AfterCoolProductIssue($product->sourceProductId, 'skipped', 'duplicate_ean_in_factory', 'Duplicate EAN in Aftercool factory.');
+                $issues[] = new AfterCoolProductIssue($product->sourceProductId, 'skipped', 'duplicate_ean_in_factory', 'Duplicate EAN in Aftercool factory.', $product->sourceArtikelnummer, $product->ean, $product->rowNo);
 
                 continue;
             }

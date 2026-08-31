@@ -4,7 +4,9 @@ namespace Jv\Import\Integration\AfterCool\Dto;
 
 final readonly class AfterCoolProductPage
 {
-    /** @param array<AfterCoolProductItem> $items */
+    /**
+     * @param list<AfterCoolProductItem|AfterCoolInvalidProductItem> $items
+     */
     public function __construct(
         public array $items,
         public int $total,

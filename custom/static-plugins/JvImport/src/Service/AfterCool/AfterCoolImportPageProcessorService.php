@@ -15,6 +15,7 @@ use Jv\Import\Service\AfterCool\Contract\AfterCoolImportPageProcessor;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolProductWriteValidationException;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolUnexpectedPageOffsetException;
 use Jv\Import\Service\ProductImport\ResolveDefaultProductTaxService;
+use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Defaults;
@@ -23,6 +24,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Symfony\Component\Lock\LockFactory;
 
 /**
  * Owns one idempotent Aftercool page checkpoint. Upstream access and mapping
@@ -48,14 +50,30 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
         private EntityRepository $productRepository,
         private EntityRepository $errorRepository,
         private Connection $connection,
+        private LockFactory $lockFactory,
     ) {
     }
 
     public function process(string $runId, int $offset, Context $context): AfterCoolPageProcessingResult
     {
+        $lock = $this->lockFactory->createLock('jv-aftercool-import-run-'.$runId, 300.0);
+        if (!$lock->acquire(true)) {
+            throw new \RuntimeException('Aftercool import run lock could not be acquired.');
+        }
+        try {
+            return $this->processLocked($runId, $offset, $context);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function processLocked(string $runId, int $offset, Context $context): AfterCoolPageProcessingResult
+    {
         $run = $this->loadRun($runId, $context);
         if ($offset < $run->getNextOffset()) {
-            return AfterCoolPageProcessingResult::completed();
+            return in_array($run->getStatus(), ['queued', 'running'], true)
+                ? AfterCoolPageProcessingResult::continueWith($run->getNextOffset())
+                : AfterCoolPageProcessingResult::completed();
         }
         if ($offset > $run->getNextOffset()) {
             throw new AfterCoolUnexpectedPageOffsetException();
@@ -81,10 +99,24 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
                     $tax->id,
                     $tax->rate,
                     Defaults::CURRENCY,
-                    Defaults::LANGUAGE_SYSTEM,
+                    Market::Germany->languageId(),
                 );
-                $existingCoverId = $this->existingCoverId($existingProductId, $context);
-                $media = $this->mediaLinks->link($payload['id'], $product->mediaUrls, $existingCoverId, $context);
+                $records[] = new AfterCoolProductWriteRecord(
+                    $product->sourceProductId,
+                    $payload,
+                );
+                $products[$product->sourceProductId] = [$product, null === $existingProductId, $payload['id']];
+            } catch (AfterCoolProductWriteValidationException $exception) {
+                $issues[] = new AfterCoolProductIssue($product->sourceProductId, 'failed', $exception->safeCode(), 'Aftercool product cannot be created without a valid price.', $product->sourceArtikelnummer, $product->ean, $product->rowNo);
+            }
+        }
+
+        $this->connection->transactional(function () use ($run, $page, $offset, $records, $products, &$issues, $context): void {
+            $recordsWithMedia = [];
+            foreach ($records as $record) {
+                [$product, , $productId] = $products[$record->sourceProductId];
+                $payload = $record->payload;
+                $media = $this->mediaLinks->link($productId, $product->mediaUrls, $this->existingCoverId($productId, $context), $context);
                 if ([] !== $media->productMedia) {
                     $payload['media'] = $media->productMedia;
                 }
@@ -92,25 +124,17 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
                     $payload['coverId'] = $media->coverId;
                 }
                 foreach ($media->issues as $mediaIssue) {
-                    $issues[] = new AfterCoolProductIssue($product->sourceProductId, 'failed', $mediaIssue->code, $mediaIssue->message);
+                    $issues[] = new AfterCoolProductIssue($product->sourceProductId, 'failed', $mediaIssue->code, $mediaIssue->message, $product->sourceArtikelnummer, $product->ean, $product->rowNo, false);
                 }
-                $records[] = new AfterCoolProductWriteRecord(
-                    $product->sourceProductId,
-                    $payload,
-                );
-                $products[$product->sourceProductId] = [$product, null === $existingProductId, $payload['id']];
-            } catch (AfterCoolProductWriteValidationException $exception) {
-                $issues[] = new AfterCoolProductIssue($product->sourceProductId, 'failed', $exception->safeCode(), 'Aftercool product cannot be created without a valid price.');
+                $recordsWithMedia[] = new AfterCoolProductWriteRecord($record->sourceProductId, $payload);
             }
-        }
 
-        $writeResult = $this->writer->write($records, $context);
-        foreach ($writeResult->failures as $failure) {
-            $issues[] = new AfterCoolProductIssue($failure->sourceProductId, 'failed', $failure->code, $failure->message);
-        }
-
-        $successful = array_fill_keys($writeResult->successfulSourceProductIds, true);
-        $this->connection->transactional(function () use ($run, $page, $offset, $products, $successful, $issues, $context): void {
+            $writeResult = $this->writer->write($recordsWithMedia, $context);
+            foreach ($writeResult->failures as $failure) {
+                [$product] = $products[$failure->sourceProductId] ?? [null];
+                $issues[] = new AfterCoolProductIssue($failure->sourceProductId, 'failed', $failure->code, $failure->message, $product?->sourceArtikelnummer, $product?->ean, $product?->rowNo);
+            }
+            $successful = array_fill_keys($writeResult->successfulSourceProductIds, true);
             $created = 0;
             $updated = 0;
             foreach ($products as $sourceProductId => [$product, $isNew, $productId]) {
@@ -128,27 +152,40 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
             $skipped = 0;
             $failed = 0;
             foreach ($issues as $issue) {
-                if ('invalid_media_url' !== $issue->code && 'external_media_link_failed' !== $issue->code) {
+                if ($issue->countsAsRecord) {
                     'skipped' === $issue->result ? ++$skipped : ++$failed;
                 }
                 $this->recordIssue($run, $offset, $issue, $context);
             }
 
-            $processed = $created + $updated + $skipped + $failed;
-            $terminal = !$page->hasMore;
-            $status = $terminal ? (0 < $run->getFailed() + $failed ? 'completed_with_errors' : 'completed') : 'running';
+            $progress = AfterCoolImportProgress::fromPersisted(
+                $run->getStatus(),
+                $run->getTotal(),
+                $run->getNextOffset(),
+                $run->getProcessed(),
+                $run->getCreated(),
+                $run->getUpdated(),
+                $run->getSkipped(),
+                $run->getFailed(),
+            )->checkpoint(new AfterCoolPageOutcome($offset, $page->total, $created, $updated, $skipped, $failed, $page->hasMore));
+            if ($progress->totalChanged) {
+                $this->recordIssue($run, $offset, new AfterCoolProductIssue(null, 'failed', 'aftercool_total_changed', 'Aftercool page total changed during import.', countsAsRecord: false), $context);
+            }
+            if (!$page->hasMore && $this->hasReportedErrors($run->getId(), $context)) {
+                $progress = $progress->withTerminalErrors();
+            }
             $payload = [
                 'id' => $run->getId(),
-                'status' => $status,
-                'total' => $run->getTotal() ?? $page->total,
-                'nextOffset' => $offset + 100,
-                'processed' => $run->getProcessed() + $processed,
-                'created' => $run->getCreated() + $created,
-                'updated' => $run->getUpdated() + $updated,
-                'skipped' => $run->getSkipped() + $skipped,
-                'failed' => $run->getFailed() + $failed,
+                'status' => $progress->status,
+                'total' => $progress->total,
+                'nextOffset' => $progress->nextOffset,
+                'processed' => $progress->processed,
+                'created' => $progress->created,
+                'updated' => $progress->updated,
+                'skipped' => $progress->skipped,
+                'failed' => $progress->failed,
             ];
-            if ($terminal) {
+            if (!$page->hasMore) {
                 $payload['finishedAt'] = new \DateTimeImmutable();
                 $payload['activeFactoryKey'] = null;
             }
@@ -187,11 +224,34 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
         $sourceCriteria->addFilter(new EqualsFilter('sourceProductId', $product->sourceProductId));
         $source = $this->sourceRepository->search($sourceCriteria, $context)->first();
         if (null !== $source) {
+            if ($source->getSourceEan() !== $product->ean || $source->getSourceArtikelnummer() !== $product->sourceArtikelnummer) {
+                $issues[] = new AfterCoolProductIssue($product->sourceProductId, 'skipped', 'source_identity_conflict', 'Aftercool source identity conflicts with its recorded EAN or Artikelnummer.', $product->sourceArtikelnummer, $product->ean, $product->rowNo);
+
+                return false;
+            }
             $linkedProductId = $source->getProductId();
             if ($this->productRepository->searchIds(new Criteria([$linkedProductId]), $context)->has($linkedProductId)) {
                 return $linkedProductId;
             }
-            $issues[] = new AfterCoolProductIssue($product->sourceProductId, 'skipped', 'missing_linked_product', 'Aftercool source link points to a missing product.');
+            $issues[] = new AfterCoolProductIssue($product->sourceProductId, 'skipped', 'missing_linked_product', 'Aftercool source link points to a missing product.', $product->sourceArtikelnummer, $product->ean, $product->rowNo);
+
+            return false;
+        }
+
+        $sourceArtikelnummerCriteria = $this->sourceIdentityCriteria($product);
+        $sourceArtikelnummerCriteria->addFilter(new EqualsFilter('sourceArtikelnummer', $product->sourceArtikelnummer));
+        $sourceWithArtikelnummer = $this->sourceRepository->search($sourceArtikelnummerCriteria, $context)->first();
+        if (null !== $sourceWithArtikelnummer && $sourceWithArtikelnummer->getId() !== $this->sourceIdentityId($product)) {
+            $issues[] = new AfterCoolProductIssue($product->sourceProductId, 'skipped', 'source_artikelnummer_conflict', 'Aftercool Artikelnummer is already used by another source identity.', $product->sourceArtikelnummer, $product->ean, $product->rowNo);
+
+            return false;
+        }
+
+        $sourceEanCriteria = $this->sourceIdentityCriteria($product);
+        $sourceEanCriteria->addFilter(new EqualsFilter('sourceEan', $product->ean));
+        $sourceWithEan = $this->sourceRepository->search($sourceEanCriteria, $context)->first();
+        if (null !== $sourceWithEan && $sourceWithEan->getId() !== $this->sourceIdentityId($product)) {
+            $issues[] = new AfterCoolProductIssue($product->sourceProductId, 'skipped', 'duplicate_ean_in_factory', 'Duplicate EAN in Aftercool factory.', $product->sourceArtikelnummer, $product->ean, $product->rowNo);
 
             return false;
         }
@@ -199,12 +259,25 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
         $criteria = (new Criteria())->addFilter(new EqualsFilter('productNumber', $product->productNumber));
         $ids = $this->productRepository->searchIds($criteria, $context)->getIds();
         if (1 < count($ids)) {
-            $issues[] = new AfterCoolProductIssue($product->sourceProductId, 'skipped', 'ambiguous_product_number', 'Multiple Shopware products have this EAN.');
+            $issues[] = new AfterCoolProductIssue($product->sourceProductId, 'skipped', 'ambiguous_product_number', 'Multiple Shopware products have this EAN.', $product->sourceArtikelnummer, $product->ean, $product->rowNo);
 
             return false;
         }
 
         return $ids[0] ?? null;
+    }
+
+    private function sourceIdentityCriteria(AfterCoolMappedProduct $product): Criteria
+    {
+        return (new Criteria())
+            ->addFilter(new EqualsFilter('account', $product->account))
+            ->addFilter(new EqualsFilter('dataset', $product->dataset))
+            ->addFilter(new EqualsFilter('factoryId', $product->factoryId));
+    }
+
+    private function sourceIdentityId(AfterCoolMappedProduct $product): string
+    {
+        return Uuid::fromStringToHex(implode(':', ['jvmoebel.aftercool.source', $product->account, $product->dataset, $product->factoryId, $product->sourceProductId]));
     }
 
     private function upsertSourceLink(AfterCoolMappedProduct $product, string $productId, Context $context): void
@@ -214,9 +287,7 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
         $criteria->addFilter(new EqualsFilter('factoryId', $product->factoryId));
         $criteria->addFilter(new EqualsFilter('sourceProductId', $product->sourceProductId));
         $existing = $this->sourceRepository->search($criteria, $context)->first();
-        $sourceId = null === $existing
-            ? Uuid::fromStringToHex(implode(':', ['jvmoebel.aftercool.source', $product->account, $product->dataset, $product->factoryId, $product->sourceProductId]))
-            : $existing->getId();
+        $sourceId = null === $existing ? $this->sourceIdentityId($product) : $existing->getId();
         $this->sourceRepository->upsert([[
             'id' => $sourceId,
             'account' => $product->account,
@@ -238,11 +309,23 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
             'runId' => $run->getId(),
             'factoryId' => $run->getFactoryId(),
             'productId' => $issue->productId,
+            'artikelnummer' => $issue->artikelnummer,
+            'ean' => $issue->ean,
             'offset' => $offset,
+            'rowNo' => $issue->rowNo,
             'result' => $issue->result,
             'code' => $issue->code,
             'message' => $issue->message,
             'createdAt' => new \DateTimeImmutable(),
         ]], $context);
+    }
+
+    private function hasReportedErrors(string $runId, Context $context): bool
+    {
+        $criteria = (new Criteria())->setLimit(1);
+        $criteria->addFilter(new EqualsFilter('runId', $runId));
+        $criteria->addFilter(new EqualsFilter('result', 'failed'));
+
+        return $this->errorRepository->searchIds($criteria, $context)->getTotal() > 0;
     }
 }
