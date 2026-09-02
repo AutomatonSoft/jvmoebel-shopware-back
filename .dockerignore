@@ -7,4 +7,3 @@ var/cache
 var/log
 .env.local
 .env.local.php
-
