@@ -258,6 +258,49 @@
             }
           }
         }
+      },
+      "jv-product-grid": {
+        "label": "Produkt-Grid",
+        "component": {
+          "titlePlaceholder": "Abschnittstitel",
+          "productSlot": "Produkt-Slot {index}",
+          "noProducts": "Keine Produkte konfiguriert"
+        },
+        "config": {
+          "title": {
+            "label": "Abschnittstitel",
+            "placeholder": "Ausgewählte Stücke"
+          },
+          "eyebrow": {
+            "label": "Eyebrow",
+            "placeholder": "Für Sie ausgewählt"
+          },
+          "products": {
+            "title": "Produkte",
+            "add": "Produkt hinzufügen",
+            "remove": "Entfernen",
+            "cardTitle": "Produkt {index}",
+            "productId": {
+              "label": "Produkt",
+              "placeholder": "Produkt auswählen"
+            },
+            "badge": {
+              "label": "Badge",
+              "placeholder": "Bestseller"
+            }
+          },
+          "viewAll": {
+            "title": "Alle-anzeigen-Link",
+            "label": {
+              "label": "Label",
+              "placeholder": "Alle Produkte anzeigen"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/shop"
+            }
+          }
+        }
       }
     },
     "blocks": {
@@ -284,6 +327,9 @@
       },
       "jv-room-grid": {
         "label": "Raum-Grid"
+      },
+      "jv-product-grid": {
+        "label": "Produkt-Grid"
       }
     }
   },
@@ -296,7 +342,8 @@
             "navigation": "Navigation",
             "hero": "Hero",
             "newsletter": "Newsletter",
-            "room": "Raum"
+            "room": "Raum",
+            "commerce": "Commerce"
           }
         }
       }

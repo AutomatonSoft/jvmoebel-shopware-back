@@ -1,0 +1,73 @@
+{% block sw_cms_el_config_jv_product_grid %}
+	<div class="sw-cms-el-config-jv-product-grid">
+		<mt-text-field
+			v-model:model-value="element.config.title.value"
+			:label="$t('cms.elements.jv-product-grid.config.title.label')"
+			:placeholder="$t('cms.elements.jv-product-grid.config.title.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-text-field
+			v-model:model-value="element.config.eyebrow.value"
+			:label="$t('cms.elements.jv-product-grid.config.eyebrow.label')"
+			:placeholder="$t('cms.elements.jv-product-grid.config.eyebrow.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<div class="sw-cms-el-config-jv-product-grid__section">
+			<div class="sw-cms-el-config-jv-product-grid__section-header">
+				<h4>{{ $t('cms.elements.jv-product-grid.config.products.title') }}</h4>
+				<mt-button size="small" variant="secondary" @click="addProduct">
+					{{ $t('cms.elements.jv-product-grid.config.products.add') }}
+				</mt-button>
+			</div>
+
+			<div
+				v-for="(product, productIndex) in products"
+				:key="product.productId || productIndex"
+				class="sw-cms-el-config-jv-product-grid__card"
+			>
+				<div class="sw-cms-el-config-jv-product-grid__card-header">
+					<strong>{{ $t('cms.elements.jv-product-grid.config.products.cardTitle', { index: productIndex + 1 }) }}</strong>
+					<mt-button size="small" variant="critical" @click="removeProduct(productIndex)">
+						{{ $t('cms.elements.jv-product-grid.config.products.remove') }}
+					</mt-button>
+				</div>
+
+				<sw-entity-single-select
+					v-model:value="product.productId"
+					entity="product"
+					:label="$t('cms.elements.jv-product-grid.config.products.productId.label')"
+					:placeholder="$t('cms.elements.jv-product-grid.config.products.productId.placeholder')"
+					show-clearable-button
+					@update:value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="product.badge"
+					:label="$t('cms.elements.jv-product-grid.config.products.badge.label')"
+					:placeholder="$t('cms.elements.jv-product-grid.config.products.badge.placeholder')"
+					@update:model-value="onUpdate"
+				/>
+			</div>
+		</div>
+
+		<div class="sw-cms-el-config-jv-product-grid__section">
+			<h4>{{ $t('cms.elements.jv-product-grid.config.viewAll.title') }}</h4>
+
+			<mt-text-field
+				v-model:model-value="element.config.viewAll.value.label"
+				:label="$t('cms.elements.jv-product-grid.config.viewAll.label.label')"
+				:placeholder="$t('cms.elements.jv-product-grid.config.viewAll.label.placeholder')"
+				@update:model-value="onUpdate"
+			/>
+
+			<mt-text-field
+				v-model:model-value="element.config.viewAll.value.url"
+				:label="$t('cms.elements.jv-product-grid.config.viewAll.url.label')"
+				:placeholder="$t('cms.elements.jv-product-grid.config.viewAll.url.placeholder')"
+				@update:model-value="onUpdate"
+			/>
+		</div>
+	</div>
+{% endblock %}
