@@ -5,7 +5,7 @@ const { Mixin } = Shopware;
 export default {
     template,
 
-    inject: ['acl'],
+    inject: ['acl', 'afterCoolImportApiService'],
 
     mixins: [Mixin.getByName('notification')],
 
@@ -21,7 +21,6 @@ export default {
             errorsPage: 1,
             errorsLimit: 50,
             polling: null,
-            httpClient: null,
             preview: [], previewTotal: 0, factoryTotal: null, previewPage: 1, previewLimit: 25, previewQuery: '', previewLoading: false, previewReady: false, previewRequest: 0, previewDetail: null,
         };
     },
@@ -69,14 +68,13 @@ export default {
 
     methods: {
         async createdComponent() {
-            this.httpClient = Shopware.Application.getContainer('init').httpClient;
             await this.loadFactories();
         },
 
         async loadFactories() {
             this.loadingFactories = true;
             try {
-                const response = await this.httpClient.get('/_action/jv-import/aftercool/factories');
+                const response = await this.afterCoolImportApiService.getFactories();
                 this.factories = response.data.data;
             } catch (error) {
                 this.createNotificationError({ message: this.afterCoolError(error, 'jv-import.aftercool.factoriesError') });
@@ -89,9 +87,7 @@ export default {
             this.stopPolling();
             this.starting = true;
             try {
-                const response = await this.httpClient.post('/_action/jv-import/aftercool/runs', {
-                    factoryId: this.factoryId,
-                });
+                const response = await this.afterCoolImportApiService.createRun(this.factoryId);
                 const runId = response.data.data.id;
                 await this.loadRun(runId);
                 if (this.run?.id === runId && !this.isTerminal(this.run.status)) this.startPolling(runId);
@@ -108,7 +104,7 @@ export default {
             this.previewLoading = true;
             this.previewReady = false;
             try {
-                const response = await this.httpClient.get('/_action/jv-import/aftercool/products', { params: { factoryId: this.factoryId, q: this.previewQuery || undefined, limit: this.previewLimit, offset: (this.previewPage - 1) * this.previewLimit } });
+                const response = await this.afterCoolImportApiService.getProducts({ factoryId: this.factoryId, q: this.previewQuery || undefined, limit: this.previewLimit, offset: (this.previewPage - 1) * this.previewLimit });
                 if (request !== this.previewRequest) return;
                 this.preview = response.data.data;
                 this.previewTotal = response.data.total;
@@ -149,16 +145,14 @@ export default {
         },
 
         async loadRun(id) {
-            const response = await this.httpClient.get(`/_action/jv-import/aftercool/runs/${id}`);
+            const response = await this.afterCoolImportApiService.getRun(id);
             this.run = response.data.data;
             await this.loadErrors(id);
             if (this.isTerminal(this.run.status)) this.stopPolling();
         },
 
         async loadErrors(id) {
-            const response = await this.httpClient.get(`/_action/jv-import/aftercool/runs/${id}/errors`, {
-                params: { limit: this.errorsLimit, offset: (this.errorsPage - 1) * this.errorsLimit },
-            });
+            const response = await this.afterCoolImportApiService.getErrors(id, { limit: this.errorsLimit, offset: (this.errorsPage - 1) * this.errorsLimit });
             this.errors = response.data.data;
             this.errorsTotal = response.data.total;
         },

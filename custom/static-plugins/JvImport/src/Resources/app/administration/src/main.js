@@ -5,6 +5,7 @@ import './extension/sw-product-detail';
 import './extension/sw-product-variants-configurator-selection';
 import './extension/sw-import-export';
 import aftercoolImport from './view/aftercool-import';
+import AfterCoolImportApiService from './service/aftercool-import.api.service';
 
 Shopware.Locale.extend('de-DE', deDE);
 Shopware.Locale.extend('en-GB', enGB);
@@ -39,6 +40,13 @@ importExportIndexRoute.children.push(aftercoolRoute);
 importExportModule.routes.set(aftercoolRoute.name, aftercoolRoute);
 
 Shopware.Component.register('jv-aftercool-import', aftercoolImport);
+
+Shopware.Application.addServiceProvider('afterCoolImportApiService', () => {
+    return new AfterCoolImportApiService(
+        Shopware.Application.getContainer('init').httpClient,
+        Shopware.Service('loginService'),
+    );
+});
 
 Module.register('jv-import', {
     type: 'plugin',
