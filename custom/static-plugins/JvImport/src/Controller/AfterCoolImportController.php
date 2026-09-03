@@ -57,7 +57,9 @@ final class AfterCoolImportController extends AbstractController
             return new JsonResponse(['errors' => [['code' => $exception instanceof AfterCoolApiException ? $exception->safeCode() : 'aftercool_invalid_response', 'detail' => 'Aftercool products could not be loaded.']]], Response::HTTP_BAD_GATEWAY);
         }
 
-        return new JsonResponse([
+        $response = new JsonResponse();
+        $response->setEncodingOptions($response->getEncodingOptions() | JSON_PRESERVE_ZERO_FRACTION);
+        $response->setData([
             'data' => array_map(static fn ($item): array => [
                 'productId' => $item->productId,
                 'artikelnummer' => $item->artikelnummer,
@@ -82,6 +84,7 @@ final class AfterCoolImportController extends AbstractController
             'offset' => $data->offset,
             'hasMore' => $data->hasMore,
         ]);
+        return $response;
     }
 
     #[Route(path: '/api/_action/jv-import/aftercool/factories', name: 'api.action.jv_import.aftercool.factories', methods: ['GET'])]
