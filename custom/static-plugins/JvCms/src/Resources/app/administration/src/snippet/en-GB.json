@@ -114,6 +114,48 @@
             "helpText": "0–20. Default: 8. 0 disables history. Stored only on the storefront (Next.js), not in Shopware."
           }
         }
+      },
+      "jv-hero": {
+        "label": "Hero",
+        "component": {
+          "emptyTitle": "Hero title"
+        },
+        "config": {
+          "title": {
+            "label": "Title",
+            "placeholder": "A home that feels like you."
+          },
+          "eyebrow": {
+            "label": "Eyebrow",
+            "placeholder": "The new living collection"
+          },
+          "description": {
+            "label": "Description",
+            "placeholder": "Furniture selected for everyday living."
+          },
+          "imageMedia": {
+            "label": "Background image",
+            "caption": "Upload hero background image"
+          },
+          "primaryLink": {
+            "title": "Primary CTA"
+          },
+          "secondaryLink": {
+            "title": "Secondary CTA"
+          },
+          "link": {
+            "label": "Label",
+            "labelPlaceholder": "Shop now",
+            "url": "Link",
+            "urlPlaceholder": "/new-in or https://…",
+            "size": {
+              "label": "Size",
+              "small": "Small",
+              "medium": "Medium",
+              "large": "Large"
+            }
+          }
+        }
       }
     },
     "blocks": {
@@ -131,6 +173,9 @@
       },
       "jv-global-search": {
         "label": "Global search"
+      },
+      "jv-hero": {
+        "label": "Hero"
       }
     }
   },
@@ -140,7 +185,8 @@
         "label": {
           "blockCategory": {
             "button": "Button",
-            "navigation": "Navigation"
+            "navigation": "Navigation",
+            "hero": "Hero"
           }
         }
       }
