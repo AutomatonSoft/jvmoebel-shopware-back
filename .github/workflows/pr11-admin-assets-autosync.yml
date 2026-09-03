@@ -56,34 +56,96 @@ jobs:
       - name: Build Administration
         run: bash bin/build-administration.sh
 
-      - name: Diagnose exact generated changes
+      - name: Verify and commit exact trailing-newline delta
         shell: bash
         run: |
-          echo '=== git status --short ==='
-          git status --short
-          echo '=== git diff --stat ==='
-          git diff --stat
-          echo '=== git diff --numstat ==='
-          git diff --numstat
-          echo '=== git diff --name-only ==='
-          git diff --name-only
+          expected=(
+            "custom/static-plugins/JvCms/src/Resources/public/administration/.vite/entrypoints.json"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/.vite/manifest.json"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-4y594tei.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-BG8c_r_5.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-BV_91oRy.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-BXPQdrnq.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-BjK8OV6S.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-BkRS4ViI.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-Bkkg0wAc.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-BrzD2l7m.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-C8LD7UCz.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-CEyP9olc.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-CFNZ1OMU.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-CQWoCPB7.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-CeV1P7Cr.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-CgBpReOW.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-ClqZmAJo.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-CnQI0VhM.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-CrA-vDtU.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-D3wLcUWe.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-DACcPwth.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-DBfWqKbz.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-DY5XNSk7.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-DjWJHxat.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-Dkq-YXWg.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-DlfovZZi.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-Dr_0zyGm.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-DxHonFR6.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-HtzK8l56.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-J2XJsFtK.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-K5gcHN1P.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-ObOHta0Z.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-Uw0WVWRd.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-bSNzF7he.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-dq32JsaK.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-i4eM4r5p.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-nJxTJg3t.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-qY_Pd4R-.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-r8IFyzEM.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-slSekddr.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-wHMRj_2w.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/jv-cms-BjvH6xlG.js.map"
+            "custom/static-plugins/JvImport/src/Resources/public/administration/.vite/entrypoints.json"
+            "custom/static-plugins/JvImport/src/Resources/public/administration/.vite/manifest.json"
+            "custom/static-plugins/JvImport/src/Resources/public/administration/assets/jv-import-B59TPq_A.js.map"
+          )
 
-          unexpected=0
-          while IFS= read -r path; do
-            [[ -z "$path" ]] && continue
-            case "$path" in
-              custom/static-plugins/*/src/Resources/public/administration/.vite/*.json|custom/static-plugins/*/src/Resources/public/administration/assets/*.map)
-                ;;
-              *)
-                echo "::error::Unexpected path class: $path"
-                unexpected=1
-                ;;
-            esac
-          done < <(git diff --name-only)
+          mapfile -t changed < <(git diff --name-only | sort)
 
-          if [[ "$unexpected" -ne 0 ]]; then
+          if [[ "${#changed[@]}" -ne "${#expected[@]}" ]]; then
+            echo "::error::Expected ${#expected[@]} generated changes, got ${#changed[@]}"
+            printf 'Changed: %s\n' "${changed[@]}"
             exit 1
           fi
 
-          echo 'Diagnostic only: no commit or push is performed in this run.'
-          exit 1
+          if ! diff -u \
+            <(printf '%s\n' "${expected[@]}" | sort) \
+            <(printf '%s\n' "${changed[@]}" | sort); then
+            echo "::error::Generated path set differs from the independently diagnosed 45-file set"
+            exit 1
+          fi
+
+          python3 - "${expected[@]}" <<'PY'
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          for path in sys.argv[1:]:
+              before = subprocess.check_output(["git", "show", f"HEAD:{path}"])
+              after = Path(path).read_bytes()
+              if before.endswith(b"\n"):
+                  raise SystemExit(f"baseline unexpectedly already ends with LF: {path}")
+              if after != before + b"\n":
+                  raise SystemExit(f"change is not exactly one appended LF: {path}")
+
+          print(f"Verified exact one-LF-only delta for {len(sys.argv) - 1} files.")
+          PY
+
+          git add -- "${expected[@]}"
+
+          if git diff --cached --quiet; then
+            echo "::error::Expected normalized Administration changes but index is empty"
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "build: normalize administration artifact trailing newlines"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
