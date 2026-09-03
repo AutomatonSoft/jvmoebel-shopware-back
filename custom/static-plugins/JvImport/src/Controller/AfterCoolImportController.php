@@ -66,7 +66,7 @@ final class AfterCoolImportController extends AbstractController
                 'ean' => $item->ean,
                 'name' => $item->name,
                 'manufacturer' => $item->manufacturer,
-                'price' => null === $item->price ? null : (float) $item->price,
+                'price' => $item->price,
                 'stock' => $item->stock,
                 'dimensions' => $item->dimensions,
                 'weight' => $item->weight,
@@ -84,6 +84,7 @@ final class AfterCoolImportController extends AbstractController
             'offset' => $data->offset,
             'hasMore' => $data->hasMore,
         ]);
+
         return $response;
     }
 
