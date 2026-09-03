@@ -156,6 +156,58 @@
             }
           }
         }
+      },
+      "jv-newsletter": {
+        "label": "Newsletter",
+        "component": {
+          "emptyTitle": "Newsletter",
+          "canvasHint": "Email signup block — storefront form is rendered by Next.js"
+        },
+        "config": {
+          "title": {
+            "label": "Title",
+            "placeholder": "Useful ideas, occasionally."
+          },
+          "eyebrow": {
+            "label": "Eyebrow",
+            "placeholder": "The good-room letter"
+          },
+          "description": {
+            "label": "Description",
+            "placeholder": "Room guides, material care and new pieces."
+          },
+          "buttonLabel": {
+            "label": "Button label",
+            "placeholder": "Join us"
+          },
+          "buttonSize": {
+            "label": "Button size",
+            "small": "Small",
+            "medium": "Medium",
+            "large": "Large"
+          },
+          "placeholder": {
+            "label": "Input placeholder",
+            "placeholder": "Your email address"
+          },
+          "storefrontUrl": {
+            "label": "Storefront URL",
+            "placeholder": "https://…",
+            "helpText": "Absolute http(s) origin for newsletter confirmation links. Empty or relative values are rejected in Store API data."
+          },
+          "successMessage": {
+            "label": "Success message",
+            "placeholder": "You are on the list."
+          },
+          "invalidEmailMessage": {
+            "label": "Invalid email message",
+            "placeholder": "Enter a valid email address."
+          },
+          "errorMessage": {
+            "label": "Error message",
+            "placeholder": "Subscription failed. Please try again."
+          }
+        }
       }
     },
     "blocks": {
@@ -176,6 +228,9 @@
       },
       "jv-hero": {
         "label": "Hero"
+      },
+      "jv-newsletter": {
+        "label": "Newsletter"
       }
     }
   },
@@ -186,7 +241,8 @@
           "blockCategory": {
             "button": "Button",
             "navigation": "Navigation",
-            "hero": "Hero"
+            "hero": "Hero",
+            "newsletter": "Newsletter"
           }
         }
       }

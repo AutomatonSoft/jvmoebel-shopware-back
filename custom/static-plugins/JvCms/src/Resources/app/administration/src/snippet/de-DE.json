@@ -156,6 +156,58 @@
             }
           }
         }
+      },
+      "jv-newsletter": {
+        "label": "Newsletter",
+        "component": {
+          "emptyTitle": "Newsletter",
+          "canvasHint": "E-Mail-Anmeldeblock — Formular rendert Next.js"
+        },
+        "config": {
+          "title": {
+            "label": "Titel",
+            "placeholder": "Ab und zu nützliche Ideen."
+          },
+          "eyebrow": {
+            "label": "Eyebrow",
+            "placeholder": "Der Good-Room-Letter"
+          },
+          "description": {
+            "label": "Beschreibung",
+            "placeholder": "Raumguides, Materialpflege und neue Stücke."
+          },
+          "buttonLabel": {
+            "label": "Button-Beschriftung",
+            "placeholder": "Mitmachen"
+          },
+          "buttonSize": {
+            "label": "Button-Größe",
+            "small": "Klein",
+            "medium": "Mittel",
+            "large": "Groß"
+          },
+          "placeholder": {
+            "label": "Eingabe-Platzhalter",
+            "placeholder": "Deine E-Mail-Adresse"
+          },
+          "storefrontUrl": {
+            "label": "Storefront-URL",
+            "placeholder": "https://…",
+            "helpText": "Absoluter http(s)-Origin für Newsletter-Bestätigungslinks. Leere oder relative Werte werden in den Store-API-Daten verworfen."
+          },
+          "successMessage": {
+            "label": "Erfolgsmeldung",
+            "placeholder": "Du bist auf der Liste."
+          },
+          "invalidEmailMessage": {
+            "label": "Meldung bei ungültiger E-Mail",
+            "placeholder": "Bitte eine gültige E-Mail-Adresse eingeben."
+          },
+          "errorMessage": {
+            "label": "Fehlermeldung",
+            "placeholder": "Anmeldung fehlgeschlagen. Bitte erneut versuchen."
+          }
+        }
       }
     },
     "blocks": {
@@ -176,6 +228,9 @@
       },
       "jv-hero": {
         "label": "Hero"
+      },
+      "jv-newsletter": {
+        "label": "Newsletter"
       }
     }
   },
@@ -186,7 +241,8 @@
           "blockCategory": {
             "button": "Button",
             "navigation": "Navigation",
-            "hero": "Hero"
+            "hero": "Hero",
+            "newsletter": "Newsletter"
           }
         }
       }

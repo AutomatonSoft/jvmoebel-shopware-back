@@ -1,0 +1,14 @@
+.sw-cms-preview-jv-newsletter {
+    align-items: flex-end;
+    background: #ded2c4;
+    border: 1px solid #cbbdad;
+    border-radius: 4px;
+    display: flex;
+    min-height: 80px;
+    padding: 12px;
+
+    &__label {
+        font-size: 12px;
+        font-weight: 600;
+    }
+}

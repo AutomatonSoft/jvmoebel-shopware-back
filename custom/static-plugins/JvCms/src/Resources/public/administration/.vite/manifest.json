@@ -1,6 +1,6 @@
 {
   "main.js": {
-    "file": "assets/jv-cms-iHm_8-xP.js",
+    "file": "assets/jv-cms-DOO7jMxQ.js",
     "name": "jv-cms",
     "src": "main.js",
     "isEntry": true,
@@ -28,7 +28,12 @@
       "module/sw-cms/elements/jv-hero/config/index.js",
       "module/sw-cms/elements/jv-hero/component/index.js",
       "module/sw-cms/blocks/jv-hero/jv-hero/preview/index.js",
-      "module/sw-cms/blocks/jv-hero/jv-hero/component/index.js"
+      "module/sw-cms/blocks/jv-hero/jv-hero/component/index.js",
+      "module/sw-cms/elements/jv-newsletter/preview/index.js",
+      "module/sw-cms/elements/jv-newsletter/config/index.js",
+      "module/sw-cms/elements/jv-newsletter/component/index.js",
+      "module/sw-cms/blocks/jv-newsletter/jv-newsletter/preview/index.js",
+      "module/sw-cms/blocks/jv-newsletter/jv-newsletter/component/index.js"
     ]
   },
   "module/sw-cms/blocks/jv-button/jv-button-link/component/index.js": {
@@ -104,6 +109,21 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-BT4Uv-nv.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-newsletter/jv-newsletter/component/index.js": {
+    "file": "assets/index-DBfWqKbz.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-newsletter/jv-newsletter/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-newsletter/jv-newsletter/preview/index.js": {
+    "file": "assets/index-Bkkg0wAc.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-newsletter/jv-newsletter/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CGHWm_mD.css"
     ]
   },
   "module/sw-cms/blocks/jv-side-navigation/jv-side-navigation/component/index.js": {
@@ -197,6 +217,33 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-CXkpjpEl.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-newsletter/component/index.js": {
+    "file": "assets/index-wHMRj_2w.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-newsletter/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-B0g3QNG1.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-newsletter/config/index.js": {
+    "file": "assets/index-slSekddr.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-newsletter/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-Bz7bHu-Q.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-newsletter/preview/index.js": {
+    "file": "assets/index-DjWJHxat.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-newsletter/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CWD0PwKz.css"
     ]
   },
   "module/sw-cms/elements/jv-side-navigation/component/index.js": {

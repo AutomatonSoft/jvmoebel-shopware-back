@@ -83,3 +83,4 @@ SPEC-NNN-short-name.md
 | [SPEC-006-cms-global-search](SPEC-006-cms-global-search.md) | Backend CMS element/block `jv-global-search` + Store API suggest/full search (OpenSearch, `suggestMinChars`, интерпретация property filters); контракт — platform SPEC-004 |
 | [SPEC-007-cms-product-filter](SPEC-007-cms-product-filter.md) | Backend CMS element/block `jv-product-filter` + фасеты PLP; контракт — platform SPEC-005 |
 | [SPEC-008-cms-hero](SPEC-008-cms-hero.md) | Backend CMS element/block `jv-hero` (баннер); контракт — platform SPEC-006 |
+| [SPEC-009-cms-newsletter](SPEC-009-cms-newsletter.md) | Backend CMS element/block `jv-newsletter` (подписка); контракт — platform SPEC-007 |
