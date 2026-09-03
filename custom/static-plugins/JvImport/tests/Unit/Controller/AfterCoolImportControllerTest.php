@@ -3,13 +3,13 @@
 namespace Jv\Import\Tests\Unit\Controller;
 
 use Jv\Import\Controller\AfterCoolImportController;
-use Jv\Import\Integration\AfterCool\AfterCoolApiClientInterface;
-use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductPage;
 use Jv\Import\Integration\AfterCool\Exception\AfterCoolApiException;
+use Jv\Import\Service\AfterCool\AfterCoolProductPreviewService;
 use Jv\Import\Service\AfterCool\Contract\AfterCoolImportRunStore;
-use Jv\Import\Service\AfterCool\Contract\AfterCoolProductPreviewProviderInterface;
 use Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolProductPageMappingResult;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolProductPreviewItem;
+use Jv\Import\Service\AfterCool\ListAfterCoolFactoriesService;
 use Jv\Import\Service\AfterCool\StartAfterCoolImportService;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -22,21 +22,13 @@ final class AfterCoolImportControllerTest extends TestCase
 {
     public function testProductsReturnsPreviewPaginationAndCuratedRows(): void
     {
-        $preview = $this->createMock(AfterCoolProductPreviewProviderInterface::class);
-        $preview->expects(self::once())->method('preview')->with(504034, 25, 50, 'sofa')->willReturn([
-            'items' => [['productId' => '900001', 'name' => 'Sofa', 'importable' => true, 'issues' => []]],
-            'total' => 102,
-            'limit' => 25,
-            'offset' => 50,
-            'hasMore' => true,
-        ]);
+        $source = $this->source(new AfterCoolProductPageMappingResult([], [], [new AfterCoolProductPreviewItem('900001', '900001', '4260174423463', 'Sofa', null, 10.0, 1, null, null, null, null, null, null, [], true, [])], 102, 50, true));
 
-        $response = $this->controller($preview)->products(Request::create('/api/_action/jv-import/aftercool/products', 'GET', ['factoryId' => '504034', 'limit' => '25', 'offset' => '50', 'q' => 'sofa']));
+        $response = $this->controller($source)->products(Request::create('/api/_action/jv-import/aftercool/products', 'GET', ['factoryId' => '504034', 'limit' => '25', 'offset' => '50', 'q' => 'sofa']));
 
         self::assertSame(200, $response->getStatusCode());
         self::assertSame([
-            'data' => [['productId' => '900001', 'name' => 'Sofa', 'importable' => true, 'issues' => []],
-            ],
+            'data' => [['productId' => '900001', 'artikelnummer' => '900001', 'ean' => '4260174423463', 'name' => 'Sofa', 'manufacturer' => null, 'price' => 10.0, 'stock' => 1, 'dimensions' => null, 'weight' => null, 'previewImage' => null, 'updatedAt' => null, 'sourceFile' => null, 'sourceKind' => null, 'description' => null, 'mediaUrls' => [], 'importable' => true, 'issues' => []]],
             'total' => 102,
             'limit' => 25,
             'offset' => 50,
@@ -46,10 +38,7 @@ final class AfterCoolImportControllerTest extends TestCase
 
     public function testProductsRejectsAnInvalidFactoryId(): void
     {
-        $preview = $this->createMock(AfterCoolProductPreviewProviderInterface::class);
-        $preview->expects(self::never())->method('preview');
-
-        $response = $this->controller($preview)->products(Request::create('/api/_action/jv-import/aftercool/products', 'GET', ['factoryId' => '0']));
+        $response = $this->controller($this->source())->products(Request::create('/api/_action/jv-import/aftercool/products', 'GET', ['factoryId' => '0']));
 
         self::assertSame(400, $response->getStatusCode());
         self::assertSame('invalid_factory_id', json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR)['errors'][0]['code']);
@@ -57,10 +46,7 @@ final class AfterCoolImportControllerTest extends TestCase
 
     public function testProductsReturnsASafeGatewayErrorForAftercoolFailure(): void
     {
-        $preview = $this->createMock(AfterCoolProductPreviewProviderInterface::class);
-        $preview->method('preview')->willThrowException(AfterCoolApiException::transport(new \RuntimeException('secret')));
-
-        $response = $this->controller($preview)->products(Request::create('/api/_action/jv-import/aftercool/products', 'GET', ['factoryId' => '504034']));
+        $response = $this->controller($this->source(null, AfterCoolApiException::transport(new \RuntimeException('secret'))))->products(Request::create('/api/_action/jv-import/aftercool/products', 'GET', ['factoryId' => '504034']));
 
         self::assertSame(502, $response->getStatusCode());
         $payload = json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR);
@@ -68,21 +54,24 @@ final class AfterCoolImportControllerTest extends TestCase
         self::assertSame('Aftercool products could not be loaded.', $payload['errors'][0]['detail']);
     }
 
-    private function controller(AfterCoolProductPreviewProviderInterface $preview): AfterCoolImportController
+    private function controller(AfterCoolProductSourceInterface $source): AfterCoolImportController
     {
-        $api = new class implements AfterCoolApiClientInterface {
-            public function getFactories(): array
+        return new AfterCoolImportController(
+            new ListAfterCoolFactoriesService($source),
+            new StartAfterCoolImportService($source, $this->createMock(AfterCoolImportRunStore::class), $this->createMock(MessageBusInterface::class), new LockFactory(new FlockStore(sys_get_temp_dir()))),
+            $this->createMock(EntityRepository::class),
+            $this->createMock(EntityRepository::class),
+            new AfterCoolProductPreviewService($source),
+        );
+    }
+
+    private function source(?AfterCoolProductPageMappingResult $page = null, ?\Throwable $failure = null): AfterCoolProductSourceInterface
+    {
+        return new class($page, $failure) implements AfterCoolProductSourceInterface {
+            public function __construct(private readonly ?AfterCoolProductPageMappingResult $page, private readonly ?\Throwable $failure)
             {
-                return [];
             }
 
-            public function getProductPage(int $factoryId, int $offset): AfterCoolProductPage
-            {
-                throw new \LogicException('Not used by preview endpoint.');
-            }
-        };
-
-        $source = new class implements AfterCoolProductSourceInterface {
             public function getFactories(): array
             {
                 return [];
@@ -94,16 +83,12 @@ final class AfterCoolImportControllerTest extends TestCase
                 int $limit = 100,
                 ?string $query = null,
             ): AfterCoolProductPageMappingResult {
-                throw new \LogicException('Not used by controller preview tests.');
+                if (null !== $this->failure) {
+                    throw $this->failure;
+                }
+
+                return $this->page ?? new AfterCoolProductPageMappingResult([], [], [], 0, $offset, false);
             }
         };
-
-        return new AfterCoolImportController(
-            $api,
-            new StartAfterCoolImportService($source, $this->createMock(AfterCoolImportRunStore::class), $this->createMock(MessageBusInterface::class), new LockFactory(new FlockStore(sys_get_temp_dir()))),
-            $this->createMock(EntityRepository::class),
-            $this->createMock(EntityRepository::class),
-            $preview,
-        );
     }
 }

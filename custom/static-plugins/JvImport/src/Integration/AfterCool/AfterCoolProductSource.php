@@ -8,6 +8,7 @@ use Jv\Import\Service\AfterCool\Dto\AfterCoolFactory;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolMappedProduct;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolProductIssue;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolProductPageMappingResult;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolProductPreviewItem;
 
 final readonly class AfterCoolProductSource implements AfterCoolProductSourceInterface
 {
@@ -35,9 +36,30 @@ final readonly class AfterCoolProductSource implements AfterCoolProductSourceInt
         $page = $this->client->getProductPage($factoryId, $offset, $limit, $query);
         $mapping = $this->pageMapper->map($page);
 
+        $products = array_map([$this, 'product'], $mapping->products);
+        $issues = array_map([$this, 'issue'], $mapping->issues);
+        $productBySourceId = [];
+        foreach ($products as $product) {
+            $productBySourceId[$product->sourceProductId] = $product;
+        }
+        $issuesByProductId = [];
+        foreach ($issues as $issue) {
+            if (null !== $issue->productId) {
+                $issuesByProductId[$issue->productId][] = $issue->code;
+            }
+        }
+
         return new AfterCoolProductPageMappingResult(
-            array_map([$this, 'product'], $mapping->products),
-            array_map([$this, 'issue'], $mapping->issues),
+            $products,
+            $issues,
+            array_map(
+                fn (Dto\AfterCoolProductItem|Dto\AfterCoolInvalidProductItem $item): AfterCoolProductPreviewItem => $this->previewItem(
+                    $item,
+                    $productBySourceId[$item->productId] ?? null,
+                    $issuesByProductId[$item->productId] ?? [],
+                ),
+                $page->items,
+            ),
             $page->total,
             $page->offset,
             $page->hasMore,
@@ -81,6 +103,29 @@ final readonly class AfterCoolProductSource implements AfterCoolProductSourceInt
             $issue->ean,
             $issue->rowNo,
             $issue->countsAsRecord,
+        );
+    }
+
+    /** @param list<string> $issues */
+    private function previewItem(Dto\AfterCoolProductItem|Dto\AfterCoolInvalidProductItem $item, ?AfterCoolMappedProduct $product, array $issues): AfterCoolProductPreviewItem
+    {
+        return new AfterCoolProductPreviewItem(
+            $item->productId ?? '',
+            $item->artikelnummer ?? '',
+            $item->ean ?? '',
+            $product?->name,
+            $product?->manufacturer,
+            $product?->grossPrice,
+            $product?->stock,
+            $product?->dimensions,
+            $product?->weight,
+            $product?->updatedAt,
+            $product?->sourceFile,
+            $product?->sourceKind,
+            $product?->description,
+            null === $product ? [] : $product->mediaUrls,
+            [] === $issues && null !== $product?->grossPrice && 0.0 < $product->grossPrice,
+            $issues,
         );
     }
 }
