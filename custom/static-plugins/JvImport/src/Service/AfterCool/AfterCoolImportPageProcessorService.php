@@ -133,12 +133,12 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
             $successful = array_fill_keys($writeResult->successfulSourceProductIds, true);
             $created = 0;
             $updated = 0;
-            foreach ($products as $sourceProductId => [$product, $resolvedProduct, $productId]) {
-                if (!isset($successful[$sourceProductId])) {
+            foreach ($products as [$product, $resolvedProduct, $productId]) {
+                if (!isset($successful[$product->sourceProductId])) {
                     continue;
                 }
                 $this->upsertSourceLink($product, $resolvedProduct->sourceLinkId, $productId, $context);
-                $this->mediaStage->stage($run->getId(), $offset, $sourceProductId, $productId, $product->mediaUrls, $resolvedProduct->hasCover);
+                $this->mediaStage->stage($run->getId(), $offset, $product->sourceProductId, $productId, $product->mediaUrls, $resolvedProduct->hasCover);
                 if ($resolvedProduct->isNew()) {
                     ++$created;
                 } else {
