@@ -7,11 +7,10 @@ use Jv\Import\Core\Content\AfterCoolImportError\AfterCoolImportErrorCollection;
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunCollection;
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunEntity;
 use Jv\Import\Core\Content\AfterCoolProductSource\AfterCoolProductSourceCollection;
-use Jv\Import\Integration\AfterCool\AfterCoolApiClientInterface;
-use Jv\Import\Integration\AfterCool\Dto\AfterCoolMappedProduct;
-use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductIssue;
-use Jv\Import\Integration\AfterCool\Mapper\AfterCoolProductPageMapper;
 use Jv\Import\Service\AfterCool\Contract\AfterCoolImportPageProcessor;
+use Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolMappedProduct;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolProductIssue;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolProductWriteValidationException;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolUnexpectedPageOffsetException;
 use Jv\Import\Service\ProductImport\ResolveDefaultProductTaxService;
@@ -40,8 +39,7 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
      * @param EntityRepository<AfterCoolImportErrorCollection>   $errorRepository
      */
     public function __construct(
-        private AfterCoolApiClientInterface $client,
-        private AfterCoolProductPageMapper $pageMapper,
+        private AfterCoolProductSourceInterface $source,
         private BuildAfterCoolShopwareProductRecordService $recordBuilder,
         private AfterCoolSyncBatchWriter $writer,
         private AfterCoolExternalMediaLinkService $mediaLinks,
@@ -83,8 +81,8 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
             throw new AfterCoolUnexpectedPageOffsetException();
         }
 
-        $page = $this->client->getProductPage($run->getFactoryId(), $offset);
-        $mapping = $this->pageMapper->map($page);
+        $page = $this->source->getProductPage($run->getFactoryId(), $offset);
+        $mapping = $page;
         $tax = $this->defaultTax->execute();
         $records = [];
         $products = [];

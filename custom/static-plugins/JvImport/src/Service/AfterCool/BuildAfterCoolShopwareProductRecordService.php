@@ -2,7 +2,7 @@
 
 namespace Jv\Import\Service\AfterCool;
 
-use Jv\Import\Integration\AfterCool\Dto\AfterCoolMappedProduct;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolMappedProduct;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolProductWriteValidationException;
 use Jv\Import\Service\ProductImport\ProductImportIdentity;
 

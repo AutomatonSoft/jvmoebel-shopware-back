@@ -97,6 +97,11 @@
         <service id="Jv\Import\Integration\AfterCool\AfterCoolApiClientInterface" alias="Jv\Import\Integration\AfterCool\AfterCoolApiClient"/>
         <service id="Jv\Import\Integration\AfterCool\Contract\AfterCoolApiClientInterface" alias="Jv\Import\Integration\AfterCool\AfterCoolApiClient"/>
         <service id="Jv\Import\Integration\AfterCool\Contract\AfterCoolProductPageReaderInterface" alias="Jv\Import\Integration\AfterCool\AfterCoolApiClient"/>
+        <service id="Jv\Import\Integration\AfterCool\AfterCoolProductSource">
+            <argument type="service" id="Jv\Import\Integration\AfterCool\AfterCoolApiClient"/>
+            <argument type="service" id="Jv\Import\Integration\AfterCool\Mapper\AfterCoolProductPageMapper"/>
+        </service>
+        <service id="Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface" alias="Jv\Import\Integration\AfterCool\AfterCoolProductSource"/>
         <service id="Jv\Import\Service\AfterCool\Contract\AfterCoolImportRunStore" alias="Jv\Import\Service\AfterCool\AfterCoolImportRunStoreService"/>
         <service id="Jv\Import\Service\AfterCool\AfterCoolSyncBatchWriter">
             <argument type="service" id="Shopware\Core\Framework\Api\Sync\SyncService"/>
@@ -106,8 +111,7 @@
         <service id="Jv\Import\Service\AfterCool\AfterCoolProductPreviewService"/>
         <service id="Jv\Import\Service\AfterCool\Contract\AfterCoolProductPreviewProviderInterface" alias="Jv\Import\Service\AfterCool\AfterCoolProductPreviewService"/>
         <service id="Jv\Import\Service\AfterCool\AfterCoolImportPageProcessorService">
-            <argument type="service" id="Jv\Import\Integration\AfterCool\AfterCoolApiClientInterface"/>
-            <argument type="service" id="Jv\Import\Integration\AfterCool\Mapper\AfterCoolProductPageMapper"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface"/>
             <argument type="service" id="Jv\Import\Service\AfterCool\BuildAfterCoolShopwareProductRecordService"/>
             <argument type="service" id="Jv\Import\Service\AfterCool\AfterCoolSyncBatchWriter"/>
             <argument type="service" id="Jv\Import\Service\AfterCool\AfterCoolExternalMediaLinkService"/>
@@ -121,7 +125,7 @@
         </service>
         <service id="Jv\Import\Service\AfterCool\Contract\AfterCoolImportPageProcessor" alias="Jv\Import\Service\AfterCool\AfterCoolImportPageProcessorService"/>
         <service id="Jv\Import\Service\AfterCool\StartAfterCoolImportService">
-            <argument type="service" id="Jv\Import\Integration\AfterCool\AfterCoolApiClientInterface"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface"/>
             <argument type="service" id="Jv\Import\Service\AfterCool\AfterCoolImportRunStoreService"/>
             <argument type="service" id="messenger.bus.default"/>
             <argument type="service" id="lock.factory"/>

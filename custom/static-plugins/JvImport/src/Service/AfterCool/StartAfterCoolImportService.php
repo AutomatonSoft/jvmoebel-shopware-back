@@ -2,9 +2,9 @@
 
 namespace Jv\Import\Service\AfterCool;
 
-use Jv\Import\Integration\AfterCool\AfterCoolApiClientInterface;
 use Jv\Import\Message\AfterCoolImportPageMessage;
 use Jv\Import\Service\AfterCool\Contract\AfterCoolImportRunStore;
+use Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolFactoryNotFoundException;
 use Shopware\Core\Framework\Context;
 use Symfony\Component\Lock\LockFactory;
@@ -12,8 +12,12 @@ use Symfony\Component\Messenger\MessageBusInterface;
 
 final readonly class StartAfterCoolImportService
 {
-    public function __construct(private AfterCoolApiClientInterface $api, private AfterCoolImportRunStore $runs, private MessageBusInterface $messageBus, private LockFactory $lockFactory)
-    {
+    public function __construct(
+        private AfterCoolProductSourceInterface $source,
+        private AfterCoolImportRunStore $runs,
+        private MessageBusInterface $messageBus,
+        private LockFactory $lockFactory,
+    ) {
     }
 
     public function start(int $factoryId, Context $context): string
@@ -21,7 +25,7 @@ final readonly class StartAfterCoolImportService
         $lock = $this->lockFactory->createLock('jv-aftercool-factory-'.$factoryId, 10.0);
         $lock->acquire(true);
         try {
-            foreach ($this->api->getFactories() as $factory) {
+            foreach ($this->source->getFactories() as $factory) {
                 if ($factory->id === $factoryId) {
                     $runId = $this->runs->createQueued($factory->id, $factory->name, 'JV:lister:'.$factory->id, $context);
                     try {

@@ -8,6 +8,8 @@ use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductPage;
 use Jv\Import\Integration\AfterCool\Exception\AfterCoolApiException;
 use Jv\Import\Service\AfterCool\Contract\AfterCoolImportRunStore;
 use Jv\Import\Service\AfterCool\Contract\AfterCoolProductPreviewProviderInterface;
+use Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolProductPageMappingResult;
 use Jv\Import\Service\AfterCool\StartAfterCoolImportService;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -80,9 +82,25 @@ final class AfterCoolImportControllerTest extends TestCase
             }
         };
 
+        $source = new class implements AfterCoolProductSourceInterface {
+            public function getFactories(): array
+            {
+                return [];
+            }
+
+            public function getProductPage(
+                int $factoryId,
+                int $offset,
+                int $limit = 100,
+                ?string $query = null,
+            ): AfterCoolProductPageMappingResult {
+                throw new \LogicException('Not used by controller preview tests.');
+            }
+        };
+
         return new AfterCoolImportController(
             $api,
-            new StartAfterCoolImportService($api, $this->createMock(AfterCoolImportRunStore::class), $this->createMock(MessageBusInterface::class), new LockFactory(new FlockStore(sys_get_temp_dir()))),
+            new StartAfterCoolImportService($source, $this->createMock(AfterCoolImportRunStore::class), $this->createMock(MessageBusInterface::class), new LockFactory(new FlockStore(sys_get_temp_dir()))),
             $this->createMock(EntityRepository::class),
             $this->createMock(EntityRepository::class),
             $preview,

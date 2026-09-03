@@ -3,11 +3,11 @@
 namespace Jv\Import\Tests\Integration\AfterCool;
 
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
-use Jv\Import\Integration\AfterCool\AfterCoolApiClientInterface;
-use Jv\Import\Integration\AfterCool\Dto\AfterCoolFactory;
-use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductPage;
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunCollection;
 use Jv\Import\Service\AfterCool\AfterCoolImportRunStoreService;
+use Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolFactory;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolProductPageMappingResult;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolFactoryImportAlreadyRunningException;
 use Jv\Import\Service\AfterCool\StartAfterCoolImportService;
 use PHPUnit\Framework\TestCase;
@@ -72,13 +72,13 @@ final class AfterCoolImportPersistenceTest extends TestCase
         $messageBus = $this->createMock(MessageBusInterface::class);
         $messageBus->expects(self::once())->method('dispatch')->willReturn(new Envelope(new \stdClass()));
         $service = new StartAfterCoolImportService(
-            new class implements AfterCoolApiClientInterface {
+            new class implements AfterCoolProductSourceInterface {
                 public function getFactories(): array
                 {
                     return [new AfterCoolFactory(504034, 'Test factory')];
                 }
 
-                public function getProductPage(int $factoryId, int $offset): AfterCoolProductPage
+                public function getProductPage(int $factoryId, int $offset, int $limit = 100, ?string $query = null): AfterCoolProductPageMappingResult
                 {
                     throw new \LogicException('Not used while starting a run.');
                 }

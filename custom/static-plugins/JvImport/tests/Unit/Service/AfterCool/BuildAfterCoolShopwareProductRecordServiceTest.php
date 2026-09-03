@@ -5,6 +5,7 @@ namespace Jv\Import\Tests\Unit\Service\AfterCool;
 use Jv\Import\Integration\AfterCool\AfterCoolResponseNormalizer;
 use Jv\Import\Integration\AfterCool\Mapper\AfterCoolListerProductMapper;
 use Jv\Import\Service\AfterCool\BuildAfterCoolShopwareProductRecordService;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolMappedProduct;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolProductWriteValidationException;
 use Jv\Import\Service\ProductImport\ProductImportIdentity;
 use PHPUnit\Framework\TestCase;
@@ -106,6 +107,23 @@ final class BuildAfterCoolShopwareProductRecordServiceTest extends TestCase
         }
         $page = (new AfterCoolResponseNormalizer())->normalizeProductPage($payload, 'JV', 'lister', 504034, 0);
 
-        return (new AfterCoolListerProductMapper())->map($page->items[$index]);
+        $mapped = (new AfterCoolListerProductMapper())->map($page->items[$index]);
+
+        return new AfterCoolMappedProduct(
+            $mapped->account,
+            $mapped->dataset,
+            $mapped->factoryId,
+            $mapped->sourceProductId,
+            $mapped->sourceArtikelnummer,
+            $mapped->ean,
+            $mapped->productNumber,
+            $mapped->name,
+            $mapped->rowNo,
+            $mapped->grossPrice,
+            $mapped->stock,
+            $mapped->description,
+            $mapped->mediaUrls,
+            [],
+        );
     }
 }
