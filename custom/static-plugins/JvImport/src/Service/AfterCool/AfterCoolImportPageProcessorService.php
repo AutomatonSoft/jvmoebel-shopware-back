@@ -42,7 +42,7 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
         private AfterCoolProductSourceInterface $source,
         private BuildAfterCoolShopwareProductRecordService $recordBuilder,
         private AfterCoolSyncBatchWriter $writer,
-        private AfterCoolExternalMediaLinkService $mediaLinks,
+        private AfterCoolMediaStageService $mediaStage,
         private ResolveDefaultProductTaxService $defaultTax,
         private EntityRepository $runRepository,
         private EntityRepository $sourceRepository,
@@ -127,24 +127,7 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
         }
 
         $this->connection->transactional(function () use ($run, $page, $offset, $records, $products, &$issues, $context): void {
-            $recordsWithMedia = [];
-            foreach ($records as $record) {
-                [$product, , $productId] = $products[$record->sourceProductId];
-                $payload = $record->payload;
-                $media = $this->mediaLinks->link($productId, $product->mediaUrls, $this->existingCoverId($productId, $context), $context);
-                if ([] !== $media->productMedia) {
-                    $payload['media'] = $media->productMedia;
-                }
-                if (null !== $media->coverId) {
-                    $payload['coverId'] = $media->coverId;
-                }
-                foreach ($media->issues as $mediaIssue) {
-                    $issues[] = new AfterCoolProductIssue($product->sourceProductId, 'failed', $mediaIssue->code, $mediaIssue->message, $product->sourceArtikelnummer, $product->ean, $product->rowNo, false);
-                }
-                $recordsWithMedia[] = new AfterCoolProductWriteRecord($record->sourceProductId, $payload);
-            }
-
-            $writeResult = $this->writer->write($recordsWithMedia, $context);
+            $writeResult = $this->writer->write($records, $context);
             foreach ($writeResult->failures as $failure) {
                 [$product] = $products[$failure->sourceProductId] ?? [null];
                 $issues[] = new AfterCoolProductIssue($failure->sourceProductId, 'failed', $failure->code, $failure->message, $product?->sourceArtikelnummer, $product?->ean, $product?->rowNo);
@@ -157,6 +140,7 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
                     continue;
                 }
                 $this->upsertSourceLink($product, $productId, $context);
+                $this->mediaStage->stage($run->getId(), $offset, $sourceProductId, $productId, $product->mediaUrls, null !== $this->existingCoverId($productId, $context));
                 if ($isNew) {
                     ++$created;
                 } else {

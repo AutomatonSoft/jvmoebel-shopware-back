@@ -114,7 +114,7 @@
             <argument type="service" id="Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface"/>
             <argument type="service" id="Jv\Import\Service\AfterCool\BuildAfterCoolShopwareProductRecordService"/>
             <argument type="service" id="Jv\Import\Service\AfterCool\AfterCoolSyncBatchWriter"/>
-            <argument type="service" id="Jv\Import\Service\AfterCool\AfterCoolExternalMediaLinkService"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\AfterCoolMediaStageService"/>
             <argument type="service" id="Jv\Import\Service\ProductImport\ResolveDefaultProductTaxService"/>
             <argument type="service" id="jv_aftercool_import_run.repository"/>
             <argument type="service" id="jv_aftercool_product_source.repository"/>
