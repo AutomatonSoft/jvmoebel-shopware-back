@@ -12,6 +12,7 @@ use Jv\Import\Message\AfterCoolImportPageMessage;
 use Jv\Import\Service\AfterCool\AfterCoolExternalMediaLinkService;
 use Jv\Import\Service\AfterCool\AfterCoolImportPageProcessorService;
 use Jv\Import\Service\AfterCool\AfterCoolImportRunStoreService;
+use Jv\Import\Service\AfterCool\AfterCoolMediaStageService;
 use Jv\Import\Service\ProductImport\ProductImportIdentity;
 use Jv\Import\Service\ProductImport\ResolveDefaultProductTaxService;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
@@ -158,6 +159,37 @@ final class AfterCoolImportWorkflowTest extends TestCase
         self::assertSame($this->ean(1), $this->response()['data'][0]['ean']);
         self::assertSame('workflow-1', $this->response()['data'][0]['productId']);
         self::assertArrayNotHasKey('row', $this->response()['data'][0]);
+    }
+
+    public function testMediaStagePersistsBinaryTaskIdentifiers(): void
+    {
+        $context = $this->prepare([]);
+        $runId = static::getContainer()->get(AfterCoolImportRunStoreService::class)->createQueued(
+            self::FACTORY_ID,
+            'Workflow factory',
+            'JV:lister:'.self::FACTORY_ID,
+            $context,
+        );
+        $productId = Uuid::randomHex();
+
+        static::getContainer()->get(AfterCoolMediaStageService::class)->stage(
+            $runId,
+            0,
+            'numeric-source-id',
+            $productId,
+            ['https://example.test/image.jpg'],
+            false,
+        );
+
+        $task = static::getContainer()->get(Connection::class)->fetchAssociative(
+            'SELECT `id`, `run_id`, `product_id` FROM `jv_aftercool_media_stage` WHERE `run_id` = :runId',
+            ['runId' => Uuid::fromHexToBytes($runId)],
+        );
+
+        self::assertIsArray($task);
+        self::assertSame(16, strlen($task['id']));
+        self::assertSame(Uuid::fromHexToBytes($runId), $task['run_id']);
+        self::assertSame(Uuid::fromHexToBytes($productId), $task['product_id']);
     }
 
     public function testTransientApiFailureDoesNotAdvanceTheCheckpointAndCanBeRetried(): void

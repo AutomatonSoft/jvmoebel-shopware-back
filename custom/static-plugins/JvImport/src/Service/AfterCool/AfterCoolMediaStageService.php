@@ -3,6 +3,7 @@
 namespace Jv\Import\Service\AfterCool;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ParameterType;
 use Shopware\Core\Framework\Uuid\Uuid;
 
 final readonly class AfterCoolMediaStageService
@@ -23,7 +24,7 @@ final readonly class AfterCoolMediaStageService
                     ON DUPLICATE KEY UPDATE `updated_at` = NOW(3)
                     SQL,
                 [
-                    'id' => Uuid::fromStringToHex('jvmoebel.aftercool.media-stage.'.$runId.'.'.$offset.'.'.$productId.'.'.$url),
+                    'id' => Uuid::fromHexToBytes(Uuid::fromStringToHex('jvmoebel.aftercool.media-stage.'.$runId.'.'.$offset.'.'.$productId.'.'.$url)),
                     'runId' => Uuid::fromHexToBytes($runId),
                     'offset' => $offset,
                     'sourceProductId' => $sourceProductId,
@@ -32,6 +33,11 @@ final readonly class AfterCoolMediaStageService
                     'urlHash' => hash('sha256', $url),
                     'position' => $position,
                     'coverCandidate' => 0 === $position && !$hasCover ? 1 : 0,
+                ],
+                [
+                    'id' => ParameterType::BINARY,
+                    'runId' => ParameterType::BINARY,
+                    'productId' => ParameterType::BINARY,
                 ],
             );
         }
