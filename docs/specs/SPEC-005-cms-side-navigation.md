@@ -65,7 +65,7 @@ Canvas в Shopping Experiences — интерактивное превью: по
 - Дерево в `enrich()`: `NavigationLoader::load()`; перед вызовом `normalizeUuid(rootCategoryId)`. Невалидный id → `items: []`, loader не вызывать.
 - Глубина сериализации **фиксирована = 4** child-уровня. `mapTreeItems` обрезает явно. Поля `maxDepth` в config нет; сериализация = 4, loader depth = 3 (TREE_DEPTH - 1), mapper режет до 4 как защита. Контракт data тот же.
 - `searchPlaceholder`: trim; пусто → дефолтная строка (например `Kategorie suchen`), не `null`.
-- `safeHref()`: relative `/…` и `http`/`https`; не копировать `ButtonCmsElementResolver::safeUrl()`.
+- `safeHref()`: relative `/…` и `http`/`https`.
 - `defaultConfig`: logo null, `searchPlaceholder` `''` или дефолт, `rootCategoryId` null, `showIcons` true, `footer.items` `[]`. Без demo-seed.
 - После смены Admin source — `bin/build-administration.sh` и закоммитить assets.
 - Footer из `config.footer`; не из дерева.
@@ -88,7 +88,7 @@ Canvas в Shopping Experiences — интерактивное превью: по
 
 ### Плагин
 
-`custom/static-plugins/JvCms`, рядом с `jv-button`. Миграций схемы нет.
+`custom/static-plugins/JvCms`. Миграций схемы нет.
 
 ### PHP (ориентир)
 
