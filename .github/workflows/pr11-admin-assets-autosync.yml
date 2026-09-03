@@ -56,42 +56,34 @@ jobs:
       - name: Build Administration
         run: bash bin/build-administration.sh
 
-      - name: Commit exact normalized Administration assets
+      - name: Diagnose exact generated changes
         shell: bash
         run: |
-          allowed=(
-            "custom/static-plugins/JvCms/src/Resources/public/administration/.vite/entrypoints.json"
-            "custom/static-plugins/JvCms/src/Resources/public/administration/.vite/manifest.json"
-            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-oitE_AjJ.js.map"
-            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-tzjbXbi6.js.map"
-            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/jv-cms-ik0csVI0.js.map"
-          )
+          echo '=== git status --short ==='
+          git status --short
+          echo '=== git diff --stat ==='
+          git diff --stat
+          echo '=== git diff --numstat ==='
+          git diff --numstat
+          echo '=== git diff --name-only ==='
+          git diff --name-only
 
-          mapfile -t changed < <(git status --porcelain=v1 | sed -E 's/^.. //')
-
-          for path in "${changed[@]}"; do
+          unexpected=0
+          while IFS= read -r path; do
             [[ -z "$path" ]] && continue
-            ok=false
-            for candidate in "${allowed[@]}"; do
-              if [[ "$path" == "$candidate" ]]; then
-                ok=true
-                break
-              fi
-            done
-            if [[ "$ok" != true ]]; then
-              echo "::error::Unexpected generated change: $path"
-              exit 1
-            fi
-          done
+            case "$path" in
+              custom/static-plugins/*/src/Resources/public/administration/.vite/*.json|custom/static-plugins/*/src/Resources/public/administration/assets/*.map)
+                ;;
+              *)
+                echo "::error::Unexpected path class: $path"
+                unexpected=1
+                ;;
+            esac
+          done < <(git diff --name-only)
 
-          git add -- "${allowed[@]}"
-
-          if git diff --cached --quiet; then
-            echo "No generated Administration changes."
-            exit 0
+          if [[ "$unexpected" -ne 0 ]]; then
+            exit 1
           fi
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "build: normalize administration artifact trailing newlines"
-          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
+          echo 'Diagnostic only: no commit or push is performed in this run.'
+          exit 1
