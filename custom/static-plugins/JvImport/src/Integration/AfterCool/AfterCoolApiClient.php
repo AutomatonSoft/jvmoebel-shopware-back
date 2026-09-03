@@ -15,8 +15,15 @@ final class AfterCoolApiClient implements AfterCoolApiClientInterface, Contract\
 {
     private ?string $sessionCookie = null;
 
-    public function __construct(private readonly HttpClientInterface $httpClient, private readonly LoggerInterface $logger, private readonly AfterCoolResponseNormalizer $normalizer, private readonly string $baseUri, private readonly string $username, private readonly string $password, private readonly float $timeout)
-    {
+    public function __construct(
+        private readonly HttpClientInterface $httpClient,
+        private readonly LoggerInterface $logger,
+        private readonly AfterCoolResponseNormalizer $normalizer,
+        private readonly string $baseUri,
+        private readonly string $username,
+        private readonly string $password,
+        private readonly float $timeout,
+    ) {
     }
 
     /** @return list<AfterCoolFactory> */

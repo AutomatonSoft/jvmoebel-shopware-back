@@ -6,8 +6,17 @@ use Jv\Import\Service\AfterCool\Exception\AfterCoolUnexpectedPageOffsetException
 
 final readonly class AfterCoolImportProgress
 {
-    private function __construct(public string $status, public ?int $total, public int $nextOffset, public int $processed, public int $created, public int $updated, public int $skipped, public int $failed, public bool $totalChanged)
-    {
+    private function __construct(
+        public string $status,
+        public ?int $total,
+        public int $nextOffset,
+        public int $processed,
+        public int $created,
+        public int $updated,
+        public int $skipped,
+        public int $failed,
+        public bool $totalChanged,
+    ) {
     }
 
     public static function queued(): self

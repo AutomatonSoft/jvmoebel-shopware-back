@@ -116,7 +116,15 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
                     $issues,
                     static fn (AfterCoolProductIssue $issue): bool => !($issue->productId === $product->sourceProductId && 'invalid_price' === $issue->code),
                 ));
-                $issues[] = new AfterCoolProductIssue($product->sourceProductId, 'failed', $exception->safeCode(), 'Aftercool product cannot be created without a valid price.', $product->sourceArtikelnummer, $product->ean, $product->rowNo);
+                $issues[] = new AfterCoolProductIssue(
+                    $product->sourceProductId,
+                    'failed',
+                    $exception->safeCode(),
+                    'Aftercool product cannot be created without a valid price.',
+                    $product->sourceArtikelnummer,
+                    $product->ean,
+                    $product->rowNo,
+                );
             }
         }
 
@@ -270,7 +278,15 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
         $source = $this->sourceRepository->search($sourceCriteria, $context)->first();
         if (null !== $source) {
             if ($source->getSourceEan() !== $product->ean || $source->getSourceArtikelnummer() !== $product->sourceArtikelnummer) {
-                $issues[] = new AfterCoolProductIssue($product->sourceProductId, 'skipped', 'source_identity_conflict', 'Aftercool source identity conflicts with its recorded EAN or Artikelnummer.', $product->sourceArtikelnummer, $product->ean, $product->rowNo);
+                $issues[] = new AfterCoolProductIssue(
+                    $product->sourceProductId,
+                    'skipped',
+                    'source_identity_conflict',
+                    'Aftercool source identity conflicts with its recorded EAN or Artikelnummer.',
+                    $product->sourceArtikelnummer,
+                    $product->ean,
+                    $product->rowNo,
+                );
 
                 return false;
             }
@@ -278,7 +294,15 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
             if ($this->productRepository->searchIds(new Criteria([$linkedProductId]), $context)->has($linkedProductId)) {
                 return $linkedProductId;
             }
-            $issues[] = new AfterCoolProductIssue($product->sourceProductId, 'skipped', 'missing_linked_product', 'Aftercool source link points to a missing product.', $product->sourceArtikelnummer, $product->ean, $product->rowNo);
+            $issues[] = new AfterCoolProductIssue(
+                $product->sourceProductId,
+                'skipped',
+                'missing_linked_product',
+                'Aftercool source link points to a missing product.',
+                $product->sourceArtikelnummer,
+                $product->ean,
+                $product->rowNo,
+            );
 
             return false;
         }
@@ -287,7 +311,15 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
         $sourceArtikelnummerCriteria->addFilter(new EqualsFilter('sourceArtikelnummer', $product->sourceArtikelnummer));
         $sourceWithArtikelnummer = $this->sourceRepository->search($sourceArtikelnummerCriteria, $context)->first();
         if (null !== $sourceWithArtikelnummer && $sourceWithArtikelnummer->getId() !== $this->sourceIdentityId($product)) {
-            $issues[] = new AfterCoolProductIssue($product->sourceProductId, 'skipped', 'source_artikelnummer_conflict', 'Aftercool Artikelnummer is already used by another source identity.', $product->sourceArtikelnummer, $product->ean, $product->rowNo);
+            $issues[] = new AfterCoolProductIssue(
+                $product->sourceProductId,
+                'skipped',
+                'source_artikelnummer_conflict',
+                'Aftercool Artikelnummer is already used by another source identity.',
+                $product->sourceArtikelnummer,
+                $product->ean,
+                $product->rowNo,
+            );
 
             return false;
         }
@@ -304,7 +336,15 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
         $criteria = (new Criteria())->addFilter(new EqualsFilter('productNumber', $product->productNumber));
         $ids = $this->productRepository->searchIds($criteria, $context)->getIds();
         if (1 < count($ids)) {
-            $issues[] = new AfterCoolProductIssue($product->sourceProductId, 'skipped', 'ambiguous_product_number', 'Multiple Shopware products have this EAN.', $product->sourceArtikelnummer, $product->ean, $product->rowNo);
+            $issues[] = new AfterCoolProductIssue(
+                $product->sourceProductId,
+                'skipped',
+                'ambiguous_product_number',
+                'Multiple Shopware products have this EAN.',
+                $product->sourceArtikelnummer,
+                $product->ean,
+                $product->rowNo,
+            );
 
             return false;
         }

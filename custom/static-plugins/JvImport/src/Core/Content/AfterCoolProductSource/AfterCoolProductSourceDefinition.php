@@ -35,6 +35,17 @@ final class AfterCoolProductSourceDefinition extends EntityDefinition
 
     protected function defineFields(): FieldCollection
     {
-        return new FieldCollection([(new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required()), (new StringField('account', 'account'))->addFlags(new Required()), (new StringField('dataset', 'dataset'))->addFlags(new Required()), (new IntField('factory_id', 'factoryId'))->addFlags(new Required()), (new StringField('source_product_id', 'sourceProductId'))->addFlags(new Required()), (new FkField('product_id', 'productId', ProductDefinition::class))->addFlags(new Required()), (new ReferenceVersionField(ProductDefinition::class))->addFlags(new Required()), (new StringField('source_artikelnummer', 'sourceArtikelnummer'))->addFlags(new Required()), (new StringField('source_ean', 'sourceEan'))->addFlags(new Required()), (new DateTimeField('last_seen_at', 'lastSeenAt'))->addFlags(new Required())]);
+        return new FieldCollection([
+            (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required()),
+            (new StringField('account', 'account'))->addFlags(new Required()),
+            (new StringField('dataset', 'dataset'))->addFlags(new Required()),
+            (new IntField('factory_id', 'factoryId'))->addFlags(new Required()),
+            (new StringField('source_product_id', 'sourceProductId'))->addFlags(new Required()),
+            (new FkField('product_id', 'productId', ProductDefinition::class))->addFlags(new Required()),
+            (new ReferenceVersionField(ProductDefinition::class))->addFlags(new Required()),
+            (new StringField('source_artikelnummer', 'sourceArtikelnummer'))->addFlags(new Required()),
+            (new StringField('source_ean', 'sourceEan'))->addFlags(new Required()),
+            (new DateTimeField('last_seen_at', 'lastSeenAt'))->addFlags(new Required()),
+        ]);
     }
 }

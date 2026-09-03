@@ -34,6 +34,19 @@ final class AfterCoolImportErrorDefinition extends EntityDefinition
 
     protected function defineFields(): FieldCollection
     {
-        return new FieldCollection([(new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required()), (new FkField('run_id', 'runId', AfterCoolImportRunDefinition::class))->addFlags(new Required()), (new IntField('factory_id', 'factoryId'))->addFlags(new Required()), new StringField('product_id', 'productId'), new StringField('artikelnummer', 'artikelnummer'), new StringField('ean', 'ean'), (new IntField('offset', 'offset'))->addFlags(new Required()), new IntField('row_no', 'rowNo'), (new StringField('result', 'result'))->addFlags(new Required()), (new StringField('code', 'code'))->addFlags(new Required()), (new StringField('message', 'message'))->addFlags(new Required()), (new DateTimeField('created_at', 'createdAt'))->addFlags(new Required())]);
+        return new FieldCollection([
+            (new IdField('id', 'id'))->addFlags(new PrimaryKey(), new Required()),
+            (new FkField('run_id', 'runId', AfterCoolImportRunDefinition::class))->addFlags(new Required()),
+            (new IntField('factory_id', 'factoryId'))->addFlags(new Required()),
+            new StringField('product_id', 'productId'),
+            new StringField('artikelnummer', 'artikelnummer'),
+            new StringField('ean', 'ean'),
+            (new IntField('offset', 'offset'))->addFlags(new Required()),
+            new IntField('row_no', 'rowNo'),
+            (new StringField('result', 'result'))->addFlags(new Required()),
+            (new StringField('code', 'code'))->addFlags(new Required()),
+            (new StringField('message', 'message'))->addFlags(new Required()),
+            (new DateTimeField('created_at', 'createdAt'))->addFlags(new Required()),
+        ]);
     }
 }
