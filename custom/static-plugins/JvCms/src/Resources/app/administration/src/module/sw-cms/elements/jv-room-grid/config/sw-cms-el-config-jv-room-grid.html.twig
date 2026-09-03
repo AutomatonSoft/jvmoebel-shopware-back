@@ -1,0 +1,112 @@
+{% block sw_cms_el_config_jv_room_grid %}
+	<div class="sw-cms-el-config-jv-room-grid">
+		<mt-text-field
+			v-model:model-value="element.config.title.value"
+			:label="$t('cms.elements.jv-room-grid.config.title.label')"
+			:placeholder="$t('cms.elements.jv-room-grid.config.title.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-text-field
+			v-model:model-value="element.config.eyebrow.value"
+			:label="$t('cms.elements.jv-room-grid.config.eyebrow.label')"
+			:placeholder="$t('cms.elements.jv-room-grid.config.eyebrow.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-textarea
+			v-model:model-value="element.config.description.value"
+			:label="$t('cms.elements.jv-room-grid.config.description.label')"
+			:placeholder="$t('cms.elements.jv-room-grid.config.description.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<div class="sw-cms-el-config-jv-room-grid__section">
+			<div class="sw-cms-el-config-jv-room-grid__section-header">
+				<h4>{{ $t('cms.elements.jv-room-grid.config.rooms.title') }}</h4>
+				<mt-button size="small" variant="secondary" @click="addRoom">
+					{{ $t('cms.elements.jv-room-grid.config.rooms.add') }}
+				</mt-button>
+			</div>
+
+			<div
+				v-for="(room, roomIndex) in rooms"
+				:key="room.id || roomIndex"
+				class="sw-cms-el-config-jv-room-grid__card"
+			>
+				<div class="sw-cms-el-config-jv-room-grid__card-header">
+					<strong>{{ $t('cms.elements.jv-room-grid.config.rooms.cardTitle', { index: roomIndex + 1 }) }}</strong>
+					<mt-button size="small" variant="critical" @click="removeRoom(roomIndex)">
+						{{ $t('cms.elements.jv-room-grid.config.rooms.remove') }}
+					</mt-button>
+				</div>
+
+				<div class="sw-cms-el-config-jv-room-grid__media">
+					<label class="sw-cms-el-config-jv-room-grid__media-label">
+						{{ $t('cms.elements.jv-room-grid.config.rooms.imageMedia.label') }}
+					</label>
+
+					<sw-media-upload-v2
+						variant="regular"
+						:upload-tag="roomUploadTag(roomIndex)"
+						:source="roomPreviewSource(room)"
+						:allow-multi-select="false"
+						:default-folder="cmsPageState.pageEntityName"
+						:caption="$t('cms.elements.jv-room-grid.config.rooms.imageMedia.caption')"
+						@media-upload-sidebar-open="onOpenRoomMediaModal(roomIndex)"
+						@media-upload-remove-image="onRoomRemove(roomIndex)"
+					/>
+
+					<sw-upload-listener
+						:upload-tag="roomUploadTag(roomIndex)"
+						auto-upload
+						@media-upload-finish="onRoomUpload(roomIndex, $event)"
+					/>
+				</div>
+
+				<mt-text-field
+					v-model:model-value="room.id"
+					:label="$t('cms.elements.jv-room-grid.config.rooms.id.label')"
+					:help-text="$t('cms.elements.jv-room-grid.config.rooms.id.helpText')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="room.label"
+					:label="$t('cms.elements.jv-room-grid.config.rooms.label.label')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="room.title"
+					:label="$t('cms.elements.jv-room-grid.config.rooms.titleField.label')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="room.url"
+					:label="$t('cms.elements.jv-room-grid.config.rooms.url.label')"
+					:placeholder="$t('cms.elements.jv-room-grid.config.rooms.url.placeholder')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-switch
+					v-model:model-value="room.featured"
+					:label="$t('cms.elements.jv-room-grid.config.rooms.featured.label')"
+					@update:model-value="onUpdate"
+				/>
+			</div>
+		</div>
+
+		<sw-media-modal-v2
+			v-if="mediaModalIndex !== null"
+			variant="full"
+			:caption="$t('cms.elements.jv-room-grid.config.rooms.imageMedia.caption')"
+			:entity-context="cmsPageState.entityName"
+			:allow-multi-select="false"
+			:initial-folder-id="cmsPageState.defaultMediaFolderId"
+			@media-modal-selection-change="onRoomSelectionChanges"
+			@modal-close="onCloseRoomMediaModal"
+		/>
+	</div>
+{% endblock %}

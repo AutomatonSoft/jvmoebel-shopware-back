@@ -4,6 +4,16 @@ import './module/sw-cms/blocks/jv-button/jv-button-secondary';
 import './module/sw-cms/blocks/jv-button/jv-button-link';
 import './module/sw-cms/elements/jv-side-navigation';
 import './module/sw-cms/blocks/jv-side-navigation/jv-side-navigation';
+import './module/sw-cms/elements/jv-global-search';
+import './module/sw-cms/blocks/jv-global-search/jv-global-search';
+import './module/sw-cms/elements/jv-hero';
+import './module/sw-cms/blocks/jv-hero/jv-hero';
+import './module/sw-cms/elements/jv-newsletter';
+import './module/sw-cms/blocks/jv-newsletter/jv-newsletter';
+import './module/sw-cms/elements/jv-room-grid';
+import './module/sw-cms/blocks/jv-room-grid/jv-room-grid';
+import './module/sw-cms/elements/jv-product-grid';
+import './module/sw-cms/blocks/jv-product-grid/jv-product-grid';
 import deDE from './snippet/de-DE.json';
 import enGB from './snippet/en-GB.json';
 

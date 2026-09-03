@@ -1,0 +1,36 @@
+.sw-cms-el-config-jv-room-grid {
+    &__section {
+        margin-top: 16px;
+    }
+
+    &__section-header {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+
+    &__card {
+        border: 1px solid #d1d9e0;
+        border-radius: 6px;
+        margin-bottom: 12px;
+        padding: 12px;
+    }
+
+    &__card-header {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+
+    &__media {
+        margin-bottom: 12px;
+    }
+
+    &__media-label {
+        display: block;
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+}

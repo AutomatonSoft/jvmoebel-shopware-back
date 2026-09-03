@@ -1,0 +1,18 @@
+.sw-cms-el-config-jv-hero {
+    &__field {
+        margin-top: 16px;
+    }
+
+    &__image-label,
+    &__link-title {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    &__link-group {
+        border-top: 1px solid #d1d9e0;
+        padding-top: 16px;
+    }
+}

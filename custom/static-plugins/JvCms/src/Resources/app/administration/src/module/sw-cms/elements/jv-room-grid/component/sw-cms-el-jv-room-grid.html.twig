@@ -1,0 +1,29 @@
+{% block sw_cms_element_jv_room_grid %}
+	<div class="sw-cms-el-jv-room-grid">
+		<div v-if="eyebrow" class="sw-cms-el-jv-room-grid__eyebrow">{{ eyebrow }}</div>
+		<div v-if="title" class="sw-cms-el-jv-room-grid__title">{{ title }}</div>
+		<div v-else class="sw-cms-el-jv-room-grid__title sw-cms-el-jv-room-grid__title--placeholder">
+			{{ $t('cms.elements.jv-room-grid.component.titlePlaceholder') }}
+		</div>
+		<div v-if="description" class="sw-cms-el-jv-room-grid__description">{{ description }}</div>
+
+		<div v-if="rooms.length" class="sw-cms-el-jv-room-grid__grid">
+			<div
+				v-for="(room, roomIndex) in rooms"
+				:key="room.id || roomIndex"
+				class="sw-cms-el-jv-room-grid__card"
+				:class="{ 'sw-cms-el-jv-room-grid__card--featured': room.featured }"
+			>
+				<div class="sw-cms-el-jv-room-grid__card-label">
+					{{ room.label || $t('cms.elements.jv-room-grid.component.roomLabelPlaceholder') }}
+				</div>
+				<div class="sw-cms-el-jv-room-grid__card-title">
+					{{ room.title || $t('cms.elements.jv-room-grid.component.roomTitlePlaceholder') }}
+				</div>
+			</div>
+		</div>
+		<div v-else class="sw-cms-el-jv-room-grid__empty">
+			{{ $t('cms.elements.jv-room-grid.component.noRooms') }}
+		</div>
+	</div>
+{% endblock %}

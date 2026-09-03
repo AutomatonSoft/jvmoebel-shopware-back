@@ -1,0 +1,26 @@
+.sw-cms-el-config-jv-product-grid {
+    &__section {
+        margin-top: 24px;
+    }
+
+    &__section-header {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+
+    &__card {
+        border: 1px solid #d1d9e0;
+        border-radius: 4px;
+        margin-bottom: 12px;
+        padding: 12px;
+    }
+
+    &__card-header {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+}

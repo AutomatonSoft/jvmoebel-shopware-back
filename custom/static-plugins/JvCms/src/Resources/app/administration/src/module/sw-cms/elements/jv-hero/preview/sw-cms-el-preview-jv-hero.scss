@@ -1,0 +1,21 @@
+.sw-cms-el-preview-jv-hero {
+    background: linear-gradient(120deg, #354044 0%, #6b7c82 100%);
+    border-radius: 4px;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    justify-content: flex-end;
+    min-height: 80px;
+    padding: 12px;
+
+    &__eyebrow {
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+
+    &__title {
+        font-size: 14px;
+    }
+}

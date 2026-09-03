@@ -14,5 +14,58 @@
             <argument type="service" id="Shopware\Core\Content\Category\Service\NavigationLoader"/>
             <tag name="shopware.cms.data_resolver"/>
         </service>
+
+        <service id="Jv\Cms\DataResolver\Element\GlobalSearchCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\HeroCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\NewsletterCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\RoomGridCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\ProductGridCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\Service\Search\SynonymDictionaryLoader"/>
+
+        <service id="Jv\Cms\Service\Search\QueryFilterInterpreter">
+            <factory service="Jv\Cms\Service\Search\QueryFilterInterpreterFactory" method="create"/>
+        </service>
+
+        <service id="Jv\Cms\Service\Search\QueryFilterInterpreterInterface"
+                 alias="Jv\Cms\Service\Search\QueryFilterInterpreter"/>
+
+        <service id="Jv\Cms\Service\Search\QueryFilterInterpreterFactory">
+            <argument type="service" id="Jv\Cms\Service\Search\SynonymDictionaryLoader"/>
+            <argument>%kernel.project_dir%</argument>
+            <argument type="service" id="property_group_option.repository"/>
+        </service>
+
+        <!-- AbstractProductSearchRoute has no DI alias; use the resolved-criteria outer route. -->
+        <service id="Jv\Cms\Service\Search\JvProductSearchService">
+            <argument type="service" id="Jv\Cms\Service\Search\QueryFilterInterpreterInterface"/>
+            <argument type="service" id="Shopware\Core\Content\Product\SalesChannel\Search\ResolvedCriteriaProductSearchRoute"/>
+            <argument type="service" id="logger"/>
+        </service>
+
+        <service id="Jv\Cms\Service\Search\ProductSearchServiceInterface"
+                 alias="Jv\Cms\Service\Search\JvProductSearchService"/>
+
+        <service id="Jv\Cms\StoreApi\Search\JvSearchSuggestRoute" public="true">
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="Jv\Cms\StoreApi\Search\JvSearchRoute" public="true">
+            <tag name="controller.service_arguments"/>
+        </service>
     </services>
 </container>
