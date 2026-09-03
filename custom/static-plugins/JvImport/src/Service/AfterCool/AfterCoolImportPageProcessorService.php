@@ -15,12 +15,9 @@ use Jv\Import\Service\AfterCool\Exception\AfterCoolProductWriteValidationExcepti
 use Jv\Import\Service\AfterCool\Exception\AfterCoolUnexpectedPageOffsetException;
 use Jv\Import\Service\ProductImport\ResolveDefaultProductTaxService;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
-use Shopware\Core\Content\Product\ProductCollection;
-use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopware\Core\Framework\DataAbstractionLayer\Pricing\Price;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
@@ -35,11 +32,11 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
     /**
      * @param EntityRepository<AfterCoolImportRunCollection>     $runRepository
      * @param EntityRepository<AfterCoolProductSourceCollection> $sourceRepository
-     * @param EntityRepository<ProductCollection>                $productRepository
      * @param EntityRepository<AfterCoolImportErrorCollection>   $errorRepository
      */
     public function __construct(
         private AfterCoolProductSourceInterface $source,
+        private AfterCoolProductPageResolverService $pageResolver,
         private BuildAfterCoolShopwareProductRecordService $recordBuilder,
         private AfterCoolSyncBatchWriter $writer,
         private AfterCoolMediaStageService $mediaStage,
@@ -47,7 +44,6 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
         private ResolveDefaultProductTaxService $defaultTax,
         private EntityRepository $runRepository,
         private EntityRepository $sourceRepository,
-        private EntityRepository $productRepository,
         private EntityRepository $errorRepository,
         private Connection $connection,
         private LockFactory $lockFactory,
@@ -89,27 +85,28 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
         $products = [];
         $issues = $mapping->issues;
 
-        foreach ($mapping->products as $product) {
-            $existingProductId = $this->resolveProductId($product, $context, $issues);
-            if (false === $existingProductId) {
+        foreach ($this->pageResolver->resolve($mapping->products, $context) as $resolvedProduct) {
+            $product = $resolvedProduct->product;
+            if (null !== $resolvedProduct->issue) {
+                $issues[] = $resolvedProduct->issue;
                 continue;
             }
 
             try {
                 $payload = $this->recordBuilder->build(
                     $product,
-                    $existingProductId,
+                    $resolvedProduct->productId,
                     $tax->id,
                     $tax->rate,
                     Defaults::CURRENCY,
                     Market::Germany->languageId(),
-                    null === $existingProductId ? [] : $this->existingPrices($existingProductId, $context),
+                    $resolvedProduct->existingPrices,
                 );
                 $records[] = new AfterCoolProductWriteRecord(
                     $product->sourceProductId,
                     $payload,
                 );
-                $products[$product->sourceProductId] = [$product, null === $existingProductId, $payload['id']];
+                $products[$product->sourceProductId] = [$product, $resolvedProduct, $payload['id']];
             } catch (AfterCoolProductWriteValidationException $exception) {
                 $issues = array_values(array_filter(
                     $issues,
@@ -136,13 +133,13 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
             $successful = array_fill_keys($writeResult->successfulSourceProductIds, true);
             $created = 0;
             $updated = 0;
-            foreach ($products as $sourceProductId => [$product, $isNew, $productId]) {
+            foreach ($products as $sourceProductId => [$product, $resolvedProduct, $productId]) {
                 if (!isset($successful[$sourceProductId])) {
                     continue;
                 }
-                $this->upsertSourceLink($product, $productId, $context);
-                $this->mediaStage->stage($run->getId(), $offset, $sourceProductId, $productId, $product->mediaUrls, null !== $this->existingCoverId($productId, $context));
-                if ($isNew) {
+                $this->upsertSourceLink($product, $resolvedProduct->sourceLinkId, $productId, $context);
+                $this->mediaStage->stage($run->getId(), $offset, $sourceProductId, $productId, $product->mediaUrls, $resolvedProduct->hasCover);
+                if ($resolvedProduct->isNew()) {
                     ++$created;
                 } else {
                     ++$updated;
@@ -207,157 +204,8 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
         return $run;
     }
 
-    private function existingCoverId(?string $productId, Context $context): ?string
+    private function upsertSourceLink(AfterCoolMappedProduct $product, string $sourceId, string $productId, Context $context): void
     {
-        if (null === $productId) {
-            return null;
-        }
-        $product = $this->productRepository->search(new Criteria([$productId]), $context)->first();
-
-        return $product instanceof ProductEntity ? $product->getCoverId() : null;
-    }
-
-    /** @return list<array<string, mixed>> */
-    private function existingPrices(string $productId, Context $context): array
-    {
-        $product = $this->productRepository->search((new Criteria([$productId]))->addAssociation('price'), $context)->first();
-        if (!$product instanceof ProductEntity || null === $product->getPrice()) {
-            return [];
-        }
-
-        return array_map(fn (Price $price): array => $this->priceData($price), $product->getPrice()->getElements());
-    }
-
-    /** @return array<string, mixed> */
-    private function priceData(Price $price): array
-    {
-        $data = [
-            'currencyId' => $price->getCurrencyId(),
-            'net' => $price->getNet(),
-            'gross' => $price->getGross(),
-            'linked' => $price->getLinked(),
-        ];
-        if (null !== $price->getListPrice()) {
-            $data['listPrice'] = $this->nestedPriceData($price->getListPrice());
-        }
-        if (null !== $price->getRegulationPrice()) {
-            $data['regulationPrice'] = $this->nestedPriceData($price->getRegulationPrice());
-        }
-
-        return $data;
-    }
-
-    /** @return array{net: float, gross: float, linked: bool} */
-    private function nestedPriceData(Price $price): array
-    {
-        return ['net' => $price->getNet(), 'gross' => $price->getGross(), 'linked' => $price->getLinked()];
-    }
-
-    /** @param list<AfterCoolProductIssue> $issues */
-    private function resolveProductId(AfterCoolMappedProduct $product, Context $context, array &$issues): string|false|null
-    {
-        $sourceCriteria = (new Criteria())->addFilter(new EqualsFilter('account', $product->account));
-        $sourceCriteria->addFilter(new EqualsFilter('dataset', $product->dataset));
-        $sourceCriteria->addFilter(new EqualsFilter('factoryId', $product->factoryId));
-        $sourceCriteria->addFilter(new EqualsFilter('sourceProductId', $product->sourceProductId));
-        $source = $this->sourceRepository->search($sourceCriteria, $context)->first();
-        if (null !== $source) {
-            if ($source->getSourceEan() !== $product->ean || $source->getSourceArtikelnummer() !== $product->sourceArtikelnummer) {
-                $issues[] = new AfterCoolProductIssue(
-                    $product->sourceProductId,
-                    'skipped',
-                    'source_identity_conflict',
-                    'Aftercool source identity conflicts with its recorded EAN or Artikelnummer.',
-                    $product->sourceArtikelnummer,
-                    $product->ean,
-                    $product->rowNo,
-                );
-
-                return false;
-            }
-            $linkedProductId = $source->getProductId();
-            if ($this->productRepository->searchIds(new Criteria([$linkedProductId]), $context)->has($linkedProductId)) {
-                return $linkedProductId;
-            }
-            $issues[] = new AfterCoolProductIssue(
-                $product->sourceProductId,
-                'skipped',
-                'missing_linked_product',
-                'Aftercool source link points to a missing product.',
-                $product->sourceArtikelnummer,
-                $product->ean,
-                $product->rowNo,
-            );
-
-            return false;
-        }
-
-        $sourceArtikelnummerCriteria = $this->sourceIdentityCriteria($product);
-        $sourceArtikelnummerCriteria->addFilter(new EqualsFilter('sourceArtikelnummer', $product->sourceArtikelnummer));
-        $sourceWithArtikelnummer = $this->sourceRepository->search($sourceArtikelnummerCriteria, $context)->first();
-        if (null !== $sourceWithArtikelnummer && $sourceWithArtikelnummer->getId() !== $this->sourceIdentityId($product)) {
-            $issues[] = new AfterCoolProductIssue(
-                $product->sourceProductId,
-                'skipped',
-                'source_artikelnummer_conflict',
-                'Aftercool Artikelnummer is already used by another source identity.',
-                $product->sourceArtikelnummer,
-                $product->ean,
-                $product->rowNo,
-            );
-
-            return false;
-        }
-
-        $sourceEanCriteria = $this->sourceIdentityCriteria($product);
-        $sourceEanCriteria->addFilter(new EqualsFilter('sourceEan', $product->ean));
-        $sourceWithEan = $this->sourceRepository->search($sourceEanCriteria, $context)->first();
-        if (null !== $sourceWithEan && $sourceWithEan->getId() !== $this->sourceIdentityId($product)) {
-            $issues[] = new AfterCoolProductIssue($product->sourceProductId, 'skipped', 'duplicate_ean_in_factory', 'Duplicate EAN in Aftercool factory.', $product->sourceArtikelnummer, $product->ean, $product->rowNo);
-
-            return false;
-        }
-
-        $criteria = (new Criteria())->addFilter(new EqualsFilter('productNumber', $product->productNumber));
-        $ids = $this->productRepository->searchIds($criteria, $context)->getIds();
-        if (1 < count($ids)) {
-            $issues[] = new AfterCoolProductIssue(
-                $product->sourceProductId,
-                'skipped',
-                'ambiguous_product_number',
-                'Multiple Shopware products have this EAN.',
-                $product->sourceArtikelnummer,
-                $product->ean,
-                $product->rowNo,
-            );
-
-            return false;
-        }
-
-        return $ids[0] ?? null;
-    }
-
-    private function sourceIdentityCriteria(AfterCoolMappedProduct $product): Criteria
-    {
-        return (new Criteria())
-            ->addFilter(new EqualsFilter('account', $product->account))
-            ->addFilter(new EqualsFilter('dataset', $product->dataset))
-            ->addFilter(new EqualsFilter('factoryId', $product->factoryId));
-    }
-
-    private function sourceIdentityId(AfterCoolMappedProduct $product): string
-    {
-        return Uuid::fromStringToHex(implode(':', ['jvmoebel.aftercool.source', $product->account, $product->dataset, $product->factoryId, $product->sourceProductId]));
-    }
-
-    private function upsertSourceLink(AfterCoolMappedProduct $product, string $productId, Context $context): void
-    {
-        $criteria = (new Criteria())->addFilter(new EqualsFilter('account', $product->account));
-        $criteria->addFilter(new EqualsFilter('dataset', $product->dataset));
-        $criteria->addFilter(new EqualsFilter('factoryId', $product->factoryId));
-        $criteria->addFilter(new EqualsFilter('sourceProductId', $product->sourceProductId));
-        $existing = $this->sourceRepository->search($criteria, $context)->first();
-        $sourceId = null === $existing ? $this->sourceIdentityId($product) : $existing->getId();
         $this->sourceRepository->upsert([[
             'id' => $sourceId,
             'account' => $product->account,
