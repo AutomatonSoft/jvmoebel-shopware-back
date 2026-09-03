@@ -107,6 +107,9 @@
             <argument type="service" id="Shopware\Core\Framework\Api\Sync\SyncService"/>
         </service>
         <service id="Jv\Import\Service\AfterCool\AfterCoolExternalMediaLinkService"/>
+        <service id="Jv\Import\Service\AfterCool\AfterCoolMediaStageService">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+        </service>
         <service id="Jv\Import\Service\AfterCool\AfterCoolStagedMediaProcessorService">
             <argument type="service" id="Doctrine\DBAL\Connection"/>
             <argument type="service" id="Jv\Import\Service\AfterCool\AfterCoolExternalMediaLinkService"/>

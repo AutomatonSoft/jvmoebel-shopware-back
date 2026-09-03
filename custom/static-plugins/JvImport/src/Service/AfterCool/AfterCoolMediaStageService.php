@@ -18,8 +18,8 @@ final readonly class AfterCoolMediaStageService
             $this->connection->executeStatement(
                 <<<'SQL'
                     INSERT INTO `jv_aftercool_media_stage`
-                        (`id`, `run_id`, `offset`, `source_product_id`, `product_id`, `url`, `position`, `cover_candidate`, `status`, `created_at`)
-                    VALUES (:id, :runId, :offset, :sourceProductId, :productId, :url, :position, :coverCandidate, 'pending', NOW(3))
+                        (`id`, `run_id`, `offset`, `source_product_id`, `product_id`, `url`, `url_hash`, `position`, `cover_candidate`, `status`, `created_at`)
+                    VALUES (:id, :runId, :offset, :sourceProductId, :productId, :url, :urlHash, :position, :coverCandidate, 'pending', NOW(3))
                     ON DUPLICATE KEY UPDATE `updated_at` = NOW(3)
                     SQL,
                 [
@@ -29,6 +29,7 @@ final readonly class AfterCoolMediaStageService
                     'sourceProductId' => $sourceProductId,
                     'productId' => Uuid::fromHexToBytes($productId),
                     'url' => $url,
+                    'urlHash' => hash('sha256', $url),
                     'position' => $position,
                     'coverCandidate' => 0 === $position && !$hasCover ? 1 : 0,
                 ],

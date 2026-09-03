@@ -22,13 +22,14 @@ final class Migration1770000020CreateAfterCoolMediaStaging extends MigrationStep
                 `source_product_id` VARCHAR(64) NOT NULL,
                 `product_id` BINARY(16) NOT NULL,
                 `url` VARCHAR(2048) NOT NULL,
+                `url_hash` CHAR(64) NOT NULL,
                 `position` INT NOT NULL,
                 `cover_candidate` TINYINT(1) NOT NULL,
                 `status` VARCHAR(16) NOT NULL,
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,
                 PRIMARY KEY (`id`),
-                UNIQUE KEY `uniq.jv_aftercool_media_stage.task` (`run_id`, `offset`, `product_id`, `url`),
+                UNIQUE KEY `uniq.jv_aftercool_media_stage.task` (`run_id`, `offset`, `product_id`, `url_hash`),
                 KEY `idx.jv_aftercool_media_stage.pending` (`run_id`, `offset`, `status`),
                 CONSTRAINT `fk.jv_aftercool_media_stage.run`
                     FOREIGN KEY (`run_id`) REFERENCES `jv_aftercool_import_run` (`id`) ON DELETE CASCADE
