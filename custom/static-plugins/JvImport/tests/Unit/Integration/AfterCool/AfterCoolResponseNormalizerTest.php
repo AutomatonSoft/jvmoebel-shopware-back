@@ -60,6 +60,28 @@ final class AfterCoolResponseNormalizerTest extends TestCase
         self::assertSame('183975801', $page->items[0]->row['I_stammartikel']);
     }
 
+    public function testItAcceptsOnlyTheExactLinkedProductIdentity(): void
+    {
+        $normalizer = new AfterCoolResponseNormalizer();
+        $exact = $normalizer->normalizeLinkedProduct($this->linkedProductPayload('183975801'), 'JV', '183975801');
+        self::assertNotNull($exact);
+        self::assertSame('product', $exact->dataset);
+        self::assertSame('183975801', $exact->productId);
+
+        self::assertNull($normalizer->normalizeLinkedProduct($this->linkedProductPayload('different-id'), 'JV', '183975801'));
+        self::assertNull($normalizer->normalizeLinkedProduct([
+            'items' => [], 'total' => 0, 'limit' => 1, 'offset' => 0, 'has_more' => false,
+        ], 'JV', '183975801'));
+    }
+
+    public function testItRejectsAnAmbiguousLinkedProductLookup(): void
+    {
+        $payload = $this->linkedProductPayload('183975801');
+        $payload['total'] = 2;
+
+        self::assertNull((new AfterCoolResponseNormalizer())->normalizeLinkedProduct($payload, 'JV', '183975801'));
+    }
+
     public function testItAcceptsAnEmptyTerminalPage(): void
     {
         $page = (new AfterCoolResponseNormalizer())->normalizeProductPage(
@@ -178,6 +200,21 @@ final class AfterCoolResponseNormalizerTest extends TestCase
         yield 'float' => [504034.0];
         yield 'boolean' => [true];
         yield 'missing value' => [null];
+    }
+
+    /** @return array<string, mixed> */
+    private function linkedProductPayload(string $id): array
+    {
+        return [
+            'items' => [[
+                'account' => 'JV', 'dataset' => 'product', 'factory_id' => '499170',
+                'product_id' => $id, 'ean' => '', 'artikelnummer' => $id, 'name' => 'Linked product',
+                'row_no' => 1, 'source_file' => 'products.csv', 'source_kind' => 'csv',
+                'updated_at' => '2026-09-01T10:00:00+00:00',
+                'row' => ['ID' => $id, 'Beschreibung' => '<div>Full HTML description</div>'],
+            ]],
+            'total' => 1, 'limit' => 1, 'offset' => 0, 'has_more' => false,
+        ];
     }
 
     /** @return array<mixed> */

@@ -66,6 +66,35 @@ final class AfterCoolApiClientTest extends TestCase
         self::assertSame('aftercool_session=session-one', $this->cookieHeader($calls[2][2]));
     }
 
+    public function testItRequestsTheLinkedProductByStammartikelWithoutAFactoryFilter(): void
+    {
+        $payload = $this->linkedProductPayload('183975801', '<section><h2>Full HTML</h2><p>Keep <strong>all</strong> markup.</p></section>');
+        $calls = [];
+        $httpClient = $this->createMock(HttpClientInterface::class);
+        $httpClient->expects(self::exactly(2))->method('request')->willReturnCallback(
+            function (string $method, string $url, array $options) use (&$calls, $payload): ResponseInterface {
+                $calls[] = [$method, $url, $options];
+
+                return 'POST' === $method ? $this->response(200, [], ['set-cookie' => ['aftercool_session=session; Path=/']]) : $this->response(200, $payload);
+            },
+        );
+
+        $product = $this->client($httpClient)->getLinkedProduct(' 183975801 ');
+
+        self::assertNotNull($product);
+        self::assertSame('183975801', $product->productId);
+        self::assertSame('<section><h2>Full HTML</h2><p>Keep <strong>all</strong> markup.</p></section>', $product->row['Beschreibung']);
+        self::assertSame([
+            'account' => 'JV',
+            'dataset' => 'product',
+            'q' => '183975801',
+            'limit' => 1,
+            'offset' => 0,
+            'include_row' => 1,
+        ], $calls[1][2]['query'] ?? null);
+        self::assertArrayNotHasKey('factory_id', $calls[1][2]['query'] ?? []);
+    }
+
     public function testItReauthenticatesOnlyOnceAfterAnUnauthorizedResponse(): void
     {
         $responses = [
@@ -228,6 +257,21 @@ final class AfterCoolApiClientTest extends TestCase
         $response->method('toArray')->with(false)->willReturn($payload);
 
         return $response;
+    }
+
+    /** @return array<string, mixed> */
+    private function linkedProductPayload(string $id, string $description): array
+    {
+        return [
+            'items' => [[
+                'account' => 'JV', 'dataset' => 'product', 'factory_id' => '499170',
+                'product_id' => $id, 'ean' => '', 'artikelnummer' => $id, 'name' => 'Linked product',
+                'row_no' => 1, 'source_file' => 'products.csv', 'source_kind' => 'csv',
+                'updated_at' => '2026-09-01T10:00:00+00:00',
+                'row' => ['ID' => $id, 'Beschreibung' => $description],
+            ]],
+            'total' => 1, 'limit' => 1, 'offset' => 0, 'has_more' => false,
+        ];
     }
 
     /** @return array<mixed> */

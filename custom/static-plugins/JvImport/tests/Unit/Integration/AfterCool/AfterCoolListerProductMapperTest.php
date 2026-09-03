@@ -46,6 +46,28 @@ final class AfterCoolListerProductMapperTest extends TestCase
         ], $product->mediaUrls);
     }
 
+    public function testLinkedProductBeschreibungOverridesTheListerPlaceholderAndPreservesHtml(): void
+    {
+        $lister = $this->page()->items[0];
+        $html = '<section data-source="aftercool"><h2>Full description</h2><table><tr><td>Details</td></tr></table></section>';
+        $linked = $this->normalizer()->normalizeLinkedProduct($this->linkedProductPayload('183975801', $html), 'JV', '183975801');
+        self::assertNotNull($linked);
+
+        $product = (new AfterCoolListerProductMapper())->map($lister, $linked);
+
+        self::assertSame($html, $product->description);
+        self::assertNull($product->manufacturer, 'Upstream brand fields must not define the Shopware manufacturer.');
+    }
+
+    public function testEmptyLinkedBeschreibungDoesNotBecomeAnEmptyDescription(): void
+    {
+        $lister = $this->page()->items[0];
+        $linked = $this->normalizer()->normalizeLinkedProduct($this->linkedProductPayload('183975801', '   '), 'JV', '183975801');
+        self::assertNotNull($linked);
+
+        self::assertNull((new AfterCoolListerProductMapper())->map($lister, $linked)->description);
+    }
+
     public function testItSeparatesSemicolonDelimitedListerPictureUrls(): void
     {
         $payload = $this->fixture();
@@ -136,6 +158,26 @@ final class AfterCoolListerProductMapperTest extends TestCase
     private function normalizer(): AfterCoolResponseNormalizer
     {
         return new AfterCoolResponseNormalizer();
+    }
+
+    /** @return array<string, mixed> */
+    private function linkedProductPayload(string $id, string $description): array
+    {
+        return [
+            'items' => [[
+                'account' => 'JV', 'dataset' => 'product', 'factory_id' => '499170',
+                'product_id' => $id, 'ean' => '', 'artikelnummer' => $id, 'name' => 'Linked product',
+                'row_no' => 1, 'source_file' => 'products.csv', 'source_kind' => 'csv',
+                'updated_at' => '2026-09-01T10:00:00+00:00',
+                'row' => [
+                    'ID' => $id,
+                    'Beschreibung' => $description,
+                    'ProduktMarke' => 'Must not become manufacturer',
+                    'ManufacturerPartNumber' => 'MPN-1',
+                ],
+            ]],
+            'total' => 1, 'limit' => 1, 'offset' => 0, 'has_more' => false,
+        ];
     }
 
     /** @return array<mixed> */

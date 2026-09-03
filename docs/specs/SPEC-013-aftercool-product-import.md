@@ -19,6 +19,8 @@ Aftercool остаётся внешним источником данных. П�
 - авторизация и чтение `account=JV`, `dataset=lister` через Aftercool API;
 - список доступных Lister-фабрик и выбор фабрики в Administration;
 - постраничное чтение всех товаров фабрики по 100 записей с `include_row=1`;
+- последовательное обогащение Lister-строк связанными `dataset=product`
+  записями по `row.I_stammartikel`;
 - фоновая обработка через Messenger;
 - mapping доступных базовых товарных полей;
 - создание новых и обновление ранее связанных товаров;
@@ -26,6 +28,8 @@ Aftercool остаётся внешним источником данных. П�
   `productNumber` совпадает с EAN;
 - сохранение source identity Aftercool;
 - пакетная запись через внутренний Shopware Sync;
+- единый Shopware manufacturer `JVMOEBEL`, рассчитанный UVP и visibility только
+  для немецкого sales channel `jvmoebel.de`;
 - прогресс, итоговый отчёт и безопасный повтор;
 - запрет двух одновременных импортов одной фабрики.
 
@@ -41,8 +45,9 @@ Aftercool остаётся внешним источником данных. П�
 - удаление или замена существующей общей Shopware gallery. Aftercool может
   только добавить собственные external media links и назначить cover новому
   товару либо товару без cover;
-- публикация нового товара без категории: новый товар создаётся неактивным и
-  без visibility до OKB-сопоставления или ручной подготовки.
+- публикация нового товара без категории: новый товар создаётся неактивным;
+  немецкая visibility существует, но товар не публикуется до активации после
+  OKB-сопоставления или ручной подготовки.
 
 ## Контракт Aftercool
 
@@ -102,6 +107,30 @@ source identity, manufacturer, EUR price, stock, dimensions, weight,
 source metadata, importable status и validation issues. Он не запускает run и
 не раскрывает credentials, cookie либо raw response Aftercool.
 
+Полные данные одной Lister-строки читаются по ссылке на исходный товар:
+
+```http
+GET /api/products
+    ?account=JV
+    &dataset=product
+    &q=<row.I_stammartikel>
+    &limit=1
+    &offset=0
+    &include_row=1
+```
+
+`q` получает каноническое строковое значение `I_stammartikel`. Ответ считается
+точным только когда содержит одну запись `dataset=product`, а её `product_id`
+либо `row.ID` совпадает с запрошенным значением. Пустой или неоднозначный ответ,
+а также несовпавшая identity не подставляются к Lister-товару.
+
+В рамках одной Lister-страницы каждый уникальный непустой `I_stammartikel`
+запрашивается не более одного раза. Запросы выполняются последовательно, без
+параллельного fan-out. Отсутствующий `I_stammartikel` или точная product-запись
+не блокирует импорт подтверждённых Lister-полей и создаёт безопасное
+предупреждение строки. Временная transport/API ошибка product-запроса передаётся
+Messenger retry так же, как ошибка чтения Lister-страницы.
+
 Ожидаемый ответ:
 
 ```text
@@ -137,12 +166,14 @@ API обследован 28 августа 2026 года на нескольки
 - верхнеуровневые `product_id`, `artikelnummer` и `row.ID` в новых примерах
   совпадают и выглядят как стабильный ID Lister-записи;
 - верхнеуровневый `ean` отделён от Artikelnummer и обычно содержит 13 цифр;
-- `row.I_stammartikel` выглядит как ссылка на исходную product-запись, но это
-  назначение должно быть подтверждено владельцем API;
+- `row.I_stammartikel` является ссылкой на исходную `dataset=product` запись;
+  точный поиск выполняется через `q`, `limit=1` и `include_row=1`;
 - `row.Description` в новых примерах содержит placeholder
   `<-StammBeschreibung->`, а `Artikelbeschreibung` и
   `TranslatedDescription` повторяют короткое название; это не готовое полное
   описание товара;
+- полное HTML-описание находится в `dataset=product` поле `row.Beschreibung`;
+  поле может быть пустым у отдельных связанных товаров;
 - `CustomItemSpecifics` содержит XML marketplace characteristics. Он не
   становится Shopware properties, потому что целевой схемой владеет OKB;
 - `GalleryURL` и `pictureurls` являются внешними URL, а не Shopware media IDs;
@@ -211,34 +242,61 @@ Aftercool-импорту. Отсутствующее, пустое или placeh
 | `name` | немецкое название товара |
 | `row.Startpreis` | gross price fixed-price listing |
 | `row.Menge` | неотрицательный целый stock |
+| `row.I_stammartikel` | identity для связанного `dataset=product` lookup |
+| `product.row.Beschreibung` | полное немецкое HTML-описание |
 | `row.GalleryURL`, `row.pictureurls` | external Shopware media links и порядок gallery |
 | `updated_at`, `row_no`, `source_file` | безопасная диагностика; raw source file не импортируется как product field |
 
-Требуют подтверждения владельцем API перед реализацией:
+Подтверждённые бизнес-правила:
+
+- все Aftercool-товары получают единый существующий Shopware manufacturer
+  `JVMOEBEL`; Lister-фабрика остаётся source identity и не становится
+  manufacturer;
+- `product.row.ProduktMarke` и `product.row.ManufacturerPartNumber` не определяют
+  Shopware manufacturer и в этой итерации не записываются;
+- `product.row.Beschreibung` без очистки HTML записывается в немецкий
+  `description`; пустое значение не затирает существующее описание;
+- `Startpreis` является продажной gross-ценой. Gross UVP вычисляется из неё и
+  записывается как EUR `listPrice` по переданному владельцем API правилу:
+
+  ```text
+  price > 5000           -> price * 1.10
+  2500 <= price <= 4999  -> price * 1.18
+  1000 <= price <= 2499  -> price * 1.25
+  иначе                  -> price * 1.35
+  ```
+
+  Правило применяется буквально, поэтому `5000` и дробные значения между
+  `4999` и `5000` попадают в последнюю ветвь. Gross и рассчитанный из немецкой
+  tax rate net округляются до двух знаков; `linked=true`.
+
+Требуют подтверждения владельцем API перед последующим mapping:
 
 - является ли `VATPercent` фактической ставкой товара;
-- источник полного описания вместо `<-StammBeschreibung->`;
 - единицы и достоверный источник веса и размеров;
-- источник производителя вне marketplace `CustomItemSpecifics`.
+- семантика `SEOName`, `pkeywords` и возможность их использования без создания
+  конфликтующих Shopware SEO URL.
 
 `Startpreis` выбран как продажная gross-цена: проверенные строки имеют fixed
 price type, а `SofortkaufenPreis` является Buy It Now ценой auction listing и
 почти всегда равен нулю. Эта задача всегда использует фиксированный целевой
-контекст `Market::Germany`: sales channel `jvmoebel.de`, EUR price и немецкий
-translation. Выбора sales channel в Administration нет. Цены, переводы и
+контекст `Market::Germany`: sales channel `jvmoebel.de`, EUR price, немецкий
+translation и `ProductVisibilityDefinition::VISIBILITY_ALL` только для этого
+sales channel. Выбора sales channel в Administration нет. Цены, переводы и
 visibility остальных sales channels не изменяются.
 
 Если подтверждённые поля реально отличаются у отдельных фабрик, integration
 выбирает отдельный mapper по factory ID. Общий mapper остаётся default; класс на
 каждую фабрику без фактического отличия не создаётся.
 
-Новый товар получает default Shopware tax, `minPurchase=1`, `active=false` и не
-получает visibility. Положительная цена обязательна для создания. Для
-существующего товара импорт обновляет только подтверждённую валюту JV-рынка и
-сохраняет остальные price entries. Немецкий перевод обновляется отдельно и не
-заменяет переводы других языков. Существующие categories, properties,
-configurator settings, variants и вручную добавленные связи не входят в Sync
-payload.
+Новый товар получает default Shopware tax, `minPurchase=1`, `active=false`,
+manufacturer `JVMOEBEL` и visibility немецкого sales channel. Положительная
+цена обязательна для создания. Для существующего товара импорт обновляет только
+подтверждённую валюту JV-рынка и сохраняет остальные price entries вместе с их
+`listPrice`. В EUR entry обычная цена и рассчитанный UVP обновляются вместе.
+Немецкий перевод обновляется отдельно и не заменяет переводы других языков.
+Существующие categories, properties, configurator settings, variants и вручную
+добавленные связи не входят в Sync payload.
 
 ## Media
 
@@ -371,6 +429,9 @@ Profiles продолжают работать без изменения.
 - выбрать фабрику по ID через searchable dropdown и до запуска увидеть preview первой страницы;
 - искать товары preview по name, artikelnummer, EAN или product_id и листать их серверной пагинацией;
 - увидеть доступные status, updated и items count;
+- preview использует только `dataset=lister` и не выполняет N дополнительных
+  `dataset=product` запросов; полное описание обогащается consumer'ом фонового
+  импорта;
 - запустить импорт;
 - увидеть запрет второго активного запуска этой фабрики;
 - опрашивать состояние run и показывать progress bar;
@@ -421,11 +482,17 @@ Start body содержит только `factoryId`. Factory name, account и d
   по `has_more`;
 - Aftercool `401`, `422`, `429`, `500`, `503`, timeout и malformed JSON;
 - mapping sanitised Lister fixtures нескольких актуальных фабрик;
-- создание нового товара;
+- точный `dataset=product` lookup по `I_stammartikel`, отсутствие и несовпадение
+  identity, один последовательный запрос на уникальный ID в странице;
+- сохранение полного HTML `Beschreibung` и отсутствие затирания существующего
+  description пустым значением;
+- создание нового товара с существующим manufacturer `JVMOEBEL` и visibility
+  только немецкого sales channel;
 - привязка к существующему CosmoShop `productNumber=EAN`;
 - повторный импорт через source link без дубля;
-- сохранение цен других валют, переводов других языков, categories,
-  properties, variants и media;
+- буквальные границы UVP-формулы и сохранение `listPrice` цен других валют;
+- сохранение visibility других sales channels, переводов других языков,
+  categories, properties, variants и media;
 - external media links без сохранения бинарников, детерминированные relations,
   сохранение existing cover и продолжение после недоступного URL;
 - пустой, невалидный и повторный EAN;
@@ -459,6 +526,8 @@ docker compose exec -T web composer test
 `bin/build-administration.sh`; закоммиченные production assets должны совпасть
 с воспроизводимой сборкой.
 
-## Требует подтверждения до mapper implementation
+## Отложено до подтверждения upstream semantics
 
-1. Источник полного описания, производителя, веса и размеров.
+1. Единицы и достоверный источник веса и размеров.
+2. Семантика `SEOName` и `pkeywords` для Shopware SEO.
+3. `DeliveryTime` не mapping-ится: обследованные ответы содержали пустое значение.

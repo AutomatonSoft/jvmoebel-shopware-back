@@ -23,6 +23,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Shopware\Core\Content\Media\MediaCollection;
 use Shopware\Core\Content\Media\Upload\MediaUploadService;
+use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Defaults;
@@ -53,6 +54,9 @@ final class AfterCoolImportWorkflowTest extends TestCase
     private array $items = [];
 
     private int $productRequests = 0;
+
+    /** @var list<string> */
+    private array $linkedProductRequests = [];
 
     private int $productHttpStatus = 200;
 
@@ -126,6 +130,25 @@ final class AfterCoolImportWorkflowTest extends TestCase
         $updated = $this->product($productId, $context);
         self::assertSame(27, $updated->getStock());
         self::assertSame(238.0, $updated->getPrice()?->getCurrencyPrice(Defaults::CURRENCY, false)?->getGross());
+    }
+
+    public function testImportPersistsLinkedHtmlStandardManufacturerUvpAndGermanVisibility(): void
+    {
+        $context = $this->prepare([$this->item(1)]);
+
+        $this->process($context);
+
+        $product = $this->product(ProductImportIdentity::fromProductNumber($this->ean(1)), $context);
+        self::assertSame(['stamm-1'], $this->linkedProductRequests);
+        self::assertSame($this->linkedDescription('stamm-1'), $product->getTranslation('description'));
+        self::assertSame('JVMOEBEL', $product->getManufacturer()?->getName());
+        $eur = $product->getPrice()?->getCurrencyPrice(Defaults::CURRENCY, false);
+        self::assertSame(119.0, $eur?->getGross());
+        self::assertSame(160.65, $eur?->getListPrice()?->getGross());
+        self::assertSame(135.0, $eur?->getListPrice()?->getNet());
+        $visibility = $product->getVisibilities()?->filterByProperty('salesChannelId', Market::Germany->salesChannelId())->first();
+        self::assertNotNull($visibility);
+        self::assertSame(ProductVisibilityDefinition::VISIBILITY_ALL, $visibility->getVisibility());
     }
 
     public function testAllAdministrationEndpointsRequireImportExportPermission(): void
@@ -218,7 +241,7 @@ final class AfterCoolImportWorkflowTest extends TestCase
 
     public function testUpdatePreservesOtherTranslationsCategoriesPropertiesAndVariants(): void
     {
-        $context = $this->prepare([$this->item(1)]);
+        $context = $this->prepare([$this->item(1, ['I_stammartikel' => ''])]);
         $id = Uuid::randomHex();
         $categoryId = Uuid::randomHex();
         $optionId = Uuid::randomHex();
@@ -239,15 +262,21 @@ final class AfterCoolImportWorkflowTest extends TestCase
                 Market::UnitedKingdom->languageId() => ['name' => 'Keep English name', 'description' => '<p>Keep English description</p>'],
             ],
             'children' => [['id' => $childId, 'productNumber' => 'WORKFLOW-CHILD', 'stock' => 3]],
+            'visibilities' => [[
+                'salesChannelId' => Market::UnitedKingdom->salesChannelId(),
+                'visibility' => ProductVisibilityDefinition::VISIBILITY_ALL,
+            ]],
         ]], $context);
         $this->process($context);
-        $criteria = (new Criteria([$id]))->addAssociation('translations')->addAssociation('categories')->addAssociation('properties')->addAssociation('children');
+        $criteria = (new Criteria([$id]))->addAssociation('translations')->addAssociation('categories')->addAssociation('properties')->addAssociation('children')->addAssociation('visibilities');
         $product = $this->products()->search($criteria, $context)->first();
         self::assertInstanceOf(ProductEntity::class, $product);
         self::assertTrue($product->getActive());
         self::assertTrue($product->getCategories()?->has($categoryId));
         self::assertTrue($product->getProperties()?->has($optionId));
         self::assertTrue($product->getChildren()?->has($childId));
+        self::assertNotNull($product->getVisibilities()?->filterByProperty('salesChannelId', Market::Germany->salesChannelId())->first());
+        self::assertNotNull($product->getVisibilities()?->filterByProperty('salesChannelId', Market::UnitedKingdom->salesChannelId())->first());
         $translations = $product->getTranslations();
         self::assertNotNull($translations);
         $german = $translations->filterByLanguageId(Market::Germany->languageId())->first();
@@ -419,6 +448,7 @@ final class AfterCoolImportWorkflowTest extends TestCase
         self::assertSame('shopware_test', static::getContainer()->get(Connection::class)->getDatabase());
         $this->items = $items;
         $this->productRequests = 0;
+        $this->linkedProductRequests = [];
         $http = new MockHttpClient(function (string $method, string $url): MockResponse {
             $path = parse_url($url, PHP_URL_PATH);
             if ('/auth/login' === $path) {
@@ -430,14 +460,23 @@ final class AfterCoolImportWorkflowTest extends TestCase
                 return new MockResponse(json_encode(['items' => [['id' => (string) self::FACTORY_ID, 'name' => 'Workflow factory']]], JSON_THROW_ON_ERROR));
             }
             self::assertSame('/api/products', $path);
+            parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+            self::assertSame('1', $query['include_row']);
+            self::assertSame('JV', $query['account']);
+            if ('product' === ($query['dataset'] ?? null)) {
+                self::assertSame('1', $query['limit']);
+                self::assertSame('0', $query['offset']);
+                self::assertArrayNotHasKey('factory_id', $query);
+                $linkedId = (string) ($query['q'] ?? '');
+                $this->linkedProductRequests[] = $linkedId;
+
+                return new MockResponse(json_encode($this->linkedProductPayload($linkedId), JSON_THROW_ON_ERROR));
+            }
             ++$this->productRequests;
             if (200 !== $this->productHttpStatus) {
                 return new MockResponse('{}', ['http_code' => $this->productHttpStatus]);
             }
-            parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
             self::assertSame((string) self::FACTORY_ID, $query['factory_id']);
-            self::assertSame('1', $query['include_row']);
-            self::assertSame('JV', $query['account']);
             self::assertSame('lister', $query['dataset']);
             $limit = (int) $query['limit'];
             $offset = (int) $query['offset'];
@@ -467,7 +506,7 @@ final class AfterCoolImportWorkflowTest extends TestCase
             'artikelnummer' => 'article-'.$number, 'name' => 'Workflow product '.$number,
             'row_no' => $number, 'source_file' => 'workflow.csv', 'source_kind' => 'csv',
             'updated_at' => '2026-08-31T10:00:00+00:00',
-            'row' => array_replace(['Startpreis' => '119', 'Menge' => '5'], $row),
+            'row' => array_replace(['Startpreis' => '119', 'Menge' => '5', 'I_stammartikel' => 'stamm-'.$number], $row),
         ];
     }
 
@@ -480,6 +519,35 @@ final class AfterCoolImportWorkflowTest extends TestCase
         }
 
         return $base.((10 - $sum % 10) % 10);
+    }
+
+    /** @return array<string, mixed> */
+    private function linkedProductPayload(string $id): array
+    {
+        if ('' === $id) {
+            return ['items' => [], 'total' => 0, 'limit' => 1, 'offset' => 0, 'has_more' => false];
+        }
+
+        return [
+            'items' => [[
+                'account' => 'JV', 'dataset' => 'product', 'factory_id' => '499170',
+                'product_id' => $id, 'ean' => '', 'artikelnummer' => $id, 'name' => 'Linked product',
+                'row_no' => 1, 'source_file' => 'products.csv', 'source_kind' => 'csv',
+                'updated_at' => '2026-09-01T10:00:00+00:00',
+                'row' => [
+                    'ID' => $id,
+                    'Beschreibung' => $this->linkedDescription($id),
+                    'ProduktMarke' => 'Foreign upstream brand',
+                    'ManufacturerPartNumber' => 'MPN-'.$id,
+                ],
+            ]],
+            'total' => 1, 'limit' => 1, 'offset' => 0, 'has_more' => false,
+        ];
+    }
+
+    private function linkedDescription(string $id): string
+    {
+        return '<section data-linked-id="'.$id.'"><h2>Full Aftercool HTML</h2><table><tr><td>Keep markup</td></tr></table></section>';
     }
 
     private function process(Context $context): string
@@ -508,7 +576,11 @@ final class AfterCoolImportWorkflowTest extends TestCase
 
     private function product(string $id, Context $context): ProductEntity
     {
-        $product = $this->products()->search(new Criteria([$id]), $context)->first();
+        $product = $this->products()->search((new Criteria([$id]))
+            ->addAssociation('manufacturer')
+            ->addAssociation('price')
+            ->addAssociation('translations')
+            ->addAssociation('visibilities'), $context)->first();
         self::assertInstanceOf(ProductEntity::class, $product);
 
         return $product;
