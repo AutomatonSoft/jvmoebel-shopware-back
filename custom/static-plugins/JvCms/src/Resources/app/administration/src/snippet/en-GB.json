@@ -258,6 +258,49 @@
             }
           }
         }
+      },
+      "jv-product-grid": {
+        "label": "Product grid",
+        "component": {
+          "titlePlaceholder": "Section title",
+          "productSlot": "Product slot {index}",
+          "noProducts": "No products configured"
+        },
+        "config": {
+          "title": {
+            "label": "Section title",
+            "placeholder": "Featured pieces"
+          },
+          "eyebrow": {
+            "label": "Eyebrow",
+            "placeholder": "Selected for you"
+          },
+          "products": {
+            "title": "Products",
+            "add": "Add product",
+            "remove": "Remove",
+            "cardTitle": "Product {index}",
+            "productId": {
+              "label": "Product",
+              "placeholder": "Select product"
+            },
+            "badge": {
+              "label": "Badge",
+              "placeholder": "Bestseller"
+            }
+          },
+          "viewAll": {
+            "title": "View all link",
+            "label": {
+              "label": "Label",
+              "placeholder": "View all products"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/shop"
+            }
+          }
+        }
       }
     },
     "blocks": {
@@ -284,6 +327,9 @@
       },
       "jv-room-grid": {
         "label": "Room grid"
+      },
+      "jv-product-grid": {
+        "label": "Product grid"
       }
     }
   },
@@ -296,7 +342,8 @@
             "navigation": "Navigation",
             "hero": "Hero",
             "newsletter": "Newsletter",
-            "room": "Room"
+            "room": "Room",
+            "commerce": "Commerce"
           }
         }
       }
