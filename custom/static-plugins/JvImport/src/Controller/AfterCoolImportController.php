@@ -64,7 +64,7 @@ final class AfterCoolImportController extends AbstractController
                 'ean' => $item->ean,
                 'name' => $item->name,
                 'manufacturer' => $item->manufacturer,
-                'price' => $item->price,
+                'price' => null === $item->price ? null : (float) $item->price,
                 'stock' => $item->stock,
                 'dimensions' => $item->dimensions,
                 'weight' => $item->weight,
