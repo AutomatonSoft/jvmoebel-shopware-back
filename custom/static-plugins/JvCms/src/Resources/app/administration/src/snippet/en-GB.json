@@ -208,6 +208,56 @@
             "placeholder": "Subscription failed. Please try again."
           }
         }
+      },
+      "jv-room-grid": {
+        "label": "Room grid",
+        "component": {
+          "titlePlaceholder": "Section title",
+          "roomLabelPlaceholder": "Room label",
+          "roomTitlePlaceholder": "Room title",
+          "noRooms": "No room cards configured"
+        },
+        "config": {
+          "title": {
+            "label": "Section title",
+            "placeholder": "Furniture for every room."
+          },
+          "eyebrow": {
+            "label": "Eyebrow",
+            "placeholder": "Shop by room"
+          },
+          "description": {
+            "label": "Description",
+            "placeholder": "Discover pieces selected to work together."
+          },
+          "rooms": {
+            "title": "Room cards",
+            "add": "Add room card",
+            "remove": "Remove",
+            "cardTitle": "Room {index}",
+            "id": {
+              "label": "ID",
+              "helpText": "Optional stable id. Empty uses label and index."
+            },
+            "label": {
+              "label": "Label"
+            },
+            "titleField": {
+              "label": "Title"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/living"
+            },
+            "featured": {
+              "label": "Featured (desktop row span 2)"
+            },
+            "imageMedia": {
+              "label": "Image",
+              "caption": "Upload room image"
+            }
+          }
+        }
       }
     },
     "blocks": {
@@ -231,6 +281,9 @@
       },
       "jv-newsletter": {
         "label": "Newsletter"
+      },
+      "jv-room-grid": {
+        "label": "Room grid"
       }
     }
   },
@@ -242,7 +295,8 @@
             "button": "Button",
             "navigation": "Navigation",
             "hero": "Hero",
-            "newsletter": "Newsletter"
+            "newsletter": "Newsletter",
+            "room": "Room"
           }
         }
       }

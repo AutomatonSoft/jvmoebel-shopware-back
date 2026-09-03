@@ -1,6 +1,6 @@
 {
   "main.js": {
-    "file": "assets/jv-cms-DOO7jMxQ.js",
+    "file": "assets/jv-cms-CC-9Eo_D.js",
     "name": "jv-cms",
     "src": "main.js",
     "isEntry": true,
@@ -33,7 +33,12 @@
       "module/sw-cms/elements/jv-newsletter/config/index.js",
       "module/sw-cms/elements/jv-newsletter/component/index.js",
       "module/sw-cms/blocks/jv-newsletter/jv-newsletter/preview/index.js",
-      "module/sw-cms/blocks/jv-newsletter/jv-newsletter/component/index.js"
+      "module/sw-cms/blocks/jv-newsletter/jv-newsletter/component/index.js",
+      "module/sw-cms/elements/jv-room-grid/preview/index.js",
+      "module/sw-cms/elements/jv-room-grid/config/index.js",
+      "module/sw-cms/elements/jv-room-grid/component/index.js",
+      "module/sw-cms/blocks/jv-room-grid/jv-room-grid/preview/index.js",
+      "module/sw-cms/blocks/jv-room-grid/jv-room-grid/component/index.js"
     ]
   },
   "module/sw-cms/blocks/jv-button/jv-button-link/component/index.js": {
@@ -124,6 +129,24 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-CGHWm_mD.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-room-grid/jv-room-grid/component/index.js": {
+    "file": "assets/index-4y594tei.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-room-grid/jv-room-grid/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BFGh6ipg.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-room-grid/jv-room-grid/preview/index.js": {
+    "file": "assets/index-BkRS4ViI.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-room-grid/jv-room-grid/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DhrCSTwN.css"
     ]
   },
   "module/sw-cms/blocks/jv-side-navigation/jv-side-navigation/component/index.js": {
@@ -244,6 +267,33 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-CWD0PwKz.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-room-grid/component/index.js": {
+    "file": "assets/index-BV_91oRy.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-room-grid/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CsPqs8ey.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-room-grid/config/index.js": {
+    "file": "assets/index-DACcPwth.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-room-grid/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-N89bevRI.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-room-grid/preview/index.js": {
+    "file": "assets/index-DxHonFR6.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-room-grid/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CL-CDUMe.css"
     ]
   },
   "module/sw-cms/elements/jv-side-navigation/component/index.js": {

@@ -84,3 +84,4 @@ SPEC-NNN-short-name.md
 | [SPEC-007-cms-product-filter](SPEC-007-cms-product-filter.md) | Backend CMS element/block `jv-product-filter` + фасеты PLP; контракт — platform SPEC-005 |
 | [SPEC-008-cms-hero](SPEC-008-cms-hero.md) | Backend CMS element/block `jv-hero` (баннер); контракт — platform SPEC-006 |
 | [SPEC-009-cms-newsletter](SPEC-009-cms-newsletter.md) | Backend CMS element/block `jv-newsletter` (подписка); контракт — platform SPEC-007 |
+| [SPEC-010-cms-room-grid](SPEC-010-cms-room-grid.md) | Backend CMS element/block `jv-room-grid` (карточки комнат, featured layout); контракт — platform SPEC-008 |

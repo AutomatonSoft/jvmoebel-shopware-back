@@ -208,6 +208,56 @@
             "placeholder": "Anmeldung fehlgeschlagen. Bitte erneut versuchen."
           }
         }
+      },
+      "jv-room-grid": {
+        "label": "Raum-Grid",
+        "component": {
+          "titlePlaceholder": "Abschnittstitel",
+          "roomLabelPlaceholder": "Raum-Label",
+          "roomTitlePlaceholder": "Raumtitel",
+          "noRooms": "Keine Raumkarten konfiguriert"
+        },
+        "config": {
+          "title": {
+            "label": "Abschnittstitel",
+            "placeholder": "Möbel für jeden Raum."
+          },
+          "eyebrow": {
+            "label": "Eyebrow",
+            "placeholder": "Nach Raum shoppen"
+          },
+          "description": {
+            "label": "Beschreibung",
+            "placeholder": "Entdecken Sie aufeinander abgestimmte Stücke."
+          },
+          "rooms": {
+            "title": "Raumkarten",
+            "add": "Raumkarte hinzufügen",
+            "remove": "Entfernen",
+            "cardTitle": "Raum {index}",
+            "id": {
+              "label": "ID",
+              "helpText": "Optionale stabile ID. Leer = Label und Index."
+            },
+            "label": {
+              "label": "Label"
+            },
+            "titleField": {
+              "label": "Titel"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/wohnen"
+            },
+            "featured": {
+              "label": "Featured (Desktop: 2 Zeilen)"
+            },
+            "imageMedia": {
+              "label": "Bild",
+              "caption": "Raumbild hochladen"
+            }
+          }
+        }
       }
     },
     "blocks": {
@@ -231,6 +281,9 @@
       },
       "jv-newsletter": {
         "label": "Newsletter"
+      },
+      "jv-room-grid": {
+        "label": "Raum-Grid"
       }
     }
   },
@@ -242,7 +295,8 @@
             "button": "Button",
             "navigation": "Navigation",
             "hero": "Hero",
-            "newsletter": "Newsletter"
+            "newsletter": "Newsletter",
+            "room": "Raum"
           }
         }
       }
