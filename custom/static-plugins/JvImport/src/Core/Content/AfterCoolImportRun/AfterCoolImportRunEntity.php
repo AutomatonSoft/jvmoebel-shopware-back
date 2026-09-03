@@ -18,6 +18,8 @@ final class AfterCoolImportRunEntity extends Entity
     protected int $updated;
     protected int $skipped;
     protected int $failed;
+    protected ?string $safeFailureCode = null;
+    protected ?string $safeFailureMessage = null;
 
     protected string $account;
     protected string $dataset;
@@ -81,5 +83,15 @@ final class AfterCoolImportRunEntity extends Entity
     public function getFailed(): int
     {
         return $this->failed;
+    }
+
+    public function getSafeFailureCode(): ?string
+    {
+        return $this->safeFailureCode;
+    }
+
+    public function getSafeFailureMessage(): ?string
+    {
+        return $this->safeFailureMessage;
     }
 }

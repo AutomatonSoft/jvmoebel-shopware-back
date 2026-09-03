@@ -11,8 +11,8 @@
         <sw-button class="jv-aftercool-import__refresh" :disabled="loadingFactories" @click="loadFactories">
             {{ $t('jv-import.aftercool.refresh') }}
         </sw-button>
-        <p v-if="previewReady && factoryTotal !== null">{{ $tc('jv-import.aftercool.importWholeFactory', factoryTotal, { count: factoryTotal }) }}</p>
-        <p v-if="previewReady && previewQuery">{{ $tc('jv-import.aftercool.filteredPreview', previewTotal, { count: previewTotal, total: factoryTotal }) }}</p>
+        <p v-if="previewReady && factoryTotal !== null">{{ $t('jv-import.aftercool.importWholeFactory', { count: factoryTotal }) }}</p>
+        <p v-if="previewReady && previewQuery">{{ $t('jv-import.aftercool.filteredPreview', { count: previewTotal, total: factoryTotal }) }}</p>
     </sw-card>
 
     <sw-card v-if="factoryId" :title="$t('jv-import.aftercool.preview')" :is-loading="previewLoading">
@@ -46,6 +46,7 @@
         <sw-progress-bar :value="run.total ? (run.processed / run.total) * 100 : 0" />
         <p>{{ run.status }} — {{ run.processed }} / {{ run.total || '?' }}</p>
         <p>{{ $t('jv-import.aftercool.counters', run) }}</p>
+        <p v-if="run.failureCode || run.failureMessage">{{ $t('jv-import.aftercool.failure', { code: run.failureCode || '—', message: run.failureMessage || '—' }) }}</p>
     </sw-card>
 
     <sw-card v-if="run && errorsTotal > 0" :title="$t('jv-import.aftercool.errors')">

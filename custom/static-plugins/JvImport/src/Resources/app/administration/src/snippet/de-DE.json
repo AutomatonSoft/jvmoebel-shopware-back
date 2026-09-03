@@ -22,6 +22,8 @@
             "search": "Name, Artikelnummer, EAN oder Produkt-ID suchen",
             "previewError": "Aftercool-Produkte konnten nicht geladen werden.",
             "startError": "Aftercool-Import konnte nicht gestartet werden.",
+            "runError": "Aftercool-Importfortschritt konnte nicht geladen werden.",
+            "failure": "Fehler: {code} — {message}",
             "importWholeFactory": "Die ganze Fabrik ({count} Produkte) wird importiert.",
             "filteredPreview": "Es werden {count} von {total} Produkten angezeigt. Die Suche filtert nur die Vorschau.",
             "image": "Bild",

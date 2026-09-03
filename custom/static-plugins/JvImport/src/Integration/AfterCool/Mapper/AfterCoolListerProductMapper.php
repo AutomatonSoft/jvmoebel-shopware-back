@@ -36,6 +36,31 @@ final class AfterCoolListerProductMapper
         );
     }
 
+    public function mapWithUnusablePrice(AfterCoolProductItem $item): AfterCoolMappedProduct
+    {
+        if (!$this->isValidEan($item->ean)) {
+            throw new AfterCoolProductMappingException($item->productId, 'invalid_ean');
+        }
+        [$mediaUrls, $mediaIssues] = $this->media($item);
+
+        return new AfterCoolMappedProduct(
+            $item->account,
+            $item->dataset,
+            $item->factoryId,
+            $item->productId,
+            $item->artikelnummer,
+            $item->ean,
+            $item->ean,
+            $item->name,
+            $item->rowNo,
+            null,
+            $this->stock($item),
+            $this->description($item),
+            $mediaUrls,
+            $mediaIssues,
+        );
+    }
+
     private function isValidEan(string $ean): bool
     {
         if (!preg_match('/^\d{13}$/', $ean)) {

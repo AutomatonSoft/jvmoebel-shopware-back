@@ -264,6 +264,11 @@ final class AfterCoolImportWorkflowTest extends TestCase
         self::assertSame('failed', $this->loadRun($runId, $context)->getStatus());
         self::assertSame(0, $this->productRequests);
         self::assertSame(0, $this->sourceProductCount());
+
+        $browser = $this->getBrowser();
+        $browser->jsonRequest('GET', '/api/_action/jv-import/aftercool/runs/'.$runId);
+        self::assertSame('aftercool_http_503', $this->response()['data']['failureCode']);
+        self::assertSame('Safe failure', $this->response()['data']['failureMessage']);
     }
 
     public function testSyncPreservesExistingOtherCurrencyPrices(): void
@@ -282,15 +287,64 @@ final class AfterCoolImportWorkflowTest extends TestCase
             'taxId' => $tax->id,
             'price' => [
                 ['currencyId' => Defaults::CURRENCY, 'gross' => 100, 'net' => 84, 'linked' => false],
-                ['currencyId' => $currencyId, 'gross' => 777, 'net' => 700, 'linked' => false],
+                [
+                    'currencyId' => $currencyId,
+                    'gross' => 777,
+                    'net' => 700,
+                    'linked' => false,
+                    'listPrice' => ['gross' => 888, 'net' => 800, 'linked' => false],
+                    'regulationPrice' => ['gross' => 666, 'net' => 600, 'linked' => false],
+                ],
             ],
         ]], $context);
         $this->process($context);
         $prices = $this->product($id, $context)->getPrice();
         self::assertNotNull($prices);
         self::assertCount(2, $prices);
-        self::assertSame(777.0, $prices->getCurrencyPrice($currencyId, false)?->getGross());
+        $otherCurrencyPrice = $prices->getCurrencyPrice($currencyId, false);
+        self::assertSame(777.0, $otherCurrencyPrice?->getGross());
+        self::assertSame(888.0, $otherCurrencyPrice->getListPrice()?->getGross());
+        self::assertSame(666.0, $otherCurrencyPrice->getRegulationPrice()?->getGross());
         self::assertSame(119.0, $prices->getCurrencyPrice(Defaults::CURRENCY, false)?->getGross());
+    }
+
+    public function testUnusableAfterCoolPriceStillUpdatesAnExistingProductWithoutOverwritingItsPrice(): void
+    {
+        $context = $this->prepare([$this->item(1, ['Startpreis' => 'price on request', 'Menge' => '27'])]);
+        $id = Uuid::randomHex();
+        $tax = static::getContainer()->get(ResolveDefaultProductTaxService::class)->execute();
+        $this->products()->create([[
+            'id' => $id,
+            'productNumber' => $this->ean(1),
+            'name' => 'Existing product',
+            'stock' => 1,
+            'taxId' => $tax->id,
+            'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 100, 'net' => 84, 'linked' => false]],
+        ]], $context);
+
+        $run = $this->loadRun($this->process($context), $context);
+        $product = $this->product($id, $context);
+
+        self::assertSame(1, $run->getUpdated());
+        self::assertSame(27, $product->getStock());
+        self::assertSame(100.0, $product->getPrice()?->getCurrencyPrice(Defaults::CURRENCY, false)?->getGross());
+    }
+
+    public function testUnusablePriceRejectsANewProductAndProducesOneReportEntry(): void
+    {
+        $context = $this->prepare([$this->item(1, ['Startpreis' => 'price on request'])]);
+
+        $runId = $this->process($context);
+        $run = $this->loadRun($runId, $context);
+
+        self::assertSame(0, $run->getCreated());
+        self::assertSame(1, $run->getFailed());
+        self::assertSame(0, $this->sourceProductCount());
+
+        $browser = $this->getBrowser();
+        $browser->jsonRequest('GET', '/api/_action/jv-import/aftercool/runs/'.$runId.'/errors');
+        self::assertSame(1, $this->response()['total'], 'One rejected product must not produce duplicate report rows for the same invalid price.');
+        self::assertSame('invalid_price', $this->response()['data'][0]['code']);
     }
 
     public function testExistingExternalMediaUsesTheIdReturnedByShopwareDeduplication(): void

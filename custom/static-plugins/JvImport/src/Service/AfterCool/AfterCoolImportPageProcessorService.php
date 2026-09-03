@@ -21,6 +21,7 @@ use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Pricing\Price;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
@@ -111,6 +112,10 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
                 );
                 $products[$product->sourceProductId] = [$product, null === $existingProductId, $payload['id']];
             } catch (AfterCoolProductWriteValidationException $exception) {
+                $issues = array_values(array_filter(
+                    $issues,
+                    static fn (AfterCoolProductIssue $issue): bool => !($issue->productId === $product->sourceProductId && 'invalid_price' === $issue->code),
+                ));
                 $issues[] = new AfterCoolProductIssue($product->sourceProductId, 'failed', $exception->safeCode(), 'Aftercool product cannot be created without a valid price.', $product->sourceArtikelnummer, $product->ean, $product->rowNo);
             }
         }
@@ -227,12 +232,32 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
             return [];
         }
 
-        return array_map(static fn ($price): array => [
+        return array_map(fn (Price $price): array => $this->priceData($price), $product->getPrice()->getElements());
+    }
+
+    /** @return array<string, mixed> */
+    private function priceData(Price $price): array
+    {
+        $data = [
             'currencyId' => $price->getCurrencyId(),
             'net' => $price->getNet(),
             'gross' => $price->getGross(),
             'linked' => $price->getLinked(),
-        ], $product->getPrice()->getElements());
+        ];
+        if (null !== $price->getListPrice()) {
+            $data['listPrice'] = $this->nestedPriceData($price->getListPrice());
+        }
+        if (null !== $price->getRegulationPrice()) {
+            $data['regulationPrice'] = $this->nestedPriceData($price->getRegulationPrice());
+        }
+
+        return $data;
+    }
+
+    /** @return array{net: float, gross: float, linked: bool} */
+    private function nestedPriceData(Price $price): array
+    {
+        return ['net' => $price->getNet(), 'gross' => $price->getGross(), 'linked' => $price->getLinked()];
     }
 
     /** @param list<AfterCoolProductIssue> $issues */

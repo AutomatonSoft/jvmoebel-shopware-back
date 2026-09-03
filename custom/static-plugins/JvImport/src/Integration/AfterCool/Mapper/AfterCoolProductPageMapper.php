@@ -29,9 +29,20 @@ final readonly class AfterCoolProductPageMapper
             try {
                 $product = $this->productMapper->map($item);
             } catch (AfterCoolProductMappingException $exception) {
-                $issues[] = new AfterCoolProductIssue($exception->productId(), 'failed', $exception->safeCode(), 'Aftercool product data is invalid.', $item->artikelnummer, $item->ean, $item->rowNo);
+                if ('invalid_price' === $exception->safeCode()) {
+                    try {
+                        $product = $this->productMapper->mapWithUnusablePrice($item);
+                    } catch (AfterCoolProductMappingException $fallbackException) {
+                        $issues[] = new AfterCoolProductIssue($fallbackException->productId(), 'failed', $fallbackException->safeCode(), 'Aftercool product data is invalid.', $item->artikelnummer, $item->ean, $item->rowNo);
 
-                continue;
+                        continue;
+                    }
+                    $issues[] = new AfterCoolProductIssue($product->sourceProductId, 'failed', 'invalid_price', 'Aftercool product price is unusable; an existing Shopware price will be kept.', $product->sourceArtikelnummer, $product->ean, $product->rowNo, false);
+                } else {
+                    $issues[] = new AfterCoolProductIssue($exception->productId(), 'failed', $exception->safeCode(), 'Aftercool product data is invalid.', $item->artikelnummer, $item->ean, $item->rowNo);
+
+                    continue;
+                }
             }
             if (isset($seenSourceProductIds[$product->sourceProductId])) {
                 $issues[] = new AfterCoolProductIssue($product->sourceProductId, 'skipped', 'duplicate_source_product_id', 'Duplicate Aftercool source product ID on one page.', $product->sourceArtikelnummer, $product->ean, $product->rowNo);

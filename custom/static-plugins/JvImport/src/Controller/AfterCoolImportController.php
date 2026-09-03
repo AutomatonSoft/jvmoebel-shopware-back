@@ -109,6 +109,8 @@ final class AfterCoolImportController extends AbstractController
             'updated' => $run->getUpdated(),
             'skipped' => $run->getSkipped(),
             'failed' => $run->getFailed(),
+            'failureCode' => $run->getSafeFailureCode(),
+            'failureMessage' => $run->getSafeFailureMessage(),
         ]]);
     }
 

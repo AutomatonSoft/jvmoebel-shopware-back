@@ -60,7 +60,7 @@ export default {
     },
 
     beforeUnmount() {
-        window.clearInterval(this.polling);
+        this.stopPolling();
     },
 
     watch: {
@@ -86,13 +86,15 @@ export default {
         },
 
         async start() {
+            this.stopPolling();
             this.starting = true;
             try {
                 const response = await this.httpClient.post('/_action/jv-import/aftercool/runs', {
                     factoryId: this.factoryId,
                 });
-                await this.loadRun(response.data.data.id);
-                this.polling = window.setInterval(() => this.loadRun(this.run.id), 3000);
+                const runId = response.data.data.id;
+                await this.loadRun(runId);
+                if (this.run?.id === runId && !this.isTerminal(this.run.status)) this.startPolling(runId);
             } catch (error) {
                 this.createNotificationError({ message: this.afterCoolError(error, 'jv-import.aftercool.startError') });
             } finally {
@@ -125,14 +127,32 @@ export default {
             return typeof detail === 'string' && detail.length > 0 ? detail : this.$t(fallbackKey);
         },
 
+        isTerminal(status) {
+            return ['completed', 'completed_with_errors', 'failed'].includes(status);
+        },
+
+        startPolling(runId) {
+            this.stopPolling();
+            this.polling = window.setInterval(async () => {
+                try {
+                    await this.loadRun(runId);
+                } catch (error) {
+                    this.stopPolling();
+                    this.createNotificationError({ message: this.afterCoolError(error, 'jv-import.aftercool.runError') });
+                }
+            }, 3000);
+        },
+
+        stopPolling() {
+            if (this.polling !== null) window.clearInterval(this.polling);
+            this.polling = null;
+        },
+
         async loadRun(id) {
             const response = await this.httpClient.get(`/_action/jv-import/aftercool/runs/${id}`);
             this.run = response.data.data;
             await this.loadErrors(id);
-            if (['completed', 'completed_with_errors', 'failed'].includes(this.run.status)) {
-                window.clearInterval(this.polling);
-                this.polling = null;
-            }
+            if (this.isTerminal(this.run.status)) this.stopPolling();
         },
 
         async loadErrors(id) {

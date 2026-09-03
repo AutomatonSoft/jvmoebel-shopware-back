@@ -16,7 +16,7 @@ final class BuildAfterCoolShopwareProductRecordService
     public function build(AfterCoolMappedProduct $product, ?string $existingProductId, string $taxId, float $taxRate, string $currencyId, string $languageId, array $existingPrices = []): array
     {
         $isNew = null === $existingProductId;
-        if ($isNew && 0.0 >= $product->grossPrice) {
+        if ($isNew && (null === $product->grossPrice || 0.0 >= $product->grossPrice)) {
             throw new AfterCoolProductWriteValidationException('invalid_price');
         }
         $record = [
@@ -32,7 +32,7 @@ final class BuildAfterCoolShopwareProductRecordService
         if (null !== $product->description) {
             $record['translations'][0]['description'] = $product->description;
         }
-        if (0.0 < $product->grossPrice) {
+        if (null !== $product->grossPrice && 0.0 < $product->grossPrice) {
             $prices = [];
             foreach ($existingPrices as $price) {
                 if (isset($price['currencyId']) && is_string($price['currencyId'])) {
