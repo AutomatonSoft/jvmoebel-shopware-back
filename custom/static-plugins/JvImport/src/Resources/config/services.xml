@@ -119,6 +119,14 @@
             <argument type="service" id="jv_aftercool_product_source.repository"/>
             <argument type="service" id="product.repository"/>
         </service>
+        <service id="Jv\Import\Service\AfterCool\AfterCoolPageCheckpointService">
+            <argument type="service" id="Jv\Import\Service\AfterCool\AfterCoolSyncBatchWriter"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\AfterCoolMediaStageService"/>
+            <argument type="service" id="jv_aftercool_import_run.repository"/>
+            <argument type="service" id="jv_aftercool_product_source.repository"/>
+            <argument type="service" id="jv_aftercool_import_error.repository"/>
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+        </service>
         <service id="Jv\Import\Service\AfterCool\BuildAfterCoolShopwareProductRecordService"/>
         <service id="Jv\Import\Service\AfterCool\AfterCoolProductPreviewService"/>
         <service id="Jv\Import\Service\AfterCool\ListAfterCoolFactoriesService"/>
@@ -126,14 +134,10 @@
             <argument type="service" id="Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface"/>
             <argument type="service" id="Jv\Import\Service\AfterCool\AfterCoolProductPageResolverService"/>
             <argument type="service" id="Jv\Import\Service\AfterCool\BuildAfterCoolShopwareProductRecordService"/>
-            <argument type="service" id="Jv\Import\Service\AfterCool\AfterCoolSyncBatchWriter"/>
-            <argument type="service" id="Jv\Import\Service\AfterCool\AfterCoolMediaStageService"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\AfterCoolPageCheckpointService"/>
             <argument type="service" id="Jv\Import\Service\AfterCool\AfterCoolStagedMediaProcessorService"/>
             <argument type="service" id="Jv\Import\Service\ProductImport\ResolveDefaultProductTaxService"/>
             <argument type="service" id="jv_aftercool_import_run.repository"/>
-            <argument type="service" id="jv_aftercool_product_source.repository"/>
-            <argument type="service" id="jv_aftercool_import_error.repository"/>
-            <argument type="service" id="Doctrine\DBAL\Connection"/>
             <argument type="service" id="lock.factory"/>
         </service>
         <service id="Jv\Import\Service\AfterCool\Contract\AfterCoolImportPageProcessor" alias="Jv\Import\Service\AfterCool\AfterCoolImportPageProcessorService"/>
