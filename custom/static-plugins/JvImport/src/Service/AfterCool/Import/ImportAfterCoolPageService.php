@@ -4,7 +4,7 @@ namespace Jv\Import\Service\AfterCool\Import;
 
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunCollection;
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunEntity;
-use Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface;
+use Jv\Import\Service\AfterCool\Contract\AfterCoolImportProductSourceInterface;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolPageProcessingResult;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolPreparedProduct;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolProductIssue;
@@ -31,7 +31,7 @@ readonly class ImportAfterCoolPageService
      * @param EntityRepository<AfterCoolImportRunCollection> $runRepository
      */
     public function __construct(
-        private AfterCoolProductSourceInterface $source,
+        private AfterCoolImportProductSourceInterface $source,
         private ResolveAfterCoolProductPageService $pageResolver,
         private BuildAfterCoolShopwareProductRecordService $recordBuilder,
         private AfterCoolPageCheckpointService $checkpoint,
@@ -70,7 +70,7 @@ readonly class ImportAfterCoolPageService
             throw new AfterCoolUnexpectedPageOffsetException();
         }
 
-        $page = $this->source->getProductPage($run->getFactoryId(), $offset);
+        $page = $this->source->getImportProductPage($run->getFactoryId(), $offset);
         $mapping = $page;
         $tax = $this->defaultTax->execute();
         $records = [];

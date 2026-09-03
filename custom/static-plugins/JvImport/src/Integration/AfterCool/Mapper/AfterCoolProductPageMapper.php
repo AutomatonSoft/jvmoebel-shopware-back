@@ -3,6 +3,7 @@
 namespace Jv\Import\Integration\AfterCool\Mapper;
 
 use Jv\Import\Integration\AfterCool\Dto\AfterCoolInvalidProductItem;
+use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductItem;
 use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductIssue;
 use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductPage;
 use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductPageMappingResult;
@@ -14,7 +15,8 @@ final readonly class AfterCoolProductPageMapper
     {
     }
 
-    public function map(AfterCoolProductPage $page): AfterCoolProductPageMappingResult
+    /** @param array<string, AfterCoolProductItem|null> $linkedProducts */
+    public function map(AfterCoolProductPage $page, array $linkedProducts = [], bool $importing = false): AfterCoolProductPageMappingResult
     {
         $products = [];
         $issues = [];
@@ -27,7 +29,8 @@ final readonly class AfterCoolProductPageMapper
                 continue;
             }
             try {
-                $product = $this->productMapper->map($item);
+                $stammartikel = $item->row['I_stammartikel'] ?? null;
+                $product = $this->productMapper->map($item, is_string($stammartikel) ? ($linkedProducts[trim($stammartikel)] ?? null) : null, $importing);
             } catch (AfterCoolProductMappingException $exception) {
                 if ('invalid_price' === $exception->safeCode()) {
                     try {

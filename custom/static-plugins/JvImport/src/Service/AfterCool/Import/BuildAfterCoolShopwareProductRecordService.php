@@ -5,6 +5,10 @@ namespace Jv\Import\Service\AfterCool\Import;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolMappedProduct;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolProductWriteValidationException;
 use Jv\Import\Service\ProductImport\ProductImportIdentity;
+use Jv\Import\Service\ProductImport\ProductManufacturerIdentity;
+use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
+use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
+use Shopware\Core\Framework\Uuid\Uuid;
 
 final class BuildAfterCoolShopwareProductRecordService
 {
@@ -44,6 +48,11 @@ final class BuildAfterCoolShopwareProductRecordService
                 'gross' => $product->grossPrice,
                 'net' => round($product->grossPrice / (1 + $taxRate / 100), 2),
                 'linked' => true,
+                'listPrice' => [
+                    'gross' => $this->uvp($product->grossPrice),
+                    'net' => round($this->uvp($product->grossPrice) / (1 + $taxRate / 100), 2),
+                    'linked' => true,
+                ],
             ];
             $record['price'] = array_values($prices);
         }
@@ -53,7 +62,20 @@ final class BuildAfterCoolShopwareProductRecordService
             $record['minPurchase'] = 1;
             $record['active'] = false;
         }
+        $record['manufacturer'] = ['id' => ProductManufacturerIdentity::jvmoebel(), 'name' => 'JVMOEBEL'];
+        $record['visibilities'] = [[
+            'id' => Uuid::fromStringToHex('jvmoebel.product-visibility.'.Market::Germany->salesChannelId().$record['id']),
+            'salesChannelId' => Market::Germany->salesChannelId(),
+            'visibility' => ProductVisibilityDefinition::VISIBILITY_ALL,
+        ]];
 
         return $record;
+    }
+
+    private function uvp(float $price): float
+    {
+        $factor = $price > 5000 ? 1.10 : ($price >= 2500 && $price <= 4999 ? 1.18 : ($price >= 1000 && $price <= 2499 ? 1.25 : 1.35));
+
+        return round($price * $factor, 2);
     }
 }

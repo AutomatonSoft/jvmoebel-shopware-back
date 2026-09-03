@@ -9,7 +9,7 @@ use Jv\Import\Integration\AfterCool\Exception\AfterCoolProductMappingException;
 
 final class AfterCoolListerProductMapper
 {
-    public function map(AfterCoolProductItem $item): AfterCoolMappedProduct
+    public function map(AfterCoolProductItem $item, ?AfterCoolProductItem $linkedProduct = null, bool $importing = false): AfterCoolMappedProduct
     {
         if (!$this->isValidEan($item->ean)) {
             throw new AfterCoolProductMappingException($item->productId, 'invalid_ean');
@@ -30,12 +30,12 @@ final class AfterCoolListerProductMapper
             $item->rowNo,
             $price,
             $stock,
-            $this->description($item),
+            $this->description($item, $linkedProduct, $importing),
             $mediaUrls,
             $mediaIssues,
-            $this->string($item, 'Hersteller'),
-            $this->string($item, 'Abmessungen') ?? $this->string($item, 'Maße'),
-            $this->string($item, 'Gewicht'),
+            null,
+            null,
+            null,
             $item->updatedAt,
             $item->sourceFile,
             $item->sourceKind,
@@ -61,12 +61,12 @@ final class AfterCoolListerProductMapper
             $item->rowNo,
             null,
             $this->stock($item),
-            $this->description($item),
+            $this->description($item, null, false),
             $mediaUrls,
             $mediaIssues,
-            $this->string($item, 'Hersteller'),
-            $this->string($item, 'Abmessungen') ?? $this->string($item, 'Maße'),
-            $this->string($item, 'Gewicht'),
+            null,
+            null,
+            null,
             $item->updatedAt,
             $item->sourceFile,
             $item->sourceKind,
@@ -106,14 +106,22 @@ final class AfterCoolListerProductMapper
         return (int) $value;
     }
 
-    private function description(AfterCoolProductItem $item): ?string
+    private function description(AfterCoolProductItem $item, ?AfterCoolProductItem $linkedProduct, bool $importing): ?string
     {
-        $value = $item->row['Description'] ?? null;
-        if (!is_string($value) || '' === trim($value) || str_contains($value, '<-StammBeschreibung->')) {
+        if (null !== $linkedProduct) {
+            $description = $linkedProduct->row['Beschreibung'] ?? null;
+
+            return is_string($description) && '' !== trim($description) ? $description : null;
+        }
+        if ($importing) {
+            return null;
+        }
+        $description = $item->row['Description'] ?? null;
+        if (!is_string($description) || '' === trim($description) || str_contains($description, '<-StammBeschreibung->')) {
             return null;
         }
 
-        return trim($value);
+        return trim($description);
     }
 
     private function string(AfterCoolProductItem $item, string $field): ?string

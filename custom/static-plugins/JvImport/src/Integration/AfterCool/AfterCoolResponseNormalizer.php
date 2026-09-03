@@ -98,6 +98,37 @@ final class AfterCoolResponseNormalizer
         return new AfterCoolProductPage($normalized, $total, $limit, $offset, $hasMore);
     }
 
+    /** @param array<string, mixed>|list<mixed> $response */
+    public function normalizeLinkedProduct(array $response, string $account, string $expectedIdentity): ?AfterCoolProductItem
+    {
+        if (array_is_list($response)
+            || !isset($response['items'], $response['total'], $response['limit'], $response['offset'], $response['has_more'])
+            || !is_array($response['items']) || !array_is_list($response['items'])
+            || !is_int($response['total']) || !is_int($response['limit']) || 1 !== $response['limit']
+            || !is_int($response['offset']) || 0 !== $response['offset'] || !is_bool($response['has_more'])) {
+            throw new AfterCoolResponseContractException('Aftercool linked product page has invalid fields.');
+        }
+        if (0 === $response['total'] && [] === $response['items'] && false === $response['has_more']) {
+            return null;
+        }
+        if (1 !== $response['total'] || 1 !== count($response['items']) || $response['has_more'] || !is_array($response['items'][0])) {
+            return null;
+        }
+        $item = $response['items'][0];
+        try {
+            $factoryId = $this->factoryId($item['factory_id'] ?? null);
+            $item['factory_id'] = $factoryId;
+            $product = $this->normalizeItem($item, $account, 'product', $factoryId);
+        } catch (AfterCoolResponseContractException) {
+            return null;
+        }
+        if ($product->productId !== $expectedIdentity && ($product->row['ID'] ?? null) !== $expectedIdentity) {
+            return null;
+        }
+
+        return $product;
+    }
+
     /** @param array<string, mixed> $item */
     private function normalizeItem(array $item, string $account, string $dataset, int $factoryId): AfterCoolProductItem
     {

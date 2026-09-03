@@ -54,6 +54,23 @@ final class AfterCoolApiClient implements AfterCoolApiClientInterface, Contract\
         return $page;
     }
 
+    public function getLinkedProduct(string $stammartikel): ?Dto\AfterCoolProductItem
+    {
+        $stammartikel = trim($stammartikel);
+        if ('' === $stammartikel) {
+            return null;
+        }
+
+        return $this->normalizer->normalizeLinkedProduct(
+            $this->request('GET', '/api/products', [
+                'account' => 'JV', 'dataset' => 'product', 'q' => $stammartikel,
+                'limit' => 1, 'offset' => 0, 'include_row' => 1,
+            ]),
+            'JV',
+            $stammartikel,
+        );
+    }
+
     /** @param array<string, scalar> $query
      * @return array<string, mixed>|list<mixed>
      */

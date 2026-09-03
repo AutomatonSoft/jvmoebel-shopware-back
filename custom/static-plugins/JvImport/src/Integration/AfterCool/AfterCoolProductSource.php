@@ -3,17 +3,17 @@
 namespace Jv\Import\Integration\AfterCool;
 
 use Jv\Import\Integration\AfterCool\Mapper\AfterCoolProductPageMapper;
-use Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface;
+use Jv\Import\Service\AfterCool\Contract\AfterCoolImportProductSourceInterface;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolFactory;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolMappedProduct;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolProductIssue;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolProductPageMappingResult;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolProductPreviewItem;
 
-final readonly class AfterCoolProductSource implements AfterCoolProductSourceInterface
+final readonly class AfterCoolProductSource implements AfterCoolImportProductSourceInterface
 {
     public function __construct(
-        private AfterCoolApiClient $client,
+        private AfterCoolApiClient|Contract\AfterCoolProductPageReaderInterface $client,
         private AfterCoolProductPageMapper $pageMapper,
     ) {
     }
@@ -21,6 +21,10 @@ final readonly class AfterCoolProductSource implements AfterCoolProductSourceInt
     /** @return list<AfterCoolFactory> */
     public function getFactories(): array
     {
+        if (!$this->client instanceof AfterCoolApiClient) {
+            throw new \LogicException('The configured Aftercool page reader cannot list factories.');
+        }
+
         return array_map(
             static fn (Dto\AfterCoolFactory $factory): AfterCoolFactory => new AfterCoolFactory($factory->id, $factory->name),
             $this->client->getFactories(),
@@ -34,7 +38,31 @@ final readonly class AfterCoolProductSource implements AfterCoolProductSourceInt
         ?string $query = null,
     ): AfterCoolProductPageMappingResult {
         $page = $this->client->getProductPage($factoryId, $offset, $limit, $query);
-        $mapping = $this->pageMapper->map($page);
+
+        return $this->mappedPage($page);
+    }
+
+    public function getImportProductPage(int $factoryId, int $offset): AfterCoolProductPageMappingResult
+    {
+        $page = $this->client->getProductPage($factoryId, $offset);
+        $linkedProducts = [];
+        foreach ($page->items as $item) {
+            if (!$item instanceof Dto\AfterCoolProductItem || !is_string($item->row['I_stammartikel'] ?? null)) {
+                continue;
+            }
+            $identity = trim($item->row['I_stammartikel']);
+            if ('' !== $identity && !array_key_exists($identity, $linkedProducts)) {
+                $linkedProducts[$identity] = $this->client->getLinkedProduct($identity);
+            }
+        }
+
+        return $this->mappedPage($page, $linkedProducts, true);
+    }
+
+    /** @param array<string, Dto\AfterCoolProductItem|null> $linkedProducts */
+    private function mappedPage(Dto\AfterCoolProductPage $page, array $linkedProducts = [], bool $importing = false): AfterCoolProductPageMappingResult
+    {
+        $mapping = $this->pageMapper->map($page, $linkedProducts, $importing);
 
         $products = array_map([$this, 'product'], $mapping->products);
         $issues = array_map([$this, 'issue'], $mapping->issues);
