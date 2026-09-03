@@ -4,23 +4,10 @@
       "jv-button": {
         "label": "Button",
         "config": {
-          "label": {
-            "label": "Beschriftung",
-            "placeholder": "Zum Angebot"
-          },
-          "url": {
-            "label": "Link",
-            "placeholder": "https://jvmoebel.de/..."
-          },
-          "variant": {
-            "label": "Variante",
-            "primary": "Primary",
-            "secondary": "Secondary",
-            "link": "Link"
-          },
-          "openInNewTab": {
-            "label": "In neuem Tab öffnen"
-          }
+          "label": { "label": "Beschriftung", "placeholder": "Zum Angebot" },
+          "url": { "label": "Link", "placeholder": "https://jvmoebel.de/..." },
+          "variant": { "label": "Variante", "primary": "Primary", "secondary": "Secondary", "link": "Link" },
+          "openInNewTab": { "label": "In neuem Tab öffnen" }
         }
       },
       "jv-side-navigation": {
@@ -37,215 +24,89 @@
           "allLinkForCategory": "Alle {name}",
           "searchClear": "Suche löschen",
           "searchNoSuggestions": "Keine passenden Kategorien",
-          "visibility": {
-            "always": "immer",
-            "guest": "Gast",
-            "customer": "Kunde"
-          }
+          "visibility": { "always": "immer", "guest": "Gast", "customer": "Kunde" }
         },
         "config": {
-          "logoMedia": {
-            "label": "Logo",
-            "caption": "Logo für die Seitennavigation hochladen"
-          },
-          "logoLink": {
-            "label": "Logo-Link",
-            "placeholder": ""
-          },
-          "searchPlaceholder": {
-            "label": "Such-Platzhalter",
-            "placeholder": "Kategorie suchen",
-            "helpText": "Text im Suchfeld der Storefront. Leer = Standard."
-          },
-          "rootCategoryId": {
-            "label": "Wurzelkategorie",
-            "placeholder": "Katalogwurzel wählen"
-          },
-          "showIcons": {
-            "label": "Kategorie-Icons anzeigen"
-          },
+          "logoMedia": { "label": "Logo", "caption": "Logo für die Seitennavigation hochladen" },
+          "logoLink": { "label": "Logo-Link", "placeholder": "" },
+          "searchPlaceholder": { "label": "Such-Platzhalter", "placeholder": "Kategorie suchen", "helpText": "Text im Suchfeld der Storefront. Leer = Standard." },
+          "rootCategoryId": { "label": "Wurzelkategorie", "placeholder": "Katalogwurzel wählen" },
+          "showIcons": { "label": "Kategorie-Icons anzeigen" },
           "footer": {
-            "title": "Footer",
-            "add": "Footer-Eintrag hinzufügen",
-            "remove": "Eintrag entfernen",
-            "id": {
-              "label": "ID"
-            },
-            "label": {
-              "label": "Beschriftung"
-            },
-            "href": {
-              "label": "Link"
-            },
-            "icon": {
-              "label": "Icon",
-              "none": "Kein Icon"
-            },
-            "visibility": {
-              "label": "Sichtbarkeit"
-            }
+            "title": "Footer", "add": "Footer-Eintrag hinzufügen", "remove": "Eintrag entfernen",
+            "id": { "label": "ID" }, "label": { "label": "Beschriftung" }, "href": { "label": "Link" },
+            "icon": { "label": "Icon", "none": "Kein Icon" }, "visibility": { "label": "Sichtbarkeit" }
           }
         }
       },
       "jv-global-search": {
         "label": "Globale Suche",
-        "preview": {
-          "placeholder": "Wonach suchst du?"
-        },
-        "component": {
-          "defaultPlaceholder": "Wonach suchst du?"
-        },
+        "preview": { "placeholder": "Wonach suchst du?" },
+        "component": { "defaultPlaceholder": "Wonach suchst du?" },
         "config": {
-          "searchPlaceholder": {
-            "label": "Such-Platzhalter",
-            "placeholder": "Wonach suchst du?",
-            "helpText": "Konfig für das Suchfeld im Header (Next.js-Layout). Leer = Standard. Baut nicht den gesamten Header als CMS."
-          },
-          "suggestMinChars": {
-            "label": "Min. Zeichen für Suggest",
-            "helpText": "0–10. Standard: 3. Außerhalb → 3. Darunter zeigt die Storefront die Historie."
-          },
-          "suggestLimit": {
-            "label": "Max. Suggest-Treffer",
-            "helpText": "1–20. Standard: 10. Werte über 20 werden auf 20 begrenzt."
-          },
-          "historyMaxItems": {
-            "label": "Max. Historieneinträge",
-            "helpText": "0–20. Standard: 8. 0 deaktiviert die Historie. Nur Storefront (Next.js), nicht in Shopware."
-          }
+          "searchPlaceholder": { "label": "Such-Platzhalter", "placeholder": "Wonach suchst du?", "helpText": "Konfig für das Suchfeld im Header (Next.js-Layout). Leer = Standard. Baut nicht den gesamten Header als CMS." },
+          "suggestMinChars": { "label": "Min. Zeichen für Suggest", "helpText": "0–10. Standard: 3. Außerhalb → 3. Darunter zeigt die Storefront die Historie." },
+          "suggestLimit": { "label": "Max. Suggest-Treffer", "helpText": "1–20. Standard: 10. Werte über 20 werden auf 20 begrenzt." },
+          "historyMaxItems": { "label": "Max. Historieneinträge", "helpText": "0–20. Standard: 8. 0 deaktiviert die Historie. Nur Storefront (Next.js), nicht in Shopware." }
         }
       },
       "jv-hero": {
         "label": "Hero",
-        "component": {
-          "emptyTitle": "Hero-Titel"
-        },
+        "component": { "emptyTitle": "Hero-Titel" },
         "config": {
-          "title": {
-            "label": "Titel",
-            "placeholder": "Ein Zuhause, das zu dir passt."
-          },
-          "eyebrow": {
-            "label": "Eyebrow",
-            "placeholder": "Die neue Wohnkollektion"
-          },
-          "description": {
-            "label": "Beschreibung",
-            "placeholder": "Möbel für den Alltag."
-          },
-          "imageMedia": {
-            "label": "Hintergrundbild",
-            "caption": "Hero-Hintergrundbild hochladen"
-          },
-          "primaryLink": {
-            "title": "Primärer CTA"
-          },
-          "secondaryLink": {
-            "title": "Sekundärer CTA"
-          },
-          "link": {
-            "label": "Beschriftung",
-            "labelPlaceholder": "Jetzt entdecken",
-            "url": "Link",
-            "urlPlaceholder": "/new-in oder https://…",
-            "size": {
-              "label": "Größe",
-              "small": "Klein",
-              "medium": "Mittel",
-              "large": "Groß"
-            }
-          }
+          "title": { "label": "Titel", "placeholder": "Ein Zuhause, das zu dir passt." },
+          "eyebrow": { "label": "Eyebrow", "placeholder": "Die neue Wohnkollektion" },
+          "description": { "label": "Beschreibung", "placeholder": "Möbel für den Alltag." },
+          "imageMedia": { "label": "Hintergrundbild", "caption": "Hero-Hintergrundbild hochladen" },
+          "primaryLink": { "title": "Primärer CTA" },
+          "secondaryLink": { "title": "Sekundärer CTA" },
+          "link": { "label": "Beschriftung", "labelPlaceholder": "Jetzt entdecken", "url": "Link", "urlPlaceholder": "/new-in oder https://…", "size": { "label": "Größe", "small": "Klein", "medium": "Mittel", "large": "Groß" } }
         }
       },
       "jv-newsletter": {
         "label": "Newsletter",
-        "component": {
-          "emptyTitle": "Newsletter",
-          "canvasHint": "E-Mail-Anmeldeblock — Formular rendert Next.js"
-        },
+        "component": { "emptyTitle": "Newsletter", "canvasHint": "E-Mail-Anmeldeblock — Formular rendert Next.js" },
         "config": {
-          "title": {
-            "label": "Titel",
-            "placeholder": "Ab und zu nützliche Ideen."
-          },
-          "eyebrow": {
-            "label": "Eyebrow",
-            "placeholder": "Der Good-Room-Letter"
-          },
-          "description": {
-            "label": "Beschreibung",
-            "placeholder": "Raumguides, Materialpflege und neue Stücke."
-          },
-          "buttonLabel": {
-            "label": "Button-Beschriftung",
-            "placeholder": "Mitmachen"
-          },
-          "buttonSize": {
-            "label": "Button-Größe",
-            "small": "Klein",
-            "medium": "Mittel",
-            "large": "Groß"
-          },
-          "placeholder": {
-            "label": "Eingabe-Platzhalter",
-            "placeholder": "Deine E-Mail-Adresse"
-          },
-          "storefrontUrl": {
-            "label": "Storefront-URL",
-            "placeholder": "https://…",
-            "helpText": "Absoluter http(s)-Origin für Newsletter-Bestätigungslinks. Leere oder relative Werte werden in den Store-API-Daten verworfen."
-          },
-          "successMessage": {
-            "label": "Erfolgsmeldung",
-            "placeholder": "Du bist auf der Liste."
-          },
-          "invalidEmailMessage": {
-            "label": "Meldung bei ungültiger E-Mail",
-            "placeholder": "Bitte eine gültige E-Mail-Adresse eingeben."
-          },
-          "errorMessage": {
-            "label": "Fehlermeldung",
-            "placeholder": "Anmeldung fehlgeschlagen. Bitte erneut versuchen."
+          "title": { "label": "Titel", "placeholder": "Ab und zu nützliche Ideen." },
+          "eyebrow": { "label": "Eyebrow", "placeholder": "Der Good-Room-Letter" },
+          "description": { "label": "Beschreibung", "placeholder": "Raumguides, Materialpflege und neue Stücke." },
+          "buttonLabel": { "label": "Button-Beschriftung", "placeholder": "Mitmachen" },
+          "buttonSize": { "label": "Button-Größe", "small": "Klein", "medium": "Mittel", "large": "Groß" },
+          "placeholder": { "label": "Eingabe-Platzhalter", "placeholder": "Deine E-Mail-Adresse" },
+          "storefrontUrl": { "label": "Storefront-URL", "placeholder": "https://…", "helpText": "Absoluter http(s)-Origin für Newsletter-Bestätigungslinks. Leere oder relative Werte werden in den Store-API-Daten verworfen." },
+          "successMessage": { "label": "Erfolgsmeldung", "placeholder": "Du bist auf der Liste." },
+          "invalidEmailMessage": { "label": "Meldung bei ungültiger E-Mail", "placeholder": "Bitte eine gültige E-Mail-Adresse eingeben." },
+          "errorMessage": { "label": "Fehlermeldung", "placeholder": "Anmeldung fehlgeschlagen. Bitte erneut versuchen." }
+        }
+      },
+      "jv-room-grid": {
+        "label": "Raum-Grid",
+        "component": { "titlePlaceholder": "Abschnittstitel", "roomLabelPlaceholder": "Raum-Label", "roomTitlePlaceholder": "Raumtitel", "noRooms": "Keine Raumkarten konfiguriert" },
+        "config": {
+          "title": { "label": "Abschnittstitel", "placeholder": "Möbel für jeden Raum." },
+          "eyebrow": { "label": "Eyebrow", "placeholder": "Nach Raum shoppen" },
+          "description": { "label": "Beschreibung", "placeholder": "Entdecken Sie aufeinander abgestimmte Stücke." },
+          "rooms": {
+            "title": "Raumkarten", "add": "Raumkarte hinzufügen", "remove": "Entfernen", "cardTitle": "Raum {index}",
+            "id": { "label": "ID", "helpText": "Optionale stabile ID. Leer = Label und Index." },
+            "label": { "label": "Label" }, "titleField": { "label": "Titel" },
+            "url": { "label": "Link", "placeholder": "/wohnen" },
+            "featured": { "label": "Featured (Desktop: 2 Zeilen)" },
+            "imageMedia": { "label": "Bild", "caption": "Raumbild hochladen" }
           }
         }
       }
     },
     "blocks": {
-      "jv-button-primary": {
-        "label": "Button · Primary"
-      },
-      "jv-button-secondary": {
-        "label": "Button · Secondary"
-      },
-      "jv-button-link": {
-        "label": "Button · Link"
-      },
-      "jv-side-navigation": {
-        "label": "Seitennavigation"
-      },
-      "jv-global-search": {
-        "label": "Globale Suche"
-      },
-      "jv-hero": {
-        "label": "Hero"
-      },
-      "jv-newsletter": {
-        "label": "Newsletter"
-      }
+      "jv-button-primary": { "label": "Button · Primary" },
+      "jv-button-secondary": { "label": "Button · Secondary" },
+      "jv-button-link": { "label": "Button · Link" },
+      "jv-side-navigation": { "label": "Seitennavigation" },
+      "jv-global-search": { "label": "Globale Suche" },
+      "jv-hero": { "label": "Hero" },
+      "jv-newsletter": { "label": "Newsletter" },
+      "jv-room-grid": { "label": "Raum-Grid" }
     }
   },
-  "apps": {
-    "sw-cms": {
-      "detail": {
-        "label": {
-          "blockCategory": {
-            "button": "Button",
-            "navigation": "Navigation",
-            "hero": "Hero",
-            "newsletter": "Newsletter"
-          }
-        }
-      }
-    }
-  }
+  "apps": { "sw-cms": { "detail": { "label": { "blockCategory": { "button": "Button", "navigation": "Navigation", "hero": "Hero", "newsletter": "Newsletter", "room": "Raum" } } } } }
 }
