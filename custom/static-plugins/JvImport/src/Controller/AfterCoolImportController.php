@@ -8,11 +8,11 @@ use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunCollection;
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunEntity;
 use Jv\Import\Integration\AfterCool\Exception\AfterCoolApiException;
 use Jv\Import\Integration\AfterCool\Exception\AfterCoolResponseContractException;
-use Jv\Import\Service\AfterCool\AfterCoolProductPreviewService;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolFactoryImportAlreadyRunningException;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolFactoryNotFoundException;
-use Jv\Import\Service\AfterCool\ListAfterCoolFactoriesService;
-use Jv\Import\Service\AfterCool\StartAfterCoolImportService;
+use Jv\Import\Service\AfterCool\Import\StartAfterCoolImportService;
+use Jv\Import\Service\AfterCool\Query\ListAfterCoolFactoriesService;
+use Jv\Import\Service\AfterCool\Query\PreviewAfterCoolProductsService;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -35,7 +35,7 @@ final class AfterCoolImportController extends AbstractController
         private readonly StartAfterCoolImportService $startImport,
         private readonly EntityRepository $runRepository,
         private readonly EntityRepository $errorRepository,
-        private readonly AfterCoolProductPreviewService $preview,
+        private readonly PreviewAfterCoolProductsService $preview,
     ) {
     }
 

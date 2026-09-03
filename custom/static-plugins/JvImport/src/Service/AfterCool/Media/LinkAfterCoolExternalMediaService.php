@@ -1,14 +1,16 @@
 <?php declare(strict_types=1);
 
-namespace Jv\Import\Service\AfterCool;
+namespace Jv\Import\Service\AfterCool\Media;
 
+use Jv\Import\Service\AfterCool\Dto\AfterCoolExternalMediaLinkResult;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolSyncWriteFailure;
 use Shopware\Core\Content\Media\MediaException;
 use Shopware\Core\Content\Media\Upload\MediaUploadParameters;
 use Shopware\Core\Content\Media\Upload\MediaUploadService;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Uuid\Uuid;
 
-final readonly class AfterCoolExternalMediaLinkService
+final readonly class LinkAfterCoolExternalMediaService
 {
     public function __construct(private MediaUploadService $mediaUpload)
     {

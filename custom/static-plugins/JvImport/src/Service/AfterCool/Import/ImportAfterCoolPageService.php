@@ -1,15 +1,18 @@
 <?php declare(strict_types=1);
 
-namespace Jv\Import\Service\AfterCool;
+namespace Jv\Import\Service\AfterCool\Import;
 
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunCollection;
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunEntity;
-use Jv\Import\Service\AfterCool\Contract\AfterCoolImportPageProcessor;
 use Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolPageProcessingResult;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolPreparedProduct;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolProductIssue;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolProductWriteRecord;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolProductWriteValidationException;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolUnexpectedPageOffsetException;
+use Jv\Import\Service\AfterCool\Media\ProcessAfterCoolStagedMediaService;
+use Jv\Import\Service\AfterCool\Persistence\AfterCoolPageCheckpointService;
 use Jv\Import\Service\ProductImport\ResolveDefaultProductTaxService;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use Shopware\Core\Defaults;
@@ -22,17 +25,17 @@ use Symfony\Component\Lock\LockFactory;
  * Owns one idempotent Aftercool page checkpoint. Upstream access and mapping
  * remain in Integration; this class only applies the import use case.
  */
-final readonly class AfterCoolImportPageProcessorService implements AfterCoolImportPageProcessor
+readonly class ImportAfterCoolPageService
 {
     /**
      * @param EntityRepository<AfterCoolImportRunCollection> $runRepository
      */
     public function __construct(
         private AfterCoolProductSourceInterface $source,
-        private AfterCoolProductPageResolverService $pageResolver,
+        private ResolveAfterCoolProductPageService $pageResolver,
         private BuildAfterCoolShopwareProductRecordService $recordBuilder,
         private AfterCoolPageCheckpointService $checkpoint,
-        private AfterCoolStagedMediaProcessorService $stagedMediaProcessor,
+        private ProcessAfterCoolStagedMediaService $stagedMediaProcessor,
         private ResolveDefaultProductTaxService $defaultTax,
         private EntityRepository $runRepository,
         private LockFactory $lockFactory,

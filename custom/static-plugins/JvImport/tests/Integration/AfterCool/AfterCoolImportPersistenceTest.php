@@ -4,12 +4,12 @@ namespace Jv\Import\Tests\Integration\AfterCool;
 
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunCollection;
-use Jv\Import\Service\AfterCool\AfterCoolImportRunStoreService;
 use Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolFactory;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolProductPageMappingResult;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolFactoryImportAlreadyRunningException;
-use Jv\Import\Service\AfterCool\StartAfterCoolImportService;
+use Jv\Import\Service\AfterCool\Import\StartAfterCoolImportService;
+use Jv\Import\Service\AfterCool\Persistence\AfterCoolImportRunStore;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Defaults;
@@ -83,7 +83,7 @@ final class AfterCoolImportPersistenceTest extends TestCase
                     throw new \LogicException('Not used while starting a run.');
                 }
             },
-            new AfterCoolImportRunStoreService($this->runRepository()),
+            new AfterCoolImportRunStore($this->runRepository()),
             $messageBus,
             static::getContainer()->get(LockFactory::class),
         );

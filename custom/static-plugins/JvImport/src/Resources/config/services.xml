@@ -79,7 +79,7 @@
         <service id="Jv\Import\Core\Content\AfterCoolImportError\AfterCoolImportErrorDefinition">
             <tag name="shopware.entity.definition" entity="jv_aftercool_import_error"/>
         </service>
-        <service id="Jv\Import\Service\AfterCool\AfterCoolImportRunStoreService">
+        <service id="Jv\Import\Service\AfterCool\Persistence\AfterCoolImportRunStore">
             <argument type="service" id="jv_aftercool_import_run.repository"/>
         </service>
         <service id="Jv\Import\Integration\AfterCool\AfterCoolResponseNormalizer"/>
@@ -102,62 +102,60 @@
             <argument type="service" id="Jv\Import\Integration\AfterCool\Mapper\AfterCoolProductPageMapper"/>
         </service>
         <service id="Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface" alias="Jv\Import\Integration\AfterCool\AfterCoolProductSource"/>
-        <service id="Jv\Import\Service\AfterCool\Contract\AfterCoolImportRunStore" alias="Jv\Import\Service\AfterCool\AfterCoolImportRunStoreService"/>
-        <service id="Jv\Import\Service\AfterCool\AfterCoolSyncBatchWriter">
+        <service id="Jv\Import\Service\AfterCool\Write\AfterCoolShopwareProductWriter">
             <argument type="service" id="Shopware\Core\Framework\Api\Sync\SyncService"/>
         </service>
-        <service id="Jv\Import\Service\AfterCool\AfterCoolExternalMediaLinkService"/>
-        <service id="Jv\Import\Service\AfterCool\AfterCoolMediaStageService">
+        <service id="Jv\Import\Service\AfterCool\Media\LinkAfterCoolExternalMediaService"/>
+        <service id="Jv\Import\Service\AfterCool\Persistence\AfterCoolMediaStageStore">
             <argument type="service" id="Doctrine\DBAL\Connection"/>
         </service>
-        <service id="Jv\Import\Service\AfterCool\AfterCoolStagedMediaProcessorService">
+        <service id="Jv\Import\Service\AfterCool\Media\ProcessAfterCoolStagedMediaService">
             <argument type="service" id="Doctrine\DBAL\Connection"/>
-            <argument type="service" id="Jv\Import\Service\AfterCool\AfterCoolExternalMediaLinkService"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\Media\LinkAfterCoolExternalMediaService"/>
             <argument type="service" id="product.repository"/>
         </service>
-        <service id="Jv\Import\Service\AfterCool\AfterCoolProductPageResolverService">
+        <service id="Jv\Import\Service\AfterCool\Import\ResolveAfterCoolProductPageService">
             <argument type="service" id="jv_aftercool_product_source.repository"/>
             <argument type="service" id="product.repository"/>
         </service>
-        <service id="Jv\Import\Service\AfterCool\AfterCoolPageCheckpointService">
-            <argument type="service" id="Jv\Import\Service\AfterCool\AfterCoolSyncBatchWriter"/>
-            <argument type="service" id="Jv\Import\Service\AfterCool\AfterCoolMediaStageService"/>
+        <service id="Jv\Import\Service\AfterCool\Persistence\AfterCoolPageCheckpointService">
+            <argument type="service" id="Jv\Import\Service\AfterCool\Write\AfterCoolShopwareProductWriter"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\Persistence\AfterCoolMediaStageStore"/>
             <argument type="service" id="jv_aftercool_import_run.repository"/>
             <argument type="service" id="jv_aftercool_product_source.repository"/>
             <argument type="service" id="jv_aftercool_import_error.repository"/>
             <argument type="service" id="Doctrine\DBAL\Connection"/>
         </service>
-        <service id="Jv\Import\Service\AfterCool\BuildAfterCoolShopwareProductRecordService"/>
-        <service id="Jv\Import\Service\AfterCool\AfterCoolProductPreviewService"/>
-        <service id="Jv\Import\Service\AfterCool\ListAfterCoolFactoriesService"/>
-        <service id="Jv\Import\Service\AfterCool\AfterCoolImportPageProcessorService">
+        <service id="Jv\Import\Service\AfterCool\Import\BuildAfterCoolShopwareProductRecordService"/>
+        <service id="Jv\Import\Service\AfterCool\Query\PreviewAfterCoolProductsService"/>
+        <service id="Jv\Import\Service\AfterCool\Query\ListAfterCoolFactoriesService"/>
+        <service id="Jv\Import\Service\AfterCool\Import\ImportAfterCoolPageService">
             <argument type="service" id="Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface"/>
-            <argument type="service" id="Jv\Import\Service\AfterCool\AfterCoolProductPageResolverService"/>
-            <argument type="service" id="Jv\Import\Service\AfterCool\BuildAfterCoolShopwareProductRecordService"/>
-            <argument type="service" id="Jv\Import\Service\AfterCool\AfterCoolPageCheckpointService"/>
-            <argument type="service" id="Jv\Import\Service\AfterCool\AfterCoolStagedMediaProcessorService"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\Import\ResolveAfterCoolProductPageService"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\Import\BuildAfterCoolShopwareProductRecordService"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\Persistence\AfterCoolPageCheckpointService"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\Media\ProcessAfterCoolStagedMediaService"/>
             <argument type="service" id="Jv\Import\Service\ProductImport\ResolveDefaultProductTaxService"/>
             <argument type="service" id="jv_aftercool_import_run.repository"/>
             <argument type="service" id="lock.factory"/>
         </service>
-        <service id="Jv\Import\Service\AfterCool\Contract\AfterCoolImportPageProcessor" alias="Jv\Import\Service\AfterCool\AfterCoolImportPageProcessorService"/>
-        <service id="Jv\Import\Service\AfterCool\StartAfterCoolImportService">
+        <service id="Jv\Import\Service\AfterCool\Import\StartAfterCoolImportService">
             <argument type="service" id="Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface"/>
-            <argument type="service" id="Jv\Import\Service\AfterCool\AfterCoolImportRunStoreService"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\Persistence\AfterCoolImportRunStore"/>
             <argument type="service" id="messenger.bus.default"/>
             <argument type="service" id="lock.factory"/>
         </service>
         <service id="Jv\Import\MessageHandler\AfterCoolImportPageMessageHandler"/>
         <service id="Jv\Import\Subscriber\AfterCoolImportFailureSubscriber">
-            <argument type="service" id="Jv\Import\Service\AfterCool\Contract\AfterCoolImportRunStore"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\Persistence\AfterCoolImportRunStore"/>
             <argument type="service" id="logger"/>
         </service>
         <service id="Jv\Import\Controller\AfterCoolImportController" public="true">
-            <argument type="service" id="Jv\Import\Service\AfterCool\ListAfterCoolFactoriesService"/>
-            <argument type="service" id="Jv\Import\Service\AfterCool\StartAfterCoolImportService"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\Query\ListAfterCoolFactoriesService"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\Import\StartAfterCoolImportService"/>
             <argument type="service" id="jv_aftercool_import_run.repository"/>
             <argument type="service" id="jv_aftercool_import_error.repository"/>
-            <argument type="service" id="Jv\Import\Service\AfterCool\AfterCoolProductPreviewService"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\Query\PreviewAfterCoolProductsService"/>
         </service>
 
         <service id="Jv\Import\Service\ProductImport\PrepareCosmoShopProductImportRecordService">

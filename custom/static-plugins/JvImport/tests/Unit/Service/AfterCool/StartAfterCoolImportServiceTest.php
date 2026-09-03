@@ -3,12 +3,12 @@
 namespace Jv\Import\Tests\Unit\Service\AfterCool;
 
 use Jv\Import\Message\AfterCoolImportPageMessage;
-use Jv\Import\Service\AfterCool\Contract\AfterCoolImportRunStore;
 use Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolFactory;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolFactoryImportAlreadyRunningException;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolFactoryNotFoundException;
-use Jv\Import\Service\AfterCool\StartAfterCoolImportService;
+use Jv\Import\Service\AfterCool\Import\StartAfterCoolImportService;
+use Jv\Import\Service\AfterCool\Persistence\AfterCoolImportRunStore;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Uuid\Uuid;

@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Jv\Import\Service\AfterCool;
+namespace Jv\Import\Service\AfterCool\Dto;
 
 final readonly class AfterCoolExternalMediaLinkResult
 {

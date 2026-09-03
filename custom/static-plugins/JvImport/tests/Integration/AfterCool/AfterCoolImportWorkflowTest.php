@@ -9,10 +9,10 @@ use Jv\Import\Integration\AfterCool\AfterCoolApiClient;
 use Jv\Import\Integration\AfterCool\AfterCoolResponseNormalizer;
 use Jv\Import\Integration\AfterCool\Exception\AfterCoolApiException;
 use Jv\Import\Message\AfterCoolImportPageMessage;
-use Jv\Import\Service\AfterCool\AfterCoolExternalMediaLinkService;
-use Jv\Import\Service\AfterCool\AfterCoolImportPageProcessorService;
-use Jv\Import\Service\AfterCool\AfterCoolImportRunStoreService;
-use Jv\Import\Service\AfterCool\AfterCoolMediaStageService;
+use Jv\Import\Service\AfterCool\Import\ImportAfterCoolPageService;
+use Jv\Import\Service\AfterCool\Media\LinkAfterCoolExternalMediaService;
+use Jv\Import\Service\AfterCool\Persistence\AfterCoolImportRunStore;
+use Jv\Import\Service\AfterCool\Persistence\AfterCoolMediaStageStore;
 use Jv\Import\Service\ProductImport\ProductImportIdentity;
 use Jv\Import\Service\ProductImport\ResolveDefaultProductTaxService;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
@@ -164,7 +164,7 @@ final class AfterCoolImportWorkflowTest extends TestCase
     public function testMediaStagePersistsBinaryTaskIdentifiers(): void
     {
         $context = $this->prepare([]);
-        $runId = static::getContainer()->get(AfterCoolImportRunStoreService::class)->createQueued(
+        $runId = static::getContainer()->get(AfterCoolImportRunStore::class)->createQueued(
             self::FACTORY_ID,
             'Workflow factory',
             'JV:lister:'.self::FACTORY_ID,
@@ -172,7 +172,7 @@ final class AfterCoolImportWorkflowTest extends TestCase
         );
         $productId = Uuid::randomHex();
 
-        static::getContainer()->get(AfterCoolMediaStageService::class)->stage(
+        static::getContainer()->get(AfterCoolMediaStageStore::class)->stage(
             $runId,
             0,
             'numeric-source-id',
@@ -195,9 +195,9 @@ final class AfterCoolImportWorkflowTest extends TestCase
     public function testTransientApiFailureDoesNotAdvanceTheCheckpointAndCanBeRetried(): void
     {
         $context = $this->prepare([$this->item(1)]);
-        $store = static::getContainer()->get(AfterCoolImportRunStoreService::class);
+        $store = static::getContainer()->get(AfterCoolImportRunStore::class);
         $runId = $store->createQueued(self::FACTORY_ID, 'Workflow factory', 'JV:lister:'.self::FACTORY_ID, $context);
-        $processor = static::getContainer()->get(AfterCoolImportPageProcessorService::class);
+        $processor = static::getContainer()->get(ImportAfterCoolPageService::class);
         $this->productHttpStatus = 503;
         try {
             $processor->process($runId, 0, $context);
@@ -289,10 +289,10 @@ final class AfterCoolImportWorkflowTest extends TestCase
     public function testDelayedMessageCannotReviveFailedRun(): void
     {
         $context = $this->prepare([$this->item(1)]);
-        $store = static::getContainer()->get(AfterCoolImportRunStoreService::class);
+        $store = static::getContainer()->get(AfterCoolImportRunStore::class);
         $runId = $store->createQueued(self::FACTORY_ID, 'Workflow factory', 'JV:lister:'.self::FACTORY_ID, $context);
         $store->markFailed($runId, 'aftercool_http_503', 'Safe failure', $context);
-        static::getContainer()->get(AfterCoolImportPageProcessorService::class)->process($runId, 0, $context);
+        static::getContainer()->get(ImportAfterCoolPageService::class)->process($runId, 0, $context);
         self::assertSame('failed', $this->loadRun($runId, $context)->getStatus());
         self::assertSame(0, $this->productRequests);
         self::assertSame(0, $this->sourceProductCount());
@@ -395,7 +395,7 @@ final class AfterCoolImportWorkflowTest extends TestCase
             'fileSize' => 123,
             'private' => false,
         ]], $system));
-        $service = new AfterCoolExternalMediaLinkService(static::getContainer()->get(MediaUploadService::class));
+        $service = new LinkAfterCoolExternalMediaService(static::getContainer()->get(MediaUploadService::class));
         $result = $service->link(Uuid::randomHex(), [$url], null, $context);
         self::assertSame([], $result->issues);
         self::assertSame($id, $result->productMedia[0]['mediaId']);
@@ -484,8 +484,8 @@ final class AfterCoolImportWorkflowTest extends TestCase
 
     private function process(Context $context): string
     {
-        $runId = static::getContainer()->get(AfterCoolImportRunStoreService::class)->createQueued(self::FACTORY_ID, 'Workflow factory', 'JV:lister:'.self::FACTORY_ID, $context);
-        static::getContainer()->get(AfterCoolImportPageProcessorService::class)->process($runId, 0, $context);
+        $runId = static::getContainer()->get(AfterCoolImportRunStore::class)->createQueued(self::FACTORY_ID, 'Workflow factory', 'JV:lister:'.self::FACTORY_ID, $context);
+        static::getContainer()->get(ImportAfterCoolPageService::class)->process($runId, 0, $context);
 
         return $runId;
     }

@@ -2,13 +2,13 @@
 
 namespace Jv\Import\Tests\Unit\Service\AfterCool;
 
-use Jv\Import\Service\AfterCool\AfterCoolProductPreviewService;
 use Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolProductPageMappingResult;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolProductPreviewItem;
+use Jv\Import\Service\AfterCool\Query\PreviewAfterCoolProductsService;
 use PHPUnit\Framework\TestCase;
 
-final class AfterCoolProductPreviewServiceTest extends TestCase
+final class PreviewAfterCoolProductsServiceTest extends TestCase
 {
     public function testItReturnsCuratedPreviewDataAndKeepsAnInvalidRowOnThePage(): void
     {
@@ -32,7 +32,7 @@ final class AfterCoolProductPreviewServiceTest extends TestCase
             }
         };
 
-        $result = (new AfterCoolProductPreviewService($source))->execute(504034, 25, 0, 'sofa');
+        $result = (new PreviewAfterCoolProductsService($source))->execute(504034, 25, 0, 'sofa');
 
         self::assertSame(102, $result->total);
         self::assertTrue($result->hasMore);
@@ -48,7 +48,7 @@ final class AfterCoolProductPreviewServiceTest extends TestCase
         $source = $this->createMock(AfterCoolProductSourceInterface::class);
         $source->expects(self::once())->method('getProductPage')->with(504034, 0, 25, null)->willReturn(new AfterCoolProductPageMappingResult([], [], [new AfterCoolProductPreviewItem('900001', '900001', '4260174423463', 'Sofa', null, 0.0, 7, null, null, null, null, null, null, [], false, [])], 1, 0, false));
 
-        $result = (new AfterCoolProductPreviewService($source))->execute(504034, 25, 0, null);
+        $result = (new PreviewAfterCoolProductsService($source))->execute(504034, 25, 0, null);
 
         self::assertFalse($result->items[0]->importable, 'A zero-price row cannot create a product; preview must not promise unconditional readiness.');
     }

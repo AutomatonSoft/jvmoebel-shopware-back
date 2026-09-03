@@ -1,11 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace Jv\Import\Service\AfterCool;
+namespace Jv\Import\Service\AfterCool\Query;
 
 use Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolProductPreviewPage;
 
-final readonly class AfterCoolProductPreviewService
+final readonly class PreviewAfterCoolProductsService
 {
     public function __construct(private AfterCoolProductSourceInterface $source)
     {

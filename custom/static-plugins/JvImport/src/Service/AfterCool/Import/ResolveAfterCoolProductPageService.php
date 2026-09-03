@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Jv\Import\Service\AfterCool;
+namespace Jv\Import\Service\AfterCool\Import;
 
 use Jv\Import\Core\Content\AfterCoolProductSource\AfterCoolProductSourceCollection;
 use Jv\Import\Core\Content\AfterCoolProductSource\AfterCoolProductSourceEntity;
@@ -18,7 +18,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 
 /** Resolves all source links and Shopware products needed by one import page. */
-final readonly class AfterCoolProductPageResolverService
+final readonly class ResolveAfterCoolProductPageService
 {
     /**
      * @param EntityRepository<AfterCoolProductSourceCollection> $sourceRepository

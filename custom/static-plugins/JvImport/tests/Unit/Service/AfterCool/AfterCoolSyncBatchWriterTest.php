@@ -2,8 +2,8 @@
 
 namespace Jv\Import\Tests\Unit\Service\AfterCool;
 
-use Jv\Import\Service\AfterCool\AfterCoolProductWriteRecord;
-use Jv\Import\Service\AfterCool\AfterCoolSyncBatchWriter;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolProductWriteRecord;
+use Jv\Import\Service\AfterCool\Write\AfterCoolShopwareProductWriter;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Framework\Api\Sync\SyncBehavior;
@@ -14,7 +14,7 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\WriteException;
 use Shopware\Core\Framework\Uuid\Uuid;
 
-final class AfterCoolSyncBatchWriterTest extends TestCase
+final class AfterCoolShopwareProductWriterTest extends TestCase
 {
     public function testItUsesTheInternalShopwareSyncServiceForOnePageBatch(): void
     {
@@ -40,7 +40,7 @@ final class AfterCoolSyncBatchWriterTest extends TestCase
             $context,
             self::isInstanceOf(SyncBehavior::class),
         )->willReturn(new SyncResult(['product' => [$firstId, $secondId]]));
-        $writer = new AfterCoolSyncBatchWriter($sync);
+        $writer = new AfterCoolShopwareProductWriter($sync);
 
         $result = $writer->write([
             new AfterCoolProductWriteRecord('900001', ['id' => $firstId, 'productNumber' => '4260174423463']),
@@ -67,7 +67,7 @@ final class AfterCoolSyncBatchWriterTest extends TestCase
                 return new SyncResult(['product' => array_column($payload, 'id')]);
             },
         );
-        $writer = new AfterCoolSyncBatchWriter($sync);
+        $writer = new AfterCoolShopwareProductWriter($sync);
 
         $result = $writer->write([
             new AfterCoolProductWriteRecord('source-good-1', ['id' => Uuid::randomHex(), 'productNumber' => 'GOOD-1']),
@@ -91,7 +91,7 @@ final class AfterCoolSyncBatchWriterTest extends TestCase
 
         $this->expectExceptionObject($failure);
 
-        (new AfterCoolSyncBatchWriter($sync))->write([
+        (new AfterCoolShopwareProductWriter($sync))->write([
             new AfterCoolProductWriteRecord('900001', ['id' => Uuid::randomHex(), 'productNumber' => '4260174423463']),
         ], $context);
     }
@@ -111,6 +111,6 @@ final class AfterCoolSyncBatchWriterTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('100');
 
-        (new AfterCoolSyncBatchWriter($sync))->write($records, Context::createDefaultContext());
+        (new AfterCoolShopwareProductWriter($sync))->write($records, Context::createDefaultContext());
     }
 }

@@ -4,13 +4,13 @@ namespace Jv\Import\Tests\Unit\Controller;
 
 use Jv\Import\Controller\AfterCoolImportController;
 use Jv\Import\Integration\AfterCool\Exception\AfterCoolApiException;
-use Jv\Import\Service\AfterCool\AfterCoolProductPreviewService;
-use Jv\Import\Service\AfterCool\Contract\AfterCoolImportRunStore;
 use Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolProductPageMappingResult;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolProductPreviewItem;
-use Jv\Import\Service\AfterCool\ListAfterCoolFactoriesService;
-use Jv\Import\Service\AfterCool\StartAfterCoolImportService;
+use Jv\Import\Service\AfterCool\Import\StartAfterCoolImportService;
+use Jv\Import\Service\AfterCool\Persistence\AfterCoolImportRunStore;
+use Jv\Import\Service\AfterCool\Query\ListAfterCoolFactoriesService;
+use Jv\Import\Service\AfterCool\Query\PreviewAfterCoolProductsService;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Symfony\Component\HttpFoundation\Request;
@@ -61,7 +61,7 @@ final class AfterCoolImportControllerTest extends TestCase
             new StartAfterCoolImportService($source, $this->createMock(AfterCoolImportRunStore::class), $this->createMock(MessageBusInterface::class), new LockFactory(new FlockStore(sys_get_temp_dir()))),
             $this->createMock(EntityRepository::class),
             $this->createMock(EntityRepository::class),
-            new AfterCoolProductPreviewService($source),
+            new PreviewAfterCoolProductsService($source),
         );
     }
 

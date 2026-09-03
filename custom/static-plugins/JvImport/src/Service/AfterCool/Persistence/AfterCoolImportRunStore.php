@@ -1,16 +1,15 @@
 <?php declare(strict_types=1);
 
-namespace Jv\Import\Service\AfterCool;
+namespace Jv\Import\Service\AfterCool\Persistence;
 
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunCollection;
-use Jv\Import\Service\AfterCool\Contract\AfterCoolImportRunStore;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolFactoryImportAlreadyRunningException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\Uuid\Uuid;
 
-final readonly class AfterCoolImportRunStoreService implements AfterCoolImportRunStore
+readonly class AfterCoolImportRunStore
 {
     /** @param EntityRepository<AfterCoolImportRunCollection> $runRepository */
     public function __construct(private EntityRepository $runRepository)

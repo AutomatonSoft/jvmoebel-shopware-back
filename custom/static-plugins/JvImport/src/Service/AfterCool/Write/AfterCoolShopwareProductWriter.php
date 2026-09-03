@@ -1,7 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace Jv\Import\Service\AfterCool;
+namespace Jv\Import\Service\AfterCool\Write;
 
+use Jv\Import\Service\AfterCool\Dto\AfterCoolProductWriteRecord;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolSyncWriteFailure;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolSyncWriteResult;
 use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Framework\Api\Sync\SyncBehavior;
 use Shopware\Core\Framework\Api\Sync\SyncOperation;
@@ -9,7 +12,7 @@ use Shopware\Core\Framework\Api\Sync\SyncServiceInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\WriteException;
 
-final readonly class AfterCoolSyncBatchWriter
+final readonly class AfterCoolShopwareProductWriter
 {
     public function __construct(private SyncServiceInterface $sync)
     {

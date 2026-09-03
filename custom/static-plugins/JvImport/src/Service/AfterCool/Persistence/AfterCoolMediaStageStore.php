@@ -1,12 +1,12 @@
 <?php declare(strict_types=1);
 
-namespace Jv\Import\Service\AfterCool;
+namespace Jv\Import\Service\AfterCool\Persistence;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
 use Shopware\Core\Framework\Uuid\Uuid;
 
-final readonly class AfterCoolMediaStageService
+final readonly class AfterCoolMediaStageStore
 {
     public function __construct(private Connection $connection)
     {

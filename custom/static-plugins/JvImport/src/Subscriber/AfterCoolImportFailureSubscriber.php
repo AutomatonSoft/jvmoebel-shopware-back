@@ -4,7 +4,7 @@ namespace Jv\Import\Subscriber;
 
 use Jv\Import\Integration\AfterCool\Exception\AfterCoolApiException;
 use Jv\Import\Message\AfterCoolImportPageMessage;
-use Jv\Import\Service\AfterCool\Contract\AfterCoolImportRunStore;
+use Jv\Import\Service\AfterCool\Persistence\AfterCoolImportRunStore;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;

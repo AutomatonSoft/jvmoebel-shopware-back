@@ -2,9 +2,9 @@
 
 namespace Jv\Import\Tests\Unit\Service\AfterCool;
 
-use Jv\Import\Service\AfterCool\AfterCoolImportProgress;
-use Jv\Import\Service\AfterCool\AfterCoolPageOutcome;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolPageOutcome;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolUnexpectedPageOffsetException;
+use Jv\Import\Service\AfterCool\Import\AfterCoolImportProgress;
 use PHPUnit\Framework\TestCase;
 
 final class AfterCoolImportProgressTest extends TestCase

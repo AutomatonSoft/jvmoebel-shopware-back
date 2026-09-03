@@ -4,9 +4,9 @@ namespace Jv\Import\Tests\Unit\Service\AfterCool;
 
 use Jv\Import\Integration\AfterCool\AfterCoolResponseNormalizer;
 use Jv\Import\Integration\AfterCool\Mapper\AfterCoolListerProductMapper;
-use Jv\Import\Service\AfterCool\BuildAfterCoolShopwareProductRecordService;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolMappedProduct;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolProductWriteValidationException;
+use Jv\Import\Service\AfterCool\Import\BuildAfterCoolShopwareProductRecordService;
 use Jv\Import\Service\ProductImport\ProductImportIdentity;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\Uuid\Uuid;

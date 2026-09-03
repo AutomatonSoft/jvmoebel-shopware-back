@@ -2,14 +2,14 @@
 
 namespace Jv\Import\Tests\Unit\Service\AfterCool;
 
-use Jv\Import\Service\AfterCool\AfterCoolExternalMediaLinkService;
+use Jv\Import\Service\AfterCool\Media\LinkAfterCoolExternalMediaService;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Media\Upload\MediaUploadParameters;
 use Shopware\Core\Content\Media\Upload\MediaUploadService;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Uuid\Uuid;
 
-final class AfterCoolExternalMediaLinkServiceTest extends TestCase
+final class LinkAfterCoolExternalMediaServiceTest extends TestCase
 {
     public function testItCreatesDeterministicExternalLinksAndPreservesAnExistingCover(): void
     {
@@ -41,7 +41,7 @@ final class AfterCoolExternalMediaLinkServiceTest extends TestCase
             },
         );
 
-        $result = (new AfterCoolExternalMediaLinkService($mediaUpload))->link(
+        $result = (new LinkAfterCoolExternalMediaService($mediaUpload))->link(
             $productId,
             $urls,
             $existingCoverId,
@@ -81,7 +81,7 @@ final class AfterCoolExternalMediaLinkServiceTest extends TestCase
                 ? throw new \RuntimeException('Private upstream response details.') : $validMediaId,
         );
 
-        $result = (new AfterCoolExternalMediaLinkService($mediaUpload))->link(
+        $result = (new LinkAfterCoolExternalMediaService($mediaUpload))->link(
             $productId,
             ['https://images.example.test/unavailable.jpg', $validUrl],
             null,

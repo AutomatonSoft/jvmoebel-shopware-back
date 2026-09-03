@@ -1,7 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Jv\Import\Service\AfterCool;
+namespace Jv\Import\Service\AfterCool\Import;
 
+use Jv\Import\Service\AfterCool\Dto\AfterCoolPageOutcome;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolUnexpectedPageOffsetException;
 
 final readonly class AfterCoolImportProgress

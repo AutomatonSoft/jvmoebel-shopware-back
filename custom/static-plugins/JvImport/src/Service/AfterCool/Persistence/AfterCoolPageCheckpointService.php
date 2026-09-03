@@ -1,14 +1,19 @@
 <?php declare(strict_types=1);
 
-namespace Jv\Import\Service\AfterCool;
+namespace Jv\Import\Service\AfterCool\Persistence;
 
 use Doctrine\DBAL\Connection;
 use Jv\Import\Core\Content\AfterCoolImportError\AfterCoolImportErrorCollection;
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunCollection;
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunEntity;
 use Jv\Import\Core\Content\AfterCoolProductSource\AfterCoolProductSourceCollection;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolPageOutcome;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolPreparedProduct;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolProductIssue;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolProductWriteRecord;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolSyncWriteFailure;
+use Jv\Import\Service\AfterCool\Import\AfterCoolImportProgress;
+use Jv\Import\Service\AfterCool\Write\AfterCoolShopwareProductWriter;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -24,8 +29,8 @@ final readonly class AfterCoolPageCheckpointService
      * @param EntityRepository<AfterCoolImportErrorCollection>   $errorRepository
      */
     public function __construct(
-        private AfterCoolSyncBatchWriter $writer,
-        private AfterCoolMediaStageService $mediaStage,
+        private AfterCoolShopwareProductWriter $writer,
+        private AfterCoolMediaStageStore $mediaStage,
         private EntityRepository $runRepository,
         private EntityRepository $sourceRepository,
         private EntityRepository $errorRepository,

@@ -1,11 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace Jv\Import\Service\AfterCool;
+namespace Jv\Import\Service\AfterCool\Import;
 
 use Jv\Import\Message\AfterCoolImportPageMessage;
-use Jv\Import\Service\AfterCool\Contract\AfterCoolImportRunStore;
 use Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolFactoryNotFoundException;
+use Jv\Import\Service\AfterCool\Persistence\AfterCoolImportRunStore;
 use Shopware\Core\Framework\Context;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\MessageBusInterface;

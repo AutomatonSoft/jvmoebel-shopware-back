@@ -1,9 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace Jv\Import\Service\AfterCool;
+namespace Jv\Import\Service\AfterCool\Media;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolSyncWriteFailure;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Framework\Context;
@@ -11,12 +12,12 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Uuid\Uuid;
 
-final readonly class AfterCoolStagedMediaProcessorService
+final readonly class ProcessAfterCoolStagedMediaService
 {
     /** @param EntityRepository<ProductCollection> $productRepository */
     public function __construct(
         private Connection $connection,
-        private AfterCoolExternalMediaLinkService $mediaLinks,
+        private LinkAfterCoolExternalMediaService $mediaLinks,
         private EntityRepository $productRepository,
     ) {
     }
