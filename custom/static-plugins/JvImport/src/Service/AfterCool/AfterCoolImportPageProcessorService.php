@@ -43,6 +43,7 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
         private BuildAfterCoolShopwareProductRecordService $recordBuilder,
         private AfterCoolSyncBatchWriter $writer,
         private AfterCoolMediaStageService $mediaStage,
+        private AfterCoolStagedMediaProcessorService $stagedMediaProcessor,
         private ResolveDefaultProductTaxService $defaultTax,
         private EntityRepository $runRepository,
         private EntityRepository $sourceRepository,
@@ -190,6 +191,8 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
             }
             $this->runRepository->update([$payload], $context);
         });
+
+        $this->stagedMediaProcessor->process($runId, $offset, $context);
 
         return $page->hasMore ? AfterCoolPageProcessingResult::continueWith($offset + 100) : AfterCoolPageProcessingResult::completed();
     }
