@@ -1,0 +1,9 @@
+.git
+.github
+.docker
+node_modules
+vendor
+var/cache
+var/log
+.env.local
+.env.local.php
