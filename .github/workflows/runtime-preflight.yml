@@ -1,0 +1,257 @@
+name: Runtime preflight
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - stage
+
+permissions:
+  contents: read
+
+concurrency:
+  group: runtime-preflight-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  runtime:
+    name: runtime bootstrap preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: shopware_runtime_preflight
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -proot --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+
+      redis:
+        image: redis:7.4-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=20
+
+    steps:
+      - name: Checkout exact PR commit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Build exact deployment image
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          docker build \
+            -f Dockerfile.deploy \
+            -t jvmoebel-back-runtime-preflight:${GITHUB_SHA} \
+            .
+
+      - name: Validate PHP and filesystem runtime contract
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          image="jvmoebel-back-runtime-preflight:${GITHUB_SHA}"
+
+          docker run --rm "${image}" php -r '
+            if (PHP_MAJOR_VERSION !== 8 || PHP_MINOR_VERSION !== 5) {
+                fwrite(STDERR, "Unexpected PHP version: " . PHP_VERSION . PHP_EOL);
+                exit(1);
+            }
+
+            if (ini_get("memory_limit") !== "512M") {
+                fwrite(STDERR, "Unexpected memory_limit: " . ini_get("memory_limit") . PHP_EOL);
+                exit(1);
+            }
+
+            if (getenv("SHOPWARE_SKIP_WEBINSTALLER") !== "1") {
+                fwrite(STDERR, "SHOPWARE_SKIP_WEBINSTALLER must be 1" . PHP_EOL);
+                exit(1);
+            }
+
+            $required = [
+                "curl", "dom", "fileinfo", "gd", "intl", "json", "mbstring",
+                "openssl", "pdo", "pdo_mysql", "session", "simplexml", "sodium",
+                "xml", "xmlreader", "zip", "zlib", "redis",
+            ];
+            $loaded = array_map("strtolower", get_loaded_extensions());
+
+            foreach ($required as $extension) {
+                if (!in_array($extension, $loaded, true)) {
+                    fwrite(STDERR, "Missing PHP extension: {$extension}" . PHP_EOL);
+                    exit(1);
+                }
+            }
+          '
+
+          docker run --rm --user 33:33 "${image}" sh -ceu '
+            test -r /var/www/html/bin/console
+            test -x /var/www/html/bin/console
+            test -r /var/www/html/vendor/autoload.php
+            test ! -w /var/www/html/bin
+            test -w /var/www/html/var
+            test -w /var/www/html/public
+          '
+
+          docker run --rm "${image}" apachectl -t
+
+      - name: Prepare staging-like writable storage
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          storage_root="${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage"
+
+          sudo rm -rf "${storage_root}"
+
+          sudo install -d -o 33 -g 33 -m 0770 \
+            "${storage_root}/files" \
+            "${storage_root}/public/bundles" \
+            "${storage_root}/public/media" \
+            "${storage_root}/public/thumbnail" \
+            "${storage_root}/public/theme" \
+            "${storage_root}/public/sitemap"
+
+      - name: Run clean Shopware deployment-helper installation
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          image="jvmoebel-back-runtime-preflight:${GITHUB_SHA}"
+
+          runtime_env=(
+            --env APP_ENV=prod
+            --env APP_DEBUG=0
+            --env APP_SECRET=runtime-preflight-only-secret-00000000000000000000000000000000
+            --env APP_URL=https://stage.jvmeubles.be
+            --env INSTANCE_ID=00000000000000000000000000000000
+            --env BLUE_GREEN_DEPLOYMENT=0
+            --env DATABASE_URL=mysql://root:root@127.0.0.1:3306/shopware_runtime_preflight
+            --env MAILER_DSN=null://null
+            --env LOCK_DSN=flock
+            --env MESSENGER_TRANSPORT_DSN=redis://127.0.0.1:6379/messages
+            --env MESSENGER_TRANSPORT_LOW_PRIORITY_DSN=redis://127.0.0.1:6379/low_priority
+            --env MESSENGER_TRANSPORT_FAILURE_DSN=redis://127.0.0.1:6379/failed
+            --env SHOPWARE_ES_ENABLED=0
+            --env SHOPWARE_ES_INDEXING_ENABLED=0
+            --env SHOPWARE_HTTP_CACHE_ENABLED=1
+            --env JV_MARKET_SALES_CHANNEL_URL_TEMPLATE=https://{domain}
+            --env INSTALL_LOCALE=de-DE
+            --env INSTALL_CURRENCY=EUR
+            --env INSTALL_ADMIN_USERNAME=runtime-preflight-admin
+            --env INSTALL_ADMIN_PASSWORD=RuntimePreflight-Only-2026
+            --env INSTALL_ADMIN_EMAIL=runtime-preflight@example.invalid
+            --env SALES_CHANNEL_URL=https://stage.jvmeubles.be
+          )
+
+          docker run --rm \
+            --network host \
+            --user 33:33 \
+            --mount "type=bind,source=${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage/files,target=/var/www/html/files" \
+            --mount "type=bind,source=${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage/public/bundles,target=/var/www/html/public/bundles" \
+            --mount "type=bind,source=${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage/public/media,target=/var/www/html/public/media" \
+            --mount "type=bind,source=${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage/public/thumbnail,target=/var/www/html/public/thumbnail" \
+            --mount "type=bind,source=${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage/public/theme,target=/var/www/html/public/theme" \
+            --mount "type=bind,source=${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage/public/sitemap,target=/var/www/html/public/sitemap" \
+            "${runtime_env[@]}" \
+            "${image}" \
+            vendor/bin/shopware-deployment-helper run --timeout=900
+
+      - name: Verify repeat deployment-helper path
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          image="jvmoebel-back-runtime-preflight:${GITHUB_SHA}"
+
+          runtime_env=(
+            --env APP_ENV=prod
+            --env APP_DEBUG=0
+            --env APP_SECRET=runtime-preflight-only-secret-00000000000000000000000000000000
+            --env APP_URL=https://stage.jvmeubles.be
+            --env INSTANCE_ID=00000000000000000000000000000000
+            --env BLUE_GREEN_DEPLOYMENT=0
+            --env DATABASE_URL=mysql://root:root@127.0.0.1:3306/shopware_runtime_preflight
+            --env MAILER_DSN=null://null
+            --env LOCK_DSN=flock
+            --env MESSENGER_TRANSPORT_DSN=redis://127.0.0.1:6379/messages
+            --env MESSENGER_TRANSPORT_LOW_PRIORITY_DSN=redis://127.0.0.1:6379/low_priority
+            --env MESSENGER_TRANSPORT_FAILURE_DSN=redis://127.0.0.1:6379/failed
+            --env SHOPWARE_ES_ENABLED=0
+            --env SHOPWARE_ES_INDEXING_ENABLED=0
+            --env SHOPWARE_HTTP_CACHE_ENABLED=1
+            --env JV_MARKET_SALES_CHANNEL_URL_TEMPLATE=https://{domain}
+            --env INSTALL_LOCALE=de-DE
+            --env INSTALL_CURRENCY=EUR
+            --env INSTALL_ADMIN_USERNAME=runtime-preflight-admin
+            --env INSTALL_ADMIN_PASSWORD=RuntimePreflight-Only-2026
+            --env INSTALL_ADMIN_EMAIL=runtime-preflight@example.invalid
+            --env SALES_CHANNEL_URL=https://stage.jvmeubles.be
+          )
+
+          docker run --rm \
+            --network host \
+            --user 33:33 \
+            --mount "type=bind,source=${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage/files,target=/var/www/html/files" \
+            --mount "type=bind,source=${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage/public/bundles,target=/var/www/html/public/bundles" \
+            --mount "type=bind,source=${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage/public/media,target=/var/www/html/public/media" \
+            --mount "type=bind,source=${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage/public/thumbnail,target=/var/www/html/public/thumbnail" \
+            --mount "type=bind,source=${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage/public/theme,target=/var/www/html/public/theme" \
+            --mount "type=bind,source=${RUNNER_TEMP}/jvmoebel-runtime-preflight-storage/public/sitemap,target=/var/www/html/public/sitemap" \
+            "${runtime_env[@]}" \
+            "${image}" \
+            vendor/bin/shopware-deployment-helper run --timeout=900
+
+      - name: Validate web healthcheck empty-200 regression
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          image="jvmoebel-back-runtime-preflight:${GITHUB_SHA}"
+
+          grep -Fq 'preg_grep(\"#^HTTP/\\S+ 200 #\", @get_headers(\"http://127.0.0.1/api/_info/health-check\") ?: [])' compose.deploy.yml
+          ! grep -Fq 'file_get_contents(\"http://127.0.0.1/api/_info/health-check\")' compose.deploy.yml
+
+          docker run --rm "${image}" sh -ceu '
+            root=/tmp/healthcheck-regression
+
+            mkdir -p "${root}/api/_info"
+            : > "${root}/api/_info/health-check"
+
+            php -S 127.0.0.1:80 -t "${root}" \
+              >/tmp/health-server.log 2>&1 &
+
+            server_pid=$!
+            trap "kill ${server_pid} >/dev/null 2>&1 || true" EXIT
+
+            for attempt in $(seq 1 20); do
+              if php -r '"'"'exit(empty(preg_grep("#^HTTP/\S+ 200 #", @get_headers("http://127.0.0.1/api/_info/health-check") ?: [])));'"'"'; then
+                echo "PASS: HTTP 200 with empty body is healthy"
+                exit 0
+              fi
+
+              sleep 0.25
+            done
+
+            cat /tmp/health-server.log >&2 || true
+            echo "Healthcheck rejected empty HTTP 200" >&2
+            exit 1
+          '
+
+      - name: Remove validation image
+        if: always()
+        shell: bash
+        run: |
+          docker image rm -f "jvmoebel-back-runtime-preflight:${GITHUB_SHA}" >/dev/null 2>&1 || true
