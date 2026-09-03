@@ -1,0 +1,41 @@
+{% block sw_cms_el_config_jv_global_search %}
+	<div class="sw-cms-el-config-jv-global-search">
+		<mt-text-field
+			v-model:model-value="element.config.searchPlaceholder.value"
+			:label="$t('cms.elements.jv-global-search.config.searchPlaceholder.label')"
+			:placeholder="$t('cms.elements.jv-global-search.config.searchPlaceholder.placeholder')"
+			:help-text="$t('cms.elements.jv-global-search.config.searchPlaceholder.helpText')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-number-field
+			v-model:model-value="element.config.suggestMinChars.value"
+			number-type="int"
+			:min="0"
+			:max="10"
+			:label="$t('cms.elements.jv-global-search.config.suggestMinChars.label')"
+			:help-text="$t('cms.elements.jv-global-search.config.suggestMinChars.helpText')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-number-field
+			v-model:model-value="element.config.suggestLimit.value"
+			number-type="int"
+			:min="1"
+			:max="20"
+			:label="$t('cms.elements.jv-global-search.config.suggestLimit.label')"
+			:help-text="$t('cms.elements.jv-global-search.config.suggestLimit.helpText')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-number-field
+			v-model:model-value="element.config.historyMaxItems.value"
+			number-type="int"
+			:min="0"
+			:max="20"
+			:label="$t('cms.elements.jv-global-search.config.historyMaxItems.label')"
+			:help-text="$t('cms.elements.jv-global-search.config.historyMaxItems.helpText')"
+			@update:model-value="onUpdate"
+		/>
+	</div>
+{% endblock %}

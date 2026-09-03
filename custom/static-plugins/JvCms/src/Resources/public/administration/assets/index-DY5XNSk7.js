@@ -1,0 +1,2 @@
+const s=`{% block sw_cms_block_jv_global_search_preview %} <div class="sw-cms-preview-jv-global-search"> <span class="sw-cms-preview-jv-global-search__icon" aria-hidden="true">⌕</span> <span class="sw-cms-preview-jv-global-search__label"> {{ $t('cms.blocks.jv-global-search.label') }} </span> </div> {% endblock %}`,a={template:s};export{a as default};
+//# sourceMappingURL=index-DY5XNSk7.js.map
