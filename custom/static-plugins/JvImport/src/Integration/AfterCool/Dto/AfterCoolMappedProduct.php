@@ -22,6 +22,12 @@ final readonly class AfterCoolMappedProduct
         public ?string $description,
         public array $mediaUrls,
         public array $mediaIssues,
+        public ?string $manufacturer = null,
+        public ?string $dimensions = null,
+        public ?string $weight = null,
+        public ?string $updatedAt = null,
+        public ?string $sourceFile = null,
+        public ?string $sourceKind = null,
     ) {
     }
 }

@@ -33,6 +33,12 @@ final class AfterCoolListerProductMapper
             $this->description($item),
             $mediaUrls,
             $mediaIssues,
+            $this->string($item, 'Hersteller'),
+            $this->string($item, 'Abmessungen') ?? $this->string($item, 'Maße'),
+            $this->string($item, 'Gewicht'),
+            $item->updatedAt,
+            $item->sourceFile,
+            $item->sourceKind,
         );
     }
 
@@ -58,6 +64,12 @@ final class AfterCoolListerProductMapper
             $this->description($item),
             $mediaUrls,
             $mediaIssues,
+            $this->string($item, 'Hersteller'),
+            $this->string($item, 'Abmessungen') ?? $this->string($item, 'Maße'),
+            $this->string($item, 'Gewicht'),
+            $item->updatedAt,
+            $item->sourceFile,
+            $item->sourceKind,
         );
     }
 
@@ -102,6 +114,13 @@ final class AfterCoolListerProductMapper
         }
 
         return trim($value);
+    }
+
+    private function string(AfterCoolProductItem $item, string $field): ?string
+    {
+        $value = $item->row[$field] ?? null;
+
+        return is_string($value) && '' !== trim($value) ? trim($value) : null;
     }
 
     /** @return array{list<string>, list<AfterCoolProductIssue>} */

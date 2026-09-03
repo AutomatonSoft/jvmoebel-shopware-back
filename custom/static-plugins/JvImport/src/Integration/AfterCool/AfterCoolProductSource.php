@@ -61,6 +61,12 @@ final readonly class AfterCoolProductSource implements AfterCoolProductSourceInt
             $product->description,
             $product->mediaUrls,
             array_map([$this, 'issue'], $product->mediaIssues),
+            $product->manufacturer,
+            $product->dimensions,
+            $product->weight,
+            $product->updatedAt,
+            $product->sourceFile,
+            $product->sourceKind,
         );
     }
 
