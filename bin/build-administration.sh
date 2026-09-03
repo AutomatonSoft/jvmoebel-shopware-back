@@ -113,3 +113,17 @@ fi
 
 (cd "${ADMIN_ROOT}"/Resources/app/administration && npm run build)
 [[ ${SHOPWARE_SKIP_ASSET_COPY:-""} ]] ||"${BIN_TOOL}" assets:install
+
+# Vite omits a final newline on plugin .vite metadata; add one for POSIX/git-friendly diffs.
+if [[ -d "${PROJECT_ROOT}/custom/static-plugins" ]]; then
+    while IFS= read -r -d '' asset_file; do
+        [[ -s "$asset_file" ]] || continue
+        last_hex=$(tail -c 1 "$asset_file" | od -An -tx1 | tr -d ' \n')
+        [[ "$last_hex" == "0a" ]] || printf '\n' >> "$asset_file"
+    done < <(
+        find "${PROJECT_ROOT}/custom/static-plugins" \
+            \( -path '*/Resources/public/administration/.vite/*.json' \
+            -o -path '*/Resources/public/administration/assets/*.map' \) \
+            -type f -print0 2>/dev/null
+    )
+fi
