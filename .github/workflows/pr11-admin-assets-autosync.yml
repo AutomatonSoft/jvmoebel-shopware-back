@@ -1,0 +1,97 @@
+name: Temporary PR11 administration asset sync
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: >-
+      github.event.pull_request.number == 11 &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.ref == 'fix/admin-build-trailing-newline'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    env:
+      APP_ENV: prod
+      APP_URL: http://localhost:8000
+      APP_SECRET: local-ci-only-not-a-production-secret
+      INSTANCE_ID: "00000000000000000000000000000000"
+      DATABASE_URL: "mysql://_placeholder.test"
+      CI: "1"
+      SHOPWARE_SKIP_ENTITY_SCHEMA_DUMP: "1"
+      SHOPWARE_SKIP_ASSET_COPY: "1"
+
+    steps:
+      - name: Checkout exact PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Setup PHP 8.5
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.5"
+          extensions: gd, intl, pdo_mysql, zip, xml, curl, mbstring, sodium
+          coverage: none
+          tools: composer:v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Build Administration
+        run: bash bin/build-administration.sh
+
+      - name: Commit exact normalized Administration assets
+        shell: bash
+        run: |
+          allowed=(
+            "custom/static-plugins/JvCms/src/Resources/public/administration/.vite/entrypoints.json"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/.vite/manifest.json"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-oitE_AjJ.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/index-tzjbXbi6.js.map"
+            "custom/static-plugins/JvCms/src/Resources/public/administration/assets/jv-cms-ik0csVI0.js.map"
+          )
+
+          mapfile -t changed < <(git status --porcelain=v1 | sed -E 's/^.. //')
+
+          for path in "${changed[@]}"; do
+            [[ -z "$path" ]] && continue
+            ok=false
+            for candidate in "${allowed[@]}"; do
+              if [[ "$path" == "$candidate" ]]; then
+                ok=true
+                break
+              fi
+            done
+            if [[ "$ok" != true ]]; then
+              echo "::error::Unexpected generated change: $path"
+              exit 1
+            fi
+          done
+
+          git add -- "${allowed[@]}"
+
+          if git diff --cached --quiet; then
+            echo "No generated Administration changes."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "build: normalize administration artifact trailing newlines"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
