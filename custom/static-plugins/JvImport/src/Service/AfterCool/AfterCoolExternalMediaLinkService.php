@@ -28,8 +28,7 @@ final readonly class AfterCoolExternalMediaLinkService
                 continue;
             }
             try {
-                $mediaId = Uuid::fromStringToHex('jvmoebel.aftercool.media.'.$url);
-                $this->mediaUpload->linkURL($url, $context, new MediaUploadParameters(id: $mediaId, mimeType: $mimeType, deduplicate: true));
+                $mediaId = $this->mediaUpload->linkURL($url, $context, new MediaUploadParameters(id: Uuid::fromStringToHex('jvmoebel.aftercool.media.'.$url), mimeType: $mimeType, deduplicate: true));
                 $relationId = Uuid::fromStringToHex('jvmoebel.aftercool.product-media.'.$productId.'.'.$mediaId);
                 $media[] = ['id' => $relationId, 'productId' => $productId, 'mediaId' => $mediaId, 'position' => $position];
                 if (null === $existingCoverId && null === $coverId) {

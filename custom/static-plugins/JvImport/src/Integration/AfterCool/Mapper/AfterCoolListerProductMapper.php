@@ -85,7 +85,7 @@ final class AfterCoolListerProductMapper
         $candidates = [];
         foreach (['GalleryURL', 'pictureurls'] as $field) {
             $value = $item->row[$field] ?? null;
-            foreach (is_array($value) ? $value : (is_string($value) ? explode('|', $value) : []) as $url) {
+            foreach (is_array($value) ? $value : (is_string($value) ? preg_split('/[|;]/', $value) : []) as $url) {
                 if (!is_string($url) || '' === trim($url)) {
                     continue;
                 }

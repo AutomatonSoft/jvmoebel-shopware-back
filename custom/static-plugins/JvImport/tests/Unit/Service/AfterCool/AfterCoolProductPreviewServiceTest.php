@@ -70,4 +70,21 @@ final class AfterCoolProductPreviewServiceTest extends TestCase
 
         return json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
     }
+
+    public function testZeroPriceIsNotAdvertisedAsUnconditionallyImportable(): void
+    {
+        $payload = $this->fixture();
+        $payload['items'] = [$payload['items'][0]];
+        $payload['items'][0]['row']['Startpreis'] = '0';
+        $payload['total'] = 1;
+        $payload['limit'] = 25;
+        $payload['has_more'] = false;
+        $page = (new AfterCoolResponseNormalizer())->normalizeProductPage($payload, 'JV', 'lister', 504034, 0, 25);
+        $reader = $this->createMock(AfterCoolProductPageReaderInterface::class);
+        $reader->expects(self::once())->method('getProductPage')->with(504034, 0, 25, null)->willReturn($page);
+
+        $result = (new AfterCoolProductPreviewService($reader, new AfterCoolProductPageMapper(new AfterCoolListerProductMapper())))->preview(504034, 25, 0, null);
+
+        self::assertFalse($result['items'][0]['importable'], 'A zero-price row cannot create a product; preview must not promise unconditional readiness.');
+    }
 }

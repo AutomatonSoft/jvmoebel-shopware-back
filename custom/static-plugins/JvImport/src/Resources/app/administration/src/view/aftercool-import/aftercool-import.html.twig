@@ -11,7 +11,8 @@
         <sw-button class="jv-aftercool-import__refresh" :disabled="loadingFactories" @click="loadFactories">
             {{ $t('jv-import.aftercool.refresh') }}
         </sw-button>
-        <p v-if="previewReady">{{ $tc('jv-import.aftercool.importWholeFactory', previewTotal, { count: previewTotal }) }}</p>
+        <p v-if="previewReady && factoryTotal !== null">{{ $tc('jv-import.aftercool.importWholeFactory', factoryTotal, { count: factoryTotal }) }}</p>
+        <p v-if="previewReady && previewQuery">{{ $tc('jv-import.aftercool.filteredPreview', previewTotal, { count: previewTotal, total: factoryTotal }) }}</p>
     </sw-card>
 
     <sw-card v-if="factoryId" :title="$t('jv-import.aftercool.preview')" :is-loading="previewLoading">

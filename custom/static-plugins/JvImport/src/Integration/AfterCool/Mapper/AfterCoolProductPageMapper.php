@@ -19,6 +19,7 @@ final readonly class AfterCoolProductPageMapper
         $products = [];
         $issues = [];
         $seenEans = [];
+        $seenSourceProductIds = [];
         foreach ($page->items as $item) {
             if ($item instanceof AfterCoolInvalidProductItem) {
                 $issues[] = new AfterCoolProductIssue($item->productId, 'failed', $item->code, 'Aftercool product data is invalid.', $item->artikelnummer, $item->ean, $item->rowNo);
@@ -32,6 +33,12 @@ final readonly class AfterCoolProductPageMapper
 
                 continue;
             }
+            if (isset($seenSourceProductIds[$product->sourceProductId])) {
+                $issues[] = new AfterCoolProductIssue($product->sourceProductId, 'skipped', 'duplicate_source_product_id', 'Duplicate Aftercool source product ID on one page.', $product->sourceArtikelnummer, $product->ean, $product->rowNo);
+
+                continue;
+            }
+            $seenSourceProductIds[$product->sourceProductId] = true;
             if (isset($seenEans[$product->ean])) {
                 $issues[] = new AfterCoolProductIssue($product->sourceProductId, 'skipped', 'duplicate_ean_in_factory', 'Duplicate EAN in Aftercool factory.', $product->sourceArtikelnummer, $product->ean, $product->rowNo);
 
@@ -39,7 +46,9 @@ final readonly class AfterCoolProductPageMapper
             }
             $seenEans[$product->ean] = true;
             $products[] = $product;
-            array_push($issues, ...$product->mediaIssues);
+            foreach ($product->mediaIssues as $issue) {
+                $issues[] = new AfterCoolProductIssue($issue->productId, $issue->result, $issue->code, $issue->message, $issue->artikelnummer, $issue->ean, $issue->rowNo, false);
+            }
         }
 
         return new AfterCoolProductPageMappingResult($products, $issues);

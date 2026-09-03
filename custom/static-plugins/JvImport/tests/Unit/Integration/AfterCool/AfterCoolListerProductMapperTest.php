@@ -46,6 +46,17 @@ final class AfterCoolListerProductMapperTest extends TestCase
         ], $product->mediaUrls);
     }
 
+    public function testItSeparatesSemicolonDelimitedListerPictureUrls(): void
+    {
+        $payload = $this->fixture();
+        $payload['items'][0]['row']['GalleryURL'] = '';
+        $payload['items'][0]['row']['pictureurls'] = 'https://images.example.test/first.jpg;https://images.example.test/second.jpg';
+        $page = $this->normalizer()->normalizeProductPage($payload, 'JV', 'lister', 504034, 0);
+        $product = (new AfterCoolListerProductMapper())->map($page->items[0]);
+
+        self::assertSame(['https://images.example.test/first.jpg', 'https://images.example.test/second.jpg'], $product->mediaUrls);
+    }
+
     public function testItIgnoresUnsafeMediaUrlsWithoutFailingTheBaseProduct(): void
     {
         $payload = $this->fixture();

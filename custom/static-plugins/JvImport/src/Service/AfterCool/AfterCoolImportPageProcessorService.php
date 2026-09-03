@@ -70,6 +70,9 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
     private function processLocked(string $runId, int $offset, Context $context): AfterCoolPageProcessingResult
     {
         $run = $this->loadRun($runId, $context);
+        if (in_array($run->getStatus(), ['completed', 'completed_with_errors', 'failed'], true)) {
+            return AfterCoolPageProcessingResult::completed();
+        }
         if ($offset < $run->getNextOffset()) {
             return in_array($run->getStatus(), ['queued', 'running'], true)
                 ? AfterCoolPageProcessingResult::continueWith($run->getNextOffset())
@@ -100,6 +103,7 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
                     $tax->rate,
                     Defaults::CURRENCY,
                     Market::Germany->languageId(),
+                    null === $existingProductId ? [] : $this->existingPrices($existingProductId, $context),
                 );
                 $records[] = new AfterCoolProductWriteRecord(
                     $product->sourceProductId,
@@ -213,6 +217,22 @@ final readonly class AfterCoolImportPageProcessorService implements AfterCoolImp
         $product = $this->productRepository->search(new Criteria([$productId]), $context)->first();
 
         return $product instanceof ProductEntity ? $product->getCoverId() : null;
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function existingPrices(string $productId, Context $context): array
+    {
+        $product = $this->productRepository->search((new Criteria([$productId]))->addAssociation('price'), $context)->first();
+        if (!$product instanceof ProductEntity || null === $product->getPrice()) {
+            return [];
+        }
+
+        return array_map(static fn ($price): array => [
+            'currencyId' => $price->getCurrencyId(),
+            'net' => $price->getNet(),
+            'gross' => $price->getGross(),
+            'linked' => $price->getLinked(),
+        ], $product->getPrice()->getElements());
     }
 
     /** @param list<AfterCoolProductIssue> $issues */

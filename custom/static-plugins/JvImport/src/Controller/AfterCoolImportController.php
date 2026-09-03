@@ -16,6 +16,7 @@ use Jv\Import\Service\AfterCool\StartAfterCoolImportService;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -117,7 +118,10 @@ final class AfterCoolImportController extends AbstractController
         $criteria = new Criteria();
         $criteria->setLimit(min(100, max(1, $request->query->getInt('limit', 50))));
         $criteria->setOffset(max(0, $request->query->getInt('offset', 0)));
+        $criteria->setTotalCountMode(Criteria::TOTAL_COUNT_MODE_EXACT);
         $criteria->addFilter(new \Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter('runId', $runId));
+        $criteria->addSorting(new FieldSorting('createdAt', FieldSorting::ASCENDING));
+        $criteria->addSorting(new FieldSorting('id', FieldSorting::ASCENDING));
         $result = $this->errorRepository->search($criteria, $context);
 
         return new JsonResponse(['data' => array_values(array_map(static fn (AfterCoolImportErrorEntity $error): array => [

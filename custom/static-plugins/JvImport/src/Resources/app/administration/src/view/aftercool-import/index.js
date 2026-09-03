@@ -22,13 +22,13 @@ export default {
             errorsLimit: 50,
             polling: null,
             httpClient: null,
-            preview: [], previewTotal: 0, previewPage: 1, previewLimit: 25, previewQuery: '', previewLoading: false, previewReady: false, previewRequest: 0, previewDetail: null,
+            preview: [], previewTotal: 0, factoryTotal: null, previewPage: 1, previewLimit: 25, previewQuery: '', previewLoading: false, previewReady: false, previewRequest: 0, previewDetail: null,
         };
     },
 
     computed: {
         canStart() {
-            return this.acl.can('system.import_export') && Number.isInteger(this.factoryId) && this.previewReady && this.previewTotal > 0 && !this.starting;
+            return this.acl.can('system.import_export') && Number.isInteger(this.factoryId) && this.previewReady && this.factoryTotal > 0 && !this.starting;
         },
         previewColumns() {
             return [
@@ -64,7 +64,7 @@ export default {
     },
 
     watch: {
-        factoryId() { this.previewPage = 1; this.previewQuery = ''; this.preview = []; this.previewTotal = 0; this.previewDetail = null; this.loadPreview(); },
+        factoryId() { this.previewPage = 1; this.previewQuery = ''; this.preview = []; this.previewTotal = 0; this.factoryTotal = null; this.previewDetail = null; this.loadPreview(); },
     },
 
     methods: {
@@ -101,7 +101,7 @@ export default {
         },
 
         async loadPreview() {
-            if (!Number.isInteger(this.factoryId)) { this.preview = []; this.previewTotal = 0; this.previewReady = false; return; }
+            if (!Number.isInteger(this.factoryId)) { this.preview = []; this.previewTotal = 0; this.factoryTotal = null; this.previewReady = false; return; }
             const request = ++this.previewRequest;
             this.previewLoading = true;
             this.previewReady = false;
@@ -110,6 +110,7 @@ export default {
                 if (request !== this.previewRequest) return;
                 this.preview = response.data.data;
                 this.previewTotal = response.data.total;
+                if ('' === this.previewQuery) this.factoryTotal = response.data.total;
                 this.previewReady = true;
             } catch (error) {
                 if (request === this.previewRequest) this.createNotificationError({ message: this.afterCoolError(error, 'jv-import.aftercool.previewError') });

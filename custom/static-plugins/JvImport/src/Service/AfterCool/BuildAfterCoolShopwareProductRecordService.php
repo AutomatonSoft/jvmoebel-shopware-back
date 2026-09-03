@@ -8,8 +8,12 @@ use Jv\Import\Service\ProductImport\ProductImportIdentity;
 
 final class BuildAfterCoolShopwareProductRecordService
 {
-    /** @return array<string, mixed> */
-    public function build(AfterCoolMappedProduct $product, ?string $existingProductId, string $taxId, float $taxRate, string $currencyId, string $languageId): array
+    /**
+     * @param list<array<string, mixed>> $existingPrices
+     *
+     * @return array<string, mixed>
+     */
+    public function build(AfterCoolMappedProduct $product, ?string $existingProductId, string $taxId, float $taxRate, string $currencyId, string $languageId, array $existingPrices = []): array
     {
         $isNew = null === $existingProductId;
         if ($isNew && 0.0 >= $product->grossPrice) {
@@ -29,12 +33,19 @@ final class BuildAfterCoolShopwareProductRecordService
             $record['translations'][0]['description'] = $product->description;
         }
         if (0.0 < $product->grossPrice) {
-            $record['price'] = [[
+            $prices = [];
+            foreach ($existingPrices as $price) {
+                if (isset($price['currencyId']) && is_string($price['currencyId'])) {
+                    $prices[$price['currencyId']] = $price;
+                }
+            }
+            $prices[$currencyId] = [
                 'currencyId' => $currencyId,
                 'gross' => $product->grossPrice,
                 'net' => round($product->grossPrice / (1 + $taxRate / 100), 2),
                 'linked' => true,
-            ]];
+            ];
+            $record['price'] = array_values($prices);
         }
         if ($isNew) {
             $record['name'] = $product->name;

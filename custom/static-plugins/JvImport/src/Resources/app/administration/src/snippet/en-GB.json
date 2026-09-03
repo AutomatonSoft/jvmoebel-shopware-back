@@ -23,6 +23,7 @@
             "previewError": "Aftercool products could not be loaded.",
             "startError": "Aftercool import could not be started.",
             "importWholeFactory": "The whole factory ({count} products) will be imported.",
+            "filteredPreview": "Showing {count} of {total} products. Search only filters the preview.",
             "image": "Image",
             "name": "Name",
             "ean": "EAN",

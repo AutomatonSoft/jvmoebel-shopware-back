@@ -51,7 +51,7 @@ final readonly class AfterCoolProductPreviewService implements AfterCoolProductP
             'previewImage' => $media[0] ?? null, 'updatedAt' => $item instanceof AfterCoolProductItem ? $item->updatedAt : null,
             'sourceFile' => $item instanceof AfterCoolProductItem ? $item->sourceFile : null, 'sourceKind' => $item instanceof AfterCoolProductItem ? $item->sourceKind : null,
             'description' => is_object($mapped) ? $mapped->description : null, 'mediaUrls' => $media,
-            'importable' => [] === $issues, 'issues' => $issues,
+            'importable' => [] === $issues && (!is_object($mapped) || 0.0 < $mapped->grossPrice), 'issues' => $issues,
         ];
     }
 
