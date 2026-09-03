@@ -3,8 +3,8 @@
 namespace Jv\Import\Integration\AfterCool\Mapper;
 
 use Jv\Import\Integration\AfterCool\Dto\AfterCoolInvalidProductItem;
-use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductItem;
 use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductIssue;
+use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductItem;
 use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductPage;
 use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductPageMappingResult;
 use Jv\Import\Integration\AfterCool\Exception\AfterCoolProductMappingException;
