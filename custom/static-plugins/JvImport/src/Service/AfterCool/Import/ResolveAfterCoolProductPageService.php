@@ -15,6 +15,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Pricing\Price;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 
 /** Resolves all source links and Shopware products needed by one import page. */
@@ -55,10 +56,7 @@ final readonly class ResolveAfterCoolProductPageService
 
         $productsById = [];
         $productsByNumber = [];
-        $criteria = (new Criteria())
-            ->addFilter(new EqualsAnyFilter('productNumber', $eans))
-            ->addAssociation('price');
-        foreach ($this->productRepository->search($criteria, $context)->getEntities() as $shopwareProduct) {
+        foreach ($this->findShopwareProducts($products, $linksByProductId, $context) as $shopwareProduct) {
             $productsById[$shopwareProduct->getId()] = $shopwareProduct;
             $productsByNumber[$shopwareProduct->getProductNumber()][] = $shopwareProduct;
         }
@@ -101,6 +99,44 @@ final readonly class ResolveAfterCoolProductPageService
         }
 
         return $resolved;
+    }
+
+    /**
+     * Fetches linked products by their persisted IDs and only falls back to an
+     * EAN/productNumber lookup where there is no source link yet.
+     *
+     * @param list<AfterCoolMappedProduct>                $products
+     * @param array<string, AfterCoolProductSourceEntity> $linksByProductId
+     *
+     * @return list<ProductEntity>
+     */
+    private function findShopwareProducts(array $products, array $linksByProductId, Context $context): array
+    {
+        $linkedProductIds = [];
+        $unlinkedEans = [];
+        foreach ($products as $product) {
+            $source = $linksByProductId[$product->sourceProductId] ?? null;
+            if (null !== $source) {
+                $linkedProductIds[] = $source->getProductId();
+
+                continue;
+            }
+            $unlinkedEans[] = $product->ean;
+        }
+        $filters = [];
+        if ([] !== $linkedProductIds) {
+            $filters[] = new EqualsAnyFilter('id', array_values(array_unique($linkedProductIds)));
+        }
+        if ([] !== $unlinkedEans) {
+            $filters[] = new EqualsAnyFilter('productNumber', array_values(array_unique($unlinkedEans)));
+        }
+        if ([] === $filters) {
+            return [];
+        }
+        $criteria = (new Criteria())->addAssociation('price');
+        $criteria->addFilter(1 === count($filters) ? $filters[0] : new MultiFilter(MultiFilter::CONNECTION_OR, $filters));
+
+        return array_values($this->productRepository->search($criteria, $context)->getElements());
     }
 
     /**
