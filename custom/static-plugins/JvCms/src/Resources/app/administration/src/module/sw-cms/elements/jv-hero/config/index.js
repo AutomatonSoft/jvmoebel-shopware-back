@@ -1,7 +1,21 @@
+/**
+ * Hero carousel config for CMS element `jv-hero`.
+ */
 import template from './sw-cms-el-config-jv-hero.html.twig';
 import './sw-cms-el-config-jv-hero.scss';
 
 const { Mixin } = Shopware;
+
+const EMPTY_LINK = {
+    label: '',
+    url: '',
+    size: 'medium',
+};
+
+const EMPTY_PROMOTION = {
+    label: '',
+    value: '',
+};
 
 export default {
     template,
@@ -16,25 +30,24 @@ export default {
 
     data() {
         return {
-            mediaModalIsOpen: false,
+            mediaModalIndex: null,
         };
     },
 
     computed: {
+        slides() {
+            return this.ensureSlides();
+        },
+
         mediaRepository() {
             return this.repositoryFactory.create('media');
         },
 
-        imageUploadTag() {
-            return `cms-element-jv-hero-image-${this.element.id}`;
-        },
-
-        imagePreviewSource() {
-            if (this.element?.data?.imageMedia?.id) {
-                return this.element.data.imageMedia;
-            }
-
-            return this.element.config.imageMedia.value;
+        layoutOptions() {
+            return [
+                { value: 'featured', label: this.$t('cms.elements.jv-hero.config.slides.layout.featured') },
+                { value: 'caption', label: this.$t('cms.elements.jv-hero.config.slides.layout.caption') },
+            ];
         },
 
         sizeOptions() {
@@ -48,91 +61,221 @@ export default {
 
     created() {
         this.initElementConfig('jv-hero');
-        this.ensureLinkObjects();
+        this.migrateLegacyConfig();
+        this.normalizeSlides();
     },
 
     methods: {
         onUpdate() {
+            this.syncSlidePositions();
             this.$emit('element-update', this.element);
         },
 
-        ensureLinkObjects() {
-            this.ensureLink('primaryLink');
-            this.ensureLink('secondaryLink');
+        syncSlidePositions() {
+            this.slides.forEach((slide, index) => {
+                slide.position = index;
+            });
         },
 
-        ensureLink(field) {
-            const config = this.element?.config?.[field];
-            if (!config) {
+        ensureSlides() {
+            if (!Array.isArray(this.element.config.slides?.value)) {
+                this.element.config.slides.value = [];
+            }
+
+            return this.element.config.slides.value;
+        },
+
+        normalizeSlides() {
+            this.ensureSlides().forEach((slide) => {
+                this.ensureSlideShape(slide);
+            });
+        },
+
+        ensureSlideShape(slide) {
+            if (typeof slide.id !== 'string') {
+                slide.id = '';
+            }
+            if (typeof slide.position !== 'number') {
+                slide.position = 0;
+            }
+            if (typeof slide.layout !== 'string' || !['featured', 'caption'].includes(slide.layout)) {
+                slide.layout = 'featured';
+            }
+            if (typeof slide.title !== 'string') {
+                slide.title = '';
+            }
+            if (typeof slide.url !== 'string') {
+                slide.url = '';
+            }
+            if (typeof slide.eyebrow !== 'string') {
+                slide.eyebrow = '';
+            }
+            if (typeof slide.description !== 'string') {
+                slide.description = '';
+            }
+            if (!Object.prototype.hasOwnProperty.call(slide, 'imageMedia')) {
+                slide.imageMedia = null;
+            }
+
+            if (!slide.promotion || typeof slide.promotion !== 'object' || Array.isArray(slide.promotion)) {
+                slide.promotion = { ...EMPTY_PROMOTION };
+            } else {
+                if (typeof slide.promotion.label !== 'string') {
+                    slide.promotion.label = '';
+                }
+                if (typeof slide.promotion.value !== 'string') {
+                    slide.promotion.value = '';
+                }
+            }
+
+            this.ensureLinkObject(slide, 'primaryLink');
+            this.ensureLinkObject(slide, 'secondaryLink');
+        },
+
+        ensureLinkObject(slide, field) {
+            if (!slide[field] || typeof slide[field] !== 'object' || Array.isArray(slide[field])) {
+                slide[field] = { ...EMPTY_LINK };
                 return;
             }
 
-            if (!config.value || typeof config.value !== 'object' || Array.isArray(config.value)) {
-                config.value = {
-                    label: '',
-                    url: '',
-                    size: 'medium',
-                };
-                return;
+            if (typeof slide[field].label !== 'string') {
+                slide[field].label = '';
             }
-
-            if (typeof config.value.label !== 'string') {
-                config.value.label = '';
+            if (typeof slide[field].url !== 'string') {
+                slide[field].url = '';
             }
-            if (typeof config.value.url !== 'string') {
-                config.value.url = '';
-            }
-            if (!['small', 'medium', 'large'].includes(config.value.size)) {
-                config.value.size = 'medium';
+            if (!['small', 'medium', 'large'].includes(slide[field].size)) {
+                slide[field].size = 'medium';
             }
         },
 
-        async onImageUpload({ targetId }) {
+        /** Map legacy flat root fields into one slide so editors can migrate in the UI. */
+        migrateLegacyConfig() {
+            this.ensureSlides();
+
+            const slides = this.element.config.slides.value;
+            if (slides.length > 0) {
+                return;
+            }
+
+            const legacyTitle = this.element.config.title?.value;
+            const legacyImage = this.element.config.imageMedia?.value;
+            const legacyEyebrow = this.element.config.eyebrow?.value;
+            const legacyDescription = this.element.config.description?.value;
+            const legacyPrimary = this.element.config.primaryLink?.value;
+            const legacySecondary = this.element.config.secondaryLink?.value;
+
+            const hasLegacy = Boolean(
+                legacyTitle
+                || legacyImage
+                || legacyEyebrow
+                || legacyDescription
+                || legacyPrimary?.label
+                || legacyPrimary?.url
+                || legacySecondary?.label
+                || legacySecondary?.url,
+            );
+
+            if (!hasLegacy) {
+                return;
+            }
+
+            this.element.config.slides.value = [{
+                id: '',
+                position: 0,
+                layout: 'featured',
+                title: legacyTitle || '',
+                url: '',
+                eyebrow: legacyEyebrow || '',
+                description: legacyDescription || '',
+                imageMedia: legacyImage || null,
+                promotion: { ...EMPTY_PROMOTION },
+                primaryLink: legacyPrimary ? { ...EMPTY_LINK, ...legacyPrimary } : { ...EMPTY_LINK },
+                secondaryLink: legacySecondary ? { ...EMPTY_LINK, ...legacySecondary } : { ...EMPTY_LINK },
+            }];
+        },
+
+        addSlide() {
+            this.ensureSlides().push({
+                id: '',
+                position: this.slides.length,
+                layout: 'featured',
+                title: '',
+                url: '',
+                eyebrow: '',
+                description: '',
+                imageMedia: null,
+                promotion: { ...EMPTY_PROMOTION },
+                primaryLink: { ...EMPTY_LINK },
+                secondaryLink: { ...EMPTY_LINK },
+            });
+            this.onUpdate();
+        },
+
+        removeSlide(index) {
+            this.ensureSlides().splice(index, 1);
+            this.onUpdate();
+        },
+
+        slideUploadTag(index) {
+            return `cms-element-jv-hero-slide-${this.element.id}-${index}`;
+        },
+
+        slidePreviewSource(slide) {
+            if (slide?.image?.id) {
+                return slide.image;
+            }
+
+            return slide.imageMedia;
+        },
+
+        async onSlideUpload(index, { targetId }) {
             const mediaEntity = await this.mediaRepository.get(targetId);
+            const slide = this.slides[index];
+            if (!slide) {
+                return;
+            }
 
-            this.element.config.imageMedia.value = mediaEntity.id;
-            this.element.config.imageMedia.source = 'static';
-            this.updateImageElementData(mediaEntity);
+            slide.imageMedia = mediaEntity.id;
+            slide.image = mediaEntity;
             this.onUpdate();
         },
 
-        onImageRemove() {
-            this.element.config.imageMedia.value = null;
-            this.updateImageElementData();
+        onSlideRemove(index) {
+            const slide = this.slides[index];
+            if (!slide) {
+                return;
+            }
+
+            slide.imageMedia = null;
+            slide.image = null;
             this.onUpdate();
         },
 
-        onOpenImageMediaModal() {
-            this.mediaModalIsOpen = true;
+        onOpenSlideMediaModal(index) {
+            this.mediaModalIndex = index;
         },
 
-        onCloseImageMediaModal() {
-            this.mediaModalIsOpen = false;
+        onCloseSlideMediaModal() {
+            this.mediaModalIndex = null;
         },
 
-        onImageSelectionChanges(mediaEntities) {
+        onSlideSelectionChanges(mediaEntities) {
+            const index = this.mediaModalIndex;
+            if (index === null) {
+                return;
+            }
+
             const media = mediaEntities[0];
-            if (!media) {
+            const slide = this.slides[index];
+            if (!media || !slide) {
                 return;
             }
 
-            this.element.config.imageMedia.value = media.id;
-            this.element.config.imageMedia.source = 'static';
-            this.updateImageElementData(media);
+            slide.imageMedia = media.id;
+            slide.image = media;
             this.onUpdate();
-        },
-
-        /** Keep element.data in sync so the canvas can show the image before page reload. */
-        updateImageElementData(media = null) {
-            const mediaId = media === null ? null : media.id;
-
-            if (!this.element.data) {
-                this.element.data = { imageMediaId: mediaId, imageMedia: media };
-                return;
-            }
-
-            this.element.data.imageMediaId = mediaId;
-            this.element.data.imageMedia = media;
+            this.onCloseSlideMediaModal();
         },
     },
 };
