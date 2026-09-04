@@ -50,24 +50,25 @@ final readonly class ProcessAfterCoolStagedMediaService
                     $product instanceof ProductEntity ? $product->getCoverId() : null,
                     $context,
                 );
+                if ([] !== $result->productMedia) {
+                    $payload = ['id' => $productId, 'media' => $result->productMedia];
+                    if (null !== $result->coverId) {
+                        $payload['coverId'] = $result->coverId;
+                    }
+                    $this->productRepository->update([$payload], $context);
+                }
+                if ([] !== $result->issues) {
+                    $this->recordIssues($runId, $offset, $productTasks, $result->issues);
+                    $this->complete($taskIds, 'failed');
+
+                    continue;
+                }
+                $this->complete($taskIds, 'completed');
             } catch (\Throwable $exception) {
                 $this->complete($taskIds, 'pending');
 
                 throw $exception;
             }
-            if ([] !== $result->productMedia) {
-                $payload = ['id' => $productId, 'media' => $result->productMedia];
-                if (null !== $result->coverId) {
-                    $payload['coverId'] = $result->coverId;
-                }
-                $this->productRepository->update([$payload], $context);
-            }
-            if ([] !== $result->issues) {
-                $this->recordIssues($runId, $offset, $productTasks, $result->issues);
-                $this->complete($taskIds, 'failed');
-                continue;
-            }
-            $this->complete($taskIds, 'completed');
         }
     }
 

@@ -4,6 +4,7 @@ namespace Jv\Import\Tests\Unit\Controller;
 
 use Jv\Import\Controller\AfterCoolImportController;
 use Jv\Import\Integration\AfterCool\Exception\AfterCoolApiException;
+use Jv\Import\Integration\AfterCool\Exception\AfterCoolResponseContractException;
 use Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolProductPageMappingResult;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolProductPreviewItem;
@@ -12,6 +13,7 @@ use Jv\Import\Service\AfterCool\Persistence\AfterCoolImportRunStore;
 use Jv\Import\Service\AfterCool\Query\ListAfterCoolFactoriesService;
 use Jv\Import\Service\AfterCool\Query\PreviewAfterCoolProductsService;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Lock\LockFactory;
@@ -54,6 +56,28 @@ final class AfterCoolImportControllerTest extends TestCase
         self::assertSame('Aftercool products could not be loaded.', $payload['errors'][0]['detail']);
     }
 
+    public function testStartReturnsASafeGatewayErrorWhenFactoryVerificationFails(): void
+    {
+        $response = $this->controller($this->source(null, AfterCoolApiException::transport(new \RuntimeException('secret'))))
+            ->start(Request::create('/api/_action/jv-import/aftercool/runs', 'POST', [], [], [], [], json_encode(['factoryId' => 504034], JSON_THROW_ON_ERROR)), Context::createDefaultContext());
+
+        self::assertSame(502, $response->getStatusCode());
+        $payload = json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame('aftercool_transport_error', $payload['errors'][0]['code']);
+        self::assertSame('Aftercool factory could not be verified.', $payload['errors'][0]['detail']);
+    }
+
+    public function testStartReturnsASafeGatewayErrorForAnInvalidFactoryResponse(): void
+    {
+        $response = $this->controller($this->source(null, new AfterCoolResponseContractException('secret')))
+            ->start(Request::create('/api/_action/jv-import/aftercool/runs', 'POST', [], [], [], [], json_encode(['factoryId' => 504034], JSON_THROW_ON_ERROR)), Context::createDefaultContext());
+
+        self::assertSame(502, $response->getStatusCode());
+        $payload = json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame('aftercool_invalid_response', $payload['errors'][0]['code']);
+        self::assertSame('Aftercool factory could not be verified.', $payload['errors'][0]['detail']);
+    }
+
     private function controller(AfterCoolProductSourceInterface $source): AfterCoolImportController
     {
         return new AfterCoolImportController(
@@ -74,6 +98,10 @@ final class AfterCoolImportControllerTest extends TestCase
 
             public function getFactories(): array
             {
+                if (null !== $this->failure) {
+                    throw $this->failure;
+                }
+
                 return [];
             }
 

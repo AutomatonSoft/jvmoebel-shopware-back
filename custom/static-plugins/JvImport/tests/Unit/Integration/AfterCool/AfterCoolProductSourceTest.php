@@ -112,6 +112,14 @@ final class AfterCoolProductSourceTest extends TestCase
         $normalizer = new AfterCoolResponseNormalizer();
         $payload = $this->listerFixture();
         $payload['items'][0]['row']['I_stammartikel'] = '';
+        unset($payload['items'][1]['row']['I_stammartikel']);
+        $payload['items'][] = array_replace($payload['items'][0], [
+            'product_id' => '900003',
+            'ean' => '4006381333931',
+            'artikelnummer' => '900003',
+            'row' => array_replace($payload['items'][0]['row'], ['ID' => '900003', 'I_stammartikel' => 'not-found']),
+        ]);
+        $payload['total'] = 3;
         $page = $normalizer->normalizeProductPage($payload, 'JV', 'lister', 504034, 0);
 
         $reader = new class($page) implements AfterCoolApiClientInterface {
@@ -139,7 +147,7 @@ final class AfterCoolProductSourceTest extends TestCase
         $result = (new AfterCoolProductSource($reader, new AfterCoolProductPageMapper(new AfterCoolListerProductMapper())))
             ->getImportProductPage(504034, 0);
 
-        self::assertCount(2, $result->products, 'Missing detail data must not reject otherwise valid Lister products.');
+        self::assertCount(3, $result->products, 'Missing detail data must not reject otherwise valid Lister products.');
         $issuesByProduct = [];
         foreach ($result->issues as $issue) {
             $issuesByProduct[$issue->productId][] = $issue;
@@ -148,8 +156,10 @@ final class AfterCoolProductSourceTest extends TestCase
         self::assertArrayHasKey($page->items[1]->productId, $issuesByProduct);
         self::assertSame('missing_stammartikel', $issuesByProduct[$page->items[0]->productId][0]->code);
         self::assertFalse($issuesByProduct[$page->items[0]->productId][0]->countsAsRecord);
-        self::assertSame('linked_product_not_found', $issuesByProduct[$page->items[1]->productId][0]->code);
+        self::assertSame('missing_stammartikel', $issuesByProduct[$page->items[1]->productId][0]->code);
         self::assertFalse($issuesByProduct[$page->items[1]->productId][0]->countsAsRecord);
+        self::assertSame('linked_product_not_found', $issuesByProduct[$page->items[2]->productId][0]->code);
+        self::assertFalse($issuesByProduct[$page->items[2]->productId][0]->countsAsRecord);
     }
 
     /** @return array<mixed> */

@@ -32,7 +32,7 @@ final readonly class AfterCoolProductPageMapper
             $linkedProduct = null;
             try {
                 $stammartikel = $item->row['I_stammartikel'] ?? null;
-                $missingStammartikel = is_string($stammartikel) && '' === trim($stammartikel);
+                $missingStammartikel = !is_string($stammartikel) || '' === trim($stammartikel);
                 $linkedIdentity = is_string($stammartikel) ? trim($stammartikel) : '';
                 $linkedProduct = '' === $linkedIdentity ? null : ($linkedProducts[$linkedIdentity] ?? null);
                 $product = $this->productMapper->map($item, $linkedProduct, $importing);
