@@ -4,7 +4,8 @@ namespace Jv\Import\Tests\Unit\Integration\AfterCool;
 
 use Jv\Import\Integration\AfterCool\AfterCoolProductSource;
 use Jv\Import\Integration\AfterCool\AfterCoolResponseNormalizer;
-use Jv\Import\Integration\AfterCool\Contract\AfterCoolProductPageReaderInterface;
+use Jv\Import\Integration\AfterCool\Contract\AfterCoolApiClientInterface;
+use Jv\Import\Integration\AfterCool\Dto\AfterCoolFactory;
 use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductItem;
 use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductPage;
 use Jv\Import\Integration\AfterCool\Mapper\AfterCoolListerProductMapper;
@@ -22,7 +23,7 @@ final class AfterCoolProductSourceTest extends TestCase
         $linked = $normalizer->normalizeLinkedProduct($this->linkedProductPayload(), 'JV', '183975801');
         self::assertNotNull($linked);
 
-        $reader = new class($page, $linked) implements AfterCoolProductPageReaderInterface {
+        $reader = new class($page, $linked) implements AfterCoolApiClientInterface {
             /** @var list<string> */
             public array $linkedIds = [];
 
@@ -30,6 +31,12 @@ final class AfterCoolProductSourceTest extends TestCase
                 private readonly AfterCoolProductPage $page,
                 private readonly AfterCoolProductItem $linked,
             ) {
+            }
+
+            /** @return list<AfterCoolFactory> */
+            public function getFactories(): array
+            {
+                return [];
             }
 
             public function getProductPage(int $factoryId, int $offset, int $limit = 100, ?string $query = null): AfterCoolProductPage
@@ -55,6 +62,94 @@ final class AfterCoolProductSourceTest extends TestCase
         self::assertCount(2, $result->products);
         self::assertSame('<article><h1>Full HTML</h1><p>One upstream request.</p></article>', $result->products[0]->description);
         self::assertSame($result->products[0]->description, $result->products[1]->description);
+    }
+
+    public function testImportKeepsTheLinkedDescriptionWhenTheListerPriceIsUnusable(): void
+    {
+        $normalizer = new AfterCoolResponseNormalizer();
+        $payload = $this->listerFixture();
+        $payload['items'] = [$payload['items'][0]];
+        $payload['total'] = 1;
+        $payload['items'][0]['row']['Startpreis'] = 'not-a-price';
+        $page = $normalizer->normalizeProductPage($payload, 'JV', 'lister', 504034, 0);
+        $linked = $normalizer->normalizeLinkedProduct($this->linkedProductPayload(), 'JV', '183975801');
+        self::assertNotNull($linked);
+
+        $reader = new class($page, $linked) implements AfterCoolApiClientInterface {
+            public function __construct(
+                private readonly AfterCoolProductPage $page,
+                private readonly AfterCoolProductItem $linked,
+            ) {
+            }
+
+            /** @return list<AfterCoolFactory> */
+            public function getFactories(): array
+            {
+                return [];
+            }
+
+            public function getProductPage(int $factoryId, int $offset, int $limit = 100, ?string $query = null): AfterCoolProductPage
+            {
+                return $this->page;
+            }
+
+            public function getLinkedProduct(string $stammartikel): AfterCoolProductItem
+            {
+                return $this->linked;
+            }
+        };
+
+        $result = (new AfterCoolProductSource($reader, new AfterCoolProductPageMapper(new AfterCoolListerProductMapper())))
+            ->getImportProductPage(504034, 0);
+
+        self::assertCount(1, $result->products);
+        self::assertNull($result->products[0]->grossPrice);
+        self::assertSame('<article><h1>Full HTML</h1><p>One upstream request.</p></article>', $result->products[0]->description);
+    }
+
+    public function testImportReportsMissingStammartikelAndMissingExactLinkedProductWithoutRejectingListerData(): void
+    {
+        $normalizer = new AfterCoolResponseNormalizer();
+        $payload = $this->listerFixture();
+        $payload['items'][0]['row']['I_stammartikel'] = '';
+        $page = $normalizer->normalizeProductPage($payload, 'JV', 'lister', 504034, 0);
+
+        $reader = new class($page) implements AfterCoolApiClientInterface {
+            public function __construct(private readonly AfterCoolProductPage $page)
+            {
+            }
+
+            /** @return list<AfterCoolFactory> */
+            public function getFactories(): array
+            {
+                return [];
+            }
+
+            public function getProductPage(int $factoryId, int $offset, int $limit = 100, ?string $query = null): AfterCoolProductPage
+            {
+                return $this->page;
+            }
+
+            public function getLinkedProduct(string $stammartikel): ?AfterCoolProductItem
+            {
+                return null;
+            }
+        };
+
+        $result = (new AfterCoolProductSource($reader, new AfterCoolProductPageMapper(new AfterCoolListerProductMapper())))
+            ->getImportProductPage(504034, 0);
+
+        self::assertCount(2, $result->products, 'Missing detail data must not reject otherwise valid Lister products.');
+        $issuesByProduct = [];
+        foreach ($result->issues as $issue) {
+            $issuesByProduct[$issue->productId][] = $issue;
+        }
+        self::assertArrayHasKey($page->items[0]->productId, $issuesByProduct);
+        self::assertArrayHasKey($page->items[1]->productId, $issuesByProduct);
+        self::assertSame('missing_stammartikel', $issuesByProduct[$page->items[0]->productId][0]->code);
+        self::assertFalse($issuesByProduct[$page->items[0]->productId][0]->countsAsRecord);
+        self::assertSame('linked_product_not_found', $issuesByProduct[$page->items[1]->productId][0]->code);
+        self::assertFalse($issuesByProduct[$page->items[1]->productId][0]->countsAsRecord);
     }
 
     /** @return array<mixed> */
