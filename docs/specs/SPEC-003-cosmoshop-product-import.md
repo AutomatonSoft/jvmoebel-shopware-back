@@ -11,7 +11,7 @@
 Импортируются: общая идентичность товара по SKU, active, stock, EAN, weight, length/width/height, min/max purchase, manufacturer, gross/net и UVP/list price в валюте рынка, translations, visibility и delivery/unit fields.
 
 Категории, OKB attributes и варианты описаны отдельной
-[SPEC-006](SPEC-006-okb-catalog-import.md). После успешного штатного импорта
+[SPEC-012](SPEC-012-okb-catalog-import.md). После успешного штатного импорта
 этого CSV фоновая задача автоматически обогащает только его строки по EAN и
 ставит итоговый parent/child CSV в штатную очередь Import/Export. Этот CSV остаётся источником
 базовой CosmoShop карточки и SKU; его категории и старые публикуемые attributes
