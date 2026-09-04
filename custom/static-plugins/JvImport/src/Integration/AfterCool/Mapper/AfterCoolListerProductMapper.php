@@ -124,13 +124,6 @@ final class AfterCoolListerProductMapper
         return trim($description);
     }
 
-    private function string(AfterCoolProductItem $item, string $field): ?string
-    {
-        $value = $item->row[$field] ?? null;
-
-        return is_string($value) && '' !== trim($value) ? trim($value) : null;
-    }
-
     /** @return array{list<string>, list<AfterCoolProductIssue>} */
     private function media(AfterCoolProductItem $item): array
     {

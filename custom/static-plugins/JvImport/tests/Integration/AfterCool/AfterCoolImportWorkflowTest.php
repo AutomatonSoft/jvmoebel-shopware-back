@@ -15,6 +15,7 @@ use Jv\Import\Service\AfterCool\Persistence\AfterCoolImportRunStore;
 use Jv\Import\Service\AfterCool\Persistence\AfterCoolMediaStageStore;
 use Jv\Import\Service\ProductImport\ProductImportIdentity;
 use Jv\Import\Service\ProductImport\ResolveDefaultProductTaxService;
+use Jv\MarketConfiguration\Service\MarketConfiguration\BootstrapMarketsService;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use Jv\MarketConfiguration\Service\MarketConfiguration\PrepareMarketReferenceDataService;
 use PHPUnit\Framework\Attributes\AfterClass;
@@ -140,12 +141,15 @@ final class AfterCoolImportWorkflowTest extends TestCase
 
         $product = $this->product(ProductImportIdentity::fromProductNumber($this->ean(1)), $context);
         self::assertSame(['stamm-1'], $this->linkedProductRequests);
-        self::assertSame($this->linkedDescription('stamm-1'), $product->getTranslation('description'));
+        self::assertSame(
+            $this->linkedDescription('stamm-1'),
+            $product->getTranslations()?->filterByLanguageId(Market::Germany->languageId())->first()?->getDescription(),
+        );
         self::assertSame('JVMOEBEL', $product->getManufacturer()?->getName());
         $eur = $product->getPrice()?->getCurrencyPrice(Defaults::CURRENCY, false);
         self::assertSame(119.0, $eur?->getGross());
-        self::assertSame(160.65, $eur?->getListPrice()?->getGross());
-        self::assertSame(135.0, $eur?->getListPrice()?->getNet());
+        self::assertSame(160.65, $eur->getListPrice()->getGross());
+        self::assertSame(135.0, $eur->getListPrice()->getNet());
         $visibility = $product->getVisibilities()?->filterByProperty('salesChannelId', Market::Germany->salesChannelId())->first();
         self::assertNotNull($visibility);
         self::assertSame(ProductVisibilityDefinition::VISIBILITY_ALL, $visibility->getVisibility());
@@ -275,8 +279,8 @@ final class AfterCoolImportWorkflowTest extends TestCase
         self::assertTrue($product->getCategories()?->has($categoryId));
         self::assertTrue($product->getProperties()?->has($optionId));
         self::assertTrue($product->getChildren()?->has($childId));
-        self::assertNotNull($product->getVisibilities()?->filterByProperty('salesChannelId', Market::Germany->salesChannelId())->first());
-        self::assertNotNull($product->getVisibilities()?->filterByProperty('salesChannelId', Market::UnitedKingdom->salesChannelId())->first());
+        self::assertNotNull($product->getVisibilities()->filterByProperty('salesChannelId', Market::Germany->salesChannelId())->first());
+        self::assertNotNull($product->getVisibilities()->filterByProperty('salesChannelId', Market::UnitedKingdom->salesChannelId())->first());
         $translations = $product->getTranslations();
         self::assertNotNull($translations);
         $german = $translations->filterByLanguageId(Market::Germany->languageId())->first();
@@ -492,6 +496,7 @@ final class AfterCoolImportWorkflowTest extends TestCase
         static::getContainer()->set(AfterCoolApiClient::class, new AfterCoolApiClient($http, new NullLogger(), new AfterCoolResponseNormalizer(), 'https://aftercool.example.test', 'test-user', 'test-password', 1.0));
         $context = Context::createDefaultContext();
         static::getContainer()->get(PrepareMarketReferenceDataService::class)->execute(Market::cases(), $context);
+        static::getContainer()->get(BootstrapMarketsService::class)->execute($context);
 
         return $context;
     }

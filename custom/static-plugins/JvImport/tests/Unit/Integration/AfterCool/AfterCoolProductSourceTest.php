@@ -37,7 +37,7 @@ final class AfterCoolProductSourceTest extends TestCase
                 return $this->page;
             }
 
-            public function getLinkedProduct(string $stammartikel): ?AfterCoolProductItem
+            public function getLinkedProduct(string $stammartikel): AfterCoolProductItem
             {
                 $this->linkedIds[] = $stammartikel;
 

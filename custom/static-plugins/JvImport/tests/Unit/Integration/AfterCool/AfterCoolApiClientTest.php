@@ -92,7 +92,7 @@ final class AfterCoolApiClientTest extends TestCase
             'offset' => 0,
             'include_row' => 1,
         ], $calls[1][2]['query'] ?? null);
-        self::assertArrayNotHasKey('factory_id', $calls[1][2]['query'] ?? []);
+        self::assertArrayNotHasKey('factory_id', $calls[1][2]['query']);
     }
 
     public function testItReauthenticatesOnlyOnceAfterAnUnauthorizedResponse(): void
