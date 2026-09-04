@@ -155,6 +155,26 @@ final class AfterCoolImportWorkflowTest extends TestCase
         self::assertSame(ProductVisibilityDefinition::VISIBILITY_ALL, $visibility->getVisibility());
     }
 
+    public function testRepeatedImportFollowsThePersistedSourceLinkWhenProductNumberWasChanged(): void
+    {
+        $context = $this->prepare([$this->item(1)]);
+        $productId = ProductImportIdentity::fromProductNumber($this->ean(1));
+
+        $this->process($context);
+        $this->products()->update([[
+            'id' => $productId,
+            'productNumber' => 'MANUALLY-CHANGED-NUMBER',
+        ]], $context);
+        $this->items[0]['row']['Menge'] = '27';
+
+        $run = $this->loadRun($this->process($context), $context);
+
+        self::assertSame(1, $run->getUpdated(), 'A persisted source link must win over productNumber lookup.');
+        self::assertSame(0, $run->getSkipped());
+        self::assertSame(27, $this->product($productId, $context)->getStock());
+        self::assertSame(1, $this->sourceProductCount());
+    }
+
     public function testAllAdministrationEndpointsRequireImportExportPermission(): void
     {
         $this->prepare([]);
