@@ -111,7 +111,9 @@ final class AfterCoolListerProductMapper
         if (null !== $linkedProduct) {
             $description = $linkedProduct->row['Beschreibung'] ?? null;
 
-            return is_string($description) && '' !== trim($description) ? $description : null;
+            return is_string($description) && '' !== trim($description)
+                ? str_ireplace(['%0a', '%0d'], ["\n", "\r"], $description)
+                : null;
         }
         if ($importing) {
             return null;
