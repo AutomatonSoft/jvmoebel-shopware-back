@@ -46,16 +46,18 @@ final class AfterCoolListerProductMapperTest extends TestCase
         ], $product->mediaUrls);
     }
 
-    public function testLinkedProductBeschreibungOverridesTheListerPlaceholderAndPreservesHtml(): void
+    public function testLinkedProductProvidesTheNameAndDecodedHtmlDescription(): void
     {
         $lister = $this->page()->items[0];
-        $html = '<section data-source="aftercool"><h2>Full description</h2><table><tr><td>Details</td></tr></table></section>';
-        $linked = $this->normalizer()->normalizeLinkedProduct($this->linkedProductPayload('183975801', $html), 'JV', '183975801');
+        $encodedHtml = '<section data-source="aftercool">%0a<h2>Full description</h2>%0A<table><tr><td>Details</td></tr></table>%0d</section>';
+        $linked = $this->normalizer()->normalizeLinkedProduct($this->linkedProductPayload('183975801', $encodedHtml), 'JV', '183975801');
         self::assertNotNull($linked);
 
         $product = (new AfterCoolListerProductMapper())->map($lister, $linked);
 
-        self::assertSame($html, $product->description);
+        self::assertSame('Linked product', $product->name, 'The enriched product name must win over an unusable Lister title.');
+        self::assertSame("<section data-source=\"aftercool\">\n<h2>Full description</h2>\n<table><tr><td>Details</td></tr></table>\r</section>", $product->description);
+        self::assertStringNotContainsString('%0a', strtolower((string) $product->description));
         self::assertNull($product->manufacturer, 'Upstream brand fields must not define the Shopware manufacturer.');
     }
 
