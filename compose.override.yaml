@@ -3,6 +3,8 @@ services:
         env_file: !override
             - .env.local
         environment:
+            LOCK_DSN: redis://redis:6379
+            TEST_REDIS_DSN: redis://redis:6379
             HOST: !reset null
             DATABASE_URL: !reset null
             MAILER_DSN: !reset null
@@ -102,6 +104,8 @@ services:
         restart: unless-stopped
         env_file:
             - .env.local
+        environment:
+            LOCK_DSN: redis://redis:6379
         command:
             - php
             - bin/console
@@ -110,6 +114,7 @@ services:
             - low_priority
             - --memory-limit=512M
             - --time-limit=3600
+            - --keepalive=30
         stop_grace_period: 30s
         volumes:
             - .:/var/www/html

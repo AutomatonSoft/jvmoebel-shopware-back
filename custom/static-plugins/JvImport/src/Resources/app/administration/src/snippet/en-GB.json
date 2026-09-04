@@ -3,6 +3,12 @@
         "general": {
             "title": "Import",
             "description": "JVMöbel imports"
+        },
+        "variantGroups": {
+            "used": "Used by product",
+            "recommended": "Recommended for variants",
+            "other": "Other properties",
+            "classificationUnavailable": "Could not load variant recommendations. All Shopware properties remain available."
         }
     }
 }

@@ -128,6 +128,21 @@ final class CosmoShopCsvPreflightReaderTest extends TestCase
         self::assertSame('SKU-001', $rows[0]['product_number']);
     }
 
+    public function testItMarksEveryRowForASkuWithDifferentEans(): void
+    {
+        $reader = $this->reader();
+        $resource = $this->resource($this->header()."\nSKU-001;4260174423463;119.00;First;0;1;0;0;0;0;1;1;1\nSKU-001;4260174423464;119.00;Second;0;1;0;0;0;0;1;1;1\n");
+
+        try {
+            $rows = iterator_to_array($reader->read($this->config(), $resource, 0));
+        } finally {
+            fclose($resource);
+        }
+
+        self::assertSame('CosmoShop product number "SKU-001" occurs with different EAN values in one CSV.', $rows[0]['__cosmoshop_csv_row_error']);
+        self::assertSame($rows[0]['__cosmoshop_csv_row_error'], $rows[1]['__cosmoshop_csv_row_error']);
+    }
+
     /** @return resource */
     private function resource(string $contents)
     {

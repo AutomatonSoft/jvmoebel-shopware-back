@@ -32,7 +32,6 @@ final class CosmoShopProductImportDataNormalizer
             $this->nullableValue($row, 'unit_id'),
             $this->nullableValue($row, 'list_price_gross'),
             $this->nullableValue($row, 'description'),
-            $this->nullableValue($row, 'urlkey'),
             $mappedRecord,
         );
     }

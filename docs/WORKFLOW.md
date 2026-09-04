@@ -38,6 +38,11 @@ docker compose exec -T web composer analyse
 docker compose exec -T web composer test
 ```
 
+PHPUnit использует отдельные Redis streams `test_messages`,
+`test_low_priority` и `test_failed`, а также файловый lock. Тесты не должны
+наследовать development streams `messages`, `low_priority`, `failed` и не
+должны запускать индексацию в локальной установке.
+
 `composer format` (также в контейнере) используется для исправления форматирования перед повторным запуском `composer lint`. Эти же команды используются локально и в CI (GitHub Actions workflow `.github/workflows/ci.yml` на pull request в `develop` и `main`).
 
 CI дополнительно собирает Shopware Administration и падает, если `git diff` показывает расхождение закоммиченных production assets в `Resources/public/administration` с результатом сборки (после изменения Admin source нужен `bin/build-administration.sh` и commit обновлённых assets).
