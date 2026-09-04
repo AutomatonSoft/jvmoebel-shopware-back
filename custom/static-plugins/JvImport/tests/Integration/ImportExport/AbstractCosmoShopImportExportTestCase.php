@@ -244,10 +244,12 @@ abstract class AbstractCosmoShopImportExportTestCase extends TestCase
         string $manufacturerName = 'JVMOEBEL',
         string $priceGross = '119.00',
         string $urlKey = 'test-product',
+        string $media = '',
+        string $cover = '',
     ): string {
         return implode("\n", [
-            'product_number;source_inactive;stock;ean;weight;length;width;height;min_purchase;max_purchase;price_gross;name;description;short_description;keywords;manufacturer_name;list_price_gross;delivery_time_id;unit_id;contents;reference_unit;pack_unit;urlkey',
-            $productNumber.';0;'.$stock.';'.$ean.';'.$weight.';'.$length.';'.$width.';'.$height.';'.$minPurchase.';'.$maxPurchase.';'.$priceGross.';'.$name.';<p>description</p>;Short description;keyword;'.$manufacturerName.';'.$listPriceGross.';'.$deliveryTimeId.';'.$unitId.';'.$contents.';'.$referenceUnit.';'.$packUnit.';'.$urlKey,
+            'product_number;source_inactive;stock;ean;weight;length;width;height;min_purchase;max_purchase;price_gross;name;description;short_description;meta_title;meta_description;meta_keywords;manufacturer_name;list_price_gross;delivery_time_id;unit_id;contents;reference_unit;pack_unit;urlkey;media;cover',
+            $productNumber.';0;'.$stock.';'.$ean.';'.$weight.';'.$length.';'.$width.';'.$height.';'.$minPurchase.';'.$maxPurchase.';'.$priceGross.';'.$name.';<p>description</p>;Short description;SEO title;SEO description;seo keyword;'.$manufacturerName.';'.$listPriceGross.';'.$deliveryTimeId.';'.$unitId.';'.$contents.';'.$referenceUnit.';'.$packUnit.';'.$urlKey.';'.$media.';'.$cover,
         ]);
     }
 }

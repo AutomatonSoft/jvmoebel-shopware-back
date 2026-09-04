@@ -76,13 +76,15 @@ final class MarketImportProfile
             ['key' => 'price.'.$market->currencyCode().'.net', 'mappedKey' => 'price_net', 'position' => 12],
             ['key' => 'translations.'.$languageId.'.name', 'mappedKey' => 'name', 'position' => 13, 'requiredByUser' => true],
             ['key' => 'translations.'.$languageId.'.description', 'mappedKey' => 'description', 'position' => 14],
-            ['key' => 'translations.'.$languageId.'.metaDescription', 'mappedKey' => 'short_description', 'position' => 15],
-            ['key' => 'translations.'.$languageId.'.keywords', 'mappedKey' => 'keywords', 'position' => 16],
-            ['key' => 'manufacturer.translations.DEFAULT.name', 'mappedKey' => 'manufacturer_name', 'position' => 17],
+            ['key' => 'translations.'.$languageId.'.metaTitle', 'mappedKey' => 'meta_title', 'position' => 15],
+            ['key' => 'translations.'.$languageId.'.metaDescription', 'mappedKey' => 'meta_description', 'position' => 16],
+            ['key' => 'translations.'.$languageId.'.keywords', 'mappedKey' => 'meta_keywords', 'position' => 17],
+            ['key' => 'manufacturer.translations.DEFAULT.name', 'mappedKey' => 'manufacturer_name', 'position' => 18],
             ['key' => 'unitId', 'mappedKey' => 'unit_id', 'position' => 19],
             ['key' => 'purchaseUnit', 'mappedKey' => 'contents', 'position' => 20],
             ['key' => 'referenceUnit', 'mappedKey' => 'reference_unit', 'position' => 21],
             ['key' => 'packUnit', 'mappedKey' => 'pack_unit', 'position' => 22],
+            ['key' => 'media', 'mappedKey' => 'media', 'position' => 23],
         ];
     }
 }

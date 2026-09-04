@@ -24,6 +24,7 @@ jobs:
       INSTANCE_ID: "00000000000000000000000000000000"
       DATABASE_URL: mysql://root:root@127.0.0.1:3306/shopware
       MAILER_DSN: "null://null"
+      TEST_REDIS_DSN: redis://127.0.0.1:6379
       MESSENGER_TRANSPORT_DSN: redis://127.0.0.1:6379/messages
       MESSENGER_TRANSPORT_LOW_PRIORITY_DSN: redis://127.0.0.1:6379/low_priority
       MESSENGER_TRANSPORT_FAILURE_DSN: redis://127.0.0.1:6379/failed

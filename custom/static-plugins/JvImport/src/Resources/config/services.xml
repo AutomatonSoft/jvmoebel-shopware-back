@@ -8,7 +8,12 @@
 
         <service id="Jv\Import\Subscriber\CosmoShopProductImportSubscriber">
             <argument type="service" id="Jv\Import\Service\ProductImport\PrepareCosmoShopProductImportRecordService"/>
+            <argument type="service" id="Jv\Import\Service\ProductMediaImport\ValidateCosmoShopProductMediaCoverService"/>
+            <argument type="service" id="Jv\Import\Service\ProductMediaImport\PrepareCosmoShopProductMediaRecordService"/>
         </service>
+        <service id="Jv\Import\Subscriber\QueueCosmoShopCatalogEnrichmentSubscriber"/>
+        <service id="Jv\Import\MessageHandler\CosmoShopCatalogEnrichmentMessageHandler"/>
+        <service id="Jv\Import\Subscriber\CatalogProductImportSubscriber"/>
         <service id="Jv\Import\Subscriber\ProductDeliveryTimeCacheInvalidationSubscriber"/>
         <service id="Jv\Import\Subscriber\CmsPageProductDeliveryTimeSubscriber"/>
 
@@ -48,8 +53,11 @@
         <service id="Jv\Import\Integration\CosmoShop\Normalizer\CosmoShopProductImportDataNormalizer"/>
         <service id="Jv\Import\Service\ProductImport\Validation\CosmoShopProductImportDataValidator"/>
         <service id="Jv\Import\Service\ProductImport\BuildShopwareProductImportRecordService"/>
+        <service id="Jv\Import\Service\ProductMediaImport\ValidateCosmoShopProductMediaCoverService"/>
+        <service id="Jv\Import\Service\ProductMediaImport\PrepareCosmoShopProductMediaRecordService"/>
         <service id="Jv\Import\Service\ProductDeliveryTime\ResolveSalesChannelProductDeliveryTimesService">
             <argument type="service" id="jv_import_product_sales_channel_delivery_time.repository"/>
+            <argument type="service" id="product.repository"/>
         </service>
         <service id="Jv\Import\Service\ProductDeliveryTime\AttachSalesChannelProductDeliveryTimesToStoreApiProductsService"/>
         <service id="Jv\Import\Service\ProductDeliveryTime\ApplySalesChannelProductDeliveryTimesToCartService"/>
@@ -58,6 +66,9 @@
         </service>
         <service id="Jv\Import\Core\Content\ProductSalesChannelDeliveryTime\ProductDeliveryTimeExtension">
             <tag name="shopware.entity.extension"/>
+        </service>
+        <service id="Jv\Import\Core\Content\CatalogCategoryAttribute\CatalogCategoryAttributeDefinition">
+            <tag name="shopware.entity.definition" entity="jv_catalog_category_attribute"/>
         </service>
 
         <service id="Jv\Import\Service\ProductImport\PrepareCosmoShopProductImportRecordService">
@@ -83,6 +94,84 @@
 
         <service id="Jv\Import\Command\UpsertCosmoShopReferencesCommand">
             <argument key="$environment">%kernel.environment%</argument>
+        </service>
+        <service id="Jv\Import\Command\ImportOkbCatalogSchemaCommand">
+            <argument key="$environment">%kernel.environment%</argument>
+        </service>
+        <service id="Jv\Import\Command\PrepareOkbProductMappingCommand">
+            <argument key="$environment">%kernel.environment%</argument>
+        </service>
+        <service id="Jv\Import\Command\BootstrapCatalogProductImportProfileCommand">
+            <argument type="service" id="import_export_profile.repository"/>
+        </service>
+        <service id="Jv\Import\Command\PrepareCatalogShopwareImportCsvCommand"/>
+        <service id="Jv\Import\Command\BackfillCatalogAttributeCategoryRelationsCommand"/>
+        <service id="Jv\Import\Command\CleanupLegacyCatalogPropertyGroupsCommand"/>
+        <service id="Jv\Import\Command\BackfillCatalogPropertyTranslationsCommand"/>
+
+        <service id="Jv\Import\Integration\Csv\SemicolonCsvReader"/>
+        <service id="Jv\Import\Service\Catalog\CatalogAttributeMappingSynchronizer"/>
+        <service id="Jv\Import\Service\Catalog\BackfillCatalogAttributeCategoryRelationsService">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+        </service>
+        <service id="Jv\Import\Service\Catalog\CleanupLegacyCatalogPropertyGroupsService">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="property_group.repository"/>
+        </service>
+        <service id="Jv\Import\Service\Catalog\BackfillCatalogPropertyTranslationsService">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+        </service>
+        <service id="Jv\Import\Service\ProductImport\Catalog\PrepareCatalogShopwareImportCsvService">
+            <argument type="service" id="Jv\Import\Integration\Csv\SemicolonCsvReader"/>
+        </service>
+        <service id="Jv\Import\Service\ProductImport\Catalog\CatalogCategoryAttributeSchemaProvider">
+            <argument type="service" id="jv_catalog_category_attribute.repository"/>
+        </service>
+        <service id="Jv\Import\Service\ProductImport\Catalog\PrepareCatalogShopwareProductImportRecordService">
+            <argument type="service" id="product.repository"/>
+            <argument type="service" id="currency.repository"/>
+            <argument type="service" id="Jv\Import\Service\ProductImport\Catalog\CatalogCategoryAttributeSchemaProvider"/>
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="Jv\Import\Service\ProductImport\Catalog\CatalogProductImportLookupCache"/>
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+        <service id="Jv\Import\Service\ProductImport\Catalog\CatalogProductImportLookupCache">
+            <tag name="kernel.reset" method="reset"/>
+        </service>
+        <service id="Jv\Import\Service\ProductImport\Catalog\EnrichCosmoShopImportService">
+            <argument type="service" id="Shopware\Core\Content\ImportExport\Service\ImportExportService"/>
+            <argument type="service" id="shopware.filesystem.private"/>
+            <argument type="service" id="Jv\Import\Integration\Csv\SemicolonCsvReader"/>
+            <argument type="service" id="Jv\Import\Integration\Okb\Service\PrepareOkbProductMappingService"/>
+            <argument type="service" id="Jv\Import\Service\ProductImport\Catalog\PrepareCatalogShopwareImportCsvService"/>
+            <argument type="service" id="import_export_profile.repository"/>
+            <argument type="service" id="import_export_log.repository"/>
+            <argument type="service" id="messenger.bus.default"/>
+            <argument type="service" id="lock.factory"/>
+            <argument key="$projectDir">%kernel.project_dir%</argument>
+        </service>
+        <service id="Jv\Import\Service\ProductImport\Catalog\ReconcileCatalogProductImportRecordService">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+        </service>
+        <service id="Jv\Import\Integration\Okb\OkbCatalogSchemaSnapshotReader"/>
+        <service id="Jv\Import\Integration\Okb\OkbProductResponseNormalizer"/>
+        <service id="Jv\Import\Integration\Okb\OkbProductApiClient">
+            <argument type="service" id="http_client"/>
+            <argument type="service" id="Jv\Import\Integration\Okb\OkbProductResponseNormalizer"/>
+            <argument key="$baseUri">https://okb.automatonsoft.de</argument>
+        </service>
+        <service id="Jv\Import\Service\Catalog\ImportCatalogSchemaService">
+            <argument type="service" id="category.repository"/>
+            <argument type="service" id="property_group.repository"/>
+            <argument type="service" id="property_group_option.repository"/>
+            <argument type="service" id="jv_catalog_category_attribute.repository"/>
+            <argument type="service" id="Jv\Import\Service\Catalog\CatalogAttributeMappingSynchronizer"/>
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry"/>
+        </service>
+        <service id="Jv\Import\Integration\Okb\Service\PrepareOkbProductMappingService">
+            <argument type="service" id="Jv\Import\Integration\Csv\SemicolonCsvReader"/>
+            <argument type="service" id="Jv\Import\Integration\Okb\OkbProductApiClient"/>
         </service>
 
         <service id="Jv\Import\Integration\CosmoShop\Reader\CosmoShopCsvPreflightReaderFactory">

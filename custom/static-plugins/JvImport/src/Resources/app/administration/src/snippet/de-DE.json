@@ -3,6 +3,12 @@
         "general": {
             "title": "Import",
             "description": "JVMöbel-Importe"
+        },
+        "variantGroups": {
+            "used": "Vom Produkt verwendet",
+            "recommended": "Für Varianten empfohlen",
+            "other": "Weitere Eigenschaften",
+            "classificationUnavailable": "Variantenempfehlungen konnten nicht geladen werden. Alle Shopware-Eigenschaften bleiben verfügbar."
         }
     }
 }
