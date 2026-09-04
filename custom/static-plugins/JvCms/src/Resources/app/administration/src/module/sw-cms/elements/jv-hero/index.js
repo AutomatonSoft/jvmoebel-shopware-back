@@ -13,37 +13,21 @@ Shopware.Service('cmsService').registerCmsElement({
     configComponent: 'sw-cms-el-config-jv-hero',
     previewComponent: 'sw-cms-el-preview-jv-hero',
     defaultConfig: {
-        title: {
+        ariaLabel: {
             source: 'static',
             value: '',
         },
-        eyebrow: {
+        autoplay: {
             source: 'static',
-            value: '',
+            value: true,
         },
-        description: {
+        autoplayIntervalMs: {
             source: 'static',
-            value: '',
+            value: 7000,
         },
-        imageMedia: {
+        slides: {
             source: 'static',
-            value: null,
-        },
-        primaryLink: {
-            source: 'static',
-            value: {
-                label: '',
-                url: '',
-                size: 'medium',
-            },
-        },
-        secondaryLink: {
-            source: 'static',
-            value: {
-                label: '',
-                url: '',
-                size: 'medium',
-            },
+            value: [],
         },
     },
 });

@@ -4,50 +4,43 @@ declare(strict_types=1);
 
 namespace Jv\Cms\DataResolver\Element;
 
-use Jv\Cms\DataResolver\Element\Hero\HeroLink;
-use Jv\Cms\DataResolver\Element\Hero\HeroMedia;
+use Jv\Cms\DataResolver\Element\Hero\HeroSlide;
 use Shopware\Core\Framework\Struct\Struct;
 
 final class HeroStruct extends Struct
 {
+    /**
+     * @param list<HeroSlide> $slides
+     */
     public function __construct(
-        protected string $title = '',
-        protected ?string $eyebrow = null,
-        protected ?string $description = null,
-        protected ?HeroMedia $image = null,
-        protected ?HeroLink $primaryLink = null,
-        protected ?HeroLink $secondaryLink = null,
+        protected ?string $ariaLabel = null,
+        protected bool $autoplay = true,
+        protected int $autoplayIntervalMs = 7000,
+        protected array $slides = [],
     ) {
     }
 
-    public function getTitle(): string
+    public function getAriaLabel(): ?string
     {
-        return $this->title;
+        return $this->ariaLabel;
     }
 
-    public function getEyebrow(): ?string
+    public function isAutoplay(): bool
     {
-        return $this->eyebrow;
+        return $this->autoplay;
     }
 
-    public function getDescription(): ?string
+    public function getAutoplayIntervalMs(): int
     {
-        return $this->description;
+        return $this->autoplayIntervalMs;
     }
 
-    public function getImage(): ?HeroMedia
+    /**
+     * @return list<HeroSlide>
+     */
+    public function getSlides(): array
     {
-        return $this->image;
-    }
-
-    public function getPrimaryLink(): ?HeroLink
-    {
-        return $this->primaryLink;
-    }
-
-    public function getSecondaryLink(): ?HeroLink
-    {
-        return $this->secondaryLink;
+        return $this->slides;
     }
 
     public function getApiAlias(): string

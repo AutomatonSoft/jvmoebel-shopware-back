@@ -1,6 +1,6 @@
 {
   "main.js": {
-    "file": "assets/jv-cms-iHm_8-xP.js",
+    "file": "assets/jv-cms-BpJ-qYdn.js",
     "name": "jv-cms",
     "src": "main.js",
     "isEntry": true,
@@ -173,7 +173,7 @@
     ]
   },
   "module/sw-cms/elements/jv-hero/component/index.js": {
-    "file": "assets/index-DlfovZZi.js",
+    "file": "assets/index-BkGYub9c.js",
     "name": "index",
     "src": "module/sw-cms/elements/jv-hero/component/index.js",
     "isDynamicEntry": true,
@@ -182,12 +182,12 @@
     ]
   },
   "module/sw-cms/elements/jv-hero/config/index.js": {
-    "file": "assets/index-qY_Pd4R-.js",
+    "file": "assets/index-BLaq8JaT.js",
     "name": "index",
     "src": "module/sw-cms/elements/jv-hero/config/index.js",
     "isDynamicEntry": true,
     "css": [
-      "assets/index-Ds0b-IFy.css"
+      "assets/index-BTKbBJJs.css"
     ]
   },
   "module/sw-cms/elements/jv-hero/preview/index.js": {

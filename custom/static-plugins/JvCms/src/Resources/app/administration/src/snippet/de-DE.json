@@ -121,21 +121,56 @@
           "emptyTitle": "Hero-Titel"
         },
         "config": {
-          "title": {
-            "label": "Titel",
-            "placeholder": "Ein Zuhause, das zu dir passt."
+          "ariaLabel": {
+            "label": "Carousel Aria-Label",
+            "helpText": "Optional. Für Screenreader, wenn der Carousel keinen sichtbaren Titel hat."
           },
-          "eyebrow": {
-            "label": "Eyebrow",
-            "placeholder": "Die neue Wohnkollektion"
+          "autoplay": {
+            "label": "Autoplay"
           },
-          "description": {
-            "label": "Beschreibung",
-            "placeholder": "Möbel für den Alltag."
+          "autoplayIntervalMs": {
+            "label": "Autoplay-Intervall (ms)",
+            "helpText": "4000–15000. Standard: 7000."
           },
-          "imageMedia": {
-            "label": "Hintergrundbild",
-            "caption": "Hero-Hintergrundbild hochladen"
+          "slides": {
+            "title": "Slides",
+            "add": "Slide hinzufügen",
+            "remove": "Entfernen",
+            "cardTitle": "Slide {index}",
+            "id": {
+              "label": "Slide-ID",
+              "helpText": "Optionale stabile ID für Analytics. Leer lassen für Auto-Generierung."
+            },
+            "layout": {
+              "label": "Layout",
+              "featured": "Featured",
+              "caption": "Caption"
+            },
+            "titleField": {
+              "label": "Titel",
+              "placeholder": "Ein Zuhause, das zu dir passt."
+            },
+            "url": {
+              "label": "Banner-Link",
+              "placeholder": "/living oder https://…"
+            },
+            "eyebrow": {
+              "label": "Eyebrow",
+              "placeholder": "Die neue Wohnkollektion"
+            },
+            "description": {
+              "label": "Beschreibung",
+              "placeholder": "Möbel für den Alltag."
+            },
+            "imageMedia": {
+              "label": "Hintergrundbild",
+              "caption": "Slide-Hintergrundbild hochladen"
+            },
+            "promotion": {
+              "title": "Promotions-Badge",
+              "label": "Beschriftung",
+              "value": "Wert"
+            }
           },
           "primaryLink": {
             "title": "Primärer CTA"
