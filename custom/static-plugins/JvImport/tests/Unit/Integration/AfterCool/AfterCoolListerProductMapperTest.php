@@ -55,7 +55,7 @@ final class AfterCoolListerProductMapperTest extends TestCase
 
         $product = (new AfterCoolListerProductMapper())->map($lister, $linked);
 
-        self::assertSame('Linked product', $product->name, 'The enriched product name must win over an unusable Lister title.');
+        self::assertSame('Sanitised Aftercool sofa', $product->name, 'The canonical Lister name must not be replaced by internal linked-product naming.');
         self::assertSame("<section data-source=\"aftercool\">\n<h2>Full description</h2>\n<table><tr><td>Details</td></tr></table>\r</section>", $product->description);
         self::assertStringNotContainsString('%0a', strtolower((string) $product->description));
         self::assertNull($product->manufacturer, 'Upstream brand fields must not define the Shopware manufacturer.');

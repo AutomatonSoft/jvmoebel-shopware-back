@@ -174,6 +174,9 @@ API обследован 28 августа 2026 года на нескольки
   описание товара;
 - полное HTML-описание находится в `dataset=product` поле `row.Beschreibung`;
   поле может быть пустым у отдельных связанных товаров;
+- актуальные фабрики передают форматирующие переносы внутри
+  `row.Beschreibung` как буквальные `%0a`/`%0d`; integration преобразует
+  только эти control sequences в CR/LF и не выполняет общий URL-decode HTML;
 - `CustomItemSpecifics` содержит XML marketplace characteristics. Он не
   становится Shopware properties, потому что целевой схемой владеет OKB;
 - `GalleryURL` и `pictureurls` являются внешними URL, а не Shopware media IDs;
@@ -254,8 +257,10 @@ Aftercool-импорту. Отсутствующее, пустое или placeh
   manufacturer;
 - `product.row.ProduktMarke` и `product.row.ManufacturerPartNumber` не определяют
   Shopware manufacturer и в этой итерации не записываются;
-- `product.row.Beschreibung` без очистки HTML записывается в немецкий
-  `description`; пустое значение не затирает существующее описание;
+- `product.row.Beschreibung` записывается в немецкий `description`
+  после преобразования буквальных `%0a`/`%0d` в переносы строк;
+  остальной HTML сохраняется, а пустое значение не затирает
+  существующее описание;
 - `Startpreis` является продажной gross-ценой. Gross UVP вычисляется из неё и
   записывается как EUR `listPrice` по переданному владельцем API правилу:
 
@@ -510,7 +515,9 @@ Start body содержит только `factoryId`. Factory name, account и d
 3. Запустить импорт и убедиться, что HTTP request сразу завершился.
 4. Наблюдать постраничный прогресс до terminal state.
 5. Проверить созданный и обновлённый товар, source link и сохранность OKB/ручных
-   данных.
+   данных. Сравнить название и описание с соответствующими Lister
+   и linked product API records; обычное форматирование не остаётся в
+   Shopware как буквальный `%0a` или `%0d` текст.
 6. Повторить тот же импорт и подтвердить отсутствие новых дублей.
 7. Попытаться запустить ту же фабрику параллельно и получить понятный отказ.
 
