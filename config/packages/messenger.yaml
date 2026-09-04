@@ -1,0 +1,9 @@
+framework:
+    messenger:
+        transports:
+            async:
+                options:
+                    consumer: '%env(HOSTNAME)%'
+            low_priority:
+                options:
+                    consumer: '%env(HOSTNAME)%'

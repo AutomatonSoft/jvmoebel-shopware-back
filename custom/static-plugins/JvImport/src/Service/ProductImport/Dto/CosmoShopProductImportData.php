@@ -30,7 +30,6 @@ final readonly class CosmoShopProductImportData
         public ?string $unitId,
         public ?string $listPriceGross,
         public ?string $description,
-        public ?string $seoPath,
         public array $mappedRecord,
     ) {
     }

@@ -1,8 +1,11 @@
 {
   "main.js": {
-    "file": "assets/jv-import-B59TPq_A.js",
+    "file": "assets/jv-import-BG2ZS0Ir.js",
     "name": "jv-import",
     "src": "main.js",
-    "isEntry": true
+    "isEntry": true,
+    "css": [
+      "assets/jv-import-BAqrfs1i.css"
+    ]
   }
 }

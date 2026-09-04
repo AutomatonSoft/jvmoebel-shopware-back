@@ -12,6 +12,9 @@ final class CosmoShopProductImportDataValidator
         if ('' === $data->productNumber) {
             throw new InvalidCosmoShopProductImportDataException('CosmoShop product record is missing a product number.');
         }
+        if (!preg_match('/^\d{13}$/D', $data->ean)) {
+            throw new InvalidCosmoShopProductImportDataException('CosmoShop EAN must contain exactly 13 digits.');
+        }
         if (!in_array($data->sourceInactive, ['0', '1'], true)) {
             throw new InvalidCosmoShopProductImportDataException('CosmoShop source_inactive must be 0 or 1.');
         }
@@ -38,9 +41,6 @@ final class CosmoShopProductImportDataValidator
         }
         if (null !== $data->listPriceGross && !$this->isZero($data->listPriceGross)) {
             $this->positiveDecimal($data->listPriceGross, 'list_price_gross');
-        }
-        if (null !== $data->seoPath && !$this->isRelativePath($data->seoPath)) {
-            throw new InvalidCosmoShopProductImportDataException('CosmoShop urlkey must be a non-empty relative path.');
         }
         if (null !== $data->description && str_contains($data->description, chr(92).'"')) {
             throw new InvalidCosmoShopProductImportDataException('CosmoShop description contains CSV escape sequences; regenerate the import file.');
@@ -71,14 +71,5 @@ final class CosmoShopProductImportDataValidator
     private function isZero(string $value): bool
     {
         return (bool) preg_match('/^0+(?:\.0+)?$/', $value);
-    }
-
-    private function isRelativePath(string $path): bool
-    {
-        return !str_starts_with($path, '/')
-            && !str_contains($path, '://')
-            && !str_contains($path, '?')
-            && !str_contains($path, '#')
-            && !str_contains($path, '../');
     }
 }

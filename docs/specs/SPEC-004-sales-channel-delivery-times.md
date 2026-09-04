@@ -41,6 +41,7 @@ delivery_time_id
 ## Правила импорта
 
 - CosmoShop import создаёт или обновляет связь только для текущего `Market`.
+- Market override варианта имеет приоритет; если он отсутствует, variant использует override своего parent. Связь parent не копируется в variant.
 - Пустой `delivery_time_id` не изменяет существующую связь.
 - Повторный импорт одного рынка не создаёт дубликат и не изменяет override
   другого рынка.
@@ -65,9 +66,9 @@ IDs и текущего sales channel. При наличии override он по�
 - CMS elements `product-slider`, `product-box`, `buy-box` и
   `product-description-reviews`.
 
-Если override отсутствует, товар и его глобальный fallback не изменяются.
-Resolver обрабатывает коллекцию одним DAL-запросом, а не отдельным запросом для
-каждого товара.
+Если override отсутствует и у parent, товар и его глобальный fallback не изменяются.
+Resolver обрабатывает коллекцию ограниченным числом пакетных DAL-запросов, а не
+отдельным запросом для каждого товара.
 
 Extension `jvImportDeliveryTimes` и DAL-сущность связи доступны только через
 Admin API для импорта и Administration. Они не сериализуются Store API.
@@ -110,7 +111,8 @@ sales channel. Пока текущая связь загружается, пол
 Integration-тесты проверяют:
 
 - разные DE/UK значения одного SKU и повторное обновление одного рынка;
-- глобальный fallback при отсутствии market relation;
+- наследование market override parent вариантом и приоритет собственного override варианта;
+- глобальный fallback при отсутствии market relation у товара и его parent;
 - Store API не раскрывает внутреннее `jvImportDeliveryTimes` extension;
 - product detail, category listing, product list, search, search suggest и
   cross-selling;

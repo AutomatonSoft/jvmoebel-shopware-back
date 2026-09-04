@@ -77,19 +77,6 @@ final class BuildShopwareProductImportRecordService
             'visibility' => ProductVisibilityDefinition::VISIBILITY_ALL,
         ]];
 
-        if (null !== $data->seoPath) {
-            $record['seoUrls'] = [[
-                'id' => Uuid::fromStringToHex('jvmoebel.product-seo-url.'.$market->domain().$id),
-                'salesChannelId' => $market->salesChannelId(),
-                'languageId' => $languageId,
-                'routeName' => 'frontend.detail.page',
-                'pathInfo' => 'detail/'.$id,
-                'seoPathInfo' => trim($data->seoPath, '/'),
-                'isCanonical' => true,
-                'isModified' => true,
-            ]];
-        }
-
         return $record;
     }
 

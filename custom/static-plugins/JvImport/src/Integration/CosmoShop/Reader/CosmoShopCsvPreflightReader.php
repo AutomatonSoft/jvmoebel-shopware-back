@@ -17,6 +17,9 @@ final class CosmoShopCsvPreflightReader extends AbstractReader
     /** @var list<string> */
     private array $headers = [];
 
+    /** @var array<string, true> */
+    private array $conflictingProductNumbers = [];
+
     public function __construct(
         private readonly LoggerInterface $logger,
         private readonly CosmoShopPreflightFailureRegistry $failureRegistry,
@@ -73,6 +76,12 @@ final class CosmoShopCsvPreflightReader extends AbstractReader
                     count($record),
                     count($this->headers),
                 );
+                $row['__cosmoshop_csv_row_error'] = $error;
+                $row['name'] = '__cosmoshop_csv_row_error__:'.$error;
+            }
+            $productNumber = trim($row['product_number'] ?? '');
+            if (isset($this->conflictingProductNumbers[$productNumber])) {
+                $error = sprintf('CosmoShop product number "%s" occurs with different EAN values in one CSV.', $productNumber);
                 $row['__cosmoshop_csv_row_error'] = $error;
                 $row['name'] = '__cosmoshop_csv_row_error__:'.$error;
             }
@@ -145,9 +154,53 @@ final class CosmoShopCsvPreflightReader extends AbstractReader
             if (null === $firstProduct) {
                 throw ImportExportException::processingError('CosmoShop CSV file contains no product rows.');
             }
+
+            $this->collectProductNumberEanConflicts($resource, $headers, $firstProduct, $delimiter, $enclosure, $escape);
         } finally {
             fseek($resource, $initialOffset);
         }
+    }
+
+    /**
+     * @param resource     $resource
+     * @param list<string> $headers
+     * @param list<mixed>  $firstProduct
+     */
+    private function collectProductNumberEanConflicts($resource, array $headers, array $firstProduct, string $delimiter, string $enclosure, string $escape): void
+    {
+        $productNumberIndex = array_search('product_number', $headers, true);
+        $eanIndex = array_search('ean', $headers, true);
+        if (false === $productNumberIndex || false === $eanIndex) {
+            return;
+        }
+
+        /** @var array<string, string> $eanByProductNumber */
+        $eanByProductNumber = [];
+        $this->collectProductNumberEanConflict($firstProduct, $headers, $productNumberIndex, $eanIndex, $eanByProductNumber);
+        while (($record = $this->nextRecord($resource, $delimiter, $enclosure, $escape)) !== null) {
+            $this->collectProductNumberEanConflict($record, $headers, $productNumberIndex, $eanIndex, $eanByProductNumber);
+        }
+    }
+
+    /**
+     * @param list<mixed>           $record
+     * @param list<string>          $headers
+     * @param array<string, string> $eanByProductNumber
+     */
+    private function collectProductNumberEanConflict(array $record, array $headers, int $productNumberIndex, int $eanIndex, array &$eanByProductNumber): void
+    {
+        if (count($headers) !== count($record)) {
+            return;
+        }
+        $productNumber = trim((string) $record[$productNumberIndex]);
+        $ean = trim((string) $record[$eanIndex]);
+        if ('' === $productNumber || '' === $ean) {
+            return;
+        }
+        if (isset($eanByProductNumber[$productNumber]) && $eanByProductNumber[$productNumber] !== $ean) {
+            $this->conflictingProductNumbers[$productNumber] = true;
+        }
+        $eanByProductNumber[$productNumber] ??= $ean;
     }
 
     /** @param resource $resource

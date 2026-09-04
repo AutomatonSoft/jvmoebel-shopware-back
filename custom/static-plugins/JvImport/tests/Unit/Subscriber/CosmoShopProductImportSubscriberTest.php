@@ -12,6 +12,8 @@ use Jv\Import\Service\ProductImport\Contract\ProductImportRecordPreparer;
 use Jv\Import\Service\ProductImport\PrepareCosmoShopProductImportRecordService;
 use Jv\Import\Service\ProductImport\ResolveDefaultProductTaxService;
 use Jv\Import\Service\ProductImport\Validation\CosmoShopProductImportDataValidator;
+use Jv\Import\Service\ProductMediaImport\PrepareCosmoShopProductMediaRecordService;
+use Jv\Import\Service\ProductMediaImport\ValidateCosmoShopProductMediaCoverService;
 use Jv\Import\Subscriber\CosmoShopProductImportSubscriber;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -41,7 +43,11 @@ final class CosmoShopProductImportSubscriberTest extends TestCase
             ->method('execute')
             ->with(Market::Germany, ['stock' => '2'], ['productNumber' => 'SKU-001'], Market::Germany->languageId(), self::isInstanceOf(Context::class))
             ->willReturn(['id' => 'prepared-product']);
-        $subscriber = new CosmoShopProductImportSubscriber($preparer);
+        $subscriber = new CosmoShopProductImportSubscriber(
+            $preparer,
+            new ValidateCosmoShopProductMediaCoverService(),
+            new PrepareCosmoShopProductMediaRecordService(),
+        );
         $event = $this->event(Market::Germany, ['stock' => '2'], ['productNumber' => 'SKU-001']);
 
         $subscriber->validateRecord($event);
@@ -54,6 +60,7 @@ final class CosmoShopProductImportSubscriberTest extends TestCase
         $subscriber = $this->subscriberReturningTaxId('019fcbab6981707eb24dafd08a2ed8c0');
         $event = $this->event(Market::Germany, [
             'source_inactive' => '0',
+            'ean' => '4260174423463',
             'stock' => '0',
             'price_gross' => '3799.00',
             'min_purchase' => '1',
@@ -69,7 +76,9 @@ final class CosmoShopProductImportSubscriberTest extends TestCase
             'productNumber' => '4260174423463',
             'translations' => [
                 '2fbb5fe2e29a4d70aa5854ce7ce3e20b' => [
+                    'metaTitle' => 'SEO title',
                     'metaDescription' => '<p> '.str_repeat('x', 300).' </p>',
+                    'keywords' => 'seo, keywords',
                 ],
             ],
         ]);
@@ -89,6 +98,8 @@ final class CosmoShopProductImportSubscriberTest extends TestCase
             'linked' => false,
         ]], $record['price']);
         self::assertSame(str_repeat('x', 255), $record['translations']['2fbb5fe2e29a4d70aa5854ce7ce3e20b']['metaDescription']);
+        self::assertSame('SEO title', $record['translations']['2fbb5fe2e29a4d70aa5854ce7ce3e20b']['metaTitle']);
+        self::assertSame('seo, keywords', $record['translations']['2fbb5fe2e29a4d70aa5854ce7ce3e20b']['keywords']);
         self::assertSame([[
             'id' => Uuid::fromStringToHex('jvmoebel.product-visibility.'.Market::Germany->salesChannelId().$record['id']),
             'salesChannelId' => Market::Germany->salesChannelId(),
@@ -229,6 +240,18 @@ final class CosmoShopProductImportSubscriberTest extends TestCase
         self::assertSame(100.0, $event->getRecord()['price'][0]['net']);
     }
 
+    public function testItDoesNotCreateSeoUrlsFromUrlkey(): void
+    {
+        $subscriber = $this->subscriberReturningTaxId('019fcbab6981707eb24dafd08a2ed8c0');
+        $event = $this->event(Market::Germany, array_replace($this->validRow(), [
+            'urlkey' => 'product-name',
+        ]), ['productNumber' => '4260174423463']);
+
+        $subscriber->validateRecord($event);
+
+        self::assertArrayNotHasKey('seoUrls', $event->getRecord());
+    }
+
     /** @param array<string, string> $row */
     #[DataProvider('invalidRows')]
     public function testItRejectsInvalidSourceData(array $row, string $message): void
@@ -251,7 +274,6 @@ final class CosmoShopProductImportSubscriberTest extends TestCase
         yield 'invalid source inactive' => [['source_inactive' => '2'], 'CosmoShop source_inactive must be 0 or 1.'];
         yield 'negative dimension' => [['height' => '-1'], 'CosmoShop height must be a non-negative decimal number.'];
         yield 'max below min' => [['min_purchase' => '2', 'max_purchase' => '1'], 'CosmoShop max_purchase must not be lower than min_purchase.'];
-        yield 'absolute url key' => [['urlkey' => 'https://example.test/product'], 'CosmoShop urlkey must be a non-empty relative path.'];
         yield 'literal csv escape' => [['description' => 'broken \\" escape'], 'CosmoShop description contains CSV escape sequences; regenerate the import file.'];
     }
 
@@ -327,6 +349,8 @@ final class CosmoShopProductImportSubscriberTest extends TestCase
                 $this->productRepositoryWithoutExistingProducts(),
                 $currencyRepository ?? $this->currencyRepository(),
             ),
+            new ValidateCosmoShopProductMediaCoverService(),
+            new PrepareCosmoShopProductMediaRecordService(),
         );
     }
 
@@ -376,6 +400,7 @@ final class CosmoShopProductImportSubscriberTest extends TestCase
     {
         return [
             'source_inactive' => '0',
+            'ean' => '4260174423463',
             'stock' => '12',
             'price_gross' => '119.00',
             'min_purchase' => '1',

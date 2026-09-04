@@ -69,9 +69,29 @@ final class MarketImportProfileTest extends TestCase
     public function testItMapsTheCosmoShopManufacturer(): void
     {
         self::assertContains(
-            ['key' => 'manufacturer.translations.DEFAULT.name', 'mappedKey' => 'manufacturer_name', 'position' => 17],
+            ['key' => 'manufacturer.translations.DEFAULT.name', 'mappedKey' => 'manufacturer_name', 'position' => 18],
             MarketImportProfile::mapping(Market::Germany),
         );
+    }
+
+    public function testItMapsOnlyDedicatedSeoColumnsToTheMarketTranslation(): void
+    {
+        $languageId = Market::Germany->languageId();
+        $mapping = MarketImportProfile::mapping(Market::Germany);
+
+        self::assertContains(
+            ['key' => 'translations.'.$languageId.'.metaTitle', 'mappedKey' => 'meta_title', 'position' => 15],
+            $mapping,
+        );
+        self::assertContains(
+            ['key' => 'translations.'.$languageId.'.metaDescription', 'mappedKey' => 'meta_description', 'position' => 16],
+            $mapping,
+        );
+        self::assertContains(
+            ['key' => 'translations.'.$languageId.'.keywords', 'mappedKey' => 'meta_keywords', 'position' => 17],
+            $mapping,
+        );
+        self::assertNotContains('short_description', array_column($mapping, 'mappedKey'));
     }
 
     public function testItLeavesTaxAssignmentToTheShopwareDefaultTax(): void
@@ -90,6 +110,17 @@ final class MarketImportProfileTest extends TestCase
     public function testItDoesNotMapDeliveryTimeToTheGlobalProductField(): void
     {
         self::assertNotContains('delivery_time_id', array_column(MarketImportProfile::mapping(Market::Germany), 'mappedKey'));
+    }
+
+    public function testItImportsMediaThroughTheMainProductProfile(): void
+    {
+        $mapping = MarketImportProfile::mapping(Market::Germany);
+
+        self::assertContains(
+            ['key' => 'media', 'mappedKey' => 'media', 'position' => 23],
+            $mapping,
+        );
+        self::assertNotContains('cover', array_column($mapping, 'mappedKey'));
     }
 
     #[DataProvider('marketLocales')]
