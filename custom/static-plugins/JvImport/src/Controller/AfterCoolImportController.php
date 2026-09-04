@@ -111,6 +111,11 @@ final class AfterCoolImportController extends AbstractController
 
         try {
             $runId = $this->startImport->start($factoryId, $context);
+        } catch (AfterCoolApiException|AfterCoolResponseContractException $exception) {
+            return new JsonResponse(['errors' => [[
+                'code' => $exception instanceof AfterCoolApiException ? $exception->safeCode() : 'aftercool_invalid_response',
+                'detail' => 'Aftercool factory could not be verified.',
+            ]]], Response::HTTP_BAD_GATEWAY);
         } catch (AfterCoolFactoryNotFoundException) {
             return new JsonResponse(['errors' => [['code' => 'factory_not_found', 'detail' => 'Aftercool factory was not found.']]], Response::HTTP_UNPROCESSABLE_ENTITY);
         } catch (AfterCoolFactoryImportAlreadyRunningException) {

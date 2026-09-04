@@ -11,7 +11,7 @@ use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 
-final class AfterCoolApiClient implements AfterCoolApiClientInterface, Contract\AfterCoolProductPageReaderInterface
+final class AfterCoolApiClient implements Contract\AfterCoolApiClientInterface
 {
     private ?string $sessionCookie = null;
 

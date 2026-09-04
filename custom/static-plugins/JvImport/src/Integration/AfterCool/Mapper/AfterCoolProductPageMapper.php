@@ -28,13 +28,18 @@ final readonly class AfterCoolProductPageMapper
 
                 continue;
             }
+            $missingStammartikel = false;
+            $linkedProduct = null;
             try {
                 $stammartikel = $item->row['I_stammartikel'] ?? null;
-                $product = $this->productMapper->map($item, is_string($stammartikel) ? ($linkedProducts[trim($stammartikel)] ?? null) : null, $importing);
+                $missingStammartikel = is_string($stammartikel) && '' === trim($stammartikel);
+                $linkedIdentity = is_string($stammartikel) ? trim($stammartikel) : '';
+                $linkedProduct = '' === $linkedIdentity ? null : ($linkedProducts[$linkedIdentity] ?? null);
+                $product = $this->productMapper->map($item, $linkedProduct, $importing);
             } catch (AfterCoolProductMappingException $exception) {
                 if ('invalid_price' === $exception->safeCode()) {
                     try {
-                        $product = $this->productMapper->mapWithUnusablePrice($item);
+                        $product = $this->productMapper->mapWithUnusablePrice($item, $linkedProduct ?? null, $importing);
                     } catch (AfterCoolProductMappingException $fallbackException) {
                         $issues[] = new AfterCoolProductIssue(
                             $fallbackException->productId(),
@@ -93,6 +98,29 @@ final readonly class AfterCoolProductPageMapper
             }
             $seenEans[$product->ean] = true;
             $products[] = $product;
+            if ($importing && $missingStammartikel) {
+                $issues[] = new AfterCoolProductIssue(
+                    $product->sourceProductId,
+                    'skipped',
+                    'missing_stammartikel',
+                    'Aftercool linked product identity is missing.',
+                    $product->sourceArtikelnummer,
+                    $product->ean,
+                    $product->rowNo,
+                    false,
+                );
+            } elseif ($importing && null === $linkedProduct) {
+                $issues[] = new AfterCoolProductIssue(
+                    $product->sourceProductId,
+                    'skipped',
+                    'linked_product_not_found',
+                    'Aftercool linked product was not found.',
+                    $product->sourceArtikelnummer,
+                    $product->ean,
+                    $product->rowNo,
+                    false,
+                );
+            }
             foreach ($product->mediaIssues as $issue) {
                 $issues[] = new AfterCoolProductIssue($issue->productId, $issue->result, $issue->code, $issue->message, $issue->artikelnummer, $issue->ean, $issue->rowNo, false);
             }

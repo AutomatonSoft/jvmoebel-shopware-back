@@ -24,6 +24,11 @@ final readonly class ProcessAfterCoolStagedMediaService
 
     public function process(string $runId, int $offset, Context $context): void
     {
+        $this->connection->executeStatement(
+            "UPDATE `jv_aftercool_media_stage` SET `status` = 'pending', `updated_at` = NOW(3) WHERE `run_id` = :runId AND `offset` = :offset AND `status` = 'processing'",
+            ['runId' => Uuid::fromHexToBytes($runId), 'offset' => $offset],
+            ['runId' => ParameterType::BINARY],
+        );
         $tasks = $this->connection->fetchAllAssociative(
             <<<'SQL'
                 SELECT `id`, `product_id`, `source_product_id`, `url`, `cover_candidate`
@@ -37,13 +42,19 @@ final readonly class ProcessAfterCoolStagedMediaService
         foreach ($this->groupByProduct($tasks) as $productId => $productTasks) {
             $taskIds = array_column($productTasks, 'id');
             $this->claim($taskIds);
-            $product = $this->productRepository->search(new Criteria([$productId]), $context)->first();
-            $result = $this->mediaLinks->link(
-                $productId,
-                array_column($productTasks, 'url'),
-                $product instanceof ProductEntity ? $product->getCoverId() : null,
-                $context,
-            );
+            try {
+                $product = $this->productRepository->search(new Criteria([$productId]), $context)->first();
+                $result = $this->mediaLinks->link(
+                    $productId,
+                    array_column($productTasks, 'url'),
+                    $product instanceof ProductEntity ? $product->getCoverId() : null,
+                    $context,
+                );
+            } catch (\Throwable $exception) {
+                $this->complete($taskIds, 'pending');
+
+                throw $exception;
+            }
             if ([] !== $result->productMedia) {
                 $payload = ['id' => $productId, 'media' => $result->productMedia];
                 if (null !== $result->coverId) {

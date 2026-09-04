@@ -42,7 +42,7 @@ final class AfterCoolListerProductMapper
         );
     }
 
-    public function mapWithUnusablePrice(AfterCoolProductItem $item): AfterCoolMappedProduct
+    public function mapWithUnusablePrice(AfterCoolProductItem $item, ?AfterCoolProductItem $linkedProduct = null, bool $importing = false): AfterCoolMappedProduct
     {
         if (!$this->isValidEan($item->ean)) {
             throw new AfterCoolProductMappingException($item->productId, 'invalid_ean');
@@ -61,7 +61,7 @@ final class AfterCoolListerProductMapper
             $item->rowNo,
             null,
             $this->stock($item),
-            $this->description($item, null, false),
+            $this->description($item, $linkedProduct, $importing),
             $mediaUrls,
             $mediaIssues,
             null,

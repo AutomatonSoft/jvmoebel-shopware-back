@@ -59,9 +59,13 @@ readonly class ImportAfterCoolPageService
     {
         $run = $this->loadRun($runId, $context);
         if (in_array($run->getStatus(), ['completed', 'completed_with_errors', 'failed'], true)) {
+            $this->stagedMediaProcessor->process($runId, $offset, $context);
+
             return AfterCoolPageProcessingResult::completed();
         }
         if ($offset < $run->getNextOffset()) {
+            $this->stagedMediaProcessor->process($runId, $offset, $context);
+
             return in_array($run->getStatus(), ['queued', 'running'], true)
                 ? AfterCoolPageProcessingResult::continueWith($run->getNextOffset())
                 : AfterCoolPageProcessingResult::completed();

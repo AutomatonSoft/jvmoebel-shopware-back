@@ -94,11 +94,9 @@
             <argument key="$password">%env(AFTERCOOL_PASSWORD)%</argument>
             <argument key="$timeout">%env(float:AFTERCOOL_TIMEOUT)%</argument>
         </service>
-        <service id="Jv\Import\Integration\AfterCool\AfterCoolApiClientInterface" alias="Jv\Import\Integration\AfterCool\AfterCoolApiClient"/>
         <service id="Jv\Import\Integration\AfterCool\Contract\AfterCoolApiClientInterface" alias="Jv\Import\Integration\AfterCool\AfterCoolApiClient"/>
-        <service id="Jv\Import\Integration\AfterCool\Contract\AfterCoolProductPageReaderInterface" alias="Jv\Import\Integration\AfterCool\AfterCoolApiClient"/>
         <service id="Jv\Import\Integration\AfterCool\AfterCoolProductSource">
-            <argument type="service" id="Jv\Import\Integration\AfterCool\AfterCoolApiClient"/>
+            <argument type="service" id="Jv\Import\Integration\AfterCool\Contract\AfterCoolApiClientInterface"/>
             <argument type="service" id="Jv\Import\Integration\AfterCool\Mapper\AfterCoolProductPageMapper"/>
         </service>
         <service id="Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface" alias="Jv\Import\Integration\AfterCool\AfterCoolProductSource"/>

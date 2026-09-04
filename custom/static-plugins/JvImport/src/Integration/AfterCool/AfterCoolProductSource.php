@@ -2,6 +2,7 @@
 
 namespace Jv\Import\Integration\AfterCool;
 
+use Jv\Import\Integration\AfterCool\Contract\AfterCoolApiClientInterface;
 use Jv\Import\Integration\AfterCool\Mapper\AfterCoolProductPageMapper;
 use Jv\Import\Service\AfterCool\Contract\AfterCoolImportProductSourceInterface;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolFactory;
@@ -13,7 +14,7 @@ use Jv\Import\Service\AfterCool\Dto\AfterCoolProductPreviewItem;
 final readonly class AfterCoolProductSource implements AfterCoolImportProductSourceInterface
 {
     public function __construct(
-        private AfterCoolApiClient|Contract\AfterCoolProductPageReaderInterface $client,
+        private AfterCoolApiClientInterface $client,
         private AfterCoolProductPageMapper $pageMapper,
     ) {
     }
@@ -21,10 +22,6 @@ final readonly class AfterCoolProductSource implements AfterCoolImportProductSou
     /** @return list<AfterCoolFactory> */
     public function getFactories(): array
     {
-        if (!$this->client instanceof AfterCoolApiClient) {
-            throw new \LogicException('The configured Aftercool page reader cannot list factories.');
-        }
-
         return array_map(
             static fn (Dto\AfterCoolFactory $factory): AfterCoolFactory => new AfterCoolFactory($factory->id, $factory->name),
             $this->client->getFactories(),

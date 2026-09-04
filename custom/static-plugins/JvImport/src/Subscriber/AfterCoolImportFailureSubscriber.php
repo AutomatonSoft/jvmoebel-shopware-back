@@ -9,6 +9,7 @@ use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Messenger\Event\WorkerMessageFailedEvent;
+use Symfony\Component\Messenger\Exception\UnrecoverableMessageHandlingException;
 
 final readonly class AfterCoolImportFailureSubscriber implements EventSubscriberInterface
 {
@@ -29,12 +30,25 @@ final readonly class AfterCoolImportFailureSubscriber implements EventSubscriber
 
         $message = $event->getEnvelope()->getMessage();
         $exception = $event->getThrowable();
-        $safeCode = $exception instanceof AfterCoolApiException ? $exception->safeCode() : 'aftercool_import_failed';
+        $safeCode = $this->safeCode($exception);
         $this->logger->error('Aftercool import run failed after Messenger retries.', [
             'runId' => $message->runId,
             'offset' => $message->offset,
-            'exception' => $exception,
+            'safeCode' => $safeCode,
+            'exceptionClass' => $exception::class,
         ]);
         $this->runs->markFailed($message->runId, $safeCode, 'The Aftercool import could not be completed.', Context::createDefaultContext());
+    }
+
+    private function safeCode(\Throwable $exception): string
+    {
+        if ($exception instanceof AfterCoolApiException) {
+            return $exception->safeCode();
+        }
+        if ($exception instanceof UnrecoverableMessageHandlingException && $exception->getPrevious() instanceof AfterCoolApiException) {
+            return $exception->getPrevious()->safeCode();
+        }
+
+        return 'aftercool_import_failed';
     }
 }
