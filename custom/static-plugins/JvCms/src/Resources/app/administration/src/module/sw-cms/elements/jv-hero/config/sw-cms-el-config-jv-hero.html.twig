@@ -1,118 +1,184 @@
 {% block sw_cms_el_config_jv_hero %}
 	<div class="sw-cms-el-config-jv-hero">
 		<mt-text-field
-			v-model:model-value="element.config.title.value"
-			:label="$t('cms.elements.jv-hero.config.title.label')"
-			:placeholder="$t('cms.elements.jv-hero.config.title.placeholder')"
+			v-model:model-value="element.config.ariaLabel.value"
+			:label="$t('cms.elements.jv-hero.config.ariaLabel.label')"
+			:help-text="$t('cms.elements.jv-hero.config.ariaLabel.helpText')"
 			@update:model-value="onUpdate"
 		/>
 
-		<mt-text-field
-			v-model:model-value="element.config.eyebrow.value"
-			:label="$t('cms.elements.jv-hero.config.eyebrow.label')"
-			:placeholder="$t('cms.elements.jv-hero.config.eyebrow.placeholder')"
+		<mt-switch
+			v-model:model-value="element.config.autoplay.value"
+			:label="$t('cms.elements.jv-hero.config.autoplay.label')"
 			class="sw-cms-el-config-jv-hero__field"
 			@update:model-value="onUpdate"
 		/>
 
-		<mt-textarea
-			v-model:model-value="element.config.description.value"
-			:label="$t('cms.elements.jv-hero.config.description.label')"
-			:placeholder="$t('cms.elements.jv-hero.config.description.placeholder')"
+		<mt-number-field
+			v-model:model-value="element.config.autoplayIntervalMs.value"
+			:label="$t('cms.elements.jv-hero.config.autoplayIntervalMs.label')"
+			:help-text="$t('cms.elements.jv-hero.config.autoplayIntervalMs.helpText')"
+			:number-type="'int'"
+			:min="4000"
+			:max="15000"
 			class="sw-cms-el-config-jv-hero__field"
 			@update:model-value="onUpdate"
 		/>
 
-		<div class="sw-cms-el-config-jv-hero__image sw-cms-el-config-jv-hero__field">
-			<label class="sw-cms-el-config-jv-hero__image-label">
-				{{ $t('cms.elements.jv-hero.config.imageMedia.label') }}
-			</label>
+		<div class="sw-cms-el-config-jv-hero__section">
+			<div class="sw-cms-el-config-jv-hero__section-header">
+				<h4>{{ $t('cms.elements.jv-hero.config.slides.title') }}</h4>
+				<mt-button size="small" variant="secondary" @click="addSlide">
+					{{ $t('cms.elements.jv-hero.config.slides.add') }}
+				</mt-button>
+			</div>
 
-			<sw-media-upload-v2
-				variant="regular"
-				:upload-tag="imageUploadTag"
-				:source="imagePreviewSource"
-				:allow-multi-select="false"
-				:default-folder="cmsPageState.pageEntityName"
-				:caption="$t('cms.elements.jv-hero.config.imageMedia.caption')"
-				@media-upload-sidebar-open="onOpenImageMediaModal"
-				@media-upload-remove-image="onImageRemove"
-			/>
+			<div
+				v-for="(slide, slideIndex) in slides"
+				:key="slide.id || slideIndex"
+				class="sw-cms-el-config-jv-hero__card"
+			>
+				<div class="sw-cms-el-config-jv-hero__card-header">
+					<strong>{{ $t('cms.elements.jv-hero.config.slides.cardTitle', { index: slideIndex + 1 }) }}</strong>
+					<mt-button size="small" variant="critical" @click="removeSlide(slideIndex)">
+						{{ $t('cms.elements.jv-hero.config.slides.remove') }}
+					</mt-button>
+				</div>
 
-			<sw-upload-listener
-				:upload-tag="imageUploadTag"
-				auto-upload
-				@media-upload-finish="onImageUpload"
-			/>
+				<div class="sw-cms-el-config-jv-hero__media">
+					<label class="sw-cms-el-config-jv-hero__media-label">
+						{{ $t('cms.elements.jv-hero.config.slides.imageMedia.label') }}
+					</label>
 
-			<sw-media-modal-v2
-				v-if="mediaModalIsOpen"
-				variant="full"
-				:caption="$t('cms.elements.jv-hero.config.imageMedia.caption')"
-				:entity-context="cmsPageState.entityName"
-				:allow-multi-select="false"
-				:initial-folder-id="cmsPageState.defaultMediaFolderId"
-				@media-modal-selection-change="onImageSelectionChanges"
-				@modal-close="onCloseImageMediaModal"
-			/>
+					<sw-media-upload-v2
+						variant="regular"
+						:upload-tag="slideUploadTag(slideIndex)"
+						:source="slidePreviewSource(slide)"
+						:allow-multi-select="false"
+						:default-folder="cmsPageState.pageEntityName"
+						:caption="$t('cms.elements.jv-hero.config.slides.imageMedia.caption')"
+						@media-upload-sidebar-open="onOpenSlideMediaModal(slideIndex)"
+						@media-upload-remove-image="onSlideRemove(slideIndex)"
+					/>
+
+					<sw-upload-listener
+						:upload-tag="slideUploadTag(slideIndex)"
+						auto-upload
+						@media-upload-finish="onSlideUpload(slideIndex, $event)"
+					/>
+				</div>
+
+				<mt-text-field
+					v-model:model-value="slide.id"
+					:label="$t('cms.elements.jv-hero.config.slides.id.label')"
+					:help-text="$t('cms.elements.jv-hero.config.slides.id.helpText')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-select
+					v-model:model-value="slide.layout"
+					:label="$t('cms.elements.jv-hero.config.slides.layout.label')"
+					:options="layoutOptions"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="slide.title"
+					:label="$t('cms.elements.jv-hero.config.slides.titleField.label')"
+					:placeholder="$t('cms.elements.jv-hero.config.slides.titleField.placeholder')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="slide.url"
+					:label="$t('cms.elements.jv-hero.config.slides.url.label')"
+					:placeholder="$t('cms.elements.jv-hero.config.slides.url.placeholder')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="slide.eyebrow"
+					:label="$t('cms.elements.jv-hero.config.slides.eyebrow.label')"
+					:placeholder="$t('cms.elements.jv-hero.config.slides.eyebrow.placeholder')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-textarea
+					v-model:model-value="slide.description"
+					:label="$t('cms.elements.jv-hero.config.slides.description.label')"
+					:placeholder="$t('cms.elements.jv-hero.config.slides.description.placeholder')"
+					@update:model-value="onUpdate"
+				/>
+
+				<div class="sw-cms-el-config-jv-hero__promotion">
+					<h5>{{ $t('cms.elements.jv-hero.config.slides.promotion.title') }}</h5>
+					<mt-text-field
+						v-model:model-value="slide.promotion.label"
+						:label="$t('cms.elements.jv-hero.config.slides.promotion.label')"
+						@update:model-value="onUpdate"
+					/>
+					<mt-text-field
+						v-model:model-value="slide.promotion.value"
+						:label="$t('cms.elements.jv-hero.config.slides.promotion.value')"
+						@update:model-value="onUpdate"
+					/>
+				</div>
+
+				<div class="sw-cms-el-config-jv-hero__link-group">
+					<h5>{{ $t('cms.elements.jv-hero.config.primaryLink.title') }}</h5>
+					<mt-text-field
+						v-model:model-value="slide.primaryLink.label"
+						:label="$t('cms.elements.jv-hero.config.link.label')"
+						:placeholder="$t('cms.elements.jv-hero.config.link.labelPlaceholder')"
+						@update:model-value="onUpdate"
+					/>
+					<mt-text-field
+						v-model:model-value="slide.primaryLink.url"
+						:label="$t('cms.elements.jv-hero.config.link.url')"
+						:placeholder="$t('cms.elements.jv-hero.config.link.urlPlaceholder')"
+						@update:model-value="onUpdate"
+					/>
+					<mt-select
+						v-model:model-value="slide.primaryLink.size"
+						:label="$t('cms.elements.jv-hero.config.link.size.label')"
+						:options="sizeOptions"
+						@update:model-value="onUpdate"
+					/>
+				</div>
+
+				<div class="sw-cms-el-config-jv-hero__link-group">
+					<h5>{{ $t('cms.elements.jv-hero.config.secondaryLink.title') }}</h5>
+					<mt-text-field
+						v-model:model-value="slide.secondaryLink.label"
+						:label="$t('cms.elements.jv-hero.config.link.label')"
+						:placeholder="$t('cms.elements.jv-hero.config.link.labelPlaceholder')"
+						@update:model-value="onUpdate"
+					/>
+					<mt-text-field
+						v-model:model-value="slide.secondaryLink.url"
+						:label="$t('cms.elements.jv-hero.config.link.url')"
+						:placeholder="$t('cms.elements.jv-hero.config.link.urlPlaceholder')"
+						@update:model-value="onUpdate"
+					/>
+					<mt-select
+						v-model:model-value="slide.secondaryLink.size"
+						:label="$t('cms.elements.jv-hero.config.link.size.label')"
+						:options="sizeOptions"
+						@update:model-value="onUpdate"
+					/>
+				</div>
+			</div>
 		</div>
 
-		<div class="sw-cms-el-config-jv-hero__link-group sw-cms-el-config-jv-hero__field">
-			<h4 class="sw-cms-el-config-jv-hero__link-title">
-				{{ $t('cms.elements.jv-hero.config.primaryLink.title') }}
-			</h4>
-
-			<mt-text-field
-				v-model:model-value="element.config.primaryLink.value.label"
-				:label="$t('cms.elements.jv-hero.config.link.label')"
-				:placeholder="$t('cms.elements.jv-hero.config.link.labelPlaceholder')"
-				@update:model-value="onUpdate"
-			/>
-
-			<mt-text-field
-				v-model:model-value="element.config.primaryLink.value.url"
-				:label="$t('cms.elements.jv-hero.config.link.url')"
-				:placeholder="$t('cms.elements.jv-hero.config.link.urlPlaceholder')"
-				class="sw-cms-el-config-jv-hero__field"
-				@update:model-value="onUpdate"
-			/>
-
-			<mt-select
-				v-model:model-value="element.config.primaryLink.value.size"
-				:label="$t('cms.elements.jv-hero.config.link.size.label')"
-				:options="sizeOptions"
-				class="sw-cms-el-config-jv-hero__field"
-				@update:model-value="onUpdate"
-			/>
-		</div>
-
-		<div class="sw-cms-el-config-jv-hero__link-group sw-cms-el-config-jv-hero__field">
-			<h4 class="sw-cms-el-config-jv-hero__link-title">
-				{{ $t('cms.elements.jv-hero.config.secondaryLink.title') }}
-			</h4>
-
-			<mt-text-field
-				v-model:model-value="element.config.secondaryLink.value.label"
-				:label="$t('cms.elements.jv-hero.config.link.label')"
-				:placeholder="$t('cms.elements.jv-hero.config.link.labelPlaceholder')"
-				@update:model-value="onUpdate"
-			/>
-
-			<mt-text-field
-				v-model:model-value="element.config.secondaryLink.value.url"
-				:label="$t('cms.elements.jv-hero.config.link.url')"
-				:placeholder="$t('cms.elements.jv-hero.config.link.urlPlaceholder')"
-				class="sw-cms-el-config-jv-hero__field"
-				@update:model-value="onUpdate"
-			/>
-
-			<mt-select
-				v-model:model-value="element.config.secondaryLink.value.size"
-				:label="$t('cms.elements.jv-hero.config.link.size.label')"
-				:options="sizeOptions"
-				class="sw-cms-el-config-jv-hero__field"
-				@update:model-value="onUpdate"
-			/>
-		</div>
+		<sw-media-modal-v2
+			v-if="mediaModalIndex !== null"
+			variant="full"
+			:caption="$t('cms.elements.jv-hero.config.slides.imageMedia.caption')"
+			:entity-context="cmsPageState.entityName"
+			:allow-multi-select="false"
+			:initial-folder-id="cmsPageState.defaultMediaFolderId"
+			@media-modal-selection-change="onSlideSelectionChanges"
+			@modal-close="onCloseSlideMediaModal"
+		/>
 	</div>
 {% endblock %}

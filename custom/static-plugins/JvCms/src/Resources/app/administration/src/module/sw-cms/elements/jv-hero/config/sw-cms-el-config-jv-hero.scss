@@ -3,16 +3,50 @@
         margin-top: 16px;
     }
 
-    &__image-label,
-    &__link-title {
+    &__section {
+        margin-top: 24px;
+        border-top: 1px solid #d1d9e0;
+        padding-top: 16px;
+    }
+
+    &__section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+    }
+
+    &__card {
+        border: 1px solid #d1d9e0;
+        border-radius: 4px;
+        margin-bottom: 16px;
+        padding: 16px;
+    }
+
+    &__card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+    }
+
+    &__media-label {
         display: block;
         font-size: 14px;
         font-weight: 600;
         margin-bottom: 8px;
     }
 
+    &__promotion,
     &__link-group {
         border-top: 1px solid #d1d9e0;
+        margin-top: 16px;
         padding-top: 16px;
+
+        h5 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
     }
 }

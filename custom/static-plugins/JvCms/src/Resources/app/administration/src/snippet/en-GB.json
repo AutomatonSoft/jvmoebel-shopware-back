@@ -121,21 +121,56 @@
           "emptyTitle": "Hero title"
         },
         "config": {
-          "title": {
-            "label": "Title",
-            "placeholder": "A home that feels like you."
+          "ariaLabel": {
+            "label": "Carousel aria label",
+            "helpText": "Optional. Used for screen readers when the carousel has no visible title."
           },
-          "eyebrow": {
-            "label": "Eyebrow",
-            "placeholder": "The new living collection"
+          "autoplay": {
+            "label": "Autoplay"
           },
-          "description": {
-            "label": "Description",
-            "placeholder": "Furniture selected for everyday living."
+          "autoplayIntervalMs": {
+            "label": "Autoplay interval (ms)",
+            "helpText": "4000–15000. Default: 7000."
           },
-          "imageMedia": {
-            "label": "Background image",
-            "caption": "Upload hero background image"
+          "slides": {
+            "title": "Slides",
+            "add": "Add slide",
+            "remove": "Remove",
+            "cardTitle": "Slide {index}",
+            "id": {
+              "label": "Slide ID",
+              "helpText": "Optional stable ID for analytics. Leave empty to auto-generate."
+            },
+            "layout": {
+              "label": "Layout",
+              "featured": "Featured",
+              "caption": "Caption"
+            },
+            "titleField": {
+              "label": "Title",
+              "placeholder": "A home that feels like you."
+            },
+            "url": {
+              "label": "Banner link",
+              "placeholder": "/living or https://…"
+            },
+            "eyebrow": {
+              "label": "Eyebrow",
+              "placeholder": "The new living collection"
+            },
+            "description": {
+              "label": "Description",
+              "placeholder": "Furniture selected for everyday living."
+            },
+            "imageMedia": {
+              "label": "Background image",
+              "caption": "Upload slide background image"
+            },
+            "promotion": {
+              "title": "Promotion badge",
+              "label": "Label",
+              "value": "Value"
+            }
           },
           "primaryLink": {
             "title": "Primary CTA"

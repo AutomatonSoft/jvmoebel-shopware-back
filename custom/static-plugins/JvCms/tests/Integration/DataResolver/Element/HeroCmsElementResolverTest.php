@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Jv\Cms\Tests\Integration\DataResolver\Element;
 
+use Jv\Cms\DataResolver\Element\Hero\HeroLink;
+use Jv\Cms\DataResolver\Element\Hero\HeroMedia;
+use Jv\Cms\DataResolver\Element\Hero\HeroPromotion;
+use Jv\Cms\DataResolver\Element\Hero\HeroSlide;
 use Jv\Cms\DataResolver\Element\HeroCmsElementResolver;
 use Jv\Cms\DataResolver\Element\HeroStruct;
 use PHPUnit\Framework\TestCase;
@@ -34,20 +38,30 @@ final class HeroCmsElementResolverTest extends TestCase
         /** @var CmsSlotsDataResolver $slotsResolver */
         $slotsResolver = $container->get(CmsSlotsDataResolver::class);
 
-        $slot = $this->createSlot([
-            'title' => '  Hello hero  ',
-            'eyebrow' => '  Eyebrow  ',
-            'description' => '  Description  ',
-            'primaryLink' => [
-                'label' => 'Shop',
-                'url' => '/new-in',
-                'size' => 'large',
+        $slot = $this->createCarouselSlot([
+            [
+                'id' => 'living-room',
+                'position' => 0,
+                'layout' => 'featured',
+                'title' => '  Living room  ',
+                'url' => '/living',
+                'eyebrow' => '  New  ',
+                'primaryLink' => [
+                    'label' => 'Shop',
+                    'url' => '/new-in',
+                    'size' => 'large',
+                ],
             ],
-            'secondaryLink' => [
-                'label' => 'Explore',
-                'url' => 'https://example.com/living',
-                'size' => 'medium',
+            [
+                'id' => 'bedroom',
+                'position' => 1,
+                'layout' => 'caption',
+                'title' => 'Bedroom',
+                'url' => 'https://example.com/bedroom',
             ],
+        ], [
+            'ariaLabel' => '  Hero carousel  ',
+            'autoplayIntervalMs' => 6500,
         ]);
 
         $resolved = $slotsResolver->resolve(
@@ -60,41 +74,51 @@ final class HeroCmsElementResolverTest extends TestCase
 
         $data = $resolved->get($slot->getUniqueIdentifier())?->getData();
         self::assertInstanceOf(HeroStruct::class, $data);
-        self::assertSame('Hello hero', $data->getTitle());
-        self::assertSame('Eyebrow', $data->getEyebrow());
-        self::assertSame('Description', $data->getDescription());
-        self::assertNull($data->getImage());
-        $primary = $data->getPrimaryLink();
-        self::assertNotNull($primary);
-        self::assertSame('/new-in', $primary->getUrl());
-        self::assertSame('large', $primary->getSize());
-        $secondary = $data->getSecondaryLink();
-        self::assertNotNull($secondary);
-        self::assertSame('https://example.com/living', $secondary->getUrl());
-        self::assertSame('cms_jv_hero', $data->getApiAlias());
+        self::assertSame('Hero carousel', $data->getAriaLabel());
+        self::assertTrue($data->isAutoplay());
+        self::assertSame(6500, $data->getAutoplayIntervalMs());
+        self::assertCount(0, $data->getSlides());
     }
 
-    public function testStoreApiEncoderExposesSerializedContract(): void
+    public function testStoreApiEncoderExposesSerializedCarouselContract(): void
     {
         /** @var CmsSlotsDataResolver $slotsResolver */
         $slotsResolver = static::getContainer()->get(CmsSlotsDataResolver::class);
         /** @var StructEncoder $encoder */
         $encoder = static::getContainer()->get(StructEncoder::class);
 
-        $slot = $this->createSlot([
-            'title' => 'A home that feels like you.',
-            'eyebrow' => 'The new living collection',
-            'description' => 'Furniture selected for everyday living.',
-            'primaryLink' => [
-                'label' => 'Shop new arrivals',
-                'url' => '/new-in',
-                'size' => 'large',
-            ],
-            'secondaryLink' => [
-                'label' => 'Explore the collection',
+        $slot = $this->createCarouselSlot([
+            [
+                'id' => 'living-room',
+                'position' => 0,
+                'layout' => 'featured',
+                'title' => 'Living room',
                 'url' => '/living',
-                'size' => 'medium',
+                'eyebrow' => 'New collection',
+                'description' => 'Everyday furniture.',
+                'promotion' => ['label' => 'Save', 'value' => '20%'],
+                'primaryLink' => [
+                    'label' => 'Shop living room',
+                    'url' => '/living',
+                    'size' => 'large',
+                ],
+                'secondaryLink' => [
+                    'label' => 'Explore',
+                    'url' => '/explore',
+                    'size' => 'medium',
+                ],
             ],
+            [
+                'id' => 'bedroom',
+                'position' => 1,
+                'layout' => 'caption',
+                'title' => 'Bedroom',
+                'url' => 'https://example.com/bedroom',
+            ],
+        ], [
+            'ariaLabel' => 'Current offers',
+            'autoplay' => true,
+            'autoplayIntervalMs' => 6500,
         ]);
 
         $resolved = $slotsResolver->resolve(
@@ -115,22 +139,113 @@ final class HeroCmsElementResolverTest extends TestCase
         $payload = $encoder->encode($data, new ResponseFields([]));
 
         self::assertSame('cms_jv_hero', $payload['apiAlias']);
-        self::assertSame('A home that feels like you.', $payload['title']);
-        self::assertSame('The new living collection', $payload['eyebrow']);
-        self::assertSame('Furniture selected for everyday living.', $payload['description']);
-        self::assertArrayHasKey('image', $payload);
-        self::assertNull($payload['image']);
+        self::assertSame('Current offers', $payload['ariaLabel']);
+        self::assertTrue($payload['autoplay']);
+        self::assertSame(6500, $payload['autoplayIntervalMs']);
+        self::assertIsArray($payload['slides']);
+        self::assertSame([], $payload['slides']);
+    }
 
-        self::assertIsArray($payload['primaryLink']);
-        self::assertSame('cms_jv_hero_link', $payload['primaryLink']['apiAlias']);
-        self::assertSame('Shop new arrivals', $payload['primaryLink']['label']);
-        self::assertSame('/new-in', $payload['primaryLink']['url']);
-        self::assertSame('large', $payload['primaryLink']['size']);
+    public function testLegacyConfigEncodesAsCarouselRoot(): void
+    {
+        /** @var CmsSlotsDataResolver $slotsResolver */
+        $slotsResolver = static::getContainer()->get(CmsSlotsDataResolver::class);
+        /** @var StructEncoder $encoder */
+        $encoder = static::getContainer()->get(StructEncoder::class);
 
-        self::assertIsArray($payload['secondaryLink']);
-        self::assertSame('cms_jv_hero_link', $payload['secondaryLink']['apiAlias']);
-        self::assertSame('/living', $payload['secondaryLink']['url']);
-        self::assertSame('medium', $payload['secondaryLink']['size']);
+        $slot = $this->createLegacySlot([
+            'title' => 'Legacy hero',
+            'eyebrow' => 'Legacy eyebrow',
+            'description' => 'Legacy description',
+            'primaryLink' => [
+                'label' => 'Shop',
+                'url' => '/new-in',
+                'size' => 'large',
+            ],
+        ]);
+
+        $resolved = $slotsResolver->resolve(
+            new CmsSlotCollection([$slot]),
+            new ResolverContext(
+                $this->createMock(SalesChannelContext::class),
+                new Request(),
+            ),
+        );
+
+        $payload = $encoder->encode(
+            $resolved->get($slot->getUniqueIdentifier())?->getData(),
+            new ResponseFields([]),
+        );
+
+        self::assertSame('cms_jv_hero', $payload['apiAlias']);
+        self::assertTrue($payload['autoplay']);
+        self::assertSame(7000, $payload['autoplayIntervalMs']);
+        self::assertIsArray($payload['slides']);
+        self::assertSame([], $payload['slides']);
+    }
+
+    public function testStructEncoderSerializesNonEmptyCarousel(): void
+    {
+        /** @var StructEncoder $encoder */
+        $encoder = static::getContainer()->get(StructEncoder::class);
+
+        $struct = new HeroStruct(
+            ariaLabel: 'Current offers',
+            autoplay: true,
+            autoplayIntervalMs: 6500,
+            slides: [
+                new HeroSlide(
+                    id: 'living-room',
+                    position: 0,
+                    layout: 'featured',
+                    title: 'Living room',
+                    url: '/living',
+                    eyebrow: 'New collection',
+                    description: 'Everyday furniture.',
+                    image: new HeroMedia('https://cdn.example.com/living.webp', 'Living room'),
+                    promotion: new HeroPromotion('Save', '20%'),
+                    primaryLink: new HeroLink('Shop living room', '/living', 'large'),
+                    secondaryLink: null,
+                ),
+                new HeroSlide(
+                    id: 'bedroom',
+                    position: 1,
+                    layout: 'caption',
+                    title: 'Bedroom',
+                    url: 'https://example.com/bedroom',
+                    eyebrow: null,
+                    description: null,
+                    image: new HeroMedia('https://cdn.example.com/bedroom.webp', 'Bedroom'),
+                    promotion: null,
+                    primaryLink: null,
+                    secondaryLink: new HeroLink('Explore', '/bedroom', 'medium'),
+                ),
+            ],
+        );
+
+        $payload = $encoder->encode($struct, new ResponseFields([]));
+
+        self::assertSame('cms_jv_hero', $payload['apiAlias']);
+        self::assertSame('Current offers', $payload['ariaLabel']);
+        self::assertTrue($payload['autoplay']);
+        self::assertSame(6500, $payload['autoplayIntervalMs']);
+        self::assertCount(2, $payload['slides']);
+
+        self::assertSame('cms_jv_hero_slide', $payload['slides'][0]['apiAlias']);
+        self::assertSame('living-room', $payload['slides'][0]['id']);
+        self::assertSame(0, $payload['slides'][0]['position']);
+        self::assertSame('featured', $payload['slides'][0]['layout']);
+        self::assertSame('/living', $payload['slides'][0]['url']);
+        self::assertSame('cms_jv_hero_media', $payload['slides'][0]['image']['apiAlias']);
+        self::assertSame('cms_jv_hero_promotion', $payload['slides'][0]['promotion']['apiAlias']);
+        self::assertSame('cms_jv_hero_link', $payload['slides'][0]['primaryLink']['apiAlias']);
+        self::assertNull($payload['slides'][0]['secondaryLink']);
+
+        self::assertSame('caption', $payload['slides'][1]['layout']);
+        self::assertSame('https://example.com/bedroom', $payload['slides'][1]['url']);
+        self::assertNull($payload['slides'][1]['promotion']);
+        self::assertNull($payload['slides'][1]['primaryLink']);
+        self::assertSame('/bedroom', $payload['slides'][1]['secondaryLink']['url']);
     }
 
     public function testMalformedMediaUuidAndUnsafeHrefDoNotThrow(): void
@@ -140,17 +255,16 @@ final class HeroCmsElementResolverTest extends TestCase
         /** @var StructEncoder $encoder */
         $encoder = static::getContainer()->get(StructEncoder::class);
 
-        $slot = $this->createSlot([
-            'title' => '',
-            'eyebrow' => '   ',
-            'description' => '',
-            'imageMedia' => 'not-a-uuid',
-            'primaryLink' => [
-                'label' => 'Boom',
-                'url' => 'javascript:alert(1)',
-                'size' => 'huge',
+        $slot = $this->createCarouselSlot([
+            [
+                'title' => 'Bad slide',
+                'imageMedia' => 'not-a-uuid',
+                'primaryLink' => [
+                    'label' => 'Boom',
+                    'url' => 'javascript:alert(1)',
+                    'size' => 'huge',
+                ],
             ],
-            'secondaryLink' => null,
         ]);
 
         $resolved = $slotsResolver->resolve(
@@ -167,25 +281,35 @@ final class HeroCmsElementResolverTest extends TestCase
         $payload = $encoder->encode($data, new ResponseFields([]));
 
         self::assertSame('cms_jv_hero', $payload['apiAlias']);
-        self::assertSame('', $payload['title']);
-        self::assertNull($payload['eyebrow']);
-        self::assertNull($payload['description']);
-        self::assertNull($payload['image']);
-        self::assertNull($payload['primaryLink']);
-        self::assertNull($payload['secondaryLink']);
+        self::assertNull($payload['ariaLabel']);
+        self::assertTrue($payload['autoplay']);
+        self::assertSame(7000, $payload['autoplayIntervalMs']);
+        self::assertSame([], $payload['slides']);
     }
 
     /**
-     * @param array{
-     *     title?: string,
-     *     eyebrow?: string,
-     *     description?: string,
-     *     imageMedia?: string|null,
-     *     primaryLink?: array<string, mixed>|null,
-     *     secondaryLink?: array<string, mixed>|null
-     * } $values
+     * @param list<array<string, mixed>> $slides
+     * @param array<string, mixed>       $root
      */
-    private function createSlot(array $values): CmsSlotEntity
+    private function createCarouselSlot(array $slides, array $root = []): CmsSlotEntity
+    {
+        $config = new FieldConfigCollection();
+        $config->add(new FieldConfig('ariaLabel', FieldConfig::SOURCE_STATIC, $root['ariaLabel'] ?? ''));
+        $config->add(new FieldConfig('autoplay', FieldConfig::SOURCE_STATIC, $root['autoplay'] ?? true));
+        $config->add(new FieldConfig(
+            'autoplayIntervalMs',
+            FieldConfig::SOURCE_STATIC,
+            $root['autoplayIntervalMs'] ?? 7000,
+        ));
+        $config->add(new FieldConfig('slides', FieldConfig::SOURCE_STATIC, $slides));
+
+        return $this->slot($config);
+    }
+
+    /**
+     * @param array<string, mixed> $values
+     */
+    private function createLegacySlot(array $values): CmsSlotEntity
     {
         $config = new FieldConfigCollection();
         $config->add(new FieldConfig('title', FieldConfig::SOURCE_STATIC, $values['title'] ?? ''));
@@ -195,18 +319,19 @@ final class HeroCmsElementResolverTest extends TestCase
         $config->add(new FieldConfig(
             'primaryLink',
             FieldConfig::SOURCE_STATIC,
-            \array_key_exists('primaryLink', $values)
-                ? $values['primaryLink']
-                : ['label' => '', 'url' => '', 'size' => 'medium'],
+            $values['primaryLink'] ?? ['label' => '', 'url' => '', 'size' => 'medium'],
         ));
         $config->add(new FieldConfig(
             'secondaryLink',
             FieldConfig::SOURCE_STATIC,
-            \array_key_exists('secondaryLink', $values)
-                ? $values['secondaryLink']
-                : ['label' => '', 'url' => '', 'size' => 'medium'],
+            $values['secondaryLink'] ?? ['label' => '', 'url' => '', 'size' => 'medium'],
         ));
 
+        return $this->slot($config);
+    }
+
+    private function slot(FieldConfigCollection $config): CmsSlotEntity
+    {
         $slot = new CmsSlotEntity();
         $slot->setUniqueIdentifier('slot-jv-hero-integration');
         $slot->setType(HeroCmsElementResolver::TYPE);
