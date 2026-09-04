@@ -1,0 +1,16 @@
+.sw-cms-el-preview-jv-cart {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+
+    &__icon {
+        font-size: 16px;
+    }
+
+    &__label {
+        font-size: 12px;
+        font-weight: 600;
+    }
+}

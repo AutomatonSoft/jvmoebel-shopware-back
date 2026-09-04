@@ -1,0 +1,38 @@
+.sw-cms-el-jv-cart {
+    padding: 16px;
+    border: 1px solid #d1d9e0;
+    border-radius: 4px;
+    background: #fff;
+
+    &__header {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    &__badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: 999px;
+        background: #de294c;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    &__title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    &__hint {
+        color: #52667a;
+        font-size: 12px;
+    }
+}

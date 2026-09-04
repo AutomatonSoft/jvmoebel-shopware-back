@@ -1,0 +1,132 @@
+{% block sw_cms_element_jv_cart_config %}
+	<div class="sw-cms-el-config-jv-cart">
+		<sw-card :title="$t('cms.elements.jv-cart.config.headerTrigger.title')" position-identifier="jv-cart-header-trigger">
+			<sw-text-field
+				v-model="element.config.headerTrigger.value.label"
+				:label="$t('cms.elements.jv-cart.config.headerTrigger.label')"
+				:placeholder="$t('cms.elements.jv-cart.config.headerTrigger.labelPlaceholder')"
+				@update:model-value="onUpdate"
+			/>
+			<sw-text-field
+				v-model="element.config.headerTrigger.value.url"
+				:label="$t('cms.elements.jv-cart.config.headerTrigger.url')"
+				:placeholder="$t('cms.elements.jv-cart.config.headerTrigger.urlPlaceholder')"
+				@update:model-value="onUpdate"
+			/>
+		</sw-card>
+
+		<sw-card :title="$t('cms.elements.jv-cart.config.page.title')" position-identifier="jv-cart-page">
+			<sw-text-field
+				v-model="element.config.titleSingular.value"
+				:label="$t('cms.elements.jv-cart.config.page.titleSingular')"
+				:help-text="$t('cms.elements.jv-cart.config.page.countHelp')"
+				@update:model-value="onUpdate"
+			/>
+			<sw-text-field
+				v-model="element.config.titlePlural.value"
+				:label="$t('cms.elements.jv-cart.config.page.titlePlural')"
+				@update:model-value="onUpdate"
+			/>
+		</sw-card>
+
+		<sw-card :title="$t('cms.elements.jv-cart.config.loginHint.title')" position-identifier="jv-cart-login-hint">
+			<sw-textarea-field
+				v-model="element.config.loginHint.value.message"
+				:label="$t('cms.elements.jv-cart.config.loginHint.message')"
+				@update:model-value="onUpdate"
+			/>
+			<sw-text-field
+				v-model="element.config.loginHint.value.loginLabel"
+				:label="$t('cms.elements.jv-cart.config.loginHint.loginLabel')"
+				@update:model-value="onUpdate"
+			/>
+			<sw-text-field
+				v-model="element.config.loginHint.value.loginUrl"
+				:label="$t('cms.elements.jv-cart.config.loginHint.loginUrl')"
+				@update:model-value="onUpdate"
+			/>
+		</sw-card>
+
+		<sw-card :title="$t('cms.elements.jv-cart.config.services.title')" position-identifier="jv-cart-services">
+			<sw-text-field
+				v-model="element.config.services.value.title"
+				:label="$t('cms.elements.jv-cart.config.services.sectionTitle')"
+				@update:model-value="onUpdate"
+			/>
+			<sw-text-field
+				v-model="element.config.services.value.postalCode.label"
+				:label="$t('cms.elements.jv-cart.config.services.postalCodeLabel')"
+				@update:model-value="onUpdate"
+			/>
+			<sw-text-field
+				v-model="element.config.services.value.postalCode.placeholder"
+				:label="$t('cms.elements.jv-cart.config.services.postalCodePlaceholder')"
+				@update:model-value="onUpdate"
+			/>
+			<sw-text-field
+				v-model="element.config.services.value.postalCode.submitLabel"
+				:label="$t('cms.elements.jv-cart.config.services.postalCodeSubmit')"
+				@update:model-value="onUpdate"
+			/>
+
+			<div class="sw-cms-el-config-jv-cart__repeater-header">
+				<strong>{{ $t('cms.elements.jv-cart.config.services.optionsTitle') }}</strong>
+				<sw-button size="small" @click="addServiceOption">{{ $t('cms.elements.jv-cart.config.services.addOption') }}</sw-button>
+			</div>
+
+			<div
+				v-for="(option, optionIndex) in serviceOptions"
+				:key="optionIndex"
+				class="sw-cms-el-config-jv-cart__repeater-item"
+			>
+				<sw-text-field v-model="option.id" :label="$t('cms.elements.jv-cart.config.services.optionId')" @update:model-value="onUpdate" />
+				<sw-text-field v-model="option.label" :label="$t('cms.elements.jv-cart.config.services.optionLabel')" @update:model-value="onUpdate" />
+				<sw-number-field v-model="option.price" :label="$t('cms.elements.jv-cart.config.services.optionPrice')" @update:model-value="onUpdate" />
+				<sw-button size="small" variant="danger" @click="removeServiceOption(optionIndex)">{{ $t('cms.elements.jv-cart.config.services.removeOption') }}</sw-button>
+			</div>
+		</sw-card>
+
+		<sw-card :title="$t('cms.elements.jv-cart.config.summary.title')" position-identifier="jv-cart-summary">
+			<sw-text-field v-model="element.config.summaryLabels.value.titleSingular" :label="$t('cms.elements.jv-cart.config.summary.titleSingular')" @update:model-value="onUpdate" />
+			<sw-text-field v-model="element.config.summaryLabels.value.titlePlural" :label="$t('cms.elements.jv-cart.config.summary.titlePlural')" @update:model-value="onUpdate" />
+			<sw-text-field v-model="element.config.summaryLabels.value.subtotalLabel" :label="$t('cms.elements.jv-cart.config.summary.subtotalLabel')" @update:model-value="onUpdate" />
+			<sw-text-field v-model="element.config.summaryLabels.value.shippingLabel" :label="$t('cms.elements.jv-cart.config.summary.shippingLabel')" @update:model-value="onUpdate" />
+			<sw-text-field v-model="element.config.summaryLabels.value.shippingUrl" :label="$t('cms.elements.jv-cart.config.summary.shippingUrl')" @update:model-value="onUpdate" />
+			<sw-text-field v-model="element.config.summaryLabels.value.totalLabel" :label="$t('cms.elements.jv-cart.config.summary.totalLabel')" @update:model-value="onUpdate" />
+			<sw-text-field v-model="element.config.summaryLabels.value.savingsLabel" :label="$t('cms.elements.jv-cart.config.summary.savingsLabel')" @update:model-value="onUpdate" />
+			<sw-text-field v-model="element.config.summaryLabels.value.checkoutLabel" :label="$t('cms.elements.jv-cart.config.summary.checkoutLabel')" @update:model-value="onUpdate" />
+			<sw-text-field v-model="element.config.summaryLabels.value.checkoutUrl" :label="$t('cms.elements.jv-cart.config.summary.checkoutUrl')" @update:model-value="onUpdate" />
+		</sw-card>
+
+		<sw-card :title="$t('cms.elements.jv-cart.config.promoCode.title')" position-identifier="jv-cart-promo">
+			<sw-text-field v-model="element.config.promoCode.value.title" :label="$t('cms.elements.jv-cart.config.formSection.title')" @update:model-value="onUpdate" />
+			<sw-switch-field v-model="element.config.promoCode.value.expanded" :label="$t('cms.elements.jv-cart.config.formSection.expanded')" @update:model-value="onUpdate" />
+			<sw-textarea-field v-model="element.config.promoCode.value.description" :label="$t('cms.elements.jv-cart.config.formSection.description')" @update:model-value="onUpdate" />
+			<sw-text-field v-model="element.config.promoCode.value.inputName" :label="$t('cms.elements.jv-cart.config.formSection.inputName')" @update:model-value="onUpdate" />
+			<sw-text-field v-model="element.config.promoCode.value.inputLabel" :label="$t('cms.elements.jv-cart.config.formSection.inputLabel')" @update:model-value="onUpdate" />
+			<sw-text-field v-model="element.config.promoCode.value.inputPlaceholder" :label="$t('cms.elements.jv-cart.config.formSection.inputPlaceholder')" @update:model-value="onUpdate" />
+			<sw-text-field v-model="element.config.promoCode.value.submitLabel" :label="$t('cms.elements.jv-cart.config.formSection.submitLabel')" @update:model-value="onUpdate" />
+		</sw-card>
+
+		<sw-card :title="$t('cms.elements.jv-cart.config.giftCard.title')" position-identifier="jv-cart-gift">
+			<sw-text-field v-model="element.config.giftCard.value.title" :label="$t('cms.elements.jv-cart.config.formSection.title')" @update:model-value="onUpdate" />
+			<sw-switch-field v-model="element.config.giftCard.value.expanded" :label="$t('cms.elements.jv-cart.config.formSection.expanded')" @update:model-value="onUpdate" />
+			<sw-textarea-field v-model="element.config.giftCard.value.description" :label="$t('cms.elements.jv-cart.config.formSection.description')" @update:model-value="onUpdate" />
+			<sw-text-field v-model="element.config.giftCard.value.inputName" :label="$t('cms.elements.jv-cart.config.formSection.inputName')" @update:model-value="onUpdate" />
+			<sw-text-field v-model="element.config.giftCard.value.inputLabel" :label="$t('cms.elements.jv-cart.config.formSection.inputLabel')" @update:model-value="onUpdate" />
+			<sw-text-field v-model="element.config.giftCard.value.inputPlaceholder" :label="$t('cms.elements.jv-cart.config.formSection.inputPlaceholder')" @update:model-value="onUpdate" />
+			<sw-text-field v-model="element.config.giftCard.value.submitLabel" :label="$t('cms.elements.jv-cart.config.formSection.submitLabel')" @update:model-value="onUpdate" />
+		</sw-card>
+
+		<sw-card :title="$t('cms.elements.jv-cart.config.trust.title')" position-identifier="jv-cart-trust">
+			<div class="sw-cms-el-config-jv-cart__repeater-header">
+				<strong>{{ $t('cms.elements.jv-cart.config.trust.itemsTitle') }}</strong>
+				<sw-button size="small" @click="addTrustItem">{{ $t('cms.elements.jv-cart.config.trust.addItem') }}</sw-button>
+			</div>
+			<div v-for="(item, trustIndex) in trustItems" :key="trustIndex" class="sw-cms-el-config-jv-cart__repeater-item">
+				<sw-text-field v-model="item.label" :label="$t('cms.elements.jv-cart.config.trust.itemLabel')" @update:model-value="onUpdate" />
+				<sw-button size="small" variant="danger" @click="removeTrustItem(trustIndex)">{{ $t('cms.elements.jv-cart.config.trust.removeItem') }}</sw-button>
+			</div>
+		</sw-card>
+	</div>
+{% endblock %}
