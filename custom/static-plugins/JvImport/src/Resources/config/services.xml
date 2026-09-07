@@ -51,6 +51,7 @@
         </service>
 
         <service id="Jv\Import\Integration\CosmoShop\Normalizer\CosmoShopProductImportDataNormalizer"/>
+        <service id="Jv\Import\Integration\CosmoShop\Customer\CosmoShopS512LegacyEncoder"/>
         <service id="Jv\Import\Service\ProductImport\Validation\CosmoShopProductImportDataValidator"/>
         <service id="Jv\Import\Service\ProductImport\BuildShopwareProductImportRecordService"/>
         <service id="Jv\Import\Service\ProductMediaImport\ValidateCosmoShopProductMediaCoverService"/>
@@ -189,6 +190,13 @@
         </service>
         <service id="Jv\Import\Command\BootstrapCatalogProductImportProfileCommand">
             <argument type="service" id="import_export_profile.repository"/>
+        </service>
+        <service id="Jv\Import\Command\ApplyCosmoShopCustomerPasswordsCommand">
+            <argument type="service" id="customer.repository"/>
+        </service>
+        <service id="Jv\Import\Command\BootstrapCosmoShopCustomerImportProfileCommand">
+            <argument type="service" id="import_export_profile.repository"/>
+            <argument type="service" id="sales_channel.repository"/>
         </service>
         <service id="Jv\Import\Command\PrepareCatalogShopwareImportCsvCommand"/>
         <service id="Jv\Import\Command\BackfillCatalogAttributeCategoryRelationsCommand"/>
