@@ -54,6 +54,19 @@ Aftercool остаётся внешним источником данных. П�
 Credentials задаются только environment configuration и не сохраняются в
 Shopware entities. Клиент выполняет:
 
+```dotenv
+AFTERCOOL_BASE_URI=https://aftercool.de
+AFTERCOOL_USERNAME=<environment secret>
+AFTERCOOL_PASSWORD=<environment secret>
+AFTERCOOL_TIMEOUT=20
+```
+
+`AFTERCOOL_USERNAME` и `AFTERCOOL_PASSWORD` обязательны для работающей
+интеграции и задаются отдельно в каждом environment. В отслеживаемых env-шаблонах
+они остаются пустыми; реальные credentials не коммитятся. `AFTERCOOL_BASE_URI`
+содержит origin без API path, а `AFTERCOOL_TIMEOUT` задаёт timeout одного HTTP
+запроса в секундах.
+
 ```http
 POST /auth/login
 Content-Type: application/json
