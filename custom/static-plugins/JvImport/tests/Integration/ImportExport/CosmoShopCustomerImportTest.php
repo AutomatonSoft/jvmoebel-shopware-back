@@ -7,6 +7,7 @@ require_once __DIR__.'/AbstractCosmoShopImportExportTestCase.php';
 use Jv\Import\Integration\CosmoShop\Customer\CosmoShopCustomerIdentity;
 use Jv\Import\Integration\CosmoShop\Profile\CustomerImportProfile;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
+use Shopware\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressCollection;
 use Shopware\Core\Checkout\Customer\CustomerCollection;
 use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Content\ImportExport\ImportExportProfileEntity;
@@ -79,10 +80,15 @@ final class CosmoShopCustomerImportTest extends AbstractCosmoShopImportExportTes
                 CosmoShopCustomerIdentity::shippingAddressId(Market::Germany, 92001),
                 $customer->getDefaultShippingAddressId(),
             );
-            self::assertSame('Main street 12a', $customer->getDefaultBillingAddress()?->getStreet());
-            self::assertSame('DE', $customer->getDefaultBillingAddress()?->getCountry()?->getIso());
-            self::assertSame('Shipping street 9', $customer->getDefaultShippingAddress()?->getStreet());
-            self::assertSame('AT', $customer->getDefaultShippingAddress()?->getCountry()?->getIso());
+            $billingAddress = $customer->getDefaultBillingAddress();
+            self::assertNotNull($billingAddress);
+            self::assertSame('Main street 12a', $billingAddress->getStreet());
+            self::assertSame('DE', $billingAddress->getCountry()?->getIso());
+
+            $shippingAddress = $customer->getDefaultShippingAddress();
+            self::assertNotNull($shippingAddress);
+            self::assertSame('Shipping street 9', $shippingAddress->getStreet());
+            self::assertSame('AT', $shippingAddress->getCountry()?->getIso());
 
             self::assertSame(
                 1,
@@ -92,7 +98,7 @@ final class CosmoShopCustomerImportTest extends AbstractCosmoShopImportExportTes
                 )->getTotal(),
             );
 
-            /** @var EntityRepository<EntityCollection> $addressRepository */
+            /** @var EntityRepository<CustomerAddressCollection> $addressRepository */
             $addressRepository = static::getContainer()->get('customer_address.repository');
             self::assertSame(
                 2,
@@ -160,7 +166,7 @@ final class CosmoShopCustomerImportTest extends AbstractCosmoShopImportExportTes
             return;
         }
 
-        $repository->delete(array_map(static fn (string $id): array => ['id' => $id], array_values($existingIds)), $context);
+        $repository->delete(array_map(static fn (string $id): array => ['id' => $id], $existingIds), $context);
     }
 
     private function customerCsv(int $sourceId, string $lastName = 'Lovelace', ?string $email = null): string
