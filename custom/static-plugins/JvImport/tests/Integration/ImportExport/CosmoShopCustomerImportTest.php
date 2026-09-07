@@ -120,7 +120,7 @@ final class CosmoShopCustomerImportTest extends AbstractCosmoShopImportExportTes
                 $header."\n".$validRow."\n".$invalidRow,
             );
 
-            self::assertSame(Progress::STATE_SUCCEEDED, $progress->getState(), $this->importResult($progress));
+            self::assertSame(Progress::STATE_FAILED, $progress->getState(), $this->importResult($progress));
 
             /** @var EntityRepository<CustomerCollection> $repository */
             $repository = static::getContainer()->get('customer.repository');

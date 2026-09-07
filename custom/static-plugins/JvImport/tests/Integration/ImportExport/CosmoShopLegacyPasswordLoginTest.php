@@ -17,6 +17,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\Country\CountryCollection;
 use Shopware\Core\System\SalesChannel\Context\AbstractSalesChannelContextFactory;
+use Shopware\Core\System\SalesChannel\Context\CachedSalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\SalesChannelCollection;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 
@@ -83,7 +84,7 @@ final class CosmoShopLegacyPasswordLoginTest extends AbstractCosmoShopImportExpo
                 ]],
             ]], $context);
 
-            $contextFactory = static::getContainer()->get(AbstractSalesChannelContextFactory::class);
+            $contextFactory = static::getContainer()->get(CachedSalesChannelContextFactory::class);
             self::assertInstanceOf(AbstractSalesChannelContextFactory::class, $contextFactory);
             $salesChannelContext = $contextFactory->create(Uuid::randomHex(), $market->salesChannelId());
 
