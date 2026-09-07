@@ -4,10 +4,10 @@ namespace Jv\Import\Tests\Integration\ImportExport;
 
 require_once __DIR__.'/AbstractCosmoShopImportExportTestCase.php';
 
-use Jv\Import\Integration\CosmoShop\CosmoShopProductIdentity;
 use Jv\Import\Service\ProductImport\LookupData\Dto\ProductImportLookupData;
 use Jv\Import\Service\ProductImport\LookupData\Dto\ProductImportLookupItemData;
 use Jv\Import\Service\ProductImport\LookupData\UpsertProductImportLookupDataService;
+use Jv\Import\Service\ProductImport\ProductImportIdentity;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use Shopware\Core\Checkout\Cart\Delivery\Struct\Delivery;
 use Shopware\Core\Checkout\Cart\Delivery\Struct\DeliveryCollection;
@@ -31,7 +31,7 @@ final class CosmoShopMarketDeliveryTimeCartOrderTest extends AbstractCosmoShopIm
     {
         $context = Context::createDefaultContext();
         $productNumber = 'MARKET-DELIVERY-CART-001';
-        $productId = CosmoShopProductIdentity::fromProductNumber($productNumber);
+        $productId = ProductImportIdentity::fromProductNumber($productNumber);
         $variantProductId = Uuid::randomHex();
         $references = static::getContainer()->get(UpsertProductImportLookupDataService::class);
         self::assertInstanceOf(UpsertProductImportLookupDataService::class, $references);

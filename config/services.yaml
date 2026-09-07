@@ -4,6 +4,10 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    env(AFTERCOOL_BASE_URI): 'https://aftercool.example'
+    env(AFTERCOOL_USERNAME): ''
+    env(AFTERCOOL_PASSWORD): ''
+    env(AFTERCOOL_TIMEOUT): '20'
     shopware.store.frw: '1'
     default_cdn_strategy: 'physical_filename'
     shopware.cdn.strategy: '%env(default:default_cdn_strategy:SHOPWARE_CDN_STRATEGY_DEFAULT)%'

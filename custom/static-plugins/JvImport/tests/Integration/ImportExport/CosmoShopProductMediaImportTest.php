@@ -4,7 +4,7 @@ namespace Jv\Import\Tests\Integration\ImportExport;
 
 require_once __DIR__.'/AbstractCosmoShopImportExportTestCase.php';
 
-use Jv\Import\Integration\CosmoShop\CosmoShopProductIdentity;
+use Jv\Import\Service\ProductImport\ProductImportIdentity;
 use Shopware\Core\Content\ImportExport\Struct\Progress;
 use Shopware\Core\Content\Product\Aggregate\ProductMedia\ProductMediaEntity;
 use Shopware\Core\Content\Product\ProductCollection;
@@ -34,7 +34,7 @@ final class CosmoShopProductMediaImportTest extends AbstractCosmoShopImportExpor
     {
         $context = Context::createDefaultContext();
         $productNumber = 'MEDIA-MAIN-PROFILE-001';
-        $productId = CosmoShopProductIdentity::fromProductNumber($productNumber);
+        $productId = ProductImportIdentity::fromProductNumber($productNumber);
         [$firstPath, $firstUrl, $firstFileName] = $this->createPublicImage('first');
         [$secondPath, $secondUrl, $secondFileName] = $this->createPublicImage('second');
 
@@ -80,8 +80,8 @@ final class CosmoShopProductMediaImportTest extends AbstractCosmoShopImportExpor
         $context = Context::createDefaultContext();
         $invalidProductNumber = 'MEDIA-UNAVAILABLE-001';
         $validProductNumber = 'MEDIA-AVAILABLE-001';
-        $invalidProductId = CosmoShopProductIdentity::fromProductNumber($invalidProductNumber);
-        $validProductId = CosmoShopProductIdentity::fromProductNumber($validProductNumber);
+        $invalidProductId = ProductImportIdentity::fromProductNumber($invalidProductNumber);
+        $validProductId = ProductImportIdentity::fromProductNumber($validProductNumber);
         [$validPath, $validUrl] = $this->createPublicImage('available');
         [$header, $invalidRow] = explode("\n", $this->csv(
             productNumber: $invalidProductNumber,
@@ -117,7 +117,7 @@ final class CosmoShopProductMediaImportTest extends AbstractCosmoShopImportExpor
     {
         $context = Context::createDefaultContext();
         $productNumber = 'MEDIA-INVALID-COVER-001';
-        $productId = CosmoShopProductIdentity::fromProductNumber($productNumber);
+        $productId = ProductImportIdentity::fromProductNumber($productNumber);
         [$galleryPath, $galleryUrl] = $this->createPublicImage('gallery');
         [$coverPath, $coverUrl] = $this->createPublicImage('cover');
 

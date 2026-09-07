@@ -3,11 +3,50 @@ import enGB from './snippet/en-GB.json';
 import './extension/sw-product-deliverability-form';
 import './extension/sw-product-detail';
 import './extension/sw-product-variants-configurator-selection';
+import './extension/sw-import-export';
+import aftercoolImport from './view/aftercool-import';
+import AfterCoolImportApiService from './service/aftercool-import.api.service';
 
 Shopware.Locale.extend('de-DE', deDE);
 Shopware.Locale.extend('en-GB', enGB);
 
 const { Module } = Shopware;
+
+const importExportModule = Module.getModuleRegistry().get('sw-import-export');
+
+if (!importExportModule) {
+    throw new Error('Shopware Import/Export module is not registered.');
+}
+
+const importExportIndexRoute = importExportModule.routes.get('sw.import.export.index');
+
+if (!importExportIndexRoute || !Array.isArray(importExportIndexRoute.children)) {
+    throw new Error('Shopware Import/Export index route is not available.');
+}
+
+const aftercoolRoute = {
+    name: 'sw.import.export.index.aftercool',
+    path: `${importExportIndexRoute.path}/aftercool`,
+    component: 'jv-aftercool-import',
+    meta: {
+        privilege: 'system.import_export',
+    },
+    isChildren: true,
+    routeKey: 'aftercool',
+};
+
+importExportModule.manifest.routes.index.children.aftercool = aftercoolRoute;
+importExportIndexRoute.children.push(aftercoolRoute);
+importExportModule.routes.set(aftercoolRoute.name, aftercoolRoute);
+
+Shopware.Component.register('jv-aftercool-import', aftercoolImport);
+
+Shopware.Application.addServiceProvider('afterCoolImportApiService', () => {
+    return new AfterCoolImportApiService(
+        Shopware.Application.getContainer('init').httpClient,
+        Shopware.Service('loginService'),
+    );
+});
 
 Module.register('jv-import', {
     type: 'plugin',
