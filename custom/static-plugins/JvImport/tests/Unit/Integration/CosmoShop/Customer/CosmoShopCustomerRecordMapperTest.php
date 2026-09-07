@@ -67,6 +67,7 @@ final class CosmoShopCustomerRecordMapperTest extends TestCase
         $customer['kd_umstid'] = '';
         $customer['kd_account_type'] = '';
         $customer['kd_geburtsdatum'] = '31.02.2020';
+        $customer['kd_anrede'] = 'd';
 
         $row = (new CosmoShopCustomerRecordMapper(['1' => 'DE']))->map(Market::Germany, $customer, []);
 
