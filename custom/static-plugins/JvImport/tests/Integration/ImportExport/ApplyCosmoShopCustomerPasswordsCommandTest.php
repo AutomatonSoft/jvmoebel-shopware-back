@@ -140,7 +140,7 @@ final class ApplyCosmoShopCustomerPasswordsCommandTest extends AbstractCosmoShop
         $context = Context::createDefaultContext();
         $market = Market::Germany;
         $sourceCustomerId = 42996;
-        $sourcePassword = 'SyntheticSourcePass9';
+        $sourcePassword = 'Ab1x';
         $customerId = CosmoShopCustomerIdentity::customerId($market, $sourceCustomerId);
         $path = tempnam(sys_get_temp_dir(), 'jv-cosmoshop-customer-passwords-');
         self::assertNotFalse($path);

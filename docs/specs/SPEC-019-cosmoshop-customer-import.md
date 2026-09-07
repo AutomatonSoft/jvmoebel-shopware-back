@@ -280,7 +280,8 @@ source_customer_id;password_hash;salt
 2. для `s512` записывает только `legacyPassword` и `legacyEncoder`;
 3. 200 непустых source password без соли, которые исходный CosmoShop сравнивал
    напрямую, однократно передаёт штатному password hasher Shopware и не сохраняет
-   как plaintext;
+   как plaintext; существующие пароли короче текущего registration minimum также
+   должны получить текущий hash и остаться пригодными для входа;
 4. не пишет password, salt, hash или исходную строку в Git, progress output,
    invalid-records либо обычный лог;
 5. отклоняет четыре служебных sentinel (`kd_pwd=xx`, `kd_salt=xx`) и четыре
