@@ -283,8 +283,8 @@ source_customer_id;password_hash;salt
    как plaintext;
 4. не пишет password, salt, hash или исходную строку в Git, progress output,
    invalid-records либо обычный лог;
-5. отклоняет четыре служебных sentinel и четыре пустых password; для них
-   применяется password reset;
+5. отклоняет четыре служебных sentinel (`kd_pwd=xx`, `kd_salt=xx`) и четыре
+   пустых password; для них применяется password reset;
 6. поддерживает безопасный повтор и удаление оператором входного файла после
    сверки.
 
