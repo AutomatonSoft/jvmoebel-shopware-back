@@ -5,11 +5,11 @@ namespace Jv\Import\Tests\Integration\ImportExport;
 require_once __DIR__.'/AbstractCosmoShopImportExportTestCase.php';
 
 use Jv\Import\Core\Content\ProductSalesChannelDeliveryTime\ProductSalesChannelDeliveryTimeCollection;
-use Jv\Import\Integration\CosmoShop\CosmoShopProductIdentity;
 use Jv\Import\Integration\CosmoShop\CosmoShopReferenceIdentity;
 use Jv\Import\Service\ProductImport\LookupData\Dto\ProductImportLookupData;
 use Jv\Import\Service\ProductImport\LookupData\Dto\ProductImportLookupItemData;
 use Jv\Import\Service\ProductImport\LookupData\UpsertProductImportLookupDataService;
+use Jv\Import\Service\ProductImport\ProductImportIdentity;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use Shopware\Core\Content\ImportExport\Struct\Progress;
 use Shopware\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSellingCollection;
@@ -44,10 +44,10 @@ final class CosmoShopMarketDeliveryTimeStoreApiTest extends AbstractCosmoShopImp
     {
         $context = Context::createDefaultContext();
         $productNumber = 'MARKET-DELIVERY-STORE-API-001';
-        $productId = CosmoShopProductIdentity::fromProductNumber($productNumber);
+        $productId = ProductImportIdentity::fromProductNumber($productNumber);
         $variantProductId = Uuid::randomHex();
         $crossSellingProductNumber = 'MARKET-DELIVERY-STORE-API-002';
-        $crossSellingProductId = CosmoShopProductIdentity::fromProductNumber($crossSellingProductNumber);
+        $crossSellingProductId = ProductImportIdentity::fromProductNumber($crossSellingProductNumber);
         $references = static::getContainer()->get(UpsertProductImportLookupDataService::class);
         self::assertInstanceOf(UpsertProductImportLookupDataService::class, $references);
         $germanyProfileId = $this->configureMarketProfile(Market::Germany, $context);
