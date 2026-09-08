@@ -138,16 +138,17 @@ final readonly class ApplyCosmoShopCustomerPasswordsService
     {
         $customerId = $customer->getId();
         $isLegacyPassword = str_starts_with($record->password, 's512##');
+        $isReset = '' === $record->password || ('xx' === $record->password && 'xx' === $record->salt);
 
         if ($isLegacyPassword && (1 !== preg_match('/^s512##[A-Za-z0-9+\\/]{86}$/', $record->password) || 1 !== preg_match('/^[A-Za-z0-9_-]{32}$/', $record->salt))) {
             return null;
         }
 
-        if ('' !== $record->password && !$isLegacyPassword && '' !== $record->salt) {
+        if (!$isReset && !$isLegacyPassword && '' !== $record->salt) {
             return null;
         }
 
-        if ('' === $record->password || ('xx' === $record->password && 'xx' === $record->salt)) {
+        if ($isReset) {
             if (null !== $customer->getPassword()) {
                 return [
                     'kind' => 'protected_current',
