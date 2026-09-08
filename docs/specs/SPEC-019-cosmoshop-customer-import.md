@@ -67,7 +67,8 @@ migration context, который запрещает создание новых
 | служебный empty-password sentinel | 4 |
 | пустой password | 4 |
 | отсутствующий email | 5 |
-| email, не прошедший базовую syntactic-проверку | 105 |
+| email, не прошедший целевую Shopware/Symfony HTML5-проверку | 1 |
+| email, не прошедший строгую RFC-проверку | 59 |
 | строки, прошедшие строгую проверку обязательных email/name/address полей | 6 542 |
 | неполные строки с полным billing snapshot в заказе | 5 |
 | дополнительные delivery addresses | 240 у 236 клиентов |
