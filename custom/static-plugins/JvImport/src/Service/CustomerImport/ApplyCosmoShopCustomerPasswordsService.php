@@ -24,7 +24,7 @@ final readonly class ApplyCosmoShopCustomerPasswordsService
     ) {
     }
 
-    public function execute(Market $market, string $file, bool $dryRun): ApplyCosmoShopCustomerPasswordsResult
+    public function execute(Market $market, string $file, bool $dryRun, Context $context): ApplyCosmoShopCustomerPasswordsResult
     {
         $records = $this->reader->read($file);
         $counts = ['processed' => count($records), 'legacy' => 0, 'rehash' => 0, 'reset_required' => 0, 'protected_current' => 0, 'missing_customer' => 0, 'failed' => 0];
@@ -42,7 +42,6 @@ final readonly class ApplyCosmoShopCustomerPasswordsService
             ];
         }
 
-        $context = Context::createCLIContext();
         $existingCustomers = $this->existingCustomers(array_column($identifiedRecords, 'customerId'), $context);
         $credentialUpdates = [];
         $bindingUpdates = [];

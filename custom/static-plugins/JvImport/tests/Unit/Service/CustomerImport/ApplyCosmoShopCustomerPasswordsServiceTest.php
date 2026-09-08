@@ -59,7 +59,7 @@ final class ApplyCosmoShopCustomerPasswordsServiceTest extends TestCase
             );
 
             $service = new ApplyCosmoShopCustomerPasswordsService(new CosmoShopCustomerPasswordCsvReader(), $repository);
-            $result = $service->execute($market, $file, false);
+            $result = $service->execute($market, $file, false, Context::createDefaultContext());
 
             self::assertSame(251, $result->resetRequired);
             self::assertSame([250, 1], array_map('count', $batches));
@@ -79,7 +79,7 @@ final class ApplyCosmoShopCustomerPasswordsServiceTest extends TestCase
                 },
             );
             $dryRunRepository->expects(self::never())->method('update');
-            $dryRun = (new ApplyCosmoShopCustomerPasswordsService(new CosmoShopCustomerPasswordCsvReader(), $dryRunRepository))->execute($market, $file, true);
+            $dryRun = (new ApplyCosmoShopCustomerPasswordsService(new CosmoShopCustomerPasswordCsvReader(), $dryRunRepository))->execute($market, $file, true, Context::createDefaultContext());
             self::assertSame(251, $dryRun->resetRequired);
         } finally {
             unlink($file);

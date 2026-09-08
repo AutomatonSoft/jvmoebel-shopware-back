@@ -23,6 +23,41 @@ use Symfony\Component\Console\Tester\CommandTester;
 
 final class ApplyCosmoShopCustomerPasswordsCommandTest extends TestCase
 {
+    public function testItDoesNotLogOrPrintCredentialMaterialFromAnException(): void
+    {
+        $secret = 'SyntheticExceptionSecret9';
+        $file = tempnam(sys_get_temp_dir(), 'jv-cosmoshop-password-command-');
+        self::assertNotFalse($file);
+        file_put_contents($file, "source_customer_id;password_hash;salt\n71;SyntheticInput9;\n");
+        /** @var EntityRepository<CustomerCollection>&MockObject $repository */
+        $repository = $this->createMock(EntityRepository::class);
+        $repository->method('search')->willThrowException(new \RuntimeException($secret));
+        $logger = new class extends AbstractLogger {
+            /** @var list<array{level: mixed, message: string|\Stringable, context: array<mixed>}> */
+            public array $records = [];
+
+            public function log($level, string|\Stringable $message, array $context = []): void
+            {
+                $this->records[] = ['level' => $level, 'message' => $message, 'context' => $context];
+            }
+        };
+        $tester = null;
+
+        try {
+            $service = new ApplyCosmoShopCustomerPasswordsService(new CosmoShopCustomerPasswordCsvReader(), $repository);
+            $tester = new CommandTester(new ApplyCosmoShopCustomerPasswordsCommand($service, $logger, 'test'));
+
+            $this->expectException(\RuntimeException::class);
+            $tester->execute(['market' => Market::Germany->domain(), 'file' => $file]);
+        } finally {
+            self::assertSame([LogLevel::INFO, LogLevel::ERROR], array_column($logger->records, 'level'));
+            self::assertNotNull($tester);
+            self::assertStringNotContainsString($secret, $tester->getDisplay(true));
+            self::assertNotContains($secret, $this->scalarValues($logger->records));
+            unlink($file);
+        }
+    }
+
     public function testItDoesNotLogOrPrintCredentialMaterial(): void
     {
         $sourceCustomerId = 71;

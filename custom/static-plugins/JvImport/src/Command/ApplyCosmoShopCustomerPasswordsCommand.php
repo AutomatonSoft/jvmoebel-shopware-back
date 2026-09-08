@@ -5,6 +5,7 @@ namespace Jv\Import\Command;
 use Jv\Import\Service\CustomerImport\ApplyCosmoShopCustomerPasswordsService;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use Psr\Log\LoggerInterface;
+use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -50,7 +51,7 @@ final class ApplyCosmoShopCustomerPasswordsCommand extends Command
         $this->logger->info('CosmoShop customer password import started.', $logContext);
 
         try {
-            $result = $this->applyCustomerPasswords->execute($market, $file, $dryRun);
+            $result = $this->applyCustomerPasswords->execute($market, $file, $dryRun, Context::createCLIContext());
         } catch (\Throwable $exception) {
             $this->logger->error('CosmoShop customer password import failed.', [...$logContext, 'exceptionClass' => $exception::class]);
 
