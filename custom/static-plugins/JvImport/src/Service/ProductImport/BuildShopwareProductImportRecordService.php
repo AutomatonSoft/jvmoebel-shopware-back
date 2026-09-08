@@ -3,7 +3,6 @@
 namespace Jv\Import\Service\ProductImport;
 
 use Jv\Import\Integration\CosmoShop\CosmoShopManufacturerIdentity;
-use Jv\Import\Integration\CosmoShop\CosmoShopProductIdentity;
 use Jv\Import\Integration\CosmoShop\CosmoShopReferenceIdentity;
 use Jv\Import\Service\ProductImport\Dto\CosmoShopProductImportData;
 use Jv\Import\Service\ProductImport\Dto\ResolvedProductTax;
@@ -32,7 +31,7 @@ final class BuildShopwareProductImportRecordService
         string $marketCurrencyId,
     ): array {
         $record = $data->mappedRecord;
-        $id = $existingProductId ?? CosmoShopProductIdentity::fromProductNumber($data->productNumber);
+        $id = $existingProductId ?? ProductImportIdentity::fromProductNumber($data->productNumber);
         $record['id'] = $id;
         $record['active'] = 0 === (int) $data->sourceInactive;
         $record['ean'] = $data->ean;

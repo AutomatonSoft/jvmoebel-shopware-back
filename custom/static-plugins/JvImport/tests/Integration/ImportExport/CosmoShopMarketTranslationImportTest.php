@@ -4,7 +4,7 @@ namespace Jv\Import\Tests\Integration\ImportExport;
 
 require_once __DIR__.'/AbstractCosmoShopImportExportTestCase.php';
 
-use Jv\Import\Integration\CosmoShop\CosmoShopProductIdentity;
+use Jv\Import\Service\ProductImport\ProductImportIdentity;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use Shopware\Core\Content\ImportExport\Struct\Progress;
 use Shopware\Core\Content\Product\ProductCollection;
@@ -18,7 +18,7 @@ final class CosmoShopMarketTranslationImportTest extends AbstractCosmoShopImport
     public function testItUpdatesOneSharedProductAndAddsTheUnitedKingdomTranslation(): void
     {
         $context = Context::createDefaultContext();
-        $productId = CosmoShopProductIdentity::fromProductNumber('SHARED-987654');
+        $productId = ProductImportIdentity::fromProductNumber('SHARED-987654');
 
         try {
             $german = $this->import(
@@ -56,7 +56,7 @@ final class CosmoShopMarketTranslationImportTest extends AbstractCosmoShopImport
     public function testItKeepsDistinctGermanTranslationsForGermanyAndAustria(): void
     {
         $context = Context::createDefaultContext();
-        $productId = CosmoShopProductIdentity::fromProductNumber('DE-AT-TRANSLATIONS-001');
+        $productId = ProductImportIdentity::fromProductNumber('DE-AT-TRANSLATIONS-001');
 
         try {
             $this->import($this->configureMarketProfile(Market::Germany, $context), $this->csv(productNumber: 'DE-AT-TRANSLATIONS-001', name: 'Deutscher Name'));

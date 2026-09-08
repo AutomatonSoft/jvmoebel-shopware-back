@@ -4,7 +4,7 @@ namespace Jv\Import\Tests\Integration\ImportExport;
 
 require_once __DIR__.'/AbstractCosmoShopImportExportTestCase.php';
 
-use Jv\Import\Integration\CosmoShop\CosmoShopProductIdentity;
+use Jv\Import\Service\ProductImport\ProductImportIdentity;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use Shopware\Core\Content\ImportExport\Struct\Progress;
 use Shopware\Core\Content\Product\ProductCollection;
@@ -18,7 +18,7 @@ final class CosmoShopProductPriceImportTest extends AbstractCosmoShopImportExpor
     public function testItPreservesBritishPriceWhenEuroIsImportedAfterwards(): void
     {
         $context = Context::createDefaultContext();
-        $productId = CosmoShopProductIdentity::fromProductNumber('GBP-EUR-PRICES-001');
+        $productId = ProductImportIdentity::fromProductNumber('GBP-EUR-PRICES-001');
 
         try {
             $british = $this->import($this->configureMarketProfile(Market::UnitedKingdom, $context), $this->csv(productNumber: 'GBP-EUR-PRICES-001', priceGross: '149.00', urlKey: 'gbp-eur-prices-001'));
@@ -42,7 +42,7 @@ final class CosmoShopProductPriceImportTest extends AbstractCosmoShopImportExpor
     public function testItUpdatesOneCurrencyWithoutCreatingDuplicatesAndKeepsItsListPrice(): void
     {
         $context = Context::createDefaultContext();
-        $productId = CosmoShopProductIdentity::fromProductNumber('GBP-REPEAT-PRICE-001');
+        $productId = ProductImportIdentity::fromProductNumber('GBP-REPEAT-PRICE-001');
 
         try {
             $this->import($this->configureMarketProfile(Market::UnitedKingdom, $context), $this->csv(productNumber: 'GBP-REPEAT-PRICE-001', priceGross: '149.00', listPriceGross: '199.00', urlKey: 'gbp-repeat-price-001'));
