@@ -19,6 +19,9 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\System\SalesChannel\SalesChannelCollection;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
+use Symfony\Bundle\FrameworkBundle\Console\Application;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Tester\CommandTester;
 
 final class CosmoShopCustomerImportTest extends AbstractCosmoShopImportExportTestCase
 {
@@ -51,6 +54,7 @@ final class CosmoShopCustomerImportTest extends AbstractCosmoShopImportExportTes
 
             self::assertSame(Progress::STATE_SUCCEEDED, $first->getState(), $this->importResult($first));
             self::assertSame(Progress::STATE_SUCCEEDED, $second->getState(), $this->importResult($second));
+            $this->applyPasswordStage(Market::Germany, 42001);
 
             /** @var EntityRepository<CustomerCollection> $repository */
             $repository = static::getContainer()->get('customer.repository');
@@ -136,6 +140,26 @@ final class CosmoShopCustomerImportTest extends AbstractCosmoShopImportExportTes
             self::assertStringContainsString('jvmoebel.de-42003', $this->invalidRecordsCsv($progress));
         } finally {
             $this->deleteCustomers([$validId, $invalidId], $context);
+        }
+    }
+
+    private function applyPasswordStage(Market $market, int $sourceCustomerId): void
+    {
+        $path = tempnam(sys_get_temp_dir(), 'jv-cosmoshop-customer-passwords-');
+        self::assertNotFalse($path);
+        file_put_contents(
+            $path,
+            "source_customer_id;password_hash;salt\n{$sourceCustomerId};xx;xx\n",
+        );
+
+        try {
+            $command = (new Application(static::getKernel()))->find('jv:cosmoshop:apply-customer-passwords');
+            self::assertSame(Command::SUCCESS, (new CommandTester($command))->execute([
+                'market' => $market->domain(),
+                'file' => $path,
+            ]));
+        } finally {
+            unlink($path);
         }
     }
 
