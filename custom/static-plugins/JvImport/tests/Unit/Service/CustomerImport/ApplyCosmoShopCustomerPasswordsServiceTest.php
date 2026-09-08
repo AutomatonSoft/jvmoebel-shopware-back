@@ -18,6 +18,40 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 
 final class ApplyCosmoShopCustomerPasswordsServiceTest extends TestCase
 {
+    public function testItRejectsAPlaintextPasswordThatCannotBeHashed(): void
+    {
+        $market = Market::Germany;
+        $sourceCustomerId = 701;
+        $customerId = CosmoShopCustomerIdentity::customerId($market, $sourceCustomerId);
+        $file = tempnam(sys_get_temp_dir(), 'jv-cosmoshop-password-nul-');
+        self::assertNotFalse($file);
+        file_put_contents($file, "source_customer_id;password_hash;salt\n{$sourceCustomerId};invalid\0password;\n");
+        $customer = new CustomerEntity();
+        $customer->setId($customerId);
+        /** @var EntityRepository<CustomerCollection>&MockObject $repository */
+        $repository = $this->createMock(EntityRepository::class);
+        $repository->method('search')->willReturnCallback(
+            static fn (Criteria $criteria, Context $context): EntitySearchResult => new EntitySearchResult('customer', 1, new CustomerCollection([$customer]), null, $criteria, $context),
+        );
+        $updates = [];
+        $repository->method('update')->willReturnCallback(
+            static function (array $records, Context $context) use (&$updates): EntityWrittenContainerEvent {
+                $updates[] = $records;
+
+                return EntityWrittenContainerEvent::createWithWrittenEvents([], $context, []);
+            },
+        );
+
+        try {
+            $result = (new ApplyCosmoShopCustomerPasswordsService(new CosmoShopCustomerPasswordCsvReader(), $repository))->execute($market, $file, false, Context::createDefaultContext());
+
+            self::assertSame(1, $result->failed);
+            self::assertSame([['id' => $customerId, 'boundSalesChannelId' => $market->salesChannelId()]], $updates[0]);
+        } finally {
+            unlink($file);
+        }
+    }
+
     public function testItBatchesCredentialWritesAndDryRunDoesNotWrite(): void
     {
         $market = Market::Germany;

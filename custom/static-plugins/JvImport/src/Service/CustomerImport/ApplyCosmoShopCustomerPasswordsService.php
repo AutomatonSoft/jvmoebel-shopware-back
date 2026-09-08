@@ -188,9 +188,15 @@ final readonly class ApplyCosmoShopCustomerPasswordsService
             ];
         }
 
+        try {
+            $passwordHash = password_hash($record->password, \PASSWORD_DEFAULT);
+        } catch (\ValueError) {
+            return null;
+        }
+
         return [
             'kind' => 'rehash',
-            'payload' => ['id' => $customerId, 'boundSalesChannelId' => $market->salesChannelId(), 'password' => password_hash($record->password, \PASSWORD_DEFAULT), 'legacyPassword' => null, 'legacyEncoder' => null],
+            'payload' => ['id' => $customerId, 'boundSalesChannelId' => $market->salesChannelId(), 'password' => $passwordHash, 'legacyPassword' => null, 'legacyEncoder' => null],
         ];
     }
 }
