@@ -1,4 +1,4 @@
-# SPEC-013 — Storefront config (backend)
+# SPEC-014 — Storefront config (backend)
 
 ## Цель
 
