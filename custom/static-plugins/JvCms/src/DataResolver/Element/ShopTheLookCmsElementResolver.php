@@ -22,7 +22,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopware\Core\Framework\Uuid\Uuid;
 
 /**
- * Resolves `jv-shop-the-look` for Store API (platform SPEC-011 / backend SPEC-013).
+ * Resolves `jv-shop-the-look` for Store API (platform SPEC-011 / backend SPEC-014).
  *
  * Persisted config is untrusted. Invalid UUIDs never reach DAL, and incomplete
  * media, product or manual entries are omitted without breaking the CMS page.

@@ -1,4 +1,4 @@
-# SPEC-013 — CMS shop the look (backend)
+# SPEC-014 — CMS shop the look (backend)
 
 ## Цель
 
