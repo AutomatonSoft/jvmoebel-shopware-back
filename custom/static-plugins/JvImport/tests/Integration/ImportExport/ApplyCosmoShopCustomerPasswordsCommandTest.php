@@ -83,7 +83,7 @@ final class ApplyCosmoShopCustomerPasswordsCommandTest extends AbstractCosmoShop
         }
     }
 
-    public function testSourceEmptyPasswordSentinelInvalidatesPreviouslyAppliedCredentials(): void
+    public function testSourceEmptyPasswordSentinelClearsLegacyCredentialWhenCurrentPasswordIsAbsent(): void
     {
         $context = Context::createDefaultContext();
         $market = Market::Germany;
@@ -257,7 +257,7 @@ final class ApplyCosmoShopCustomerPasswordsCommandTest extends AbstractCosmoShop
         );
 
         $this->ensureMarketSalesChannel($market, $context);
-        $this->createCustomer($sourceCustomerId, $market, $context);
+        $this->createCustomer($sourceCustomerId, $market, $context, true);
 
         /** @var EntityRepository<CustomerCollection> $customerRepository */
         $customerRepository = static::getContainer()->get('customer.repository');
@@ -291,8 +291,12 @@ final class ApplyCosmoShopCustomerPasswordsCommandTest extends AbstractCosmoShop
         }
     }
 
-    private function createCustomer(int $sourceCustomerId, Market $market, Context $context): void
-    {
+    private function createCustomer(
+        int $sourceCustomerId,
+        Market $market,
+        Context $context,
+        bool $hasCurrentPassword = false,
+    ): void {
         $customerId = CosmoShopCustomerIdentity::customerId($market, $sourceCustomerId);
         $addressId = CosmoShopCustomerIdentity::billingAddressId($market, $sourceCustomerId);
 
@@ -321,7 +325,7 @@ final class ApplyCosmoShopCustomerPasswordsCommandTest extends AbstractCosmoShop
             'firstName' => 'Password',
             'lastName' => 'Import',
             'email' => 'password-import-'.$sourceCustomerId.'@example.test',
-            'password' => 'InitialPass9',
+            ...($hasCurrentPassword ? ['password' => 'InitialPass9'] : []),
             'active' => true,
             'guest' => false,
             'accountType' => 'personal',
