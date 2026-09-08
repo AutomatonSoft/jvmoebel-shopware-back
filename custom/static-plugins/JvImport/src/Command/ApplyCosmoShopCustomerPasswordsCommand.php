@@ -81,7 +81,7 @@ final class ApplyCosmoShopCustomerPasswordsCommand extends Command
                 }
 
                 if (str_starts_with($password, 's512##')) {
-                    if (!preg_match('/^s512##[A-Za-z0-9+\\/]{86}$/', $password) || 1 !== preg_match('/^[A-Za-z0-9]{32}$/', $salt)) {
+                    if (!preg_match('/^s512##[A-Za-z0-9+\\/]{86}$/', $password) || 1 !== preg_match('/^[A-Za-z0-9_-]{32}$/', $salt)) {
                         ++$counts['failed'];
                         continue;
                     }

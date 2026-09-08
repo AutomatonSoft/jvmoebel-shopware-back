@@ -15,7 +15,7 @@ final class CosmoShopS512LegacyEncoder implements LegacyEncoderInterface
 
     public function isPasswordValid(#[\SensitiveParameter] string $password, string $hash): bool
     {
-        if (1 !== preg_match('/^(s512##[A-Za-z0-9+\\/]{86}):([A-Za-z0-9]{32})$/', $hash, $matches)) {
+        if (1 !== preg_match('/^(s512##[A-Za-z0-9+\\/]{86}):([A-Za-z0-9_-]{32})$/', $hash, $matches)) {
             return false;
         }
 
