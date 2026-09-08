@@ -1,0 +1,20 @@
+{
+  "main.js": {
+    "file": "assets/jv-storefront-BlZbVpJK.js",
+    "name": "jv-storefront",
+    "src": "main.js",
+    "isEntry": true,
+    "dynamicImports": [
+      "module/jv-storefront-settings/page/jv-storefront-settings-index/index.js"
+    ]
+  },
+  "module/jv-storefront-settings/page/jv-storefront-settings-index/index.js": {
+    "file": "assets/index-DtCY5OR_.js",
+    "name": "index",
+    "src": "module/jv-storefront-settings/page/jv-storefront-settings-index/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CdHHr4HJ.css"
+    ]
+  }
+}

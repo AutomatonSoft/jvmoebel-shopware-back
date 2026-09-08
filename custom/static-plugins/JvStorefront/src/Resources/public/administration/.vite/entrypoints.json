@@ -1,0 +1,25 @@
+{
+  "base": "/bundles/jvstorefront/administration/",
+  "entryPoints": {
+    "jv-storefront": {
+      "css": [],
+      "dynamic": [
+        "/bundles/jvstorefront/administration/assets/index-DtCY5OR_.js"
+      ],
+      "js": [
+        "/bundles/jvstorefront/administration/assets/jv-storefront-BlZbVpJK.js"
+      ],
+      "legacy": false,
+      "preload": []
+    }
+  },
+  "legacy": false,
+  "metadatas": {},
+  "version": [
+    "7.1.0",
+    7,
+    1,
+    0
+  ],
+  "viteServer": null
+}
