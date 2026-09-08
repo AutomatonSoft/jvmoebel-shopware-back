@@ -191,8 +191,15 @@
         <service id="Jv\Import\Command\BootstrapCatalogProductImportProfileCommand">
             <argument type="service" id="import_export_profile.repository"/>
         </service>
-        <service id="Jv\Import\Command\ApplyCosmoShopCustomerPasswordsCommand">
+        <service id="Jv\Import\Integration\CosmoShop\Customer\CosmoShopCustomerPasswordCsvReader"/>
+        <service id="Jv\Import\Service\CustomerImport\ApplyCosmoShopCustomerPasswordsService">
+            <argument type="service" id="Jv\Import\Integration\CosmoShop\Customer\CosmoShopCustomerPasswordCsvReader"/>
             <argument type="service" id="customer.repository"/>
+        </service>
+        <service id="Jv\Import\Command\ApplyCosmoShopCustomerPasswordsCommand">
+            <argument type="service" id="Jv\Import\Service\CustomerImport\ApplyCosmoShopCustomerPasswordsService"/>
+            <argument type="service" id="logger"/>
+            <argument key="$environment">%kernel.environment%</argument>
         </service>
         <service id="Jv\Import\Command\BootstrapCosmoShopCustomerImportProfileCommand">
             <argument type="service" id="import_export_profile.repository"/>

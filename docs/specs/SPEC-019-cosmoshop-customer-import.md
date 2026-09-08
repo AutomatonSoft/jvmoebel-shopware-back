@@ -290,8 +290,22 @@ source_customer_id;password_hash;salt
 6. поддерживает безопасный повтор и удаление оператором входного файла после
    сверки.
 
+Повтор защищает более новое состояние Shopware: если после первого прохода
+появился current password, источник не возвращает legacy credential и не
+перезаписывает current password старым plaintext. Для reset sentinel stale
+legacy material очищается, но current password сохраняется. Точное уже
+сохранённое legacy payload считается no-op.
+
+Password post-import также устанавливает `boundSalesChannelId` каждого
+существующего однозначно идентифицируемого customer из CSV. Это выполняется
+пакетно и не зависит от валидности password material: malformed или duplicate
+строка получает итоговый failure, но не оставляет известного клиента без
+market binding.
+
 Команда выводит только агрегатные `processed`, `legacy`, `rehash`,
-`reset_required`, `missing_customer` и `failed` counts. Source customer ID,
+`reset_required`, `protected_current`, `missing_customer` и `failed` counts.
+`protected_current` означает, что команда сохранила более новый current
+credential и не является ошибкой. Source customer ID,
 password, salt и hash не включаются в console output или logger context.
 
 ## Newsletter CSV-контракт
