@@ -94,6 +94,8 @@ final class ApplyCosmoShopCustomerAddressesCommandTest extends AbstractCosmoShop
             [$sourceCustomerId, 92203, 'mr', '', 'Duplicate', 'One', '', 'Duplicate street 1', '10115', 'Berlin', 'DE', ''],
             [$sourceCustomerId, 92203, 'mr', '', 'Duplicate', 'Two', '', 'Duplicate street 2', '10115', 'Berlin', 'DE', ''],
             [$sourceCustomerId, 92204, 'mr', '', 'Unknown', 'Country', '', 'Unknown street 1', '10115', 'Berlin', 'ZZ', ''],
+            [$sourceCustomerId, 92205, 'mr', '', str_repeat('X', 256), 'TooLong', '', 'Long field street 1', '10115', 'Berlin', 'DE', ''],
+            ['not-an-id', 92206, 'mr', '', 'Malformed', 'Identity', '', 'Malformed street 1', '10115', 'Berlin', 'DE', ''],
         ]);
 
         $this->ensureMarketSalesChannel($market, $context);
@@ -114,10 +116,10 @@ final class ApplyCosmoShopCustomerAddressesCommandTest extends AbstractCosmoShop
             ]), $context)->first());
 
             $output = $tester->getDisplay(true);
-            self::assertStringContainsString('processed=5', $output);
+            self::assertStringContainsString('processed=7', $output);
             self::assertStringContainsString('missing_customer=1', $output);
-            self::assertStringContainsString('failed=3', $output);
-            foreach (['42102', '999999', '92203', 'Valid', 'Duplicate', 'Unknown street'] as $sensitiveValue) {
+            self::assertStringContainsString('failed=5', $output);
+            foreach (['42102', '999999', '92203', '92205', '92206', 'Valid', 'Duplicate', 'Unknown street', 'Long field', 'Malformed'] as $sensitiveValue) {
                 self::assertStringNotContainsString($sensitiveValue, $output);
             }
         } finally {

@@ -31,7 +31,8 @@ final class CosmoShopNewsletterRecipientRecordMapperTest extends TestCase
         yield 'active with zero confirmation date' => ['a', '0000-00-00 00:00:00', 'direct'];
         yield 'unsubscribed' => ['d', null, 'optOut'];
         yield 'pending/unknown consent' => ['p', null, 'notSet'];
-        yield 'unknown source state remains invalid for Shopware' => ['unexpected', null, 'unexpected'];
+        yield 'unknown source state becomes invalid for Shopware' => ['unexpected', null, 'invalid'];
+        yield 'unknown source state cannot masquerade as a Shopware state' => ['optIn', null, 'invalid'];
     }
 
     public function testItCreatesStableMarketScopedIdentityAndAnIndependentUnpredictableToken(): void

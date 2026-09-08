@@ -60,7 +60,7 @@ final class CosmoShopNewsletterRecipientImportTest extends AbstractCosmoShopImpo
 
             /** @var EntityRepository<NewsletterRecipientCollection> $repository */
             $repository = static::getContainer()->get('newsletter_recipient.repository');
-            $stored = $repository->search(new Criteria(array_values($ids)), $context);
+            $stored = $repository->search(new Criteria($ids), $context);
             self::assertCount(4, $stored);
 
             foreach ($recipients as $name => $expectedStatus) {
@@ -71,7 +71,7 @@ final class CosmoShopNewsletterRecipientImportTest extends AbstractCosmoShopImpo
                 self::assertSame(hash('sha256', $name), $recipient->getHash());
             }
 
-            self::assertSame(4, $repository->search(new Criteria(array_values($ids)), $context)->getTotal());
+            self::assertSame(4, $repository->search(new Criteria($ids), $context)->getTotal());
             self::assertSame([], $mailFlowEvents, 'A migration import must not trigger newsletter mail/Flow events.');
         } finally {
             foreach ([NewsletterRegisterEvent::class, NewsletterConfirmEvent::class, NewsletterUnsubscribeEvent::class] as $eventClass) {
@@ -79,7 +79,7 @@ final class CosmoShopNewsletterRecipientImportTest extends AbstractCosmoShopImpo
             }
             /** @var EntityRepository<NewsletterRecipientCollection> $repository */
             $repository = static::getContainer()->get('newsletter_recipient.repository');
-            $existingIds = $repository->searchIds(new Criteria(array_values($ids)), $context)->getIds();
+            $existingIds = $repository->searchIds(new Criteria($ids), $context)->getIds();
             if ([] !== $existingIds) {
                 $repository->delete(array_map(static fn (string $id): array => ['id' => $id], $existingIds), $context);
             }
