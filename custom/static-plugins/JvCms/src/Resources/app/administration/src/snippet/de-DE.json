@@ -336,6 +336,76 @@
             }
           }
         }
+      },
+      "jv-shop-the-look": {
+        "label": "Shop the Look",
+        "component": {
+          "titlePlaceholder": "Abschnittstitel",
+          "imagePlaceholder": "Raumbild auswählen",
+          "itemPlaceholder": "Element {index}",
+          "noItems": "Keine Look-Elemente konfiguriert"
+        },
+        "config": {
+          "title": {
+            "label": "Abschnittstitel",
+            "placeholder": "Diesen Look nach Hause holen."
+          },
+          "eyebrow": {
+            "label": "Eyebrow",
+            "placeholder": "Ein Raum, ein Look"
+          },
+          "description": {
+            "label": "Beschreibung",
+            "placeholder": "Entdecken Sie die Möbel dieses Raumes."
+          },
+          "imageMedia": {
+            "label": "Raumbild",
+            "caption": "Shop-the-Look-Bild hochladen"
+          },
+          "items": {
+            "title": "Look-Elemente",
+            "add": "Element hinzufügen",
+            "remove": "Entfernen",
+            "moveUp": "Nach oben",
+            "moveDown": "Nach unten",
+            "cardTitle": "Element {index}",
+            "manualHelpText": "Wird nur verwendet, wenn kein Shopware-Produkt ausgewählt ist.",
+            "productId": {
+              "label": "Produkt",
+              "placeholder": "Produkt auswählen oder manuelle Felder verwenden",
+              "helpText": "Ein ausgewähltes Produkt liefert Name und Sales-Channel-SEO-URL."
+            },
+            "name": {
+              "label": "Manueller Name",
+              "placeholder": "Alba Modulsofa"
+            },
+            "description": {
+              "label": "Beschreibung",
+              "placeholder": "Optionale redaktionelle Beschreibung"
+            },
+            "url": {
+              "label": "Manueller Link",
+              "placeholder": "/produkt/alba"
+            },
+            "hotspotX": {
+              "label": "Hotspot X (%)"
+            },
+            "hotspotY": {
+              "label": "Hotspot Y (%)"
+            }
+          },
+          "viewAll": {
+            "title": "Alle-anzeigen-Link",
+            "label": {
+              "label": "Label",
+              "placeholder": "Wohnzimmer entdecken"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/wohnzimmer"
+            }
+          }
+        }
       }
     },
     "blocks": {
@@ -365,6 +435,9 @@
       },
       "jv-product-grid": {
         "label": "Produkt-Grid"
+      },
+      "jv-shop-the-look": {
+        "label": "Shop the Look"
       }
     }
   },

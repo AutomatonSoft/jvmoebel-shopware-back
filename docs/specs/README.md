@@ -87,3 +87,4 @@ SPEC-NNN-short-name.md
 | [SPEC-010-cms-room-grid](SPEC-010-cms-room-grid.md) | Backend CMS element/block `jv-room-grid` (карточки комнат, featured layout); контракт — platform SPEC-008 |
 | [SPEC-011-cms-product-grid](SPEC-011-cms-product-grid.md) | Backend CMS element/block `jv-product-grid` (сетка товаров, цены sales channel); контракт — platform SPEC-009 |
 | [SPEC-012-okb-catalog-import](SPEC-012-okb-catalog-import.md) | Дерево OKB, schema attributes и EAN-обогащение CosmoShop товаров |
+| [SPEC-013-cms-shop-the-look](SPEC-013-cms-shop-the-look.md) | Backend CMS element/block `jv-shop-the-look` (интерьерное изображение, товары и hotspot-точки); контракт — platform SPEC-011 |

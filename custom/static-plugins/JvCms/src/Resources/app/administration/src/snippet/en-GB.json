@@ -336,6 +336,76 @@
             }
           }
         }
+      },
+      "jv-shop-the-look": {
+        "label": "Shop the look",
+        "component": {
+          "titlePlaceholder": "Section title",
+          "imagePlaceholder": "Select the room image",
+          "itemPlaceholder": "Item {index}",
+          "noItems": "No look items configured"
+        },
+        "config": {
+          "title": {
+            "label": "Section title",
+            "placeholder": "Bring this look home."
+          },
+          "eyebrow": {
+            "label": "Eyebrow",
+            "placeholder": "One room, one look"
+          },
+          "description": {
+            "label": "Description",
+            "placeholder": "Discover the furniture in this room."
+          },
+          "imageMedia": {
+            "label": "Room image",
+            "caption": "Upload the shop-the-look image"
+          },
+          "items": {
+            "title": "Look items",
+            "add": "Add item",
+            "remove": "Remove",
+            "moveUp": "Move up",
+            "moveDown": "Move down",
+            "cardTitle": "Item {index}",
+            "manualHelpText": "Used only when no Shopware product is selected.",
+            "productId": {
+              "label": "Product",
+              "placeholder": "Select product or use manual fields",
+              "helpText": "A selected product supplies its name and sales-channel SEO URL."
+            },
+            "name": {
+              "label": "Manual name",
+              "placeholder": "Alba modular sofa"
+            },
+            "description": {
+              "label": "Description",
+              "placeholder": "Optional editorial description"
+            },
+            "url": {
+              "label": "Manual link",
+              "placeholder": "/product/alba"
+            },
+            "hotspotX": {
+              "label": "Hotspot X (%)"
+            },
+            "hotspotY": {
+              "label": "Hotspot Y (%)"
+            }
+          },
+          "viewAll": {
+            "title": "View-all link",
+            "label": {
+              "label": "Label",
+              "placeholder": "Discover the living room"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/living-room"
+            }
+          }
+        }
       }
     },
     "blocks": {
@@ -365,6 +435,9 @@
       },
       "jv-product-grid": {
         "label": "Product grid"
+      },
+      "jv-shop-the-look": {
+        "label": "Shop the look"
       }
     }
   },

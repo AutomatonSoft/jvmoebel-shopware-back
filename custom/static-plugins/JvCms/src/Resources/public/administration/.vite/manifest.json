@@ -1,6 +1,6 @@
 {
   "main.js": {
-    "file": "assets/jv-cms-b3tdO6tx.js",
+    "file": "assets/jv-cms-DEthnl45.js",
     "name": "jv-cms",
     "src": "main.js",
     "isEntry": true,
@@ -43,7 +43,12 @@
       "module/sw-cms/elements/jv-product-grid/config/index.js",
       "module/sw-cms/elements/jv-product-grid/component/index.js",
       "module/sw-cms/blocks/jv-product-grid/jv-product-grid/preview/index.js",
-      "module/sw-cms/blocks/jv-product-grid/jv-product-grid/component/index.js"
+      "module/sw-cms/blocks/jv-product-grid/jv-product-grid/component/index.js",
+      "module/sw-cms/elements/jv-shop-the-look/preview/index.js",
+      "module/sw-cms/elements/jv-shop-the-look/config/index.js",
+      "module/sw-cms/elements/jv-shop-the-look/component/index.js",
+      "module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look/preview/index.js",
+      "module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look/component/index.js"
     ]
   },
   "module/sw-cms/blocks/jv-button/jv-button-link/component/index.js": {
@@ -170,6 +175,24 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-DhrCSTwN.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look/component/index.js": {
+    "file": "assets/index-Bp_ct0hx.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DCy-0fLO.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look/preview/index.js": {
+    "file": "assets/index-BIUFIdaS.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DRrl3i8L.css"
     ]
   },
   "module/sw-cms/blocks/jv-side-navigation/jv-side-navigation/component/index.js": {
@@ -344,6 +367,33 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-CL-CDUMe.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-shop-the-look/component/index.js": {
+    "file": "assets/index-CdXyNa_t.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-shop-the-look/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CoS6bh_Y.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-shop-the-look/config/index.js": {
+    "file": "assets/index-DC5WHeut.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-shop-the-look/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DntydX4r.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-shop-the-look/preview/index.js": {
+    "file": "assets/index-oVGmts59.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-shop-the-look/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DwPRe1bH.css"
     ]
   },
   "module/sw-cms/elements/jv-side-navigation/component/index.js": {

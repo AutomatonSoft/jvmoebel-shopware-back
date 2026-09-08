@@ -1,0 +1,40 @@
+.sw-cms-el-config-jv-shop-the-look {
+    &__section {
+        border-top: 1px solid #d1d9e0;
+        margin-top: 20px;
+        padding-top: 16px;
+    }
+
+    &__section-header,
+    &__card-header {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+
+    &__media-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    &__card {
+        border: 1px solid #d1d9e0;
+        border-radius: 6px;
+        margin-bottom: 12px;
+        padding: 12px;
+    }
+
+    &__card-actions {
+        display: flex;
+        gap: 6px;
+    }
+
+    &__coordinates {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
