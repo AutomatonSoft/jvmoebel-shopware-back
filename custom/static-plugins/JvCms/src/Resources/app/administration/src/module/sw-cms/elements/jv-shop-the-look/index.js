@@ -13,7 +13,13 @@ Shopware.Service('cmsService').registerCmsElement({
         title: { source: 'static', value: '' },
         eyebrow: { source: 'static', value: '' },
         description: { source: 'static', value: '' },
-        imageMedia: { source: 'static', value: null },
+        imageMedia: {
+            source: 'static',
+            value: null,
+            entity: {
+                name: 'media',
+            },
+        },
         items: { source: 'static', value: [] },
         viewAll: { source: 'static', value: { label: '', url: '' } },
     },

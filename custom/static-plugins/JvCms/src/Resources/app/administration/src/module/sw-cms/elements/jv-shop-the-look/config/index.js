@@ -35,8 +35,8 @@ export default {
         },
 
         imagePreviewSource() {
-            if (this.element?.data?.image?.id) {
-                return this.element.data.image;
+            if (this.element?.data?.imageMedia?.id) {
+                return this.element.data.imageMedia;
             }
 
             return this.element.config.imageMedia.value;
@@ -179,11 +179,11 @@ export default {
 
         updateImageElementData(media = null) {
             if (!this.element.data) {
-                this.element.data = { image: media };
+                this.element.data = { imageMedia: media };
                 return;
             }
 
-            this.element.data.image = media;
+            this.element.data.imageMedia = media;
         },
     },
 };
