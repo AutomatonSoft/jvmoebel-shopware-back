@@ -318,9 +318,54 @@ status;hash;sales_channel_id
 ```
 
 ID строится из market + нормализованного email. Source `datum_confirm`
-сохраняется только если профиль поддерживает `confirmedAt`; отсутствие mapping
-не блокирует перенос subscription status. `hash` создаётся как новый
-непредсказуемый import token и не переиспользует customer password/hash.
+не входит в штатный profile mapping Shopware 6.7.12.2, поэтому дата
+не подмешивается в CSV. Она однозначно участвует в mapping source status:
+
+- `a` с непустым `datum_confirm` → `optIn`;
+- `a` без `datum_confirm` → `direct`;
+- `d` → `optOut`;
+- `p` → `notSet`;
+- неизвестный source status не угадывается и должен стать invalid-record.
+
+`hash` создаётся как новый непредсказуемый import token и не переиспользует
+customer password/hash. Для повторяемости exporter вычисляет token через
+HMAC-SHA-256 от market и normalized email с отдельным секретом миграции
+минимум 32 bytes. Секрет не передаётся в аргументах процесса, не
+попадает в Git и не печатается. Повтор с тем же секретом даёт тот же CSV.
+
+## Additional-address CSV-контракт
+
+После основного customer import все 240 строк `shopkundenadressen`
+передаются в защищённый технический проход:
+
+```text
+source_customer_id;source_address_id;salutation;title;first_name;last_name;
+company;street;zipcode;city;country;phone_number
+```
+
+`jv:cosmoshop:apply-customer-addresses <market> <file> [--dry-run]` вычисляет
+customer/address UUID только из market и source IDs, разрешает country по
+ISO-2 и пакетно upsert-ит address через DAL. Первая `lief`-запись уже
+создана customer import как default shipping и здесь обновляется тем же
+ID; только четыре вторых address-записи создают новые entities. Default
+shipping reference при повторе не меняется.
+
+Пустой/нецелый source ID, повтор `source_address_id` внутри файла,
+отсутствующий target customer, неизвестная country и ошибка DAL считаются
+ошибкой строки, но не блокируют валидные строки. Команда возвращает
+failure при `missing_customer` или `failed` > 0 и печатает только
+агрегатные counts. Source IDs и PII не попадают в output и logs.
+
+## Внешний exporter
+
+Как и product exporter из SPEC-003, одноразовый CosmoShop DB exporter не
+входит в backend-репозиторий и не подключает legacy DB к runtime Shopware.
+Один immutable export run создаёт четыре раздельных файла: customer,
+additional-address, newsletter и password CSV. Файлы упорядочены по source
+ID/email, создаются в каталоге с правами `0700`, сами файлы — `0600`.
+Существующий export не перезаписывается без явного operator action. DB
+credential, HMAC key, password material и PII не печатаются; отчёт содержит
+только counts и checksums.
 
 ## Ошибки и отчёт
 
