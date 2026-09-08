@@ -24,6 +24,7 @@ use Shopware\Core\Content\Category\Service\NavigationLoaderInterface;
 use Shopware\Core\Content\Category\Tree\TreeItem;
 use Shopware\Core\Content\Media\MediaCollection;
 use Shopware\Core\Content\Media\MediaEntity;
+use Shopware\Core\Content\Seo\SeoUrlPlaceholderHandler;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -241,30 +242,20 @@ final class StorefrontConfigLoader
         if ($category instanceof SalesChannelCategoryEntity) {
             $seoUrl = $category->getSeoUrl();
             if (\is_string($seoUrl) && '' !== $seoUrl) {
-                return $this->safeRelativeOrAbsoluteHref($seoUrl);
+                if (str_contains($seoUrl, SeoUrlPlaceholderHandler::DOMAIN_PLACEHOLDER)) {
+                    return $seoUrl;
+                }
+
+                return $this->normalizer->safeHref($seoUrl);
             }
         }
 
         $externalLink = $category->getTranslation('externalLink') ?? $category->getExternalLink();
         if (\is_string($externalLink) && '' !== trim($externalLink)) {
-            return $this->safeRelativeOrAbsoluteHref(trim($externalLink));
+            return $this->normalizer->safeHref(trim($externalLink));
         }
 
         return null;
-    }
-
-    private function safeRelativeOrAbsoluteHref(string $href): ?string
-    {
-        $href = trim($href);
-        if ('' === $href) {
-            return null;
-        }
-
-        if (str_starts_with($href, '/') && !str_starts_with($href, '//')) {
-            return $href;
-        }
-
-        return $this->normalizer->safeSocialUrl($href);
     }
 
     /**

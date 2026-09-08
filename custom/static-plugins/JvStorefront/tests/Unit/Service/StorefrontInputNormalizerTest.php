@@ -15,6 +15,24 @@ final class StorefrontInputNormalizerTest extends TestCase
         $this->normalizer = new StorefrontInputNormalizer();
     }
 
+    #[DataProvider('hrefProvider')]
+    public function testSafeHref(?string $input, ?string $expected): void
+    {
+        self::assertSame($expected, $this->normalizer->safeHref($input));
+    }
+
+    /** @return iterable<string, array{0: ?string, 1: ?string}> */
+    public static function hrefProvider(): iterable
+    {
+        yield 'absolute path' => ['/privacy', '/privacy'];
+        yield 'shopware seo path' => ['Living-Room/', '/Living-Room/'];
+        yield 'shopware seo path with slash' => ['/Living-Room/', '/Living-Room/'];
+        yield 'reject protocol relative' => ['//Living-Room/', '/Living-Room/'];
+        yield 'external https' => ['https://example.com/page', 'https://example.com/page'];
+        yield 'reject javascript' => ['javascript:alert(1)', null];
+        yield 'reject empty' => ['', null];
+    }
+
     #[DataProvider('socialUrlProvider')]
     public function testSafeSocialUrl(?string $input, ?string $expected): void
     {

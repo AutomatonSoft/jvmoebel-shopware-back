@@ -84,6 +84,20 @@ final class StorefrontInputNormalizer
         return $url;
     }
 
+    public function safeHref(?string $href): ?string
+    {
+        $href = trim((string) $href);
+        if ('' === $href) {
+            return null;
+        }
+
+        if (str_contains($href, '://') || preg_match('#^[a-z][a-z0-9+.-]*:#i', $href)) {
+            return $this->safeSocialUrl($href);
+        }
+
+        return '/' . ltrim($href, '/');
+    }
+
     public function safeEmail(?string $email): ?string
     {
         $email = trim((string) $email);
