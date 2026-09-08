@@ -51,14 +51,26 @@
         background: #fff;
         border: 2px solid #189eff;
         border-radius: 50%;
+        cursor: grab;
         display: flex;
         font-size: 10px;
         font-weight: 600;
         height: 24px;
         justify-content: center;
         position: absolute;
+        touch-action: none;
         transform: translate(-50%, -50%);
+        user-select: none;
         width: 24px;
+
+        &.is--dragging {
+            cursor: grabbing;
+            z-index: 1;
+        }
+
+        &.is--disabled {
+            cursor: default;
+        }
     }
 
     &__items {

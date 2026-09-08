@@ -7,6 +7,7 @@
 
 		<div class="sw-cms-el-jv-shop-the-look__content">
 			<div
+				ref="image"
 				class="sw-cms-el-jv-shop-the-look__image"
 				:class="{ 'sw-cms-el-jv-shop-the-look__image--empty': !imageUrl }"
 				:style="imageUrl ? { backgroundImage: `url(${imageUrl})` } : {}"
@@ -18,7 +19,14 @@
 					v-for="(item, itemIndex) in items"
 					:key="item.id || itemIndex"
 					class="sw-cms-el-jv-shop-the-look__hotspot"
+					:class="{ 'is--dragging': isHotspotDragging(item), 'is--disabled': disabled }"
 					:style="hotspotStyle(item)"
+					@click.stop.prevent
+					@pointerdown="onHotspotPointerDown($event, item)"
+					@pointermove="onHotspotPointerMove"
+					@pointerup="onHotspotPointerUp"
+					@pointercancel="onHotspotPointerCancel"
+					@lostpointercapture="onHotspotPointerCaptureLost"
 				>
 					{{ itemIndex + 1 }}
 				</span>

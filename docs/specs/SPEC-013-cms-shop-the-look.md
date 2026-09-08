@@ -17,6 +17,7 @@
 - element + block `jv-shop-the-look`, палитра `commerce`;
 - `ShopTheLookCmsElementResolver` и typed structs;
 - `collect()` для main media и product UUID;
+- визуальное перемещение hotspot-точек в Administration canvas с обновлением координат;
 - unit/integration-тесты;
 - Administration source, snippets и production assets.
 
@@ -27,14 +28,14 @@
 - собственный Store API route;
 - отдельная DAL entity или migration;
 - цены и карточечные изображения товаров;
-- визуальный drag-and-drop picker координат.
+- изменение координат hotspot на публичной витрине.
 
 ## Сценарий
 
 1. Редактор открывает Shopping Experiences → Blocks → **Commerce**.
 2. Добавляет block **Shop the look**.
 3. Задаёт `title`, опциональные `eyebrow` / `description`, выбирает main image.
-4. Добавляет items: выбирает Shopware product либо вводит ручные `name` / `url`, задаёт описание и координаты `hotspot.x/y`.
+4. Добавляет items: выбирает Shopware product либо вводит ручные `name` / `url`, задаёт описание и координаты `hotspot.x/y` вручную или перемещением hotspot-точки на CMS canvas.
 5. Опционально задаёт `viewAll`.
 6. Store API отдаёт `type: jv-shop-the-look` и нормализованный `data` по platform SPEC-011.
 7. Next.js читает только `slot.data`.
@@ -76,6 +77,8 @@ Root всегда содержит `apiAlias`, `title`, `eyebrow`, `description`
 - `image`: отсутствующий entity или пустой URL → null; alt берётся из translated media alt, затем file name.
 - `items`: list/keyed object; non-array entries skip; сортировка по finite `position`, tie-break original index.
 - `hotspot.x/y`: только finite int/float в диапазоне 0..100 включительно; иначе item skip.
+- Administration canvas поддерживает перемещение hotspot мышью, touch и pen; вычисленные координаты ограничиваются диапазоном 0..100 и округляются до одного знака после запятой.
+- Перемещение hotspot обновляет `hotspot.x/y` того же item, поэтому числовые поля конфигурации показывают новые координаты.
 - Непустой `productId` задаёт product mode. Invalid/missing/not-in-channel product или пустое translated name → item skip.
 - В product mode `id` = product UUID, `name` берётся из resolved product, а `url` всегда равен `/produkt/{productId}`; CMS `description` override имеет приоритет над translated product description.
 - Пустой `productId` задаёт manual mode: требуются trim `name` и safe `url`; `id` = trim config id либо `${name}-${originalIndex}`.
@@ -145,6 +148,7 @@ module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look/
 - block виден в Commerce;
 - main media upload/remove/select;
 - add/remove items, product/manual fields и координаты;
+- drag hotspot мышью и touch, синхронизация координат с числовыми полями, границы 0/100;
 - save/reload;
 - Store API возвращает frontend contract.
 
