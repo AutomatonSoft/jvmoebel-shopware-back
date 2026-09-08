@@ -17,6 +17,7 @@ use Jv\Storefront\StoreApi\Struct\StorefrontMediaStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontNavigationItemStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontPaymentBadgeStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontSocialLinkStruct;
+use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\Category\CategoryEntity;
 use Shopware\Core\Content\Category\Exception\CategoryNotFoundException;
 use Shopware\Core\Content\Category\SalesChannel\SalesChannelCategoryEntity;
@@ -36,7 +37,8 @@ use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 final class StorefrontConfigLoader
 {
     private const int HEADER_NAVIGATION_DEPTH = 1;
-    private const int FOOTER_NAVIGATION_DEPTH = 2;
+    private const int FOOTER_CATEGORY_NAVIGATION_DEPTH = 2;
+    private const int FOOTER_SERVICE_NAVIGATION_DEPTH = 1;
 
     /**
      * @param EntityRepository<StorefrontSocialLinkCollection>   $socialLinkRepository
@@ -68,8 +70,8 @@ final class StorefrontConfigLoader
                 about: $this->loadAbout($customFields),
                 revocation: $this->loadRevocation($customFields),
                 copyrightText: $this->normalizer->optionalString($customFields['jv_footer_copyright_text'] ?? null),
-                categoryNavigation: $this->loadNavigation($salesChannel->getFooterCategoryId(), self::FOOTER_NAVIGATION_DEPTH, $context),
-                serviceNavigation: $this->loadNavigation($salesChannel->getServiceCategoryId(), self::FOOTER_NAVIGATION_DEPTH, $context),
+                categoryNavigation: $this->loadNavigation($salesChannel->getFooterCategoryId(), self::FOOTER_CATEGORY_NAVIGATION_DEPTH, $context),
+                serviceNavigation: $this->loadNavigation($salesChannel->getServiceCategoryId(), self::FOOTER_SERVICE_NAVIGATION_DEPTH, $context),
                 socialLinks: $this->loadSocialLinks($salesChannel->getId(), $context),
                 paymentBadges: $this->loadPaymentBadges($salesChannel->getId(), $context),
             ),
@@ -239,6 +241,18 @@ final class StorefrontConfigLoader
 
     private function categoryHref(CategoryEntity $category): ?string
     {
+        if (CategoryDefinition::TYPE_LINK === $category->getType()) {
+            $linkType = $category->getTranslation('linkType') ?? $category->getLinkType();
+            if (CategoryDefinition::LINK_TYPE_EXTERNAL === $linkType) {
+                $externalLink = $category->getTranslation('externalLink') ?? $category->getExternalLink();
+                if (\is_string($externalLink) && '' !== trim($externalLink)) {
+                    return $this->normalizer->safeHref(trim($externalLink));
+                }
+
+                return null;
+            }
+        }
+
         if ($category instanceof SalesChannelCategoryEntity) {
             $seoUrl = $category->getSeoUrl();
             if (\is_string($seoUrl) && '' !== $seoUrl) {
@@ -255,7 +269,11 @@ final class StorefrontConfigLoader
             return $this->normalizer->safeHref(trim($externalLink));
         }
 
-        return null;
+        if (CategoryDefinition::TYPE_FOLDER === $category->getType()) {
+            return null;
+        }
+
+        return $this->normalizer->safeHref('/navigation/'.$category->getId());
     }
 
     /**

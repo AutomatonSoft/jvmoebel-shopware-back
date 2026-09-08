@@ -13,6 +13,7 @@ use Jv\Storefront\StoreApi\Struct\StorefrontMediaStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontPaymentBadgeStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontSocialLinkStruct;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Content\Category\CategoryCollection;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Api\Context\SystemSource;
 use Shopware\Core\Framework\Context;
@@ -134,6 +135,52 @@ final class StorefrontConfigStoreApiTest extends TestCase
         self::assertSame('jv_storefront_footer_payment_badge', $payload['footer']['paymentBadges'][0]['apiAlias'] ?? null);
         self::assertSame('PayPal', $payload['footer']['paymentBadges'][0]['label'] ?? null);
         self::assertIsArray($payload['footer']['paymentBadges'][0]['icon'] ?? null);
+    }
+
+    public function testServiceNavigationReturnsChildrenOfServiceCategory(): void
+    {
+        $serviceRootId = Uuid::randomHex();
+        $serviceChildId = Uuid::randomHex();
+
+        /** @var EntityRepository<CategoryCollection> $categoryRepository */
+        $categoryRepository = static::getContainer()->get('category.repository');
+        $categoryRepository->create([
+            [
+                'id' => $serviceRootId,
+                'parentId' => $this->getValidCategoryId(),
+                'active' => true,
+                'visible' => true,
+                'type' => 'folder',
+                'name' => 'Service navigation root',
+            ],
+            [
+                'id' => $serviceChildId,
+                'parentId' => $serviceRootId,
+                'active' => true,
+                'visible' => true,
+                'type' => 'link',
+                'name' => 'Privacy policy',
+                'linkType' => 'external',
+                'externalLink' => 'https://example.com/privacy',
+            ],
+        ], Context::createDefaultContext());
+
+        $browser = $this->createCustomSalesChannelBrowser([
+            'serviceCategoryId' => $serviceRootId,
+        ]);
+
+        $browser->request('GET', '/store-api/storefront-config');
+
+        self::assertSame(200, $browser->getResponse()->getStatusCode());
+
+        /** @var array<string, mixed> $payload */
+        $payload = json_decode((string) $browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertCount(1, $payload['footer']['serviceNavigation'] ?? []);
+        self::assertSame($serviceChildId, $payload['footer']['serviceNavigation'][0]['id'] ?? null);
+        self::assertSame('Privacy policy', $payload['footer']['serviceNavigation'][0]['label'] ?? null);
+        self::assertSame('https://example.com/privacy', $payload['footer']['serviceNavigation'][0]['href'] ?? null);
+        self::assertSame([], $payload['footer']['serviceNavigation'][0]['children'] ?? null);
     }
 
     public function testCustomFieldsUseSalesChannelDefaultLanguageWhenRequestLanguageDiffers(): void

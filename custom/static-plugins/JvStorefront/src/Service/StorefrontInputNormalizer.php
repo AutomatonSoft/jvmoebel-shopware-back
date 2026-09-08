@@ -95,7 +95,7 @@ final class StorefrontInputNormalizer
             return $this->safeSocialUrl($href);
         }
 
-        return '/' . ltrim($href, '/');
+        return '/'.ltrim($href, '/');
     }
 
     public function safeEmail(?string $email): ?string

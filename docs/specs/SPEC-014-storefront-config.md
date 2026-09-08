@@ -32,11 +32,14 @@ CMS element `jv-footer` **не** реализуется.
 
 ## Сценарий
 
-1. Редактор открывает **Storefront settings** для sales channel.
+1. Редактор открывает **Settings** → **Storefront settings**, выбирает sales channels.
 2. Редактирует about / copyright / revocation.
-3. Добавляет social link: label, URL, icon media, position.
-4. Добавляет payment badge: label, icon media, position.
-5. Category/service links настраивает в Katalog → Kategorien (navigation).
+3. Редактирует social link: label, URL, icon media, position.
+4. Редактирует payment badge: label, icon media, position.
+5. В боковом меню выбирает **Sales cnahhels** → **General**:
+ - Entry point main navigation;
+ - Entry point footer navigation;
+ - Entry point footer service navigation; Редактор выбирает root, но отображаются дочерние элементы, а не сам root.
 6. Store API `GET /store-api/storefront-config` отдаёт агрегированный JSON.
 7. Next.js рендерит header/footer без mock fixtures.
 
