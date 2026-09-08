@@ -83,7 +83,7 @@ final class ApplyCosmoShopCustomerPasswordsCommandTest extends AbstractCosmoShop
         }
     }
 
-    public function testSourceEmptyPasswordSentinelRequiresResetAndIsNeverApplied(): void
+    public function testSourceEmptyPasswordSentinelInvalidatesPreviouslyAppliedCredentials(): void
     {
         $context = Context::createDefaultContext();
         $market = Market::Germany;
@@ -103,10 +103,11 @@ final class ApplyCosmoShopCustomerPasswordsCommandTest extends AbstractCosmoShop
         $customerRepository = static::getContainer()->get('customer.repository');
 
         try {
-            $customerBefore = $customerRepository->search(new Criteria([$customerId]), $context)->first();
-            self::assertInstanceOf(CustomerEntity::class, $customerBefore);
-            $passwordBefore = $customerBefore->getPassword();
-            self::assertNotNull($passwordBefore);
+            $customerRepository->update([[
+                'id' => $customerId,
+                'legacyPassword' => self::TEST_SOURCE_HASH.':'.self::TEST_SALT,
+                'legacyEncoder' => 'CosmoShopS512',
+            ]], $context);
 
             $command = (new Application(static::getKernel()))->find('jv:cosmoshop:apply-customer-passwords');
             $tester = new CommandTester($command);
@@ -124,7 +125,7 @@ final class ApplyCosmoShopCustomerPasswordsCommandTest extends AbstractCosmoShop
 
             $customerAfter = $customerRepository->search(new Criteria([$customerId]), $context)->first();
             self::assertInstanceOf(CustomerEntity::class, $customerAfter);
-            self::assertSame($passwordBefore, $customerAfter->getPassword());
+            self::assertNull($customerAfter->getPassword());
             self::assertNull($customerAfter->getLegacyPassword());
             self::assertNull($customerAfter->getLegacyEncoder());
         } finally {
@@ -178,6 +179,110 @@ final class ApplyCosmoShopCustomerPasswordsCommandTest extends AbstractCosmoShop
             self::assertTrue(password_verify($sourcePassword, $customer->getPassword()));
             self::assertNull($customer->getLegacyPassword());
             self::assertNull($customer->getLegacyEncoder());
+        } finally {
+            if (null !== $customerRepository->searchIds(new Criteria([$customerId]), $context)->firstId()) {
+                $customerRepository->delete([['id' => $customerId]], $context);
+            }
+            unlink($path);
+        }
+    }
+
+    public function testRejectedAndMissingRowsMakeTheCommandFailWithoutBlockingValidRows(): void
+    {
+        $context = Context::createDefaultContext();
+        $market = Market::Germany;
+        $sourceCustomerId = 42995;
+        $customerId = CosmoShopCustomerIdentity::customerId($market, $sourceCustomerId);
+        $missingSourceCustomerId = 999999;
+        $path = tempnam(sys_get_temp_dir(), 'jv-cosmoshop-customer-passwords-');
+        self::assertNotFalse($path);
+        file_put_contents(
+            $path,
+            "source_customer_id;password_hash;salt\n"
+            .$sourceCustomerId.';'.self::TEST_SOURCE_HASH.';'.self::TEST_SALT."\n"
+            .$missingSourceCustomerId.';'.self::TEST_SOURCE_HASH.';'.self::TEST_SALT."\n"
+            ."invalid-id;malformed;payload\n",
+        );
+
+        $this->ensureMarketSalesChannel($market, $context);
+        $this->createCustomer($sourceCustomerId, $market, $context);
+
+        /** @var EntityRepository<CustomerCollection> $customerRepository */
+        $customerRepository = static::getContainer()->get('customer.repository');
+
+        try {
+            $command = (new Application(static::getKernel()))->find('jv:cosmoshop:apply-customer-passwords');
+            $tester = new CommandTester($command);
+
+            self::assertSame(Command::FAILURE, $tester->execute([
+                'market' => $market->domain(),
+                'file' => $path,
+            ]));
+
+            $output = $tester->getDisplay(true);
+            self::assertStringContainsString('processed=3', $output);
+            self::assertStringContainsString('legacy=1', $output);
+            self::assertStringContainsString('missing_customer=1', $output);
+            self::assertStringContainsString('failed=1', $output);
+            self::assertStringNotContainsString((string) $sourceCustomerId, $output);
+            self::assertStringNotContainsString((string) $missingSourceCustomerId, $output);
+            self::assertStringNotContainsString(self::TEST_SOURCE_HASH, $output);
+            self::assertStringNotContainsString(self::TEST_SALT, $output);
+
+            $customer = $customerRepository->search(new Criteria([$customerId]), $context)->first();
+            self::assertInstanceOf(CustomerEntity::class, $customer);
+            self::assertSame(self::TEST_SOURCE_HASH.':'.self::TEST_SALT, $customer->getLegacyPassword());
+            self::assertSame('CosmoShopS512', $customer->getLegacyEncoder());
+        } finally {
+            if (null !== $customerRepository->searchIds(new Criteria([$customerId]), $context)->firstId()) {
+                $customerRepository->delete([['id' => $customerId]], $context);
+            }
+            unlink($path);
+        }
+    }
+
+    public function testDuplicateCustomerRowsAreRejectedWithoutChangingCredentials(): void
+    {
+        $context = Context::createDefaultContext();
+        $market = Market::Germany;
+        $sourceCustomerId = 42994;
+        $customerId = CosmoShopCustomerIdentity::customerId($market, $sourceCustomerId);
+        $path = tempnam(sys_get_temp_dir(), 'jv-cosmoshop-customer-passwords-');
+        self::assertNotFalse($path);
+        file_put_contents(
+            $path,
+            "source_customer_id;password_hash;salt\n"
+            .$sourceCustomerId.";FirstPassword9;\n"
+            .$sourceCustomerId.";SecondPassword9;\n",
+        );
+
+        $this->ensureMarketSalesChannel($market, $context);
+        $this->createCustomer($sourceCustomerId, $market, $context);
+
+        /** @var EntityRepository<CustomerCollection> $customerRepository */
+        $customerRepository = static::getContainer()->get('customer.repository');
+
+        try {
+            $command = (new Application(static::getKernel()))->find('jv:cosmoshop:apply-customer-passwords');
+            $tester = new CommandTester($command);
+
+            self::assertSame(Command::FAILURE, $tester->execute([
+                'market' => $market->domain(),
+                'file' => $path,
+            ]));
+
+            $output = $tester->getDisplay(true);
+            self::assertStringContainsString('processed=2', $output);
+            self::assertStringContainsString('rehash=0', $output);
+            self::assertStringContainsString('failed=2', $output);
+            self::assertStringNotContainsString('FirstPassword9', $output);
+            self::assertStringNotContainsString('SecondPassword9', $output);
+            self::assertStringNotContainsString((string) $sourceCustomerId, $output);
+
+            $customer = $customerRepository->search(new Criteria([$customerId]), $context)->first();
+            self::assertInstanceOf(CustomerEntity::class, $customer);
+            self::assertNotNull($customer->getPassword());
+            self::assertTrue(password_verify('InitialPass9', $customer->getPassword()));
         } finally {
             if (null !== $customerRepository->searchIds(new Criteria([$customerId]), $context)->firstId()) {
                 $customerRepository->delete([['id' => $customerId]], $context);
