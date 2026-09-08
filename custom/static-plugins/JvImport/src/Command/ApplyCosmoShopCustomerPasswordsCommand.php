@@ -122,7 +122,6 @@ final class ApplyCosmoShopCustomerPasswordsCommand extends Command
 
     private function isResetRequired(string $password, string $salt): bool
     {
-        return ('xx' === mb_strtolower($password) && 'xx' === mb_strtolower($salt))
-            || ('' === $salt && in_array(mb_strtolower($password), ['empty', 'empty-password', 'password-empty', 'no-password'], true));
+        return 'xx' === $password && 'xx' === $salt;
     }
 }
