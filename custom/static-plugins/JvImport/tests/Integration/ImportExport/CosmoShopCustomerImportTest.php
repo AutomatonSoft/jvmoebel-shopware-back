@@ -64,6 +64,7 @@ final class CosmoShopCustomerImportTest extends AbstractCosmoShopImportExportTes
             self::assertInstanceOf(CustomerEntity::class, $customer);
             self::assertSame('jvmoebel.de-42001', $customer->getCustomerNumber());
             self::assertSame('customer-42001@example.test', $customer->getEmail());
+            self::assertSame(Market::Germany->salesChannelId(), $customer->getBoundSalesChannelId());
             self::assertSame('Updated', $customer->getLastName());
             self::assertTrue($customer->getActive());
             self::assertFalse($customer->getGuest());
