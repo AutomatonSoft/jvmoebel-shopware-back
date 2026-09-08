@@ -105,7 +105,7 @@ final class ApplyCosmoShopCustomerPasswordsCommand extends Command
                 if (!$dryRun) {
                     $this->customerRepository->update([[
                         'id' => $customerId,
-                        'password' => $password,
+                        'password' => password_hash($password, \PASSWORD_DEFAULT),
                         'legacyPassword' => null,
                         'legacyEncoder' => null,
                     ]], $context);
@@ -122,6 +122,7 @@ final class ApplyCosmoShopCustomerPasswordsCommand extends Command
 
     private function isResetRequired(string $password, string $salt): bool
     {
-        return '' === $salt && in_array(mb_strtolower($password), ['empty', 'empty-password', 'password-empty', 'no-password'], true);
+        return ('xx' === mb_strtolower($password) && 'xx' === mb_strtolower($salt))
+            || ('' === $salt && in_array(mb_strtolower($password), ['empty', 'empty-password', 'password-empty', 'no-password'], true));
     }
 }
