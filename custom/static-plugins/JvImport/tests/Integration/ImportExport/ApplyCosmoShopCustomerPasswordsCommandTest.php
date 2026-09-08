@@ -21,9 +21,9 @@ use Symfony\Component\Console\Tester\CommandTester;
 
 final class ApplyCosmoShopCustomerPasswordsCommandTest extends AbstractCosmoShopImportExportTestCase
 {
-    private const string TEST_SALT = '0123456789abcdefghijklmnopqrstuv';
+    private const string TEST_SALT = '0123456789abcdefghijklmnopqrst-_';
 
-    private const string TEST_SOURCE_HASH = 's512##5KYTzUCQXwRYpvOFJ3672U58CaBRkMtr4pyMh1mHTMNlegrAR503ZwK7m5A8TKFrGMQpQSjuHj9hMFDl6lAg8g';
+    private const string TEST_SOURCE_HASH = 's512##BRpXFjGlAzWDj9hP1sMBInj7pSr8AnC2POeJBU8tG36dXmTXJvPEyWYfKgzhByml5+Rkcilpk/rK3inzRw7T9A';
 
     public function testDryRunAndRepeatedApplyAreSafeAndNeverPrintPasswordMaterial(): void
     {

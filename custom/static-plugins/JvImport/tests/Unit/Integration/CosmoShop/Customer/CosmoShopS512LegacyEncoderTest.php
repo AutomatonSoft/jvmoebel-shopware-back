@@ -35,6 +35,14 @@ final class CosmoShopS512LegacyEncoderTest extends TestCase
         self::assertFalse((new CosmoShopS512LegacyEncoder())->isPasswordValid(self::TEST_PASSWORD, $payload));
     }
 
+    public function testItAcceptsTheCompleteCosmoShopSaltAlphabet(): void
+    {
+        self::assertTrue((new CosmoShopS512LegacyEncoder())->isPasswordValid(
+            self::TEST_PASSWORD,
+            's512##BRpXFjGlAzWDj9hP1sMBInj7pSr8AnC2POeJBU8tG36dXmTXJvPEyWYfKgzhByml5+Rkcilpk/rK3inzRw7T9A:0123456789abcdefghijklmnopqrst-_',
+        ));
+    }
+
     /** @return iterable<string, array{string}> */
     public static function malformedPayloads(): iterable
     {
