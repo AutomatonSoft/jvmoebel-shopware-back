@@ -64,7 +64,7 @@ final class ApplyCosmoShopCustomerWishlistsServiceTest extends TestCase
         $wishlistRepository = $this->createMock(EntityRepository::class);
         $wishlistLookups = [];
         $wishlistWrites = [];
-        $wishlistRepository->expects(self::exactly(4))->method('search')->willReturnCallback(function (Criteria $criteria, Context $context) use (&$wishlistLookups): EntitySearchResult {
+        $wishlistRepository->expects(self::exactly(2))->method('search')->willReturnCallback(function (Criteria $criteria, Context $context) use (&$wishlistLookups): EntitySearchResult {
             $filter = $criteria->getFilters()[0] ?? null;
             if (!$filter instanceof EqualsAnyFilter) {
                 throw new \LogicException('Expected customer wishlist lookup filter.');
@@ -107,7 +107,7 @@ final class ApplyCosmoShopCustomerWishlistsServiceTest extends TestCase
             foreach ([$customerLookups, $productLookups, $relationLookups, $wishlistWrites, $relationWrites] as $sizes) {
                 self::assertSame([250, 1], $sizes);
             }
-            self::assertSame([250, 1, 250, 1], $wishlistLookups);
+            self::assertSame([250, 1], $wishlistLookups);
         } finally {
             unlink($file);
         }
@@ -204,11 +204,6 @@ final class ApplyCosmoShopCustomerWishlistsServiceTest extends TestCase
             $product->setId(ProductImportIdentity::fromProductNumber($number));
             $products[] = $product;
         }
-        $persisted = new CustomerWishlistEntity();
-        $persisted->setId(Uuid::randomHex());
-        $persisted->setCustomerId($customers[0]->getId());
-        $persisted->setSalesChannelId($market->salesChannelId());
-
         /** @var EntityRepository<CustomerCollection>&MockObject $customerRepository */
         $customerRepository = $this->createMock(EntityRepository::class);
         $customerRepository->method('search')->willReturnCallback(fn (Criteria $criteria, Context $context): EntitySearchResult => $this->searchResult('customer', new CustomerCollection($customers), $criteria, $context));
@@ -217,12 +212,7 @@ final class ApplyCosmoShopCustomerWishlistsServiceTest extends TestCase
         $productRepository->method('search')->willReturnCallback(fn (Criteria $criteria, Context $context): EntitySearchResult => $this->searchResult('product', new ProductCollection($products), $criteria, $context));
         /** @var EntityRepository<CustomerWishlistCollection>&MockObject $wishlistRepository */
         $wishlistRepository = $this->createMock(EntityRepository::class);
-        $wishlistSearches = 0;
-        $wishlistRepository->method('search')->willReturnCallback(function (Criteria $criteria, Context $context) use (&$wishlistSearches, $persisted): EntitySearchResult {
-            ++$wishlistSearches;
-
-            return $this->searchResult('customer_wishlist', new CustomerWishlistCollection(1 === $wishlistSearches ? [] : [$persisted]), $criteria, $context);
-        });
+        $wishlistRepository->method('search')->willReturnCallback(fn (Criteria $criteria, Context $context): EntitySearchResult => $this->searchResult('customer_wishlist', new CustomerWishlistCollection(), $criteria, $context));
         $wishlistWrites = 0;
         $wishlistRepository->expects(self::exactly(3))->method('upsert')->willReturnCallback(static function (array $records, Context $context) use (&$wishlistWrites): EntityWrittenContainerEvent {
             ++$wishlistWrites;

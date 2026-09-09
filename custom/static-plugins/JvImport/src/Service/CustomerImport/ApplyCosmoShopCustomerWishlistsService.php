@@ -126,12 +126,13 @@ final readonly class ApplyCosmoShopCustomerWishlistsService
         $written = 0;
         $exceptionClasses = [];
         if (!$dryRun) {
-            [, $wishlistFailures, $wishlistClasses] = $this->write($this->wishlistRepository, $wishlistPayloads, $context);
+            [, $wishlistFailures, $wishlistClasses, $writtenWishlistIds] = $this->write($this->wishlistRepository, $wishlistPayloads, $context);
             if ([] !== $wishlistPayloads) {
-                $persistedWishlists = $this->wishlists($market, array_column($ready, 'customerId'), $context);
+                $newWishlistIds = array_fill_keys(array_column($wishlistPayloads, 'id'), true);
+                $writtenWishlistIds = array_fill_keys($writtenWishlistIds, true);
                 $relationPayloads = array_values(array_filter(
                     $relationPayloads,
-                    static fn (array $payload): bool => in_array($payload['wishlistId'], $persistedWishlists, true),
+                    static fn (array $payload): bool => !isset($newWishlistIds[$payload['wishlistId']]) || isset($writtenWishlistIds[$payload['wishlistId']]),
                 ));
             }
             [$written, $relationFailures, $relationClasses] = $this->write($this->wishlistProductRepository, $relationPayloads, $context);
@@ -220,21 +221,23 @@ final readonly class ApplyCosmoShopCustomerWishlistsService
      * @param EntityRepository<TCollection> $repository
      * @param list<array<string, string>>   $payloads
      *
-     * @return array{int, int, list<class-string<\Throwable>>}
+     * @return array{int, int, list<class-string<\Throwable>>, list<string>}
      */
     private function write(EntityRepository $repository, array $payloads, Context $context): array
     {
         $written = 0;
         $failed = 0;
         $exceptionClasses = [];
+        $writtenIds = [];
         foreach (array_chunk($payloads, self::BATCH_SIZE) as $batch) {
-            [$batchWritten, $batchFailed, $batchClasses] = $this->writeBatch($repository, $batch, $context);
+            [$batchWritten, $batchFailed, $batchClasses, $batchIds] = $this->writeBatch($repository, $batch, $context);
             $written += $batchWritten;
             $failed += $batchFailed;
             $exceptionClasses = [...$exceptionClasses, ...$batchClasses];
+            $writtenIds = [...$writtenIds, ...$batchIds];
         }
 
-        return [$written, $failed, $exceptionClasses];
+        return [$written, $failed, $exceptionClasses, $writtenIds];
     }
 
     /**
@@ -243,24 +246,24 @@ final readonly class ApplyCosmoShopCustomerWishlistsService
      * @param EntityRepository<TCollection>         $repository
      * @param non-empty-list<array<string, string>> $payloads
      *
-     * @return array{int, int, list<class-string<\Throwable>>}
+     * @return array{int, int, list<class-string<\Throwable>>, list<string>}
      */
     private function writeBatch(EntityRepository $repository, array $payloads, Context $context): array
     {
         try {
             $repository->upsert($payloads, $context);
 
-            return [count($payloads), 0, []];
+            return [count($payloads), 0, [], array_column($payloads, 'id')];
         } catch (WriteException $exception) {
             if (1 === count($payloads)) {
-                return [0, 1, [$exception::class]];
+                return [0, 1, [$exception::class], []];
             }
         }
 
         $middle = intdiv(count($payloads), 2);
-        [$leftWritten, $leftFailed, $leftClasses] = $this->writeBatch($repository, array_slice($payloads, 0, $middle), $context);
-        [$rightWritten, $rightFailed, $rightClasses] = $this->writeBatch($repository, array_slice($payloads, $middle), $context);
+        [$leftWritten, $leftFailed, $leftClasses, $leftIds] = $this->writeBatch($repository, array_slice($payloads, 0, $middle), $context);
+        [$rightWritten, $rightFailed, $rightClasses, $rightIds] = $this->writeBatch($repository, array_slice($payloads, $middle), $context);
 
-        return [$leftWritten + $rightWritten, $leftFailed + $rightFailed, [...$leftClasses, ...$rightClasses]];
+        return [$leftWritten + $rightWritten, $leftFailed + $rightFailed, [...$leftClasses, ...$rightClasses], [...$leftIds, ...$rightIds]];
     }
 }
