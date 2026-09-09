@@ -1,6 +1,6 @@
 {
   "main.js": {
-    "file": "assets/jv-cms-DXJR-Gmx.js",
+    "file": "assets/jv-cms-BzLXTfS7.js",
     "name": "jv-cms",
     "src": "main.js",
     "isEntry": true,
@@ -44,6 +44,21 @@
       "module/sw-cms/elements/jv-product-grid/component/index.js",
       "module/sw-cms/blocks/jv-product-grid/jv-product-grid/preview/index.js",
       "module/sw-cms/blocks/jv-product-grid/jv-product-grid/component/index.js",
+      "module/sw-cms/elements/jv-shop-the-look/preview/index.js",
+      "module/sw-cms/elements/jv-shop-the-look/config/index.js",
+      "module/sw-cms/elements/jv-shop-the-look/component/index.js",
+      "module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look/preview/index.js",
+      "module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look/component/index.js",
+      "module/sw-cms/elements/jv-home-editorial/preview/index.js",
+      "module/sw-cms/elements/jv-home-editorial/config/index.js",
+      "module/sw-cms/elements/jv-home-editorial/component/index.js",
+      "module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/preview/index.js",
+      "module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/component/index.js",
+      "module/sw-cms/elements/jv-faq/preview/index.js",
+      "module/sw-cms/elements/jv-faq/config/index.js",
+      "module/sw-cms/elements/jv-faq/component/index.js",
+      "module/sw-cms/blocks/jv-faq/jv-faq/preview/index.js",
+      "module/sw-cms/blocks/jv-faq/jv-faq/component/index.js",
       "module/sw-cms/elements/jv-category-rail/preview/index.js",
       "module/sw-cms/elements/jv-category-rail/config/index.js",
       "module/sw-cms/elements/jv-category-rail/component/index.js",
@@ -119,6 +134,24 @@
       "assets/index-BBqgw90K.css"
     ]
   },
+  "module/sw-cms/blocks/jv-faq/jv-faq/component/index.js": {
+    "file": "assets/index-DsIPREBq.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-faq/jv-faq/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BtEdmG6F.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-faq/jv-faq/preview/index.js": {
+    "file": "assets/index-DGp_Qoek.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-faq/jv-faq/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BTT0UeeF.css"
+    ]
+  },
   "module/sw-cms/blocks/jv-global-search/jv-global-search/component/index.js": {
     "file": "assets/index-ClqZmAJo.js",
     "name": "index",
@@ -147,6 +180,24 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-BT4Uv-nv.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/component/index.js": {
+    "file": "assets/index-DbpRozBh.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DFDuMenX.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/preview/index.js": {
+    "file": "assets/index-DdP8Urs8.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BKywnAF-.css"
     ]
   },
   "module/sw-cms/blocks/jv-newsletter/jv-newsletter/component/index.js": {
@@ -198,6 +249,24 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-DhrCSTwN.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look/component/index.js": {
+    "file": "assets/index-Bp_ct0hx.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DCy-0fLO.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look/preview/index.js": {
+    "file": "assets/index-BIUFIdaS.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DRrl3i8L.css"
     ]
   },
   "module/sw-cms/blocks/jv-side-navigation/jv-side-navigation/component/index.js": {
@@ -287,6 +356,33 @@
       "assets/index-Blid_j87.css"
     ]
   },
+  "module/sw-cms/elements/jv-faq/component/index.js": {
+    "file": "assets/index-3nRUFl0C.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-faq/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BfimdR6n.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-faq/config/index.js": {
+    "file": "assets/index-CUfEhBlQ.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-faq/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-7HcPrnKK.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-faq/preview/index.js": {
+    "file": "assets/index-CYgrWzwu.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-faq/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DTpw0lRZ.css"
+    ]
+  },
   "module/sw-cms/elements/jv-global-search/component/index.js": {
     "file": "assets/index-D3wLcUWe.js",
     "name": "index",
@@ -336,6 +432,33 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-CXkpjpEl.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-home-editorial/component/index.js": {
+    "file": "assets/index-D2P0FUh4.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-home-editorial/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-C-hKOn8U.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-home-editorial/config/index.js": {
+    "file": "assets/index-BfSv-kPA.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-home-editorial/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-D6g1sFoe.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-home-editorial/preview/index.js": {
+    "file": "assets/index-_-gawrCV.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-home-editorial/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CKk0oJG6.css"
     ]
   },
   "module/sw-cms/elements/jv-newsletter/component/index.js": {
@@ -417,6 +540,33 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-CL-CDUMe.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-shop-the-look/component/index.js": {
+    "file": "assets/index-Bwng74PP.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-shop-the-look/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-Dq6_HUcC.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-shop-the-look/config/index.js": {
+    "file": "assets/index-Fd-eTgdX.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-shop-the-look/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DntydX4r.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-shop-the-look/preview/index.js": {
+    "file": "assets/index-oVGmts59.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-shop-the-look/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DwPRe1bH.css"
     ]
   },
   "module/sw-cms/elements/jv-side-navigation/component/index.js": {
