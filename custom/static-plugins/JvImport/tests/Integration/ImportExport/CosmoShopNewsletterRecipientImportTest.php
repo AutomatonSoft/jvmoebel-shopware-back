@@ -18,6 +18,9 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Symfony\Bundle\FrameworkBundle\Console\Application;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 final class CosmoShopNewsletterRecipientImportTest extends AbstractCosmoShopImportExportTestCase
@@ -27,6 +30,7 @@ final class CosmoShopNewsletterRecipientImportTest extends AbstractCosmoShopImpo
         $context = Context::createDefaultContext();
         $market = Market::Germany;
         $this->ensureMarketSalesChannel($market, $context);
+        $this->configureCosmoShopProfiles($market);
         $profileId = $this->defaultNewsletterProfileId($context);
         $recipients = [
             'optin' => 'optIn',
@@ -69,6 +73,7 @@ final class CosmoShopNewsletterRecipientImportTest extends AbstractCosmoShopImpo
                 self::assertSame($expectedStatus, $recipient->getStatus());
                 self::assertSame($market->salesChannelId(), $recipient->getSalesChannelId());
                 self::assertSame(hash('sha256', $name), $recipient->getHash());
+                self::assertSame('Newsletter \\"'.$name.'"', $recipient->getFirstName());
             }
 
             self::assertSame(4, $repository->search(new Criteria($ids), $context)->getTotal());
@@ -97,6 +102,7 @@ final class CosmoShopNewsletterRecipientImportTest extends AbstractCosmoShopImpo
         self::assertInstanceOf(ImportExportProfileEntity::class, $profile);
         self::assertTrue($profile->getSystemDefault());
         self::assertSame('newsletter_recipient', $profile->getSourceEntity());
+        self::assertSame('', $profile->getConfig()['escape'] ?? null);
 
         return $profile->getId();
     }
@@ -109,7 +115,7 @@ final class CosmoShopNewsletterRecipientImportTest extends AbstractCosmoShopImpo
         fputcsv($stream, [
             'id', 'email', 'title', 'salutation', 'first_name', 'last_name', 'zip_code', 'city', 'street',
             'status', 'hash', 'sales_channel_id',
-        ], ';', '"', '\\', "\n");
+        ], ';', '"', '', "\n");
 
         foreach ($recipients as $name => $status) {
             fputcsv($stream, [
@@ -117,7 +123,7 @@ final class CosmoShopNewsletterRecipientImportTest extends AbstractCosmoShopImpo
                 $name.'@example.test',
                 '',
                 'not_specified',
-                'Newsletter',
+                'Newsletter \\"'.$name.'"',
                 ucfirst($name),
                 '10115',
                 'Berlin',
@@ -125,7 +131,7 @@ final class CosmoShopNewsletterRecipientImportTest extends AbstractCosmoShopImpo
                 $status,
                 hash('sha256', $name),
                 $market->salesChannelId(),
-            ], ';', '"', '\\', "\n");
+            ], ';', '"', '', "\n");
         }
 
         rewind($stream);
@@ -134,5 +140,11 @@ final class CosmoShopNewsletterRecipientImportTest extends AbstractCosmoShopImpo
         self::assertIsString($csv);
 
         return rtrim($csv, "\n");
+    }
+
+    private function configureCosmoShopProfiles(Market $market): void
+    {
+        $command = (new Application(static::getKernel()))->find('jv:cosmoshop:bootstrap-customer-import-profile');
+        self::assertSame(Command::SUCCESS, (new CommandTester($command))->execute(['market' => $market->domain()]));
     }
 }

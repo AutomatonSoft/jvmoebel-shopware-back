@@ -5,6 +5,8 @@ namespace Jv\Import\Tests\Unit\Integration\CosmoShop\Profile;
 use Jv\Import\Integration\CosmoShop\Profile\CustomerImportProfile;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Content\ImportExport\Processing\Reader\CsvReader;
+use Shopware\Core\Content\ImportExport\Struct\Config;
 use Shopware\Core\Framework\Uuid\Uuid;
 
 final class CustomerImportProfileTest extends TestCase
@@ -25,7 +27,43 @@ final class CustomerImportProfileTest extends TestCase
         self::assertSame('text/csv', $definition['fileType']);
         self::assertSame(';', $definition['delimiter']);
         self::assertSame('"', $definition['enclosure']);
+        self::assertSame(['escape' => ''], $definition['config']);
         self::assertSame(['id'], $definition['updateBy']);
+    }
+
+    public function testItMakesTheStandardShopwareReaderPreserveRfc4180CustomerValues(): void
+    {
+        $definition = CustomerImportProfile::definition(Market::Germany, self::CUSTOMER_GROUP_ID);
+        $config = new Config(
+            $definition['mapping'],
+            [
+                ...$definition['config'],
+                'delimiter' => $definition['delimiter'],
+                'enclosure' => $definition['enclosure'],
+            ],
+            $definition['updateBy'],
+        );
+        $expected = [
+            'Company \\"Quoted"',
+            'Company ending in \\',
+            "Company on two\nlines",
+            'Möbel Юникод',
+        ];
+        $stream = fopen('php://temp', 'w+');
+        self::assertIsResource($stream);
+        fputcsv($stream, ['billing_company'], ';', '"', '');
+        foreach ($expected as $company) {
+            fputcsv($stream, [$company], ';', '"', '');
+        }
+        rewind($stream);
+
+        try {
+            $rows = iterator_to_array((new CsvReader())->read($config, $stream, 0));
+        } finally {
+            fclose($stream);
+        }
+
+        self::assertSame($expected, array_column($rows, 'billing_company'));
     }
 
     public function testItResolvesRequiredAssociationsByUuidDefaultsOnly(): void
