@@ -28,7 +28,7 @@ final class CosmoShopCustomerAddressCsvReader
         }
 
         try {
-            $header = fgetcsv($stream, separator: ';', enclosure: '"', escape: '\\');
+            $header = fgetcsv($stream, separator: ';', enclosure: '"', escape: '');
             if (is_array($header) && isset($header[0])) {
                 $header[0] = preg_replace('/^\xEF\xBB\xBF/', '', $header[0]) ?? $header[0];
             }
@@ -37,7 +37,7 @@ final class CosmoShopCustomerAddressCsvReader
             }
 
             $records = [];
-            while (($row = fgetcsv($stream, separator: ';', enclosure: '"', escape: '\\')) !== false) {
+            while (($row = fgetcsv($stream, separator: ';', enclosure: '"', escape: '')) !== false) {
                 $values = array_map(static fn (mixed $value): string => trim((string) $value), $row);
                 $sourceCustomerId = $this->positiveInteger($values[0]);
                 $sourceAddressId = $this->positiveInteger($values[1] ?? '');

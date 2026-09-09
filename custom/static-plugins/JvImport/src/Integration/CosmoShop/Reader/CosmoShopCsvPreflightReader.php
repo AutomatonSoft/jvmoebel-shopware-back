@@ -56,7 +56,7 @@ final class CosmoShopCsvPreflightReader extends AbstractReader
 
         $delimiter = (string) ($config->get('delimiter') ?? ';');
         $enclosure = (string) ($config->get('enclosure') ?? '"');
-        $escape = (string) ($config->get('escape') ?? '\\');
+        $escape = (string) ($config->get('escape') ?? '');
         $this->initializeHeaders($resource, $delimiter, $enclosure, $escape, $offset);
 
         while (($record = fgetcsv($resource, 0, $delimiter, $enclosure, $escape)) !== false) {
@@ -106,7 +106,7 @@ final class CosmoShopCsvPreflightReader extends AbstractReader
 
         $delimiter = (string) ($config->get('delimiter') ?? ';');
         $enclosure = (string) ($config->get('enclosure') ?? '"');
-        $escape = (string) ($config->get('escape') ?? '\\');
+        $escape = (string) ($config->get('escape') ?? '');
         $initialOffset = ftell($resource);
         if (false === $initialOffset || 0 !== fseek($resource, 0)) {
             throw ImportExportException::processingError('CosmoShop CSV file must be seekable.');

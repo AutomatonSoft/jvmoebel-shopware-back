@@ -54,8 +54,9 @@ final class ApplyCosmoShopCustomerPasswordsCommand extends Command
             $result = $this->applyCustomerPasswords->execute($market, $file, $dryRun, Context::createCLIContext());
         } catch (\Throwable $exception) {
             $this->logger->error('CosmoShop customer password import failed.', [...$logContext, 'exceptionClass' => $exception::class]);
+            $output->writeln('failed=1');
 
-            throw $exception;
+            return self::FAILURE;
         }
 
         $counts = $result->counts();
