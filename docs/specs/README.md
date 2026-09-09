@@ -92,3 +92,4 @@ SPEC-NNN-short-name.md
 | [SPEC-015-cms-category-rail](SPEC-015-cms-category-rail.md) | Backend CMS element/block `jv-category-rail` (лента категорий, layout rail/grid); контракт — platform SPEC-012 |
 | [SPEC-016-cms-home-editorial](SPEC-016-cms-home-editorial.md) | Backend CMS element/block `jv-home-editorial` (вводный и раскрываемый rich-text контент); контракт — frontend `docs/components/jv-home-editorial.md` |
 | [SPEC-017-cms-faq](SPEC-017-cms-faq.md) | Backend CMS element/block `jv-faq` (упорядоченные вопросы и rich-text ответы); контракт — frontend `docs/components/jv-faq.md` |
+| [SPEC-018-cms-why-jvmoebel](SPEC-018-cms-why-jvmoebel.md) | Backend CMS element/block `jv-why-jvmoebel` (brand mark, benefits, view all); контракт — platform SPEC-013 |

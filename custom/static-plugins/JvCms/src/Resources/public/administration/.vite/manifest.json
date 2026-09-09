@@ -1,6 +1,6 @@
 {
   "main.js": {
-    "file": "assets/jv-cms-DJu9GCIh.js",
+    "file": "assets/jv-cms-BzLXTfS7.js",
     "name": "jv-cms",
     "src": "main.js",
     "isEntry": true,
@@ -63,7 +63,12 @@
       "module/sw-cms/elements/jv-category-rail/config/index.js",
       "module/sw-cms/elements/jv-category-rail/component/index.js",
       "module/sw-cms/blocks/jv-category-rail/jv-category-rail/preview/index.js",
-      "module/sw-cms/blocks/jv-category-rail/jv-category-rail/component/index.js"
+      "module/sw-cms/blocks/jv-category-rail/jv-category-rail/component/index.js",
+      "module/sw-cms/elements/jv-why-jvmoebel/preview/index.js",
+      "module/sw-cms/elements/jv-why-jvmoebel/config/index.js",
+      "module/sw-cms/elements/jv-why-jvmoebel/component/index.js",
+      "module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel/preview/index.js",
+      "module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel/component/index.js"
     ]
   },
   "module/sw-cms/blocks/jv-button/jv-button-link/component/index.js": {
@@ -280,6 +285,24 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-C855RAsj.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel/component/index.js": {
+    "file": "assets/index-BNvpkD1R.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DWz8PQ0H.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel/preview/index.js": {
+    "file": "assets/index-BDvqu_7R.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BrRugZro.css"
     ]
   },
   "module/sw-cms/elements/jv-button/component/index.js": {
@@ -571,6 +594,33 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-DB4fQlLF.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-why-jvmoebel/component/index.js": {
+    "file": "assets/index-DksinXIK.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-why-jvmoebel/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DwAUYmoV.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-why-jvmoebel/config/index.js": {
+    "file": "assets/index-FVNTZwZ2.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-why-jvmoebel/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BviYk8wf.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-why-jvmoebel/preview/index.js": {
+    "file": "assets/index-B7wDVh0W.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-why-jvmoebel/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-D4uEN92m.css"
     ]
   }
 }

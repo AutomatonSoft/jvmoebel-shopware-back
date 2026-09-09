@@ -572,6 +572,83 @@
             }
           }
         }
+      },
+      "jv-why-jvmoebel": {
+        "label": "Warum JVMöbel",
+        "component": {
+          "markPlaceholder": "JVM",
+          "titlePlaceholder": "Abschnittstitel",
+          "benefitTitlePlaceholder": "Vorteilstitel",
+          "noBenefits": "Keine Vorteile konfiguriert"
+        },
+        "config": {
+          "mark": {
+            "label": "Brand Mark",
+            "placeholder": "JVM"
+          },
+          "tagline": {
+            "label": "Tagline",
+            "placeholder": "Für Räume mit Persönlichkeit"
+          },
+          "title": {
+            "label": "Abschnittstitel",
+            "placeholder": "Warum JVMöbel?"
+          },
+          "eyebrow": {
+            "label": "Eyebrow",
+            "placeholder": "Mehr als nur Möbel"
+          },
+          "description": {
+            "label": "Beschreibung",
+            "placeholder": "Wir verbinden Design mit persönlichem Service."
+          },
+          "benefits": {
+            "title": "Vorteile",
+            "add": "Vorteil hinzufügen",
+            "remove": "Entfernen",
+            "cardTitle": "Vorteil {index}",
+            "id": {
+              "label": "ID",
+              "helpText": "Optionale stabile ID. Leer = Titel und Index."
+            },
+            "iconMode": {
+              "label": "Icon-Typ",
+              "preset": "Standard-Icon",
+              "media": "Eigenes Bild"
+            },
+            "icon": {
+              "label": "Icon",
+              "advice": "Beratung",
+              "design": "Design",
+              "payment": "Zahlung"
+            },
+            "iconMedia": {
+              "label": "Icon-Bild",
+              "caption": "Icon hochladen oder aus Medien wählen"
+            },
+            "titleField": {
+              "label": "Titel"
+            },
+            "description": {
+              "label": "Beschreibung"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/kontakt"
+            }
+          },
+          "viewAll": {
+            "title": "Alle-anzeigen-Link",
+            "label": {
+              "label": "Label",
+              "placeholder": "Mehr über JVMöbel"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/ueber-uns"
+            }
+          }
+        }
       }
     },
     "blocks": {
@@ -613,6 +690,9 @@
       },
       "jv-category-rail": {
         "label": "Kategorie-Leiste"
+      },
+      "jv-why-jvmoebel": {
+        "label": "Warum JVMöbel"
       }
     }
   },
@@ -627,7 +707,8 @@
             "newsletter": "Newsletter",
             "room": "Raum",
             "commerce": "Commerce",
-            "category": "Kategorie"
+            "category": "Kategorie",
+            "brand": "Marke"
           }
         }
       }

@@ -572,6 +572,83 @@
             }
           }
         }
+      },
+      "jv-why-jvmoebel": {
+        "label": "Why JVMöbel",
+        "component": {
+          "markPlaceholder": "JVM",
+          "titlePlaceholder": "Section title",
+          "benefitTitlePlaceholder": "Benefit title",
+          "noBenefits": "No benefits configured"
+        },
+        "config": {
+          "mark": {
+            "label": "Brand mark",
+            "placeholder": "JVM"
+          },
+          "tagline": {
+            "label": "Tagline",
+            "placeholder": "For rooms with personality"
+          },
+          "title": {
+            "label": "Section title",
+            "placeholder": "Why JVMöbel?"
+          },
+          "eyebrow": {
+            "label": "Eyebrow",
+            "placeholder": "More than furniture"
+          },
+          "description": {
+            "label": "Description",
+            "placeholder": "We combine design with personal service."
+          },
+          "benefits": {
+            "title": "Benefits",
+            "add": "Add benefit",
+            "remove": "Remove",
+            "cardTitle": "Benefit {index}",
+            "id": {
+              "label": "ID",
+              "helpText": "Optional stable ID. Empty = title and index."
+            },
+            "iconMode": {
+              "label": "Icon type",
+              "preset": "Default icon",
+              "media": "Custom image"
+            },
+            "icon": {
+              "label": "Icon",
+              "advice": "Advice",
+              "design": "Design",
+              "payment": "Payment"
+            },
+            "iconMedia": {
+              "label": "Icon image",
+              "caption": "Upload icon or choose from media"
+            },
+            "titleField": {
+              "label": "Title"
+            },
+            "description": {
+              "label": "Description"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/contact"
+            }
+          },
+          "viewAll": {
+            "title": "View all link",
+            "label": {
+              "label": "Label",
+              "placeholder": "More about JVMöbel"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/about-us"
+            }
+          }
+        }
       }
     },
     "blocks": {
@@ -613,6 +690,9 @@
       },
       "jv-category-rail": {
         "label": "Category rail"
+      },
+      "jv-why-jvmoebel": {
+        "label": "Why JVMöbel"
       }
     }
   },
@@ -627,7 +707,8 @@
             "newsletter": "Newsletter",
             "room": "Room",
             "commerce": "Commerce",
-            "category": "Category"
+            "category": "Category",
+            "brand": "Brand"
           }
         }
       }
