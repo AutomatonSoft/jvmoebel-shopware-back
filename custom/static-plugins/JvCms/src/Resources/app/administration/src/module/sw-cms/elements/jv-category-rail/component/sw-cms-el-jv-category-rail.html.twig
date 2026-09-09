@@ -1,0 +1,35 @@
+{% block sw_cms_element_jv_category_rail %}
+	<div class="sw-cms-el-jv-category-rail" :class="`sw-cms-el-jv-category-rail--${layout}`">
+		<div v-if="eyebrow" class="sw-cms-el-jv-category-rail__eyebrow">{{ eyebrow }}</div>
+		<div v-if="title" class="sw-cms-el-jv-category-rail__title">{{ title }}</div>
+		<div v-else class="sw-cms-el-jv-category-rail__title sw-cms-el-jv-category-rail__title--placeholder">
+			{{ $t('cms.elements.jv-category-rail.component.titlePlaceholder') }}
+		</div>
+		<div v-if="description" class="sw-cms-el-jv-category-rail__description">{{ description }}</div>
+
+		<div v-if="categories.length" class="sw-cms-el-jv-category-rail__list">
+			<div
+				v-for="(category, categoryIndex) in categories"
+				:key="`jv-category-rail-preview-${categoryIndex}`"
+				class="sw-cms-el-jv-category-rail__item"
+			>
+				<div class="sw-cms-el-jv-category-rail__item-image">
+					<img
+						v-if="categoryImageUrl(category, categoryIndex)"
+						class="sw-cms-el-jv-category-rail__item-photo"
+						:src="categoryImageUrl(category, categoryIndex)"
+						:alt="category.label || $t('cms.elements.jv-category-rail.component.categoryLabelPlaceholder')"
+					/>
+				</div>
+				<div class="sw-cms-el-jv-category-rail__item-label">
+					{{ category.label || $t('cms.elements.jv-category-rail.component.categoryLabelPlaceholder') }}
+				</div>
+			</div>
+		</div>
+		<div v-else class="sw-cms-el-jv-category-rail__empty">
+			{{ $t('cms.elements.jv-category-rail.component.noCategories') }}
+		</div>
+
+		<div v-if="viewAllLabel" class="sw-cms-el-jv-category-rail__view-all">{{ viewAllLabel }}</div>
+	</div>
+{% endblock %}
