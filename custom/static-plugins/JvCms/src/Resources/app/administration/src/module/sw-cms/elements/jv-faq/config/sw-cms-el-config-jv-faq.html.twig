@@ -1,0 +1,87 @@
+{% block sw_cms_el_config_jv_faq %}
+	<div class="sw-cms-el-config-jv-faq">
+		<mt-text-field
+			v-model:model-value="element.config.title.value"
+			:label="$t('cms.elements.jv-faq.config.title.label')"
+			:placeholder="$t('cms.elements.jv-faq.config.title.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-text-field
+			v-model:model-value="element.config.eyebrow.value"
+			:label="$t('cms.elements.jv-faq.config.eyebrow.label')"
+			:placeholder="$t('cms.elements.jv-faq.config.eyebrow.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-textarea
+			v-model:model-value="element.config.description.value"
+			:label="$t('cms.elements.jv-faq.config.description.label')"
+			:placeholder="$t('cms.elements.jv-faq.config.description.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<div class="sw-cms-el-config-jv-faq__section">
+			<div class="sw-cms-el-config-jv-faq__section-header">
+				<h4>{{ $t('cms.elements.jv-faq.config.items.title') }}</h4>
+				<mt-button size="small" variant="secondary" @click="addItem">
+					{{ $t('cms.elements.jv-faq.config.items.add') }}
+				</mt-button>
+			</div>
+
+			<div
+				v-for="(item, itemIndex) in items"
+				:key="item.id || itemIndex"
+				class="sw-cms-el-config-jv-faq__card"
+				:class="{ 'sw-cms-el-config-jv-faq__card--invalid': !itemIsValid(item) }"
+			>
+				<div class="sw-cms-el-config-jv-faq__card-header">
+					<strong>{{ $t('cms.elements.jv-faq.config.items.cardTitle', { index: itemIndex + 1 }) }}</strong>
+					<div class="sw-cms-el-config-jv-faq__actions">
+						<mt-button size="small" variant="secondary" :disabled="itemIndex === 0" @click="moveItem(itemIndex, -1)">
+							{{ $t('cms.elements.jv-faq.config.items.moveUp') }}
+						</mt-button>
+						<mt-button size="small" variant="secondary" :disabled="itemIndex === items.length - 1" @click="moveItem(itemIndex, 1)">
+							{{ $t('cms.elements.jv-faq.config.items.moveDown') }}
+						</mt-button>
+						<mt-button size="small" variant="critical" @click="removeItem(itemIndex)">
+							{{ $t('cms.elements.jv-faq.config.items.remove') }}
+						</mt-button>
+					</div>
+				</div>
+
+				<mt-banner
+					v-if="!itemIsValid(item)"
+					class="sw-cms-el-config-jv-faq__item-error"
+					variant="critical"
+					:show-icon="true"
+				>
+					{{ $t('cms.elements.jv-faq.config.items.required') }}
+				</mt-banner>
+
+				<mt-text-field
+					v-model:model-value="item.id"
+					:label="$t('cms.elements.jv-faq.config.items.id.label')"
+					:help-text="$t('cms.elements.jv-faq.config.items.id.helpText')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="item.question"
+					:label="$t('cms.elements.jv-faq.config.items.question.label')"
+					:placeholder="$t('cms.elements.jv-faq.config.items.question.placeholder')"
+					@update:model-value="onUpdate"
+				/>
+
+				<label class="sw-cms-el-config-jv-faq__answer-label">
+					{{ $t('cms.elements.jv-faq.config.items.answer.label') }}
+				</label>
+				<sw-text-editor
+					v-model:value="item.answer"
+					:placeholder="$t('cms.elements.jv-faq.config.items.answer.placeholder')"
+					@update:value="onUpdate"
+				/>
+			</div>
+		</div>
+	</div>
+{% endblock %}

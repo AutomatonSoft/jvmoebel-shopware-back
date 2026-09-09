@@ -398,6 +398,48 @@
           "remove": "Entfernen"
         }
       },
+      "jv-faq": {
+        "label": "FAQ",
+        "component": {
+          "titlePlaceholder": "FAQ-Titel",
+          "noItems": "Keine Fragen konfiguriert"
+        },
+        "config": {
+          "title": {
+            "label": "Titel",
+            "placeholder": "Häufige Fragen zu Rabattcodes"
+          },
+          "eyebrow": {
+            "label": "Eyebrow",
+            "placeholder": "Gut zu wissen"
+          },
+          "description": {
+            "label": "Beschreibung",
+            "placeholder": "Informationen zu Aktionen, Codes und reduzierten Artikeln."
+          },
+          "items": {
+            "title": "Fragen und Antworten",
+            "add": "Frage hinzufügen",
+            "cardTitle": "Frage {index}",
+            "required": "Frage und Antwort müssen ausgefüllt sein.",
+            "moveUp": "Nach oben",
+            "moveDown": "Nach unten",
+            "remove": "Entfernen",
+            "id": {
+              "label": "ID",
+              "helpText": "Stabile technische ID. Wird für neue Fragen automatisch erzeugt."
+            },
+            "question": {
+              "label": "Frage",
+              "placeholder": "Wie kann ich einen Rabattcode einlösen?"
+            },
+            "answer": {
+              "label": "Antwort",
+              "placeholder": "Antworttext und Links eingeben …"
+            }
+          }
+        }
+      },
       "jv-shop-the-look": {
         "label": "Shop the Look",
         "component": {
@@ -562,6 +604,9 @@
       },
       "jv-home-editorial": {
         "label": "Editorial-Inhalt"
+      },
+      "jv-faq": {
+        "label": "FAQ"
       },
       "jv-shop-the-look": {
         "label": "Shop the Look"

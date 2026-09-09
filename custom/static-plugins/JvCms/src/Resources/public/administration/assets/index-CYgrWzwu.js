@@ -1,0 +1,2 @@
+const s=`{% block sw_cms_element_jv_faq_preview %} <div class="sw-cms-el-preview-jv-faq"> <div class="sw-cms-el-preview-jv-faq__intro"> <span></span> <strong>{{ $t('cms.elements.jv-faq.label') }}</strong> <span></span> </div> <div class="sw-cms-el-preview-jv-faq__items"> <span></span> <span></span> <span></span> </div> </div> {% endblock %}`,e={template:s};export{e as default};
+//# sourceMappingURL=index-CYgrWzwu.js.map
