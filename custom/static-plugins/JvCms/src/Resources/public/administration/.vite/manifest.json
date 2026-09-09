@@ -1,6 +1,6 @@
 {
   "main.js": {
-    "file": "assets/jv-cms-CBtzSmmb.js",
+    "file": "assets/jv-cms-BW4EU9Oo.js",
     "name": "jv-cms",
     "src": "main.js",
     "isEntry": true,
@@ -48,7 +48,12 @@
       "module/sw-cms/elements/jv-shop-the-look/config/index.js",
       "module/sw-cms/elements/jv-shop-the-look/component/index.js",
       "module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look/preview/index.js",
-      "module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look/component/index.js"
+      "module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look/component/index.js",
+      "module/sw-cms/elements/jv-home-editorial/preview/index.js",
+      "module/sw-cms/elements/jv-home-editorial/config/index.js",
+      "module/sw-cms/elements/jv-home-editorial/component/index.js",
+      "module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/preview/index.js",
+      "module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/component/index.js"
     ]
   },
   "module/sw-cms/blocks/jv-button/jv-button-link/component/index.js": {
@@ -124,6 +129,24 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-BT4Uv-nv.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/component/index.js": {
+    "file": "assets/index-DbpRozBh.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DFDuMenX.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/preview/index.js": {
+    "file": "assets/index-DdP8Urs8.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BKywnAF-.css"
     ]
   },
   "module/sw-cms/blocks/jv-newsletter/jv-newsletter/component/index.js": {
@@ -286,6 +309,33 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-CXkpjpEl.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-home-editorial/component/index.js": {
+    "file": "assets/index-D2P0FUh4.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-home-editorial/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-C-hKOn8U.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-home-editorial/config/index.js": {
+    "file": "assets/index-BfSv-kPA.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-home-editorial/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-D6g1sFoe.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-home-editorial/preview/index.js": {
+    "file": "assets/index-_-gawrCV.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-home-editorial/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CKk0oJG6.css"
     ]
   },
   "module/sw-cms/elements/jv-newsletter/component/index.js": {

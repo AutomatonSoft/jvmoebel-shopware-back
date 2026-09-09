@@ -337,6 +337,67 @@
           }
         }
       },
+      "jv-home-editorial": {
+        "label": "Editorial-Inhalt",
+        "component": {
+          "statementPlaceholder": "Einleitende Aussage",
+          "titlePlaceholder": "Editorial-Titel",
+          "showMorePlaceholder": "Alles anzeigen",
+          "noSections": "Keine aufklappbaren Abschnitte konfiguriert"
+        },
+        "config": {
+          "appearance": {
+            "label": "Darstellung",
+            "card": "Karte",
+            "plain": "Schlicht"
+          },
+          "statement": {
+            "label": "Einleitende Aussage",
+            "placeholder": "Unser Service steht für höchste Qualität."
+          },
+          "title": {
+            "label": "Titel",
+            "placeholder": "Willkommen bei JVMöbel"
+          },
+          "introduction": {
+            "title": "Einleitung"
+          },
+          "paragraph": {
+            "title": "Absatz {index}",
+            "add": "Absatz hinzufügen",
+            "placeholder": "Text und Links eingeben …"
+          },
+          "sections": {
+            "title": "Aufklappbare Abschnitte",
+            "add": "Abschnitt hinzufügen",
+            "cardTitle": "Abschnitt {index}",
+            "paragraphs": "Absätze",
+            "paragraphRequired": "Mindestens einen Absatz hinzufügen und ausfüllen.",
+            "id": {
+              "label": "ID",
+              "helpText": "Stabile technische ID. Wird für neue Abschnitte automatisch erzeugt."
+            },
+            "titleField": {
+              "label": "Optionaler Titel",
+              "placeholder": "Gesund und schön schlafen"
+            }
+          },
+          "labels": {
+            "title": "Beschriftungen des Aufklappbereichs"
+          },
+          "showMoreLabel": {
+            "label": "Beschriftung im geschlossenen Zustand",
+            "placeholder": "Alles anzeigen"
+          },
+          "showLessLabel": {
+            "label": "Beschriftung im geöffneten Zustand",
+            "placeholder": "Weniger anzeigen"
+          },
+          "moveUp": "Nach oben",
+          "moveDown": "Nach unten",
+          "remove": "Entfernen"
+        }
+      },
       "jv-shop-the-look": {
         "label": "Shop the Look",
         "component": {
@@ -435,6 +496,9 @@
       },
       "jv-product-grid": {
         "label": "Produkt-Grid"
+      },
+      "jv-home-editorial": {
+        "label": "Editorial-Inhalt"
       },
       "jv-shop-the-look": {
         "label": "Shop the Look"

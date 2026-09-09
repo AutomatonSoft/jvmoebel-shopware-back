@@ -16,6 +16,8 @@ import './module/sw-cms/elements/jv-product-grid';
 import './module/sw-cms/blocks/jv-product-grid/jv-product-grid';
 import './module/sw-cms/elements/jv-shop-the-look';
 import './module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look';
+import './module/sw-cms/elements/jv-home-editorial';
+import './module/sw-cms/blocks/jv-home-editorial/jv-home-editorial';
 import deDE from './snippet/de-DE.json';
 import enGB from './snippet/en-GB.json';
 
