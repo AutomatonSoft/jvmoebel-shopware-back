@@ -13,7 +13,7 @@ final class CustomerImportProfile
     }
 
     /**
-     * @return array{id: string, technicalName: string, type: string, sourceEntity: string, fileType: string, delimiter: string, enclosure: string, mapping: list<array{key: string, mappedKey: string, position: int, requiredByUser?: bool, useDefaultValue?: bool, defaultValue?: string}>, updateBy: list<string>, config: array<never, never>}
+     * @return array{id: string, technicalName: string, type: string, sourceEntity: string, fileType: string, delimiter: string, enclosure: string, mapping: list<array{key: string, mappedKey: string, position: int, requiredByUser?: bool, useDefaultValue?: bool, defaultValue?: string}>, updateBy: list<string>, config: array{escape: string}}
      */
     public static function definition(Market $market, string $customerGroupId): array
     {
@@ -29,7 +29,7 @@ final class CustomerImportProfile
             'enclosure' => '"',
             'mapping' => self::mapping($market, $customerGroupId),
             'updateBy' => ['id'],
-            'config' => [],
+            'config' => ['escape' => ''],
         ];
     }
 

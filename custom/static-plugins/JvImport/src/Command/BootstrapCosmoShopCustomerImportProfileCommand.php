@@ -9,6 +9,7 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\System\SalesChannel\SalesChannelCollection;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -23,6 +24,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 final class BootstrapCosmoShopCustomerImportProfileCommand extends Command
 {
+    private const string NEWSLETTER_PROFILE_TECHNICAL_NAME = 'default_newsletter_recipient';
+
     /**
      * @param EntityRepository<EntityCollection<ImportExportProfileEntity>> $profileRepository
      * @param EntityRepository<SalesChannelCollection>                      $salesChannelRepository
@@ -52,11 +55,29 @@ final class BootstrapCosmoShopCustomerImportProfileCommand extends Command
             throw new \InvalidArgumentException('The market sales channel does not exist.');
         }
 
+        $newsletterProfile = $this->profileRepository->search(
+            (new Criteria())->addFilter(new EqualsFilter('technicalName', self::NEWSLETTER_PROFILE_TECHNICAL_NAME)),
+            $context,
+        )->first();
+        if (!$newsletterProfile instanceof ImportExportProfileEntity
+            || !in_array($newsletterProfile->getType(), [
+                ImportExportProfileEntity::TYPE_IMPORT,
+                ImportExportProfileEntity::TYPE_IMPORT_EXPORT,
+            ], true)
+            || 'newsletter_recipient' !== $newsletterProfile->getSourceEntity()
+        ) {
+            throw new \RuntimeException('The required newsletter recipient import profile is unavailable.');
+        }
+
         $this->profileRepository->upsert([
             CustomerImportProfile::definition($market, $salesChannel->getCustomerGroupId()),
+            [
+                'id' => $newsletterProfile->getId(),
+                'config' => [...$newsletterProfile->getConfig(), 'escape' => ''],
+            ],
         ], $context);
 
-        $output->writeln('Customer import profile configured.');
+        $output->writeln('Customer and newsletter import profiles configured.');
 
         return self::SUCCESS;
     }

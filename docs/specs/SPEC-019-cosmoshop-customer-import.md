@@ -200,6 +200,11 @@ shipping_last_name;shipping_company;shipping_street;shipping_zipcode;
 shipping_city;shipping_country;shipping_phone_number;account_type
 ```
 
+Python exporter использует RFC-4180 quoting без backslash-escape. Bootstrap
+явно задаёт для source-specific customer profile и системного
+`default_newsletter_recipient` значение CSV `escape=''`; у системного profile
+при этом сохраняются его mapping, `updateBy` и остальные config values.
+
 Точные lookup values для group, language и sales channel разрешаются при
 bootstrap профиля в технически подготовленном target environment. Exporter не
 читает их из source DB и не угадывает переведённые Shopware labels. CSV-колонки

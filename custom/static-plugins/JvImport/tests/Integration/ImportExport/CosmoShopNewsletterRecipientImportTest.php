@@ -38,6 +38,7 @@ final class CosmoShopNewsletterRecipientImportTest extends AbstractCosmoShopImpo
             'optout' => 'optOut',
             'notset' => 'notSet',
         ];
+        $firstNames = $this->newsletterFirstNames();
         $ids = array_map(
             static fn (string $name): string => CosmoShopCustomerIdentity::newsletterRecipientId($market, $name.'@example.test'),
             array_keys($recipients),
@@ -73,7 +74,7 @@ final class CosmoShopNewsletterRecipientImportTest extends AbstractCosmoShopImpo
                 self::assertSame($expectedStatus, $recipient->getStatus());
                 self::assertSame($market->salesChannelId(), $recipient->getSalesChannelId());
                 self::assertSame(hash('sha256', $name), $recipient->getHash());
-                self::assertSame('Newsletter \\"'.$name.'"', $recipient->getFirstName());
+                self::assertSame($firstNames[$name], $recipient->getFirstName());
             }
 
             self::assertSame(4, $repository->search(new Criteria($ids), $context)->getTotal());
@@ -91,7 +92,28 @@ final class CosmoShopNewsletterRecipientImportTest extends AbstractCosmoShopImpo
         }
     }
 
+    public function testBootstrapPreservesTheSystemNewsletterProfileContractWhileDisablingCsvEscapes(): void
+    {
+        $context = Context::createDefaultContext();
+        $market = Market::Germany;
+        $this->ensureMarketSalesChannel($market, $context);
+        $before = $this->defaultNewsletterProfile($context, false);
+
+        $this->configureCosmoShopProfiles($market);
+
+        $after = $this->defaultNewsletterProfile($context);
+        self::assertSame($before->getId(), $after->getId());
+        self::assertSame($before->getMapping(), $after->getMapping());
+        self::assertSame($before->getUpdateBy(), $after->getUpdateBy());
+        self::assertSame([...$before->getConfig(), 'escape' => ''], $after->getConfig());
+    }
+
     private function defaultNewsletterProfileId(Context $context): string
+    {
+        return $this->defaultNewsletterProfile($context)->getId();
+    }
+
+    private function defaultNewsletterProfile(Context $context, bool $assertRfc4180Escape = true): ImportExportProfileEntity
     {
         /** @var EntityRepository<EntityCollection<ImportExportProfileEntity>> $repository */
         $repository = static::getContainer()->get('import_export_profile.repository');
@@ -102,9 +124,11 @@ final class CosmoShopNewsletterRecipientImportTest extends AbstractCosmoShopImpo
         self::assertInstanceOf(ImportExportProfileEntity::class, $profile);
         self::assertTrue($profile->getSystemDefault());
         self::assertSame('newsletter_recipient', $profile->getSourceEntity());
-        self::assertSame('', $profile->getConfig()['escape'] ?? null);
+        if ($assertRfc4180Escape) {
+            self::assertSame('', $profile->getConfig()['escape'] ?? null);
+        }
 
-        return $profile->getId();
+        return $profile;
     }
 
     /** @param array<string, string> $recipients */
@@ -117,13 +141,14 @@ final class CosmoShopNewsletterRecipientImportTest extends AbstractCosmoShopImpo
             'status', 'hash', 'sales_channel_id',
         ], ';', '"', '', "\n");
 
+        $firstNames = $this->newsletterFirstNames();
         foreach ($recipients as $name => $status) {
             fputcsv($stream, [
                 CosmoShopCustomerIdentity::newsletterRecipientId($market, $name.'@example.test'),
                 $name.'@example.test',
                 '',
                 'not_specified',
-                'Newsletter \\"'.$name.'"',
+                $firstNames[$name],
                 ucfirst($name),
                 '10115',
                 'Berlin',
@@ -140,6 +165,17 @@ final class CosmoShopNewsletterRecipientImportTest extends AbstractCosmoShopImpo
         self::assertIsString($csv);
 
         return rtrim($csv, "\n");
+    }
+
+    /** @return array<string, string> */
+    private function newsletterFirstNames(): array
+    {
+        return [
+            'optin' => 'Newsletter \\"optin\\"',
+            'direct' => 'Newsletter ending in \\',
+            'optout' => "Newsletter on two\nlines",
+            'notset' => 'Möbel Юникод',
+        ];
     }
 
     private function configureCosmoShopProfiles(Market $market): void
