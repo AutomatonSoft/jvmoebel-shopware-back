@@ -1,0 +1,2 @@
+const s=`{% block sw_cms_block_jv_home_editorial_preview %} <div class="sw-cms-preview-jv-home-editorial"> <span class="sw-cms-preview-jv-home-editorial__statement"></span> <div class="sw-cms-preview-jv-home-editorial__content"> <strong>{{ $t('cms.blocks.jv-home-editorial.label') }}</strong> <span></span> <span></span> </div> <div class="sw-cms-preview-jv-home-editorial__sections"> <span></span> <span></span> </div> </div> {% endblock %}`,e={template:s};export{e as default};
+//# sourceMappingURL=index-DdP8Urs8.js.map

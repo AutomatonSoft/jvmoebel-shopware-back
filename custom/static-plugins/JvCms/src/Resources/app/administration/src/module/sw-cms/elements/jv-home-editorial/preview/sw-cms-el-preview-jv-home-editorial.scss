@@ -1,0 +1,44 @@
+.sw-cms-el-preview-jv-home-editorial {
+    background: #f0f2f5;
+    border: 1px solid #dfe3e8;
+    border-radius: 8px;
+    display: grid;
+    gap: 8px;
+    grid-template-columns: 0.6fr 1.4fr;
+    padding: 12px;
+
+    &__statement,
+    &__content span,
+    &__sections span {
+        background: #c6cdd4;
+        border-radius: 2px;
+        display: block;
+        height: 4px;
+    }
+
+    &__statement {
+        margin-top: 4px;
+        width: 75%;
+    }
+
+    &__content {
+        strong {
+            display: block;
+            font-size: 11px;
+            margin-bottom: 7px;
+        }
+
+        span {
+            margin-bottom: 4px;
+        }
+    }
+
+    &__sections {
+        border-top: 1px solid #d1d9e0;
+        display: grid;
+        gap: 8px;
+        grid-column: 1 / -1;
+        grid-template-columns: repeat(2, 1fr);
+        padding-top: 8px;
+    }
+}

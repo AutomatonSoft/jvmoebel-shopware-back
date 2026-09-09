@@ -38,6 +38,10 @@
         <service id="Jv\Cms\DataResolver\Element\ShopTheLookCmsElementResolver">
             <tag name="shopware.cms.data_resolver"/>
         </service>
+
+        <service id="Jv\Cms\DataResolver\Element\HomeEditorialCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
           
         <service id="Jv\Cms\DataResolver\Element\CategoryRailCmsElementResolver">
             <tag name="shopware.cms.data_resolver"/>

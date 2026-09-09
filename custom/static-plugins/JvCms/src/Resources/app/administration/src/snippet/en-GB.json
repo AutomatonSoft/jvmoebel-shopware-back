@@ -337,6 +337,67 @@
           }
         }
       },
+      "jv-home-editorial": {
+        "label": "Editorial content",
+        "component": {
+          "statementPlaceholder": "Introductory statement",
+          "titlePlaceholder": "Editorial title",
+          "showMorePlaceholder": "Show more",
+          "noSections": "No expandable sections configured"
+        },
+        "config": {
+          "appearance": {
+            "label": "Appearance",
+            "card": "Card",
+            "plain": "Plain"
+          },
+          "statement": {
+            "label": "Introductory statement",
+            "placeholder": "Our service stands for the highest quality."
+          },
+          "title": {
+            "label": "Title",
+            "placeholder": "Welcome to JVMöbel"
+          },
+          "introduction": {
+            "title": "Introduction"
+          },
+          "paragraph": {
+            "title": "Paragraph {index}",
+            "add": "Add paragraph",
+            "placeholder": "Enter text and links …"
+          },
+          "sections": {
+            "title": "Expandable sections",
+            "add": "Add section",
+            "cardTitle": "Section {index}",
+            "paragraphs": "Paragraphs",
+            "paragraphRequired": "Add and fill in at least one paragraph.",
+            "id": {
+              "label": "ID",
+              "helpText": "Stable technical ID. Generated automatically for new sections."
+            },
+            "titleField": {
+              "label": "Optional title",
+              "placeholder": "Healthy and beautiful sleep"
+            }
+          },
+          "labels": {
+            "title": "Disclosure labels"
+          },
+          "showMoreLabel": {
+            "label": "Label while closed",
+            "placeholder": "Show more"
+          },
+          "showLessLabel": {
+            "label": "Label while open",
+            "placeholder": "Show less"
+          },
+          "moveUp": "Move up",
+          "moveDown": "Move down",
+          "remove": "Remove"
+        }
+      },
       "jv-shop-the-look": {
         "label": "Shop the look",
         "component": {
@@ -344,12 +405,6 @@
           "imagePlaceholder": "Select the room image",
           "itemPlaceholder": "Item {index}",
           "noItems": "No look items configured"
-      "jv-category-rail": {
-        "label": "Category rail",
-        "component": {
-          "titlePlaceholder": "Section title",
-          "categoryLabelPlaceholder": "Category label",
-          "noCategories": "No categories configured"
         },
         "config": {
           "title": {
@@ -409,6 +464,20 @@
             "url": {
               "label": "Link",
               "placeholder": "/living-room"
+            }
+          }
+        }
+      },
+      "jv-category-rail": {
+        "label": "Category rail",
+        "component": {
+          "titlePlaceholder": "Section title",
+          "categoryLabelPlaceholder": "Category label",
+          "noCategories": "No categories configured"
+        },
+        "config": {
+          "title": {
+            "label": "Section title",
             "placeholder": "Popular categories"
           },
           "eyebrow": {
@@ -491,8 +560,12 @@
       "jv-product-grid": {
         "label": "Product grid"
       },
+      "jv-home-editorial": {
+        "label": "Editorial content"
+      },
       "jv-shop-the-look": {
         "label": "Shop the look"
+      },
       "jv-category-rail": {
         "label": "Category rail"
       }
