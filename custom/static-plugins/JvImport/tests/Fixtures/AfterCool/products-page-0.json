@@ -1,0 +1,53 @@
+{
+  "items": [
+    {
+      "account": "JV",
+      "dataset": "lister",
+      "factory_id": 504034,
+      "product_id": "900001",
+      "ean": "4260174423463",
+      "artikelnummer": "900001",
+      "name": "Sanitised Aftercool sofa",
+      "row_no": 1,
+      "source_file": "sanitised.xlsx",
+      "source_kind": "xlsx",
+      "updated_at": "2026-08-27T12:00:00+00:00",
+      "row": {
+        "ID": "900001",
+        "I_stammartikel": "183975801",
+        "Startpreis": "1199.00",
+        "Menge": "7",
+        "Description": "<-StammBeschreibung->",
+        "GalleryURL": "https://images.example.test/900001-cover.jpg",
+        "pictureurls": "https://images.example.test/900001-cover.jpg|https://images.example.test/900001-side.jpg|https://images.example.test/900001-side.jpg"
+      }
+    },
+    {
+      "account": "JV",
+      "dataset": "lister",
+      "factory_id": 504034,
+      "product_id": "900002",
+      "ean": "4260454042902",
+      "artikelnummer": "900002",
+      "name": "Sanitised Aftercool armchair",
+      "row_no": 2,
+      "source_file": "sanitised.xlsx",
+      "source_kind": "xlsx",
+      "updated_at": "2026-08-27T12:00:01+00:00",
+      "row": {
+        "ID": "900002",
+        "Startpreis": 499.95,
+        "Menge": 3,
+        "Description": "<p>Usable description</p>",
+        "GalleryURL": "https://images.example.test/900002-cover.jpg",
+        "pictureurls": [
+          "https://images.example.test/900002-side.jpg"
+        ]
+      }
+    }
+  ],
+  "total": 102,
+  "limit": 100,
+  "offset": 0,
+  "has_more": true
+}

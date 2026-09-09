@@ -467,6 +467,69 @@
             }
           }
         }
+      },
+      "jv-category-rail": {
+        "label": "Category rail",
+        "component": {
+          "titlePlaceholder": "Section title",
+          "categoryLabelPlaceholder": "Category label",
+          "noCategories": "No categories configured"
+        },
+        "config": {
+          "title": {
+            "label": "Section title",
+            "placeholder": "Popular categories"
+          },
+          "eyebrow": {
+            "label": "Eyebrow",
+            "placeholder": "Discover quickly"
+          },
+          "description": {
+            "label": "Description",
+            "placeholder": "Jump straight to the right furniture."
+          },
+          "layout": {
+            "label": "Layout",
+            "rail": "Horizontal rail",
+            "grid": "Responsive grid"
+          },
+          "categories": {
+            "title": "Categories",
+            "add": "Add category",
+            "remove": "Remove",
+            "cardTitle": "Category {index}",
+            "id": {
+              "label": "ID",
+              "helpText": "Optional stable ID. Empty = label and index."
+            },
+            "categoryId": {
+              "label": "Category",
+              "placeholder": "Select category"
+            },
+            "label": {
+              "label": "Label"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/living/sofas"
+            },
+            "imageMedia": {
+              "label": "Image",
+              "caption": "Upload category image"
+            }
+          },
+          "viewAll": {
+            "title": "View all link",
+            "label": {
+              "label": "Label",
+              "placeholder": "All categories"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/shop"
+            }
+          }
+        }
       }
     },
     "blocks": {
@@ -502,6 +565,9 @@
       },
       "jv-shop-the-look": {
         "label": "Shop the look"
+      },
+      "jv-category-rail": {
+        "label": "Category rail"
       }
     }
   },
@@ -515,7 +581,8 @@
             "hero": "Hero",
             "newsletter": "Newsletter",
             "room": "Room",
-            "commerce": "Commerce"
+            "commerce": "Commerce",
+            "category": "Category"
           }
         }
       }

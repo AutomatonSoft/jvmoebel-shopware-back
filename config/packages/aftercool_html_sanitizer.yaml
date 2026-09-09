@@ -1,0 +1,12 @@
+shopware:
+    html_sanitizer:
+        sets:
+            - name: aftercool
+              tags: ["section"]
+              attributes: ["data-linked-id"]
+              custom_attributes:
+                  - tags: ["section"]
+                    attributes: ["data-linked-id"]
+        fields:
+            - name: product_translation.description
+              sets: ["basic", "media", "HTML5", "aftercool"]

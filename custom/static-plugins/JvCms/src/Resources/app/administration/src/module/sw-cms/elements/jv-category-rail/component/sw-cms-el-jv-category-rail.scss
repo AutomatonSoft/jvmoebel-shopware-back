@@ -1,0 +1,98 @@
+$jv-category-rail-preview-size: 56px;
+
+.sw-cms-el-jv-category-rail {
+    padding: 16px;
+
+    &__eyebrow {
+        color: #52667a;
+        font-size: 12px;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+
+    &__title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+
+        &--placeholder {
+            color: #94a6b8;
+        }
+    }
+
+    &__description {
+        color: #52667a;
+        font-size: 13px;
+        margin-bottom: 12px;
+    }
+
+    &__list {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+    }
+
+    &--grid &__list {
+        display: grid;
+        gap: 10px 12px;
+        grid-template-columns: repeat(auto-fill, $jv-category-rail-preview-size);
+        justify-content: start;
+        overflow: visible;
+    }
+
+    &__item {
+        flex: 0 0 $jv-category-rail-preview-size;
+        text-align: center;
+        width: $jv-category-rail-preview-size;
+    }
+
+    &--grid &__item {
+        flex: initial;
+    }
+
+    &__item-image {
+        align-items: center;
+        aspect-ratio: 1;
+        background: #e3e9ef;
+        border: 1px solid #d1d9e0;
+        border-radius: 999px;
+        display: flex;
+        height: $jv-category-rail-preview-size;
+        justify-content: center;
+        margin: 0 auto 6px;
+        overflow: hidden;
+        width: $jv-category-rail-preview-size;
+    }
+
+    &__item-photo {
+        display: block;
+        height: 100%;
+        object-fit: cover;
+        width: 100%;
+    }
+
+    &__item-label {
+        display: -webkit-box;
+        font-size: 10px;
+        font-weight: 600;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-height: 1.2;
+        max-width: $jv-category-rail-preview-size;
+        overflow: hidden;
+        overflow-wrap: anywhere;
+    }
+
+    &__empty {
+        color: #94a6b8;
+        font-size: 13px;
+    }
+
+    &__view-all {
+        color: #52667a;
+        font-size: 12px;
+        font-weight: 600;
+        margin-top: 12px;
+    }
+}
