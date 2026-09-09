@@ -53,6 +53,23 @@ final class CosmoShopCustomerWishlistCsvReaderTest extends TestCase
         }
     }
 
+    public function testItReadsRfc4180QuotesWithoutTreatingBackslashesAsEscapes(): void
+    {
+        $productNumber = 'SKU-\\"QUOTED"';
+        $file = $this->file([
+            ['42', '10', '100', $productNumber],
+        ]);
+
+        try {
+            $record = (new CosmoShopCustomerWishlistCsvReader())->read($file)[0];
+
+            self::assertTrue($record->isWellFormed);
+            self::assertSame($productNumber, $record->productNumber);
+        } finally {
+            unlink($file);
+        }
+    }
+
     /** @param list<list<string>> $rows */
     private function file(array $rows): string
     {
@@ -60,9 +77,9 @@ final class CosmoShopCustomerWishlistCsvReaderTest extends TestCase
         self::assertNotFalse($file);
         $stream = fopen($file, 'wb');
         self::assertIsResource($stream);
-        fputcsv($stream, ['source_customer_id', 'source_list_id', 'source_article_id', 'product_number'], ';', '"', '\\');
+        fputcsv($stream, ['source_customer_id', 'source_list_id', 'source_article_id', 'product_number'], ';', '"', '');
         foreach ($rows as $row) {
-            fputcsv($stream, $row, ';', '"', '\\');
+            fputcsv($stream, $row, ';', '"', '');
         }
         fclose($stream);
 

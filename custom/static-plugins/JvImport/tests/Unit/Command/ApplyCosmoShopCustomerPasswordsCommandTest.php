@@ -18,7 +18,9 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Tester\ApplicationTester;
 use Symfony\Component\Console\Tester\CommandTester;
 
 final class ApplyCosmoShopCustomerPasswordsCommandTest extends TestCase
@@ -41,18 +43,22 @@ final class ApplyCosmoShopCustomerPasswordsCommandTest extends TestCase
                 $this->records[] = ['level' => $level, 'message' => $message, 'context' => $context];
             }
         };
-        $tester = null;
-
         try {
             $service = new ApplyCosmoShopCustomerPasswordsService(new CosmoShopCustomerPasswordCsvReader(), $repository);
-            $tester = new CommandTester(new ApplyCosmoShopCustomerPasswordsCommand($service, $logger, 'test'));
+            $application = new Application();
+            $application->setAutoExit(false);
+            $application->addCommand(new ApplyCosmoShopCustomerPasswordsCommand($service, $logger, 'test'));
+            $tester = new ApplicationTester($application);
 
-            $this->expectException(\RuntimeException::class);
-            $tester->execute(['market' => Market::Germany->domain(), 'file' => $file]);
+            self::assertSame(Command::FAILURE, $tester->run([
+                'command' => 'jv:cosmoshop:apply-customer-passwords',
+                'market' => Market::Germany->domain(),
+                'file' => $file,
+            ], ['capture_stderr_separately' => true]));
+            self::assertStringNotContainsString($secret, $tester->getDisplay(true));
+            self::assertStringNotContainsString($secret, $tester->getErrorOutput(true));
         } finally {
             self::assertSame([LogLevel::INFO, LogLevel::ERROR], array_column($logger->records, 'level'));
-            self::assertNotNull($tester);
-            self::assertStringNotContainsString($secret, $tester->getDisplay(true));
             self::assertNotContains($secret, $this->scalarValues($logger->records));
             unlink($file);
         }

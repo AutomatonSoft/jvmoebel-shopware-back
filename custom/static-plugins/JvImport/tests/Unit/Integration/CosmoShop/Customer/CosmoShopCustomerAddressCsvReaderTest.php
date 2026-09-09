@@ -48,6 +48,23 @@ final class CosmoShopCustomerAddressCsvReaderTest extends TestCase
         }
     }
 
+    public function testItReadsRfc4180QuotesWithoutTreatingBackslashesAsEscapes(): void
+    {
+        $company = 'ACME \\"Quoted"';
+        $file = $this->file([
+            ['42', '17', 'mr', '', 'Ada', 'Lovelace', $company, 'Main 1', '10115', 'Berlin', 'DE', ''],
+        ]);
+
+        try {
+            $record = (new CosmoShopCustomerAddressCsvReader())->read($file)[0];
+
+            self::assertTrue($record->isWellFormed);
+            self::assertSame($company, $record->company);
+        } finally {
+            unlink($file);
+        }
+    }
+
     /** @param list<list<string>> $rows */
     private function file(array $rows): string
     {
@@ -58,9 +75,9 @@ final class CosmoShopCustomerAddressCsvReaderTest extends TestCase
         fputcsv($stream, [
             'source_customer_id', 'source_address_id', 'salutation', 'title', 'first_name', 'last_name',
             'company', 'street', 'zipcode', 'city', 'country', 'phone_number',
-        ], ';', '"', '\\');
+        ], ';', '"', '');
         foreach ($rows as $row) {
-            fputcsv($stream, $row, ';', '"', '\\');
+            fputcsv($stream, $row, ';', '"', '');
         }
         fclose($stream);
 

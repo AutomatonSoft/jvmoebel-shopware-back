@@ -49,15 +49,16 @@ final class CosmoShopCustomerPasswordCsvReaderTest extends TestCase
         self::assertNotFalse($file);
         $stream = fopen($file, 'wb');
         self::assertNotFalse($stream);
-        fputcsv($stream, ['source_customer_id', 'password_hash', 'salt'], ';', '"', '\\');
-        fputcsv($stream, ['44', 'plain;"text\\value', ''], ';', '"', '\\');
+        fputcsv($stream, ['source_customer_id', 'password_hash', 'salt'], ';', '"', '');
+        $password = 'plain-\\"quoted"-value';
+        fputcsv($stream, ['44', $password, ''], ';', '"', '');
         fclose($stream);
 
         try {
             $record = (new CosmoShopCustomerPasswordCsvReader())->read($file)[0];
 
             self::assertTrue($record->isWellFormed);
-            self::assertSame('plain;"text\\value', $record->password);
+            self::assertSame($password, $record->password);
         } finally {
             unlink($file);
         }
