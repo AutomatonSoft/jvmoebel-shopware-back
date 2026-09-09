@@ -22,7 +22,8 @@ import './module/sw-cms/elements/jv-faq';
 import './module/sw-cms/blocks/jv-faq/jv-faq';
 import './module/sw-cms/elements/jv-category-rail';
 import './module/sw-cms/blocks/jv-category-rail/jv-category-rail';
-
+import './module/sw-cms/elements/jv-why-jvmoebel';
+import './module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel';
 import deDE from './snippet/de-DE.json';
 import enGB from './snippet/en-GB.json';
 

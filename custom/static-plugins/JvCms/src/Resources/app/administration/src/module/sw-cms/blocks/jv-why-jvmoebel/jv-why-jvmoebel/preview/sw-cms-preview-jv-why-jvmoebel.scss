@@ -1,0 +1,39 @@
+.sw-cms-preview-jv-why-jvmoebel {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    gap: 12px;
+    align-items: start;
+    padding: 12px;
+
+    &__mark {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 56px;
+        height: 56px;
+        font-size: 14px;
+        font-weight: 700;
+        color: #a57d63;
+        border: 1px solid #cdb8a6;
+        border-radius: 50%;
+    }
+
+    &__title {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    &__list {
+        display: grid;
+        gap: 6px;
+    }
+
+    &__item {
+        display: block;
+        height: 8px;
+        background: #cbd5e1;
+        border-radius: 999px;
+    }
+}

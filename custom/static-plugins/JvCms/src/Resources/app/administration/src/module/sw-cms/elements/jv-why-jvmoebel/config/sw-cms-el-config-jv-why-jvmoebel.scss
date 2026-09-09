@@ -1,0 +1,26 @@
+.sw-cms-el-config-jv-why-jvmoebel {
+    &__section {
+        margin-top: 24px;
+    }
+
+    &__section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+
+    &__card {
+        padding: 16px;
+        margin-bottom: 16px;
+        border: 1px solid #d1d9e0;
+        border-radius: 4px;
+    }
+
+    &__card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+}
