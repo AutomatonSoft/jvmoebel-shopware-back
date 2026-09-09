@@ -11,7 +11,7 @@ use Shopware\Core\Content\Cms\DataResolver\Element\ElementDataCollection;
 use Shopware\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
 
 /**
- * Resolves CMS element `jv-home-editorial` for the Store API (backend SPEC-015).
+ * Resolves CMS element `jv-home-editorial` for the Store API (backend SPEC-016).
  *
  * The element has static CMS config only. Persisted config is untrusted and is
  * normalized into the canonical arrays expected by the Next.js storefront.

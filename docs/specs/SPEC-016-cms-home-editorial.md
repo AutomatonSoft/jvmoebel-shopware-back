@@ -1,4 +1,4 @@
-# SPEC-015 — CMS home editorial (backend)
+# SPEC-016 — CMS home editorial (backend)
 
 ## Цель
 
