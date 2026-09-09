@@ -1,6 +1,6 @@
 {
   "main.js": {
-    "file": "assets/jv-cms-BW4EU9Oo.js",
+    "file": "assets/jv-cms-DGd1P9dw.js",
     "name": "jv-cms",
     "src": "main.js",
     "isEntry": true,
@@ -53,7 +53,12 @@
       "module/sw-cms/elements/jv-home-editorial/config/index.js",
       "module/sw-cms/elements/jv-home-editorial/component/index.js",
       "module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/preview/index.js",
-      "module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/component/index.js"
+      "module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/component/index.js",
+      "module/sw-cms/elements/jv-category-rail/preview/index.js",
+      "module/sw-cms/elements/jv-category-rail/config/index.js",
+      "module/sw-cms/elements/jv-category-rail/component/index.js",
+      "module/sw-cms/blocks/jv-category-rail/jv-category-rail/preview/index.js",
+      "module/sw-cms/blocks/jv-category-rail/jv-category-rail/component/index.js"
     ]
   },
   "module/sw-cms/blocks/jv-button/jv-button-link/component/index.js": {
