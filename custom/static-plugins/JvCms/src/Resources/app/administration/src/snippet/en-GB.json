@@ -398,6 +398,48 @@
           "remove": "Remove"
         }
       },
+      "jv-faq": {
+        "label": "FAQ",
+        "component": {
+          "titlePlaceholder": "FAQ title",
+          "noItems": "No questions configured"
+        },
+        "config": {
+          "title": {
+            "label": "Title",
+            "placeholder": "Frequently asked questions about discount codes"
+          },
+          "eyebrow": {
+            "label": "Eyebrow",
+            "placeholder": "Good to know"
+          },
+          "description": {
+            "label": "Description",
+            "placeholder": "Information about promotions, codes, and discounted products."
+          },
+          "items": {
+            "title": "Questions and answers",
+            "add": "Add question",
+            "cardTitle": "Question {index}",
+            "required": "Question and answer must both be filled in.",
+            "moveUp": "Move up",
+            "moveDown": "Move down",
+            "remove": "Remove",
+            "id": {
+              "label": "ID",
+              "helpText": "Stable technical ID. Generated automatically for new questions."
+            },
+            "question": {
+              "label": "Question",
+              "placeholder": "How can I redeem a discount code?"
+            },
+            "answer": {
+              "label": "Answer",
+              "placeholder": "Enter answer text and links …"
+            }
+          }
+        }
+      },
       "jv-shop-the-look": {
         "label": "Shop the look",
         "component": {
@@ -562,6 +604,9 @@
       },
       "jv-home-editorial": {
         "label": "Editorial content"
+      },
+      "jv-faq": {
+        "label": "FAQ"
       },
       "jv-shop-the-look": {
         "label": "Shop the look"

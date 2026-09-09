@@ -18,6 +18,8 @@ import './module/sw-cms/elements/jv-shop-the-look';
 import './module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look';
 import './module/sw-cms/elements/jv-home-editorial';
 import './module/sw-cms/blocks/jv-home-editorial/jv-home-editorial';
+import './module/sw-cms/elements/jv-faq';
+import './module/sw-cms/blocks/jv-faq/jv-faq';
 import './module/sw-cms/elements/jv-category-rail';
 import './module/sw-cms/blocks/jv-category-rail/jv-category-rail';
 

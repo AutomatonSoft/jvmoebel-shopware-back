@@ -1,0 +1,36 @@
+.sw-cms-el-preview-jv-faq {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 0.7fr 1.3fr;
+    padding: 12px;
+
+    &__intro {
+        strong {
+            display: block;
+            font-size: 11px;
+            margin: 6px 0;
+        }
+
+        span {
+            background: #c6cdd4;
+            border-radius: 2px;
+            display: block;
+            height: 4px;
+        }
+    }
+
+    &__items {
+        border: 1px solid #d1d9e0;
+        border-radius: 5px;
+
+        span {
+            border-bottom: 1px solid #d1d9e0;
+            display: block;
+            height: 15px;
+
+            &:last-child {
+                border-bottom: 0;
+            }
+        }
+    }
+}

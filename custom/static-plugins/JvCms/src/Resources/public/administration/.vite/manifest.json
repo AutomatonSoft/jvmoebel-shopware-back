@@ -1,6 +1,6 @@
 {
   "main.js": {
-    "file": "assets/jv-cms-DGd1P9dw.js",
+    "file": "assets/jv-cms-DJu9GCIh.js",
     "name": "jv-cms",
     "src": "main.js",
     "isEntry": true,
@@ -54,6 +54,11 @@
       "module/sw-cms/elements/jv-home-editorial/component/index.js",
       "module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/preview/index.js",
       "module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/component/index.js",
+      "module/sw-cms/elements/jv-faq/preview/index.js",
+      "module/sw-cms/elements/jv-faq/config/index.js",
+      "module/sw-cms/elements/jv-faq/component/index.js",
+      "module/sw-cms/blocks/jv-faq/jv-faq/preview/index.js",
+      "module/sw-cms/blocks/jv-faq/jv-faq/component/index.js",
       "module/sw-cms/elements/jv-category-rail/preview/index.js",
       "module/sw-cms/elements/jv-category-rail/config/index.js",
       "module/sw-cms/elements/jv-category-rail/component/index.js",
@@ -122,6 +127,24 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-BBqgw90K.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-faq/jv-faq/component/index.js": {
+    "file": "assets/index-DsIPREBq.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-faq/jv-faq/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BtEdmG6F.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-faq/jv-faq/preview/index.js": {
+    "file": "assets/index-DGp_Qoek.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-faq/jv-faq/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BTT0UeeF.css"
     ]
   },
   "module/sw-cms/blocks/jv-global-search/jv-global-search/component/index.js": {
@@ -308,6 +331,33 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-Blid_j87.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-faq/component/index.js": {
+    "file": "assets/index-3nRUFl0C.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-faq/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BfimdR6n.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-faq/config/index.js": {
+    "file": "assets/index-CUfEhBlQ.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-faq/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-7HcPrnKK.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-faq/preview/index.js": {
+    "file": "assets/index-CYgrWzwu.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-faq/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DTpw0lRZ.css"
     ]
   },
   "module/sw-cms/elements/jv-global-search/component/index.js": {
