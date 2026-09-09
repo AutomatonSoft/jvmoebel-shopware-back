@@ -1,0 +1,157 @@
+{% block sw_cms_el_config_jv_shop_the_look %}
+	<div class="sw-cms-el-config-jv-shop-the-look">
+		<mt-text-field
+			v-model:model-value="element.config.title.value"
+			:label="$t('cms.elements.jv-shop-the-look.config.title.label')"
+			:placeholder="$t('cms.elements.jv-shop-the-look.config.title.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-text-field
+			v-model:model-value="element.config.eyebrow.value"
+			:label="$t('cms.elements.jv-shop-the-look.config.eyebrow.label')"
+			:placeholder="$t('cms.elements.jv-shop-the-look.config.eyebrow.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-textarea
+			v-model:model-value="element.config.description.value"
+			:label="$t('cms.elements.jv-shop-the-look.config.description.label')"
+			:placeholder="$t('cms.elements.jv-shop-the-look.config.description.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<div class="sw-cms-el-config-jv-shop-the-look__section">
+			<label class="sw-cms-el-config-jv-shop-the-look__media-label">
+				{{ $t('cms.elements.jv-shop-the-look.config.imageMedia.label') }}
+			</label>
+
+			<sw-media-upload-v2
+				variant="regular"
+				:upload-tag="imageUploadTag"
+				:source="imagePreviewSource"
+				:allow-multi-select="false"
+				:default-folder="cmsPageState.pageEntityName"
+				:caption="$t('cms.elements.jv-shop-the-look.config.imageMedia.caption')"
+				@media-upload-sidebar-open="onOpenImageMediaModal"
+				@media-upload-remove-image="onImageRemove"
+			/>
+
+			<sw-upload-listener
+				:upload-tag="imageUploadTag"
+				auto-upload
+				@media-upload-finish="onImageUpload"
+			/>
+		</div>
+
+		<div class="sw-cms-el-config-jv-shop-the-look__section">
+			<div class="sw-cms-el-config-jv-shop-the-look__section-header">
+				<h4>{{ $t('cms.elements.jv-shop-the-look.config.items.title') }}</h4>
+				<mt-button size="small" variant="secondary" @click="addItem">
+					{{ $t('cms.elements.jv-shop-the-look.config.items.add') }}
+				</mt-button>
+			</div>
+
+			<div
+				v-for="(item, itemIndex) in items"
+				:key="item.id || itemIndex"
+				class="sw-cms-el-config-jv-shop-the-look__card"
+			>
+				<div class="sw-cms-el-config-jv-shop-the-look__card-header">
+					<strong>{{ $t('cms.elements.jv-shop-the-look.config.items.cardTitle', { index: itemIndex + 1 }) }}</strong>
+					<div class="sw-cms-el-config-jv-shop-the-look__card-actions">
+						<mt-button size="small" variant="secondary" :disabled="itemIndex === 0" @click="moveItem(itemIndex, -1)">
+							{{ $t('cms.elements.jv-shop-the-look.config.items.moveUp') }}
+						</mt-button>
+						<mt-button size="small" variant="secondary" :disabled="itemIndex === items.length - 1" @click="moveItem(itemIndex, 1)">
+							{{ $t('cms.elements.jv-shop-the-look.config.items.moveDown') }}
+						</mt-button>
+						<mt-button size="small" variant="critical" @click="removeItem(itemIndex)">
+							{{ $t('cms.elements.jv-shop-the-look.config.items.remove') }}
+						</mt-button>
+					</div>
+				</div>
+
+				<sw-entity-single-select
+					v-model:value="item.productId"
+					entity="product"
+					:label="$t('cms.elements.jv-shop-the-look.config.items.productId.label')"
+					:placeholder="$t('cms.elements.jv-shop-the-look.config.items.productId.placeholder')"
+					:help-text="$t('cms.elements.jv-shop-the-look.config.items.productId.helpText')"
+					show-clearable-button
+					@update:value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="item.name"
+					:label="$t('cms.elements.jv-shop-the-look.config.items.name.label')"
+					:placeholder="$t('cms.elements.jv-shop-the-look.config.items.name.placeholder')"
+					:help-text="$t('cms.elements.jv-shop-the-look.config.items.manualHelpText')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-textarea
+					v-model:model-value="item.description"
+					:label="$t('cms.elements.jv-shop-the-look.config.items.description.label')"
+					:placeholder="$t('cms.elements.jv-shop-the-look.config.items.description.placeholder')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="item.url"
+					:label="$t('cms.elements.jv-shop-the-look.config.items.url.label')"
+					:placeholder="$t('cms.elements.jv-shop-the-look.config.items.url.placeholder')"
+					:help-text="$t('cms.elements.jv-shop-the-look.config.items.manualHelpText')"
+					@update:model-value="onUpdate"
+				/>
+
+				<div class="sw-cms-el-config-jv-shop-the-look__coordinates">
+					<mt-number-field
+						v-model:model-value="item.hotspot.x"
+						number-type="float"
+						:min="0"
+						:max="100"
+						:label="$t('cms.elements.jv-shop-the-look.config.items.hotspotX.label')"
+						@update:model-value="onUpdate"
+					/>
+
+					<mt-number-field
+						v-model:model-value="item.hotspot.y"
+						number-type="float"
+						:min="0"
+						:max="100"
+						:label="$t('cms.elements.jv-shop-the-look.config.items.hotspotY.label')"
+						@update:model-value="onUpdate"
+					/>
+				</div>
+			</div>
+		</div>
+
+		<div class="sw-cms-el-config-jv-shop-the-look__section">
+			<h4>{{ $t('cms.elements.jv-shop-the-look.config.viewAll.title') }}</h4>
+			<mt-text-field
+				v-model:model-value="element.config.viewAll.value.label"
+				:label="$t('cms.elements.jv-shop-the-look.config.viewAll.label.label')"
+				:placeholder="$t('cms.elements.jv-shop-the-look.config.viewAll.label.placeholder')"
+				@update:model-value="onUpdate"
+			/>
+			<mt-text-field
+				v-model:model-value="element.config.viewAll.value.url"
+				:label="$t('cms.elements.jv-shop-the-look.config.viewAll.url.label')"
+				:placeholder="$t('cms.elements.jv-shop-the-look.config.viewAll.url.placeholder')"
+				@update:model-value="onUpdate"
+			/>
+		</div>
+
+		<sw-media-modal-v2
+			v-if="mediaModalIsOpen"
+			variant="full"
+			:caption="$t('cms.elements.jv-shop-the-look.config.imageMedia.caption')"
+			:entity-context="cmsPageState.entityName"
+			:allow-multi-select="false"
+			:initial-folder-id="cmsPageState.defaultMediaFolderId"
+			@media-modal-selection-change="onImageSelectionChanges"
+			@modal-close="onCloseImageMediaModal"
+		/>
+	</div>
+{% endblock %}
