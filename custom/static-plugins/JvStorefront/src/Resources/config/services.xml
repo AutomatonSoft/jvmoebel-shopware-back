@@ -1,0 +1,31 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services https://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <defaults autowire="true" autoconfigure="true" public="false"/>
+
+        <service id="Jv\Storefront\Core\Content\StorefrontSocialLink\StorefrontSocialLinkDefinition">
+            <tag name="shopware.entity.definition" entity="jv_storefront_social_link"/>
+        </service>
+
+        <service id="Jv\Storefront\Core\Content\StorefrontPaymentBadge\StorefrontPaymentBadgeDefinition">
+            <tag name="shopware.entity.definition" entity="jv_storefront_payment_badge"/>
+        </service>
+
+        <service id="Jv\Storefront\Service\StorefrontInputNormalizer"/>
+        <service id="Jv\Storefront\Service\StorefrontConfigLoader">
+            <argument type="service" id="jv_storefront_social_link.repository"/>
+            <argument type="service" id="jv_storefront_payment_badge.repository"/>
+            <argument type="service" id="media.repository"/>
+            <argument type="service" id="sales_channel.repository"/>
+            <argument type="service" id="Shopware\Core\Content\Category\Service\NavigationLoader"/>
+            <argument type="service" id="Jv\Storefront\Service\StorefrontInputNormalizer"/>
+        </service>
+
+        <service id="Jv\Storefront\StoreApi\Route\StorefrontConfigRoute" public="true">
+            <tag name="controller.service_arguments"/>
+        </service>
+    </services>
+</container>

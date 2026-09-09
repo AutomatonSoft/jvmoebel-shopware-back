@@ -1,0 +1,342 @@
+{% block jv_storefront_settings_index %}
+<sw-page class="jv-storefront-settings-index">
+    {% block jv_storefront_settings_index_smart_bar %}
+    <template #smart-bar-header>
+        <h2>{{ $t('jv-storefront-settings.general.title') }}</h2>
+    </template>
+
+    <template #smart-bar-actions>
+        <sw-button
+            variant="primary"
+            :disabled="isSaving || !salesChannel"
+            :isLoading="isSaving"
+            @click="saveCustomFields"
+        >
+            {{ $t('global.default.save') }}
+        </sw-button>
+    </template>
+    {% endblock %}
+
+    {% block jv_storefront_settings_index_content %}
+    <template #content>
+        <sw-card-view>
+            <sw-card :title="$t('jv-storefront-settings.salesChannel.title')">
+                <sw-entity-single-select
+                    v-model:value="salesChannelId"
+                    entity="sales_channel"
+                    :label="$t('jv-storefront-settings.salesChannel.label')"
+                    @update:value="onSalesChannelChange"
+                />
+            </sw-card>
+
+            <sw-card v-if="salesChannel" :title="$t('jv-storefront-settings.branding.title')">
+                <div class="jv-storefront-settings-index__logo">
+                    <label class="jv-storefront-settings-index__logo-label">
+                        {{ $t('jv-storefront-settings.branding.logo') }}
+                    </label>
+
+                    <sw-media-upload-v2
+                        variant="regular"
+                        :upload-tag="logoUploadTag"
+                        :source="logoPreviewSource"
+                        :allow-multi-select="false"
+                        :caption="$t('jv-storefront-settings.branding.logoCaption')"
+                        :on-media-upload-sidebar-open="onOpenLogoMediaModal"
+                        @media-upload-sidebar-open="onOpenLogoMediaModal"
+                        @media-upload-remove-image="onLogoRemove"
+                    />
+
+                    <sw-upload-listener
+                        :upload-tag="logoUploadTag"
+                        auto-upload
+                        @media-upload-finish="onLogoUpload"
+                    />
+                </div>
+            </sw-card>
+
+            <sw-card v-if="salesChannel" :title="$t('jv-storefront-settings.footer.title')">
+                <sw-text-field
+                    v-model:value="customFields.jv_footer_about_eyebrow"
+                    :label="$t('jv-storefront-settings.footer.eyebrow')"
+                />
+                <sw-text-field
+                    v-model:value="customFields.jv_footer_about_title"
+                    :label="$t('jv-storefront-settings.footer.titleField')"
+                />
+                <sw-textarea-field
+                    v-model:modelValue="customFields.jv_footer_about_description"
+                    :label="$t('jv-storefront-settings.footer.description')"
+                />
+                <sw-text-field
+                    v-model:value="customFields.jv_footer_copyright_text"
+                    :label="$t('jv-storefront-settings.footer.copyright')"
+                />
+                <sw-switch-field
+                    v-model:value="customFields.jv_footer_revocation_enabled"
+                    :label="$t('jv-storefront-settings.footer.revocationEnabled')"
+                />
+                <sw-text-field
+                    v-model:value="customFields.jv_footer_revocation_button_label"
+                    :label="$t('jv-storefront-settings.footer.revocationLabel')"
+                />
+                <sw-text-field
+                    v-model:value="customFields.jv_footer_revocation_recipient_email"
+                    :label="$t('jv-storefront-settings.footer.revocationEmail')"
+                />
+            </sw-card>
+
+            <mt-card
+                v-if="salesChannel"
+                position-identifier="jv-storefront-settings-social-links"
+                :title="$t('jv-storefront-settings.social.title')"
+            >
+                <template #toolbar>
+                    <mt-button
+                        size="small"
+                        variant="secondary"
+                        :disabled="!salesChannelId"
+                        @click="openSocialLinkCreate"
+                    >
+                        {{ $t('jv-storefront-settings.actions.add') }}
+                    </mt-button>
+                </template>
+
+                <sw-data-grid
+                    v-if="salesChannelId"
+                    identifier="jv-storefront-settings-social-links"
+                    :data-source="socialLinks"
+                    :columns="socialLinkGridColumns"
+                    :is-loading="isSocialLinksLoading"
+                    :show-selection="false"
+                    :show-settings="false"
+                >
+                    <template #column-active="{ item }">
+                        <span class="sw-data-grid__cell-value">{{ formatActive(item.active) }}</span>
+                    </template>
+
+                    <template #actions="{ item }">
+                        <sw-context-menu-item @click="openSocialLinkEdit(item)">
+                            {{ $t('global.default.edit') }}
+                        </sw-context-menu-item>
+                        <sw-context-menu-item
+                            variant="danger"
+                            @click="deleteSocialLink(item)"
+                        >
+                            {{ $t('global.default.delete') }}
+                        </sw-context-menu-item>
+                    </template>
+                </sw-data-grid>
+            </mt-card>
+
+            <mt-card
+                v-if="salesChannel"
+                position-identifier="jv-storefront-settings-payment-badges"
+                :title="$t('jv-storefront-settings.payment.title')"
+            >
+                <template #toolbar>
+                    <mt-button
+                        size="small"
+                        variant="secondary"
+                        :disabled="!salesChannelId"
+                        @click="openPaymentBadgeCreate"
+                    >
+                        {{ $t('jv-storefront-settings.actions.add') }}
+                    </mt-button>
+                </template>
+
+                <sw-data-grid
+                    v-if="salesChannelId"
+                    identifier="jv-storefront-settings-payment-badges"
+                    :data-source="paymentBadges"
+                    :columns="paymentBadgeGridColumns"
+                    :is-loading="isPaymentBadgesLoading"
+                    :show-selection="false"
+                    :show-settings="false"
+                >
+                    <template #column-active="{ item }">
+                        <span class="sw-data-grid__cell-value">{{ formatActive(item.active) }}</span>
+                    </template>
+
+                    <template #actions="{ item }">
+                        <sw-context-menu-item @click="openPaymentBadgeEdit(item)">
+                            {{ $t('global.default.edit') }}
+                        </sw-context-menu-item>
+                        <sw-context-menu-item
+                            variant="danger"
+                            @click="deletePaymentBadge(item)"
+                        >
+                            {{ $t('global.default.delete') }}
+                        </sw-context-menu-item>
+                    </template>
+                </sw-data-grid>
+            </mt-card>
+        </sw-card-view>
+
+        <sw-media-modal-v2
+            v-if="logoMediaModalOpen"
+            variant="full"
+            :caption="$t('jv-storefront-settings.branding.logoCaption')"
+            entity-context="sales_channel"
+            :allow-multi-select="false"
+            @media-modal-selection-change="onLogoSelectionChanges"
+            @modal-close="onCloseLogoMediaModal"
+        />
+
+        <sw-media-modal-v2
+            v-if="iconMediaModalOpen"
+            variant="full"
+            :caption="$t('jv-storefront-settings.list.iconCaption')"
+            entity-context="sales_channel"
+            :allow-multi-select="false"
+            @media-modal-selection-change="onIconMediaSelectionChanges"
+            @modal-close="onCloseIconMediaModal"
+        />
+
+        <mt-modal-root
+            :is-open="socialLinkModalOpen"
+            @change="onSocialLinkModalChange"
+        >
+            <mt-modal
+                v-if="socialLinkDraft"
+                class="jv-storefront-settings-modal"
+                width="s"
+                :title="isSocialLinkCreate ? $t('jv-storefront-settings.modal.socialCreate') : $t('jv-storefront-settings.modal.socialEdit')"
+            >
+                <sw-text-field
+                    v-model:value="socialLinkDraft.label"
+                    :label="$t('jv-storefront-settings.list.label')"
+                    required
+                />
+                <sw-text-field
+                    v-model:value="socialLinkDraft.url"
+                    :label="$t('jv-storefront-settings.list.url')"
+                    required
+                />
+                <div class="jv-storefront-settings-index__icon-field">
+                    <label class="jv-storefront-settings-index__logo-label">
+                        {{ $t('jv-storefront-settings.list.icon') }}
+                    </label>
+
+                    <sw-media-upload-v2
+                        variant="regular"
+                        :upload-tag="socialLinkIconUploadTag"
+                        :source="socialLinkIconPreviewSource"
+                        :allow-multi-select="false"
+                        :caption="$t('jv-storefront-settings.list.iconCaption')"
+                        :on-media-upload-sidebar-open="openSocialLinkIconMediaModal"
+                        @media-upload-sidebar-open="openSocialLinkIconMediaModal"
+                        @media-upload-remove-image="onSocialLinkIconRemove"
+                    />
+
+                    <sw-upload-listener
+                        :upload-tag="socialLinkIconUploadTag"
+                        auto-upload
+                        @media-upload-finish="onSocialLinkIconUpload"
+                    />
+                </div>
+                <mt-number-field
+                    v-model="socialLinkDraft.position"
+                    number-type="int"
+                    :label="$t('jv-storefront-settings.list.position')"
+                />
+                <sw-switch-field
+                    v-model:value="socialLinkDraft.active"
+                    :label="$t('jv-storefront-settings.list.active')"
+                />
+                <sw-switch-field
+                    v-model:value="socialLinkDraft.openInNewTab"
+                    :label="$t('jv-storefront-settings.list.openInNewTab')"
+                />
+
+                <template #footer>
+                    <mt-modal-close
+                        as="mt-button"
+                        size="small"
+                        variant="secondary"
+                    >
+                        {{ $t('global.default.cancel') }}
+                    </mt-modal-close>
+                    <mt-modal-action
+                        as="mt-button"
+                        size="small"
+                        variant="primary"
+                        :is-loading="isSocialLinkSaving"
+                        @click="saveSocialLinkDraft"
+                    >
+                        {{ $t('global.default.save') }}
+                    </mt-modal-action>
+                </template>
+            </mt-modal>
+        </mt-modal-root>
+
+        <mt-modal-root
+            :is-open="paymentBadgeModalOpen"
+            @change="onPaymentBadgeModalChange"
+        >
+            <mt-modal
+                v-if="paymentBadgeDraft"
+                class="jv-storefront-settings-modal"
+                width="s"
+                :title="isPaymentBadgeCreate ? $t('jv-storefront-settings.modal.paymentCreate') : $t('jv-storefront-settings.modal.paymentEdit')"
+            >
+                <sw-text-field
+                    v-model:value="paymentBadgeDraft.label"
+                    :label="$t('jv-storefront-settings.list.label')"
+                    required
+                />
+                <div class="jv-storefront-settings-index__icon-field">
+                    <label class="jv-storefront-settings-index__logo-label">
+                        {{ $t('jv-storefront-settings.list.icon') }}
+                    </label>
+
+                    <sw-media-upload-v2
+                        variant="regular"
+                        :upload-tag="paymentBadgeIconUploadTag"
+                        :source="paymentBadgeIconPreviewSource"
+                        :allow-multi-select="false"
+                        :caption="$t('jv-storefront-settings.list.iconCaption')"
+                        :on-media-upload-sidebar-open="openPaymentBadgeIconMediaModal"
+                        @media-upload-sidebar-open="openPaymentBadgeIconMediaModal"
+                        @media-upload-remove-image="onPaymentBadgeIconRemove"
+                    />
+
+                    <sw-upload-listener
+                        :upload-tag="paymentBadgeIconUploadTag"
+                        auto-upload
+                        @media-upload-finish="onPaymentBadgeIconUpload"
+                    />
+                </div>
+                <mt-number-field
+                    v-model="paymentBadgeDraft.position"
+                    number-type="int"
+                    :label="$t('jv-storefront-settings.list.position')"
+                />
+                <sw-switch-field
+                    v-model:value="paymentBadgeDraft.active"
+                    :label="$t('jv-storefront-settings.list.active')"
+                />
+
+                <template #footer>
+                    <mt-modal-close
+                        as="mt-button"
+                        size="small"
+                        variant="secondary"
+                    >
+                        {{ $t('global.default.cancel') }}
+                    </mt-modal-close>
+                    <mt-modal-action
+                        as="mt-button"
+                        size="small"
+                        variant="primary"
+                        :is-loading="isPaymentBadgeSaving"
+                        @click="savePaymentBadgeDraft"
+                    >
+                        {{ $t('global.default.save') }}
+                    </mt-modal-action>
+                </template>
+            </mt-modal>
+        </mt-modal-root>
+    </template>
+    {% endblock %}
+</sw-page>
+{% endblock %}

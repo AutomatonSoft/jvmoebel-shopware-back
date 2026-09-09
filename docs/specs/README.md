@@ -89,3 +89,4 @@ SPEC-NNN-short-name.md
 | [SPEC-012-okb-catalog-import](SPEC-012-okb-catalog-import.md) | Дерево OKB, schema attributes и EAN-обогащение CosmoShop товаров |
 | [SPEC-013-aftercool-product-import](SPEC-013-aftercool-product-import.md) | Фоновый импорт товаров выбранной Aftercool Lister-фабрики |
 | [SPEC-014-cms-shop-the-look](SPEC-014-cms-shop-the-look.md) | Backend CMS element/block `jv-shop-the-look` (интерьерное изображение, товары и hotspot-точки); контракт — platform SPEC-011 |
+| [SPEC-015-cms-category-rail](SPEC-015-cms-category-rail.md) | Backend CMS element/block `jv-category-rail` (лента категорий, layout rail/grid); контракт — platform SPEC-012 |

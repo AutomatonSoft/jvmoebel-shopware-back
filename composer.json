@@ -9,6 +9,7 @@
         "jvmoebel/cms": "^0.1.0",
         "jvmoebel/import": "^0.1",
         "jvmoebel/market-configuration": "^0.1",
+        "jvmoebel/storefront": "^0.1.0",
         "shopware/administration": "*",
         "shopware/core": "6.7.12.2",
         "shopware/deployment-helper": "*",

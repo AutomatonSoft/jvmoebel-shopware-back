@@ -1,0 +1,18 @@
+.jv-storefront-settings-modal {
+    .mt-modal__content {
+        max-height: calc(100vh - 220px);
+        overflow-y: auto;
+    }
+}
+
+.jv-storefront-settings-index__logo-label,
+.jv-storefront-settings-index__icon-field .jv-storefront-settings-index__logo-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary-default);
+}
+
+.jv-storefront-settings-index__icon-field {
+    margin-bottom: 22px;
+}
