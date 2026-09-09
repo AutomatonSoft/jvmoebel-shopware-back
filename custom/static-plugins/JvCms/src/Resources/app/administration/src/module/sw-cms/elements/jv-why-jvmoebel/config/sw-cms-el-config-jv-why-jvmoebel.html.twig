@@ -56,11 +56,45 @@
 				</div>
 
 				<mt-select
+					v-model:model-value="benefit.iconMode"
+					:label="$t('cms.elements.jv-why-jvmoebel.config.benefits.iconMode.label')"
+					:options="iconModeOptions"
+					@update:model-value="onIconModeChange(benefit)"
+				/>
+
+				<mt-select
+					v-if="benefit.iconMode === 'preset'"
 					v-model:model-value="benefit.icon"
 					:label="$t('cms.elements.jv-why-jvmoebel.config.benefits.icon.label')"
 					:options="iconOptions"
 					@update:model-value="onUpdate"
 				/>
+
+				<div
+					v-else
+					class="sw-cms-el-config-jv-why-jvmoebel__media"
+				>
+					<label class="sw-cms-el-config-jv-why-jvmoebel__media-label">
+						{{ $t('cms.elements.jv-why-jvmoebel.config.benefits.iconMedia.label') }}
+					</label>
+
+					<sw-media-upload-v2
+						variant="regular"
+						:upload-tag="benefitUploadTag(benefitIndex)"
+						:source="benefitIconPreviewSource(benefit)"
+						:allow-multi-select="false"
+						:default-folder="cmsPageState.pageEntityName"
+						:caption="$t('cms.elements.jv-why-jvmoebel.config.benefits.iconMedia.caption')"
+						@media-upload-sidebar-open="onOpenBenefitIconMediaModal(benefitIndex)"
+						@media-upload-remove-image="onBenefitIconRemove(benefitIndex)"
+					/>
+
+					<sw-upload-listener
+						:upload-tag="benefitUploadTag(benefitIndex)"
+						auto-upload
+						@media-upload-finish="onBenefitIconUpload(benefitIndex, $event)"
+					/>
+				</div>
 
 				<mt-text-field
 					v-model:model-value="benefit.id"
@@ -107,5 +141,16 @@
 				@update:model-value="onUpdate"
 			/>
 		</div>
+
+		<sw-media-modal-v2
+			v-if="mediaModalIndex !== null"
+			variant="full"
+			:caption="$t('cms.elements.jv-why-jvmoebel.config.benefits.iconMedia.caption')"
+			:entity-context="cmsPageState.entityName"
+			:allow-multi-select="false"
+			:initial-folder-id="cmsPageState.defaultMediaFolderId"
+			@media-modal-selection-change="onBenefitIconSelectionChanges"
+			@modal-close="onCloseBenefitIconMediaModal"
+		/>
 	</div>
 {% endblock %}

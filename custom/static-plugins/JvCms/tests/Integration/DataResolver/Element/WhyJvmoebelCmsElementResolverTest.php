@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Jv\Cms\Tests\Integration\DataResolver\Element;
 
+use Jv\Cms\DataResolver\Element\WhyJvmoebelBenefitIconMediaStruct;
 use Jv\Cms\DataResolver\Element\WhyJvmoebelBenefitStruct;
 use Jv\Cms\DataResolver\Element\WhyJvmoebelCmsElementResolver;
 use Jv\Cms\DataResolver\Element\WhyJvmoebelLinkStruct;
@@ -129,6 +130,7 @@ final class WhyJvmoebelCmsElementResolverTest extends TestCase
                     id: 'why-jvmoebel-advice',
                     position: 0,
                     icon: 'advice',
+                    iconMedia: null,
                     title: 'Persönliche Beratung',
                     description: 'Persönliche Hilfe bei der Auswahl.',
                     url: '/kontakt',
@@ -137,6 +139,7 @@ final class WhyJvmoebelCmsElementResolverTest extends TestCase
                     id: 'why-jvmoebel-design',
                     position: 1,
                     icon: 'design',
+                    iconMedia: null,
                     title: 'Ausgewählte Designs',
                     description: 'Ausdrucksstarke Formen.',
                     url: '/shop',
@@ -158,6 +161,38 @@ final class WhyJvmoebelCmsElementResolverTest extends TestCase
         self::assertSame('/shop', $payload['benefits'][1]['url']);
         self::assertSame('cms_jv_why_jvmoebel_link', $payload['viewAll']['apiAlias']);
         self::assertSame('/ueber-uns', $payload['viewAll']['url']);
+    }
+
+    public function testStructEncoderSerializesCustomBenefitIconMedia(): void
+    {
+        /** @var StructEncoder $encoder */
+        $encoder = static::getContainer()->get(StructEncoder::class);
+
+        $data = new WhyJvmoebelStruct(
+            mark: 'JVM',
+            tagline: 'Tagline',
+            title: 'Title',
+            eyebrow: null,
+            description: null,
+            benefits: [
+                new WhyJvmoebelBenefitStruct(
+                    id: 'custom-icon',
+                    position: 0,
+                    icon: null,
+                    iconMedia: new WhyJvmoebelBenefitIconMediaStruct('https://cdn.example.com/icon.svg', 'Custom icon'),
+                    title: 'Custom icon',
+                    description: 'Uses uploaded media.',
+                    url: '/custom',
+                ),
+            ],
+            viewAll: null,
+        );
+
+        $payload = $encoder->encode($data, new ResponseFields());
+
+        self::assertNull($payload['benefits'][0]['icon']);
+        self::assertSame('cms_jv_why_jvmoebel_benefit_icon_media', $payload['benefits'][0]['iconMedia']['apiAlias']);
+        self::assertSame('https://cdn.example.com/icon.svg', $payload['benefits'][0]['iconMedia']['url']);
     }
 
     /**

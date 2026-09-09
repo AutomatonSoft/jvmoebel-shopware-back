@@ -611,11 +611,20 @@
               "label": "ID",
               "helpText": "Optionale stabile ID. Leer = Titel und Index."
             },
+            "iconMode": {
+              "label": "Icon-Typ",
+              "preset": "Standard-Icon",
+              "media": "Eigenes Bild"
+            },
             "icon": {
               "label": "Icon",
               "advice": "Beratung",
               "design": "Design",
               "payment": "Zahlung"
+            },
+            "iconMedia": {
+              "label": "Icon-Bild",
+              "caption": "Icon hochladen oder aus Medien wählen"
             },
             "titleField": {
               "label": "Titel"

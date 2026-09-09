@@ -13,18 +13,51 @@ use Shopware\Core\Content\Cms\DataResolver\Element\ElementDataCollection;
 use Shopware\Core\Content\Cms\DataResolver\FieldConfig;
 use Shopware\Core\Content\Cms\DataResolver\FieldConfigCollection;
 use Shopware\Core\Content\Cms\DataResolver\ResolverContext\ResolverContext;
+use Shopware\Core\Content\Media\MediaCollection;
+use Shopware\Core\Content\Media\MediaDefinition;
+use Shopware\Core\Content\Media\MediaEntity;
+use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopware\Core\Framework\Struct\Struct;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
 
 final class WhyJvmoebelCmsElementResolverTest extends TestCase
 {
+    private const string MEDIA_ID = 'a1b2c3d4e5f6478990a1b2c3d4e5f678';
+
     public function testItExposesTheCmsElementType(): void
     {
         $resolver = new WhyJvmoebelCmsElementResolver();
 
         self::assertSame('jv-why-jvmoebel', $resolver->getType());
         self::assertNull($resolver->collect($this->slot(), $this->resolverContext()));
+    }
+
+    public function testCollectLoadsCustomBenefitIconMedia(): void
+    {
+        $slot = $this->slot([
+            'mark' => 'JVM',
+            'tagline' => 'Tagline',
+            'title' => 'Title',
+            'benefits' => [[
+                'iconMode' => 'media',
+                'iconMedia' => self::MEDIA_ID,
+                'title' => 'Custom icon',
+                'description' => 'Uses uploaded media.',
+                'url' => '/custom',
+            ]],
+        ]);
+
+        $collection = (new WhyJvmoebelCmsElementResolver())->collect($slot, $this->resolverContext());
+
+        self::assertNotNull($collection);
+        self::assertArrayHasKey(MediaDefinition::class, $collection->all());
+        self::assertSame(
+            [self::MEDIA_ID],
+            $collection->all()[MediaDefinition::class]['jv_why_jvmoebel_media_'.$slot->getUniqueIdentifier()]->getIds(),
+        );
     }
 
     public function testEmptyConfigYieldsSafePayload(): void
@@ -171,6 +204,58 @@ final class WhyJvmoebelCmsElementResolverTest extends TestCase
         self::assertSame('Sicher bezahlen-0', $data->getBenefits()[0]->getId());
     }
 
+    public function testCustomIconMediaBenefitIsResolved(): void
+    {
+        $slot = $this->slot([
+            'mark' => 'JVM',
+            'tagline' => 'Tagline',
+            'title' => 'Title',
+            'benefits' => [[
+                'iconMode' => 'media',
+                'iconMedia' => self::MEDIA_ID,
+                'title' => 'Custom icon',
+                'description' => 'Uses uploaded media.',
+                'url' => '/custom',
+            ]],
+        ]);
+
+        (new WhyJvmoebelCmsElementResolver())->enrich(
+            $slot,
+            $this->resolverContext(),
+            $this->mediaResult($slot, [$this->media(self::MEDIA_ID, 'https://cdn.example.com/icon.svg', 'Custom alt')]),
+        );
+
+        $data = $slot->getData();
+        self::assertInstanceOf(WhyJvmoebelStruct::class, $data);
+        self::assertCount(1, $data->getBenefits());
+        self::assertNull($data->getBenefits()[0]->getIcon());
+        self::assertNotNull($data->getBenefits()[0]->getIconMedia());
+        self::assertSame('https://cdn.example.com/icon.svg', $data->getBenefits()[0]->getIconMedia()->getUrl());
+        self::assertSame('Custom alt', $data->getBenefits()[0]->getIconMedia()->getAlt());
+    }
+
+    public function testCustomIconMediaWithoutResolvedMediaOmitsBenefit(): void
+    {
+        $slot = $this->slot([
+            'mark' => 'JVM',
+            'tagline' => 'Tagline',
+            'title' => 'Title',
+            'benefits' => [[
+                'iconMode' => 'media',
+                'iconMedia' => self::MEDIA_ID,
+                'title' => 'Custom icon',
+                'description' => 'Uses uploaded media.',
+                'url' => '/custom',
+            ]],
+        ]);
+
+        (new WhyJvmoebelCmsElementResolver())->enrich($slot, $this->resolverContext(), new ElementDataCollection());
+
+        $data = $slot->getData();
+        self::assertInstanceOf(WhyJvmoebelStruct::class, $data);
+        self::assertSame([], $data->getBenefits());
+    }
+
     public function testUnknownIconOmitsBenefit(): void
     {
         $slot = $this->slot([
@@ -307,6 +392,8 @@ final class WhyJvmoebelCmsElementResolverTest extends TestCase
         self::assertNull($payload['description']);
         self::assertIsArray($payload['benefits']);
         self::assertSame('cms_jv_why_jvmoebel_benefit', $payload['benefits'][0]['apiAlias']);
+        self::assertSame('design', $payload['benefits'][0]['icon']);
+        self::assertNull($payload['benefits'][0]['iconMedia']);
         self::assertSame('cms_jv_why_jvmoebel_link', $payload['viewAll']['apiAlias']);
     }
 
@@ -456,5 +543,42 @@ final class WhyJvmoebelCmsElementResolverTest extends TestCase
             $this->createMock(SalesChannelContext::class),
             new Request(),
         );
+    }
+
+    /**
+     * @param list<MediaEntity> $entities
+     */
+    private function mediaResult(CmsSlotEntity $slot, array $entities): ElementDataCollection
+    {
+        $ids = array_map(static fn (MediaEntity $entity): string => $entity->getUniqueIdentifier(), $entities);
+        $result = new ElementDataCollection();
+        $result->add(
+            'jv_why_jvmoebel_media_'.$slot->getUniqueIdentifier(),
+            new EntitySearchResult(
+                MediaDefinition::ENTITY_NAME,
+                \count($entities),
+                new MediaCollection($entities),
+                null,
+                new Criteria($ids),
+                Context::createDefaultContext(),
+            ),
+        );
+
+        return $result;
+    }
+
+    private function media(string $id, string $url, string $alt = ''): MediaEntity
+    {
+        $media = new MediaEntity();
+        $media->setUniqueIdentifier($id);
+        $media->setId($id);
+        $media->setUrl($url);
+        if ('' !== $alt) {
+            $media->setTranslated(['alt' => $alt]);
+        } else {
+            $media->setFileName('icon.svg');
+        }
+
+        return $media;
     }
 }

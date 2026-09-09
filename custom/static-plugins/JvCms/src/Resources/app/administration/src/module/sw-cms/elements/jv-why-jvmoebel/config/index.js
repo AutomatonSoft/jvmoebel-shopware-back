@@ -15,9 +15,28 @@ export default {
         Mixin.getByName('cms-element'),
     ],
 
+    inject: ['repositoryFactory'],
+
+    data() {
+        return {
+            mediaModalIndex: null,
+        };
+    },
+
     computed: {
         benefits() {
             return this.ensureBenefits();
+        },
+
+        mediaRepository() {
+            return this.repositoryFactory.create('media');
+        },
+
+        iconModeOptions() {
+            return [
+                { value: 'preset', label: this.$t('cms.elements.jv-why-jvmoebel.config.benefits.iconMode.preset') },
+                { value: 'media', label: this.$t('cms.elements.jv-why-jvmoebel.config.benefits.iconMode.media') },
+            ];
         },
 
         iconOptions() {
@@ -54,6 +73,20 @@ export default {
                 this.element.config.benefits.value = [];
             }
 
+            this.element.config.benefits.value.forEach((benefit) => {
+                if (!benefit || typeof benefit !== 'object') {
+                    return;
+                }
+
+                if (benefit.iconMode !== 'preset' && benefit.iconMode !== 'media') {
+                    benefit.iconMode = 'preset';
+                }
+
+                if (!benefit.icon) {
+                    benefit.icon = 'design';
+                }
+            });
+
             return this.element.config.benefits.value;
         },
 
@@ -89,7 +122,9 @@ export default {
             this.benefits.push({
                 id: Utils.createId(),
                 position: this.benefits.length,
+                iconMode: 'preset',
                 icon: 'design',
+                iconMedia: null,
                 title: '',
                 description: '',
                 url: '',
@@ -100,6 +135,79 @@ export default {
         removeBenefit(index) {
             this.benefits.splice(index, 1);
             this.onUpdate();
+        },
+
+        onIconModeChange(benefit) {
+            if (benefit.iconMode === 'preset') {
+                benefit.iconMedia = null;
+                benefit.iconEntity = null;
+                if (!benefit.icon) {
+                    benefit.icon = 'design';
+                }
+            }
+
+            this.onUpdate();
+        },
+
+        benefitUploadTag(index) {
+            return `cms-element-jv-why-jvmoebel-benefit-${this.element.id}-${index}`;
+        },
+
+        benefitIconPreviewSource(benefit) {
+            if (benefit?.iconEntity?.id) {
+                return benefit.iconEntity;
+            }
+
+            return benefit.iconMedia;
+        },
+
+        async onBenefitIconUpload(index, { targetId }) {
+            const mediaEntity = await this.mediaRepository.get(targetId);
+            const benefit = this.benefits[index];
+            if (!benefit) {
+                return;
+            }
+
+            benefit.iconMedia = mediaEntity.id;
+            benefit.iconEntity = mediaEntity;
+            this.onUpdate();
+        },
+
+        onBenefitIconRemove(index) {
+            const benefit = this.benefits[index];
+            if (!benefit) {
+                return;
+            }
+
+            benefit.iconMedia = null;
+            benefit.iconEntity = null;
+            this.onUpdate();
+        },
+
+        onOpenBenefitIconMediaModal(index) {
+            this.mediaModalIndex = index;
+        },
+
+        onCloseBenefitIconMediaModal() {
+            this.mediaModalIndex = null;
+        },
+
+        onBenefitIconSelectionChanges(mediaEntities) {
+            const index = this.mediaModalIndex;
+            if (index === null) {
+                return;
+            }
+
+            const media = mediaEntities[0];
+            const benefit = this.benefits[index];
+            if (!media || !benefit) {
+                return;
+            }
+
+            benefit.iconMedia = media.id;
+            benefit.iconEntity = media;
+            this.onUpdate();
+            this.onCloseBenefitIconMediaModal();
         },
     },
 };

@@ -12,7 +12,8 @@ final class WhyJvmoebelBenefitStruct extends Struct
     public function __construct(
         protected string $id,
         protected int $position,
-        protected string $icon,
+        protected ?string $icon,
+        protected ?WhyJvmoebelBenefitIconMediaStruct $iconMedia,
         protected string $title,
         protected string $description,
         protected string $url,
@@ -29,9 +30,14 @@ final class WhyJvmoebelBenefitStruct extends Struct
         return $this->position;
     }
 
-    public function getIcon(): string
+    public function getIcon(): ?string
     {
         return $this->icon;
+    }
+
+    public function getIconMedia(): ?WhyJvmoebelBenefitIconMediaStruct
+    {
+        return $this->iconMedia;
     }
 
     public function getTitle(): string

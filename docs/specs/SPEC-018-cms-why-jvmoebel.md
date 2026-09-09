@@ -1,4 +1,4 @@
-# SPEC-016 — CMS why JVMöbel (backend)
+# SPEC-018 — CMS why JVMöbel (backend)
 
 ## Цель
 
@@ -15,14 +15,13 @@
 
 - плагин `custom/static-plugins/JvCms`;
 - element + block `jv-why-jvmoebel`, палитра `brand`;
-- `WhyJvmoebelCmsElementResolver`, structs (`WhyJvmoebelStruct`, `WhyJvmoebelBenefitStruct`, `WhyJvmoebelLinkStruct`);
+- `WhyJvmoebelCmsElementResolver`, structs (`WhyJvmoebelStruct`, `WhyJvmoebelBenefitStruct`, `WhyJvmoebelBenefitIconMediaStruct`, `WhyJvmoebelLinkStruct`);
 - unit/integration-тесты;
 - этот файл, `docs/specs/README.md`; при необходимости `docs/ARCHITECTURE.md`.
 
 Не входит:
 
 - Next.js renderer, pixel-perfect, mock-обновления;
-- media upload / DAL;
 - Twig Storefront;
 - собственный Store API route;
 - `jv-hero`, `jv-room-grid`, `jv-product-grid`, `jv-category-rail`;
@@ -54,22 +53,24 @@
 | Block | `jv-why-jvmoebel` |
 | Category | `brand` |
 
-Config: `mark`, `tagline`, `title`, `eyebrow`, `description`, repeater `benefits` (`id`, `position`, `icon`, `title`, `description`, `url`), `viewAll` (`label`, `url`).
+Config: `mark`, `tagline`, `title`, `eyebrow`, `description`, repeater `benefits` (`id`, `position`, `iconMode`, `icon`, `iconMedia`, `title`, `description`, `url`), `viewAll` (`label`, `url`).
 
 `defaultConfig`: пустые строки, `benefits: []`, `viewAll: { label: "", url: "" }`, без demo-seed.
 
-Поле `icon` в repeater — select (`advice`, `design`, `payment`), не free text.
+Benefit icon в Admin:
+- `iconMode: preset` → select `icon` (`advice`, `design`, `payment`);
+- `iconMode: media` → `iconMedia` (UUID) через `sw-media-upload-v2` / media modal.
 
 ## Правила
 
 - `getType()` = `jv-why-jvmoebel`.
 - Persisted config — недоверенный input.
-- `collect()` возвращает `null` (нет DAL).
+- `collect()` загружает media UUID из benefits с `iconMode: media`.
 - `enrich()`: нормализация по SPEC-013; `$slot->setData(WhyJvmoebelStruct)`.
-- Валидный benefit: `title`, `description`, `url` (`safeWhyJvmoebelHref`), allowlist `icon`, unique `id`.
+- Валидный benefit: `title`, `description`, `url` (`safeWhyJvmoebelHref`), unique `id`, и **либо** allowlist `icon` (`iconMode: preset`), **либо** resolved `iconMedia.url` (`iconMode: media`).
 - Invalid benefits skip; page не 500.
 - `benefits` в `data` — array, sorted by `position` (tie-break: original config index).
-- `icon`: unknown / пустое → benefit omit.
+- preset: unknown / пустой `icon` → benefit omit; media: invalid UUID / missing media / empty url → benefit omit.
 - `viewAll`: оба поля + valid url → link struct; иначе `null`.
 - `catch (\Throwable)` запрещён.
 - Unique `id`: trim config `id`; пусто → `"${title}-${originalConfigIndex}"`; duplicate → skip (first wins).
@@ -86,7 +87,7 @@ Config: `mark`, `tagline`, `title`, `eyebrow`, `description`, repeater `benefits
 | все benefits invalid | `benefits: []` |
 | часть invalid | только valid |
 | duplicate `id` | first wins |
-| unknown `icon` | benefit omit |
+| unknown preset `icon` / unresolved `iconMedia` | benefit omit |
 | unsafe benefit `url` | benefit omit |
 | частичный `viewAll` | `viewAll: null` |
 | пустой `mark` / `tagline` / `title` | `""`; front omit |
@@ -106,6 +107,7 @@ custom/static-plugins/JvCms/src/
 │   ├── WhyJvmoebelCmsElementResolver.php
 │   ├── WhyJvmoebelStruct.php
 │   ├── WhyJvmoebelBenefitStruct.php
+│   ├── WhyJvmoebelBenefitIconMediaStruct.php
 │   └── WhyJvmoebelLinkStruct.php
 └── Resources/config/services.xml
 ```
@@ -145,7 +147,7 @@ module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel/
 Ручные:
 
 - палитра Brand, block Why JVMöbel;
-- repeater: icon select, title, description, url, reorder;
+- repeater: icon mode (preset/media), icon select или media upload, title, description, url, reorder;
 - save / reload;
 - Store API: `type`, `apiAlias`, `benefits` — array;
 - unsafe URL → no 500.
