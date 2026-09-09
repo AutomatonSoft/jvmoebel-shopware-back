@@ -391,6 +391,38 @@ email, required name/address, неизвестная country, невозможн
 Полный повтор должен давать только update/skip и ноль новых
 customer/address/newsletter entities.
 
+### Решение по отклонённым DE-клиентам
+
+Полный Shopware acceptance принял 6 555 из 6 845 customer rows.
+Стандартный invalid-record артефакт дал следующую взаимно исключающую
+классификацию 290 отклонённых строк:
+
+| Причина | Строк |
+|---|---:|
+| отсутствуют required name/address fields; часть тех же строк не имеет email или country | 188 |
+| неподтверждённый country — единственная ошибка | 90 |
+| zipcode длиннее целевого лимита — единственная ошибка | 7 |
+| phone number длиннее целевого лимита | 2 |
+| пустой или HTML5-invalid email — единственная ошибка | 2 |
+| одновременно zipcode длиннее лимита и неподтверждённый country | 1 |
+| **Итого** | **290** |
+
+В country-ошибки входят 91 строка с одним из четырёх неподтверждённых
+внутренних country ID и 186 строк с пустым source country. Значения не
+восстанавливаются по city, zipcode или географической догадке.
+
+Для текущей customer migration все 290 строк явно исключены из активных
+Shopware accounts. Они не превращаются в фиктивных клиентов, а invalid-record
+артефакт архивируется вне Git в защищённом migration storage. В итоговом
+reconciliation должно быть `6 555 imported + 290 archived = 6 845 source`.
+
+Из неполных source-профилей пять имеют полный billing snapshot в
+историческом заказе. Это не даёт права склеивать order snapshot с
+активным customer account автоматически. Пять кандидатов повторно
+рассматриваются на order stage только после exact source-customer/order
+reconciliation; исторический order в любом случае хранит свой address snapshot
+и не требует создания фиктивного login-аккаунта.
+
 ## Проверка
 
 Автоматически проверяются:
