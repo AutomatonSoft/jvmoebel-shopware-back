@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a56ad30754c979bb1af83c49bdfa7bc4",
+    "content-hash": "3257b68158fd29be6f7d9d62b26eafb9",
     "packages": [
         {
             "name": "async-aws/core",
@@ -2798,6 +2798,45 @@
                 "proprietary"
             ],
             "description": "JVMöbel market and sales channel configuration",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "jvmoebel/storefront",
+            "version": "0.1.0",
+            "dist": {
+                "type": "path",
+                "url": "custom/static-plugins/JvStorefront",
+                "reference": "f7ea9f7d7aa16d1099c53b2b12e710c860b133b4"
+            },
+            "require": {
+                "php": "^8.5",
+                "shopware/core": "~6.7.0"
+            },
+            "type": "shopware-platform-plugin",
+            "extra": {
+                "shopware-plugin-class": "Jv\\Storefront\\JvStorefront",
+                "label": {
+                    "de-DE": "JVMöbel Storefront",
+                    "en-GB": "JVMöbel Storefront"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Jv\\Storefront\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Jv\\Storefront\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "description": "JVMöbel storefront configuration (header/footer shell)",
             "transport-options": {
                 "symlink": true,
                 "relative": true

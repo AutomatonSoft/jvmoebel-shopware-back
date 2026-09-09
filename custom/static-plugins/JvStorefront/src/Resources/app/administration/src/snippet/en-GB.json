@@ -1,0 +1,66 @@
+{
+    "jv-storefront-settings": {
+        "general": {
+            "title": "Storefront settings",
+            "description": "Global header and footer configuration"
+        },
+        "salesChannel": {
+            "title": "Sales channel",
+            "label": "Sales channel"
+        },
+        "branding": {
+            "title": "Branding",
+            "logo": "Storefront logo",
+            "logoCaption": "Select storefront logo"
+        },
+        "footer": {
+            "title": "Footer texts",
+            "eyebrow": "About eyebrow",
+            "titleField": "About title",
+            "description": "About description",
+            "copyright": "Copyright text",
+            "revocationEnabled": "Revocation enabled",
+            "revocationLabel": "Revocation button label",
+            "revocationEmail": "Revocation recipient email"
+        },
+        "social": {
+            "title": "Social links"
+        },
+        "payment": {
+            "title": "Payment badges"
+        },
+        "list": {
+            "label": "Label",
+            "url": "URL",
+            "position": "Position",
+            "active": "Active",
+            "icon": "Icon",
+            "iconCaption": "Select icon",
+            "openInNewTab": "Open in new tab",
+            "iconMissing": "No icon"
+        },
+        "modal": {
+            "socialCreate": "Add social link",
+            "socialEdit": "Edit social link",
+            "paymentCreate": "Add payment badge",
+            "paymentEdit": "Edit payment badge"
+        },
+        "actions": {
+            "add": "Add"
+        },
+        "notifications": {
+            "saved": "Storefront settings saved.",
+            "saveFailed": "Could not save storefront settings.",
+            "socialSaved": "Social link saved.",
+            "socialSaveFailed": "Could not save social link.",
+            "socialValidationFailed": "Please fill in label, URL and icon.",
+            "socialDeleted": "Social link deleted.",
+            "socialDeleteFailed": "Could not delete social link.",
+            "paymentSaved": "Payment badge saved.",
+            "paymentSaveFailed": "Could not save payment badge.",
+            "paymentValidationFailed": "Please fill in label and icon.",
+            "paymentDeleted": "Payment badge deleted.",
+            "paymentDeleteFailed": "Could not delete payment badge."
+        }
+    }
+}
