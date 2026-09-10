@@ -108,7 +108,6 @@
         <service id="Jv\Import\Service\AfterCool\Media\LinkAfterCoolExternalMediaService"/>
         <service id="Jv\Import\Service\AfterCool\Persistence\AfterCoolMediaStageStore">
             <argument type="service" id="Doctrine\DBAL\Connection"/>
-            <tag name="kernel.event_subscriber"/>
         </service>
         <service id="Jv\Import\Service\AfterCool\Media\ProcessAfterCoolStagedMediaService">
             <argument type="service" id="Doctrine\DBAL\Connection"/>
@@ -236,6 +235,7 @@
         <service id="Jv\Import\Service\OrderImport\HistoricalOrderStockStorage" decorates="Shopware\Core\Content\Product\Stock\StockStorage">
             <argument type="service" id="Jv\Import\Service\OrderImport\HistoricalOrderStockStorage.inner"/>
             <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <tag name="kernel.event_subscriber"/>
         </service>
         <service id="Jv\Import\Service\OrderImport\ApplyCosmoShopOrdersService">
             <argument type="service" id="Jv\Import\Integration\CosmoShop\Order\CosmoShopOrderJsonlReader"/>
