@@ -30,7 +30,7 @@ use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 final readonly class ApplyCosmoShopOrdersService
 {
     private const int CHUNK_SIZE = 50;
-    private const string MAPPING_VERSION = '2026-09-10.2';
+    private const string MAPPING_VERSION = '2026-09-10.3';
     private const array PAYMENT_KEYS = ['amazon_pay', 'cash_on_delivery', 'easycredit', 'installment_purchase', 'invoice', 'klarna', 'klarna_pay_later', 'klarna_pay_now', 'klarna_payments', 'paypal', 'paypal_express', 'prepayment_discount', 'santander_financing', 'skrill', 'split_deposit'];
     private const array SHIPPING_KEYS = ['freight_forwarder', 'freight_forwarder_to_installation_location', 'self_pickup'];
 
@@ -80,7 +80,7 @@ final readonly class ApplyCosmoShopOrdersService
             $this->applyChunk($market, $chunk, $dryRun, $context, $counts, $sourceIds, $orderNumbers, $writtenOrderNumbers);
         }
         if (!$dryRun) {
-            $this->raiseOrderNumberRange($writtenOrderNumbers);
+            $this->raiseOrderNumberRange($market, $writtenOrderNumbers);
         }
 
         return new ApplyCosmoShopOrdersResult($counts);
@@ -621,7 +621,7 @@ final readonly class ApplyCosmoShopOrdersService
     /** @return array<string, mixed> */
     private function price(float $unit, float $total, int $quantity, float $taxRate, float $tax, ?float $net = null): array
     {
-        return ['unitPrice' => $unit, 'totalPrice' => $total, 'quantity' => $quantity, 'calculatedTaxes' => [['taxRate' => $taxRate, 'price' => $net ?? ($total - $tax), 'tax' => $tax]], 'taxRules' => [['taxRate' => $taxRate, 'percentage' => 100.0]]];
+        return ['unitPrice' => $unit, 'totalPrice' => $total, 'quantity' => $quantity, 'calculatedTaxes' => [['taxRate' => $taxRate, 'price' => $net ?? $total, 'tax' => $tax]], 'taxRules' => [['taxRate' => $taxRate, 'percentage' => 100.0]]];
     }
 
     /**
@@ -631,7 +631,9 @@ final readonly class ApplyCosmoShopOrdersService
      */
     private function aggregatePrice(float $total, float $net, float $tax, array $taxes): array
     {
-        return ['unitPrice' => $total, 'totalPrice' => $total, 'quantity' => 1, 'calculatedTaxes' => array_values($taxes), 'taxRules' => $this->taxRules($taxes, $net)];
+        $taxes = array_map(static fn (array $tax): array => [...$tax, 'price' => $tax['price'] + $tax['tax']], $taxes);
+
+        return ['unitPrice' => $total, 'totalPrice' => $total, 'quantity' => 1, 'calculatedTaxes' => array_values($taxes), 'taxRules' => $this->taxRules($taxes, $total)];
     }
 
     /**
@@ -641,7 +643,9 @@ final readonly class ApplyCosmoShopOrdersService
      */
     private function cartPrice(float $total, float $net, float $tax, float $positionPrice, string $taxStatus, array $taxes): array
     {
-        return ['netPrice' => $net, 'totalPrice' => $total, 'positionPrice' => $positionPrice, 'rawTotal' => $total, 'taxStatus' => $taxStatus, 'calculatedTaxes' => array_values($taxes), 'taxRules' => $this->taxRules($taxes, $net)];
+        $taxes = 'tax-free' === $taxStatus ? array_map(static fn (array $tax): array => [...$tax, 'price' => $tax['price'] * 0, 'tax' => 0.0], $taxes) : array_map(static fn (array $tax): array => [...$tax, 'price' => 'gross' === $taxStatus ? $tax['price'] + $tax['tax'] : $tax['price']], $taxes);
+
+        return ['netPrice' => $net, 'totalPrice' => $total, 'positionPrice' => $positionPrice, 'rawTotal' => $total, 'taxStatus' => $taxStatus, 'calculatedTaxes' => array_values($taxes), 'taxRules' => $this->taxRules($taxes, $total)];
     }
 
     /** @param array<string, mixed> $record */
@@ -711,8 +715,9 @@ final readonly class ApplyCosmoShopOrdersService
     }
 
     /** @param list<string> $numbers */
-    private function raiseOrderNumberRange(array $numbers): void
+    private function raiseOrderNumberRange(Market $market, array $numbers): void
     {
+        $numbers = [...$numbers, ...$this->connection->fetchFirstColumn('SELECT order_number FROM `order` WHERE JSON_EXTRACT(custom_fields, \'$.jv_cosmoshop_historical_import\') = true AND JSON_UNQUOTE(JSON_EXTRACT(custom_fields, \'$.jv_cosmoshop_source_market\')) = ?', [$market->domain()])];
         $numericNumbers = array_map(
             static fn (string $number): int => (int) $number,
             array_filter($numbers, static fn (string $number): bool => ctype_digit($number)),
@@ -720,6 +725,15 @@ final readonly class ApplyCosmoShopOrdersService
         if ([] === $numericNumbers) {
             return;
         }
-        $this->connection->executeStatement('UPDATE number_range_state s INNER JOIN number_range r ON r.id=s.number_range_id INNER JOIN number_range_type t ON t.id=r.type_id SET s.last_value=GREATEST(s.last_value, ?) WHERE t.technical_name=?', [max($numericNumbers), 'order']);
+        $range = $this->connection->fetchAssociative('SELECT r.id, s.id AS state_id FROM number_range r JOIN number_range_type t ON t.id=r.type_id LEFT JOIN number_range_state s ON s.number_range_id=r.id WHERE t.technical_name=? ORDER BY r.start DESC LIMIT 1', ['order']);
+        if (!is_array($range) || !isset($range['id'])) {
+            return;
+        }
+        if (null === ($range['state_id'] ?? null)) {
+            $this->connection->executeStatement('INSERT INTO number_range_state (id, number_range_id, `last_value`, created_at) VALUES (?, ?, ?, ?)', [Uuid::fromHexToBytes(Uuid::randomHex()), $range['id'], max($numericNumbers), (new \DateTimeImmutable())->format('Y-m-d H:i:s.v')]);
+
+            return;
+        }
+        $this->connection->executeStatement('UPDATE number_range_state SET `last_value`=GREATEST(`last_value`, ?), updated_at=? WHERE number_range_id=?', [max($numericNumbers), (new \DateTimeImmutable())->format('Y-m-d H:i:s.v'), $range['id']]);
     }
 }

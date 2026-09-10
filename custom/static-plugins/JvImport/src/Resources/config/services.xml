@@ -234,6 +234,7 @@
         <service id="Jv\Import\Integration\CosmoShop\Order\CosmoShopOrderJsonlReader"/>
         <service id="Jv\Import\Service\OrderImport\HistoricalOrderStockStorage" decorates="Shopware\Core\Content\Product\Stock\StockStorage">
             <argument type="service" id="Jv\Import\Service\OrderImport\HistoricalOrderStockStorage.inner"/>
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
         </service>
         <service id="Jv\Import\Service\OrderImport\ApplyCosmoShopOrdersService">
             <argument type="service" id="Jv\Import\Integration\CosmoShop\Order\CosmoShopOrderJsonlReader"/>
