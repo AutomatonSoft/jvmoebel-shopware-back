@@ -77,7 +77,7 @@ Root всегда содержит `apiAlias`, `title`, nullable `eyebrow`, null
 - Items сортируются по `position`, при равенстве — по исходному индексу.
 - Backend не интерпретирует и не рисует rich text. Next.js sanitizer удаляет scripts, event handlers, unsafe protocols и неподдерживаемую разметку перед render.
 - Administration при перестановке items записывает последовательные `position`; для новых items генерируется стабильный `id`.
-- Administration использует общий механизм из [SPEC-019](SPEC-019-cms-validation.md): незаполненные question и answer получают собственную подсветку и локализованный текст ошибки. Ошибка также выделяет item, карточку CMS block в Element settings и CMS block на canvas. Это правило не устанавливает `blockSave` и не блокирует сохранение CMS-страницы.
+- Administration использует общий механизм из [SPEC-021](SPEC-021-cms-validation.md): незаполненные question и answer получают собственную подсветку и локализованный текст ошибки. Ошибка также выделяет item, карточку CMS block в Element settings и CMS block на canvas. Это правило не устанавливает `blockSave` и не блокирует сохранение CMS-страницы.
 
 ## Ошибки и повтор
 
@@ -114,7 +114,7 @@ module/sw-cms/blocks/jv-faq/jv-faq/
 
 `main.js` импортирует element и block. Snippets используют `cms.elements.jv-faq.*` и `cms.blocks.jv-faq.label`.
 
-Специфичное правило находится в `elements/jv-faq/validation.js`, подключается при регистрации element и использует общий Administration mixin. Серверное правило `FaqCmsElementValidationRule` регистрируется с tag `jv.cms.element_validation_rule`; оно сохраняет неблокирующий режим. Общая инфраструктура и инструкция подключения описаны в [SPEC-019](SPEC-019-cms-validation.md).
+Специфичное правило находится в `elements/jv-faq/validation.js`, подключается при регистрации element и использует общий Administration mixin. Серверное правило `FaqCmsElementValidationRule` регистрируется с tag `jv.cms.element_validation_rule`; оно сохраняет неблокирующий режим. Общая инфраструктура и инструкция подключения описаны в [SPEC-021](SPEC-021-cms-validation.md).
 
 ## Проверка
 

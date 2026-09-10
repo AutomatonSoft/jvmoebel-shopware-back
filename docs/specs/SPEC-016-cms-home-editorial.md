@@ -78,7 +78,7 @@ Root всегда содержит `apiAlias`, `appearance`, `statement`, `title
 - Секции сортируются по `position`, при равенстве — по исходному индексу.
 - Backend не интерпретирует и не рисует rich text. Next.js sanitizer удаляет scripts, event handlers, unsafe protocols и неподдерживаемую разметку перед render.
 - Administration при перестановке секций записывает последовательные `position`; для новых секций генерируется стабильный `id`.
-- Administration использует общий механизм из [SPEC-019](SPEC-019-cms-validation.md): если paragraph уже существует, ошибка и локализованный текст привязываются к его `sw-text-editor`; если paragraphs отсутствуют, сообщение показывается на уровне секции. Ошибка также выделяет секцию, карточку CMS block в Element settings и CMS block на canvas. Это правило не устанавливает `blockSave` и не блокирует сохранение CMS-страницы.
+- Administration использует общий механизм из [SPEC-021](SPEC-021-cms-validation.md): если paragraph уже существует, ошибка и локализованный текст привязываются к его `sw-text-editor`; если paragraphs отсутствуют, сообщение показывается на уровне секции. Ошибка также выделяет секцию, карточку CMS block в Element settings и CMS block на canvas. Это правило не устанавливает `blockSave` и не блокирует сохранение CMS-страницы.
 
 ## Ошибки и повтор
 
@@ -115,7 +115,7 @@ module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/
 
 `main.js` импортирует element и block. Snippets используют `cms.elements.jv-home-editorial.*` и `cms.blocks.jv-home-editorial.label`.
 
-Специфичное правило находится в `elements/jv-home-editorial/validation.js`, подключается при регистрации element и использует общий Administration mixin. Серверное правило `HomeEditorialCmsElementValidationRule` регистрируется с tag `jv.cms.element_validation_rule`; оно сохраняет неблокирующий режим. Общая инфраструктура и инструкция подключения описаны в [SPEC-019](SPEC-019-cms-validation.md).
+Специфичное правило находится в `elements/jv-home-editorial/validation.js`, подключается при регистрации element и использует общий Administration mixin. Серверное правило `HomeEditorialCmsElementValidationRule` регистрируется с tag `jv.cms.element_validation_rule`; оно сохраняет неблокирующий режим. Общая инфраструктура и инструкция подключения описаны в [SPEC-021](SPEC-021-cms-validation.md).
 
 ## Проверка
 

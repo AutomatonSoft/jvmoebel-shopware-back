@@ -1,4 +1,4 @@
-# SPEC-019 — Общая валидация CMS elements
+# SPEC-021 — Общая валидация CMS elements
 
 ## Цель
 
