@@ -15,16 +15,18 @@ final class HistoricalOrderStockStorageTest extends TestCase
     {
         $decorated = $this->createMock(AbstractStockStorage::class);
         $connection = $this->createMock(Connection::class);
-        $connection->expects(self::once())->method('fetchFirstColumn')->willReturn(['historical-line']);
+        $historicalId = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+        $normalId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+        $connection->expects(self::once())->method('fetchFirstColumn')->willReturn([$historicalId]);
         $decorated->expects(self::once())->method('alter')->with(
-            self::callback(static fn (array $changes): bool => 1 === count($changes) && 'normal-line' === $changes[0]->lineItemId),
+            self::callback(static fn (array $changes): bool => 1 === count($changes) && $normalId === $changes[0]->lineItemId),
             self::isInstanceOf(Context::class),
         );
 
         $storage = new HistoricalOrderStockStorage($decorated, $connection);
         $storage->alter([
-            new StockAlteration('historical-line', 'product-a', 2, 0),
-            new StockAlteration('normal-line', 'product-b', 2, 0),
+            new StockAlteration($historicalId, 'product-a', 2, 0),
+            new StockAlteration($normalId, 'product-b', 2, 0),
         ], Context::createDefaultContext());
     }
 
@@ -32,10 +34,11 @@ final class HistoricalOrderStockStorageTest extends TestCase
     {
         $decorated = $this->createMock(AbstractStockStorage::class);
         $connection = $this->createMock(Connection::class);
-        $connection->method('fetchFirstColumn')->willReturn(['historical-line']);
+        $historicalId = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+        $connection->method('fetchFirstColumn')->willReturn([$historicalId]);
         $decorated->expects(self::never())->method('alter');
 
         $storage = new HistoricalOrderStockStorage($decorated, $connection);
-        $storage->alter([new StockAlteration('historical-line', 'product-a', 2, 0)], Context::createDefaultContext());
+        $storage->alter([new StockAlteration($historicalId, 'product-a', 2, 0)], Context::createDefaultContext());
     }
 }

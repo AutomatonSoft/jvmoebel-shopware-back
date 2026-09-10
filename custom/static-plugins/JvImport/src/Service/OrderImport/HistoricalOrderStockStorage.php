@@ -9,15 +9,25 @@ use Shopware\Core\Content\Product\Stock\StockAlteration;
 use Shopware\Core\Content\Product\Stock\StockDataCollection;
 use Shopware\Core\Content\Product\Stock\StockLoadRequest;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWriteEvent;
+use Shopware\Core\Framework\Struct\ArrayStruct;
+use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
  * The core order stock subscriber works on every DAL product line write. Historical
  * imports are explicitly outside stock accounting, so their context opts out here.
  */
-final class HistoricalOrderStockStorage extends AbstractStockStorage
+final class HistoricalOrderStockStorage extends AbstractStockStorage implements EventSubscriberInterface
 {
     public const CONTEXT_EXTENSION = 'jv_cosmoshop_historical_order_import';
+    private const CAPTURED_EXTENSION = 'jv_cosmoshop_historical_line_items';
+
+    public static function getSubscribedEvents(): array
+    {
+        return [EntityWriteEvent::class => 'captureHistoricalLines'];
+    }
 
     public function __construct(private readonly AbstractStockStorage $decorated, private readonly Connection $connection)
     {
@@ -41,21 +51,31 @@ final class HistoricalOrderStockStorage extends AbstractStockStorage
         }
 
         $ids = array_values(array_unique(array_map(static fn (StockAlteration $change): string => $change->lineItemId, $changes)));
+        $captured = $context->getExtension(self::CAPTURED_EXTENSION);
+        $historical = $captured instanceof ArrayStruct ? $captured->get('ids') : [];
+        $historical = is_array($historical) ? $historical : [];
         if ([] !== $ids) {
-            $historical = $this->connection->fetchFirstColumn(
-                "SELECT LOWER(HEX(id)) FROM order_line_item WHERE LOWER(HEX(id)) IN (?) AND JSON_EXTRACT(payload, '$.jv_cosmoshop_historical_import') = true",
-                [$ids],
-                [ArrayParameterType::STRING],
-            );
-            if ([] !== $historical) {
-                $changes = array_values(array_filter($changes, static fn (StockAlteration $change): bool => !in_array(strtolower($change->lineItemId), $historical, true)));
-            }
+            $hexIds = array_map(static fn (string $id): string => ctype_xdigit($id) && 32 === strlen($id) ? strtolower($id) : strtolower(bin2hex($id)), $ids);
+            $historical = [...$historical, ...$this->connection->fetchFirstColumn("SELECT LOWER(HEX(id)) FROM order_line_item WHERE id IN (?) AND JSON_EXTRACT(payload, '$.jv_cosmoshop_historical_import') = true", [array_map('hex2bin', $hexIds)], [ArrayParameterType::BINARY])];
+            $changes = array_values(array_filter($changes, static fn (StockAlteration $change): bool => !in_array(ctype_xdigit($change->lineItemId) && 32 === strlen($change->lineItemId) ? strtolower($change->lineItemId) : strtolower(bin2hex($change->lineItemId)), $historical, true)));
         }
         if ([] === $changes) {
             return;
         }
 
         $this->decorated->alter($changes, $context);
+    }
+
+    public function captureHistoricalLines(EntityWriteEvent $event): void
+    {
+        $ids = $event->getIds('order_line_item');
+        if ([] === $ids) {
+            return;
+        }
+        $historical = $this->connection->fetchFirstColumn("SELECT LOWER(HEX(id)) FROM order_line_item WHERE id IN (?) AND JSON_EXTRACT(payload, '$.jv_cosmoshop_historical_import') = true", [array_map(static fn (string $id): string => Uuid::fromHexToBytes($id), $ids)], [ArrayParameterType::BINARY]);
+        if ([] !== $historical) {
+            $event->getContext()->addExtension(self::CAPTURED_EXTENSION, new ArrayStruct(['ids' => $historical]));
+        }
     }
 
     /** @param list<string> $productIds */

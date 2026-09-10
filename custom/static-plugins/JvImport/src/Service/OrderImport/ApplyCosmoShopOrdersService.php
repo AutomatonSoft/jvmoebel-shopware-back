@@ -30,7 +30,7 @@ use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 final readonly class ApplyCosmoShopOrdersService
 {
     private const int CHUNK_SIZE = 50;
-    private const string MAPPING_VERSION = '2026-09-10.3';
+    private const string MAPPING_VERSION = '2026-09-10.4';
     private const array PAYMENT_KEYS = ['amazon_pay', 'cash_on_delivery', 'easycredit', 'installment_purchase', 'invoice', 'klarna', 'klarna_pay_later', 'klarna_pay_now', 'klarna_payments', 'paypal', 'paypal_express', 'prepayment_discount', 'santander_financing', 'skrill', 'split_deposit'];
     private const array SHIPPING_KEYS = ['freight_forwarder', 'freight_forwarder_to_installation_location', 'self_pickup'];
 
@@ -645,7 +645,9 @@ final readonly class ApplyCosmoShopOrdersService
     {
         $taxes = 'tax-free' === $taxStatus ? array_map(static fn (array $tax): array => [...$tax, 'price' => $tax['price'] * 0, 'tax' => 0.0], $taxes) : array_map(static fn (array $tax): array => [...$tax, 'price' => 'gross' === $taxStatus ? $tax['price'] + $tax['tax'] : $tax['price']], $taxes);
 
-        return ['netPrice' => $net, 'totalPrice' => $total, 'positionPrice' => $positionPrice, 'rawTotal' => $total, 'taxStatus' => $taxStatus, 'calculatedTaxes' => array_values($taxes), 'taxRules' => $this->taxRules($taxes, $total)];
+        $taxRuleBasis = 'net' === $taxStatus ? $net : $total;
+
+        return ['netPrice' => $net, 'totalPrice' => $total, 'positionPrice' => $positionPrice, 'rawTotal' => $total, 'taxStatus' => $taxStatus, 'calculatedTaxes' => array_values($taxes), 'taxRules' => $this->taxRules($taxes, $taxRuleBasis)];
     }
 
     /** @param array<string, mixed> $record */
