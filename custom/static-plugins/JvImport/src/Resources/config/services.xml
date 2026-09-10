@@ -51,6 +51,7 @@
         </service>
 
         <service id="Jv\Import\Integration\CosmoShop\Normalizer\CosmoShopProductImportDataNormalizer"/>
+        <service id="Jv\Import\Integration\CosmoShop\Customer\CosmoShopS512LegacyEncoder"/>
         <service id="Jv\Import\Service\ProductImport\Validation\CosmoShopProductImportDataValidator"/>
         <service id="Jv\Import\Service\ProductImport\BuildShopwareProductImportRecordService"/>
         <service id="Jv\Import\Service\ProductMediaImport\ValidateCosmoShopProductMediaCoverService"/>
@@ -189,6 +190,46 @@
         </service>
         <service id="Jv\Import\Command\BootstrapCatalogProductImportProfileCommand">
             <argument type="service" id="import_export_profile.repository"/>
+        </service>
+        <service id="Jv\Import\Integration\CosmoShop\Customer\CosmoShopCustomerPasswordCsvReader"/>
+        <service id="Jv\Import\Integration\CosmoShop\Customer\CosmoShopCustomerAddressCsvReader"/>
+        <service id="Jv\Import\Integration\CosmoShop\Customer\CosmoShopCustomerWishlistCsvReader"/>
+        <service id="Jv\Import\Service\CustomerImport\ApplyCosmoShopCustomerAddressesService">
+            <argument type="service" id="Jv\Import\Integration\CosmoShop\Customer\CosmoShopCustomerAddressCsvReader"/>
+            <argument type="service" id="customer.repository"/>
+            <argument type="service" id="customer_address.repository"/>
+            <argument type="service" id="country.repository"/>
+            <argument type="service" id="salutation.repository"/>
+        </service>
+        <service id="Jv\Import\Command\ApplyCosmoShopCustomerAddressesCommand">
+            <argument type="service" id="Jv\Import\Service\CustomerImport\ApplyCosmoShopCustomerAddressesService"/>
+            <argument type="service" id="logger"/>
+            <argument key="$environment">%kernel.environment%</argument>
+        </service>
+        <service id="Jv\Import\Service\CustomerImport\ApplyCosmoShopCustomerPasswordsService">
+            <argument type="service" id="Jv\Import\Integration\CosmoShop\Customer\CosmoShopCustomerPasswordCsvReader"/>
+            <argument type="service" id="customer.repository"/>
+        </service>
+        <service id="Jv\Import\Command\ApplyCosmoShopCustomerPasswordsCommand">
+            <argument type="service" id="Jv\Import\Service\CustomerImport\ApplyCosmoShopCustomerPasswordsService"/>
+            <argument type="service" id="logger"/>
+            <argument key="$environment">%kernel.environment%</argument>
+        </service>
+        <service id="Jv\Import\Service\CustomerImport\ApplyCosmoShopCustomerWishlistsService">
+            <argument type="service" id="Jv\Import\Integration\CosmoShop\Customer\CosmoShopCustomerWishlistCsvReader"/>
+            <argument type="service" id="customer.repository"/>
+            <argument type="service" id="product.repository"/>
+            <argument type="service" id="customer_wishlist.repository"/>
+            <argument type="service" id="customer_wishlist_product.repository"/>
+        </service>
+        <service id="Jv\Import\Command\ApplyCosmoShopCustomerWishlistsCommand">
+            <argument type="service" id="Jv\Import\Service\CustomerImport\ApplyCosmoShopCustomerWishlistsService"/>
+            <argument type="service" id="logger"/>
+            <argument key="$environment">%kernel.environment%</argument>
+        </service>
+        <service id="Jv\Import\Command\BootstrapCosmoShopCustomerImportProfileCommand">
+            <argument type="service" id="import_export_profile.repository"/>
+            <argument type="service" id="sales_channel.repository"/>
         </service>
         <service id="Jv\Import\Command\PrepareCatalogShopwareImportCsvCommand"/>
         <service id="Jv\Import\Command\BackfillCatalogAttributeCategoryRelationsCommand"/>
