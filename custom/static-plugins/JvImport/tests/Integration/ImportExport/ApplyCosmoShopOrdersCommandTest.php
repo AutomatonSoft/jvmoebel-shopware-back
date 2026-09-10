@@ -283,6 +283,9 @@ final class ApplyCosmoShopOrdersCommandTest extends AbstractCosmoShopImportExpor
                 self::assertSame('ustid-befreit' === $record['vat_type'] ? 100.0 : ('netto' === $record['price_display'] ? 100.0 : 119.0), $order->getPrice()->getPositionPrice());
                 self::assertSame('ustid-befreit' === $record['vat_type'] ? 100.0 : 119.0, $order->getPrice()->getTotalPrice());
                 self::assertSame('ustid-befreit' === $record['vat_type'] ? 100.0 : 119.0, $order->getTransactions()?->first()?->getAmount()->getTotalPrice());
+                $tax = $order->getPrice()->getCalculatedTaxes()->first();
+                self::assertNotNull($tax);
+                self::assertSame('ustid-befreit' === $record['vat_type'] ? 0.0 : ('netto' === $record['price_display'] ? 100.0 : 119.0), $tax->getPrice());
             }
         } finally {
             foreach ($records as $record) {
@@ -416,6 +419,9 @@ final class ApplyCosmoShopOrdersCommandTest extends AbstractCosmoShopImportExpor
 
         $this->ensureMarketSalesChannel($market, $context);
         $this->ensureOrderNumberRange($context);
+        /** @var Connection $connection */
+        $connection = static::getContainer()->get(Connection::class);
+        $connection->executeStatement('DELETE FROM number_range_state');
         /** @var EntityRepository<OrderCollection> $orderRepository */
         $orderRepository = static::getContainer()->get('order.repository');
         try {
