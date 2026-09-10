@@ -96,3 +96,27 @@ SPEC-NNN-short-name.md
 | [SPEC-019-cosmoshop-customer-import](SPEC-019-cosmoshop-customer-import.md) | Импорт клиентов и newsletter recipients немецкого CosmoShop через штатный Shopware Import/Export |
 | [SPEC-020-cosmoshop-customer-wishlist-import](SPEC-020-cosmoshop-customer-wishlist-import.md) | Импорт wishlist зарегистрированных клиентов немецкого CosmoShop |
 | [SPEC-021-cms-validation](SPEC-021-cms-validation.md) | Общая валидация CMS elements в Administration и при DAL-записи; инструкция подключения правил к компонентам |
+| [SPEC-022-cms-promo-banner](SPEC-022-cms-promo-banner.md) | Backend CMS element/block `jv-promo-banner`; контракт — platform SPEC-014 |
+| [SPEC-023-cms-countdown-promo](SPEC-023-cms-countdown-promo.md) | Backend CMS element/block `jv-countdown-promo`; контракт — platform SPEC-015 |
+| [SPEC-024-cms-promo-deal-tiles](SPEC-024-cms-promo-deal-tiles.md) | Backend CMS element/block `jv-promo-deal-tiles`; контракт — platform SPEC-016 |
+| [SPEC-025-cms-related-look-cards](SPEC-025-cms-related-look-cards.md) | Backend CMS element/block `jv-related-look-cards`; контракт — platform SPEC-017 |
+| [SPEC-026-cms-chip-rail](SPEC-026-cms-chip-rail.md) | Backend CMS element/block `jv-chip-rail`; контракт — platform SPEC-018 |
+| [SPEC-027-cms-trend-look-grid](SPEC-027-cms-trend-look-grid.md) | Backend CMS element/block `jv-trend-look-grid`; контракт — platform SPEC-019 |
+| [SPEC-028-cms-look-scene](SPEC-028-cms-look-scene.md) | Backend CMS element/block `jv-look-scene`; контракт — platform SPEC-020 |
+| [SPEC-029-cms-color-world-picker](SPEC-029-cms-color-world-picker.md) | Backend CMS element/block `jv-color-world-picker`; контракт — platform SPEC-021 |
+| [SPEC-030-cms-article-hero](SPEC-030-cms-article-hero.md) | Backend CMS element/block `jv-article-hero`; контракт — platform SPEC-022 |
+| [SPEC-031-cms-table-of-contents](SPEC-031-cms-table-of-contents.md) | Backend CMS element/block `jv-table-of-contents`; контракт — platform SPEC-023 |
+| [SPEC-032-cms-expert-tip](SPEC-032-cms-expert-tip.md) | Backend CMS element/block `jv-expert-tip`; контракт — platform SPEC-024 |
+| [SPEC-033-cms-expert-quote](SPEC-033-cms-expert-quote.md) | Backend CMS element/block `jv-expert-quote`; контракт — platform SPEC-025 |
+| [SPEC-034-cms-expert-profile](SPEC-034-cms-expert-profile.md) | Backend CMS element/block `jv-expert-profile`; контракт — platform SPEC-026 |
+| [SPEC-035-cms-author-footer](SPEC-035-cms-author-footer.md) | Backend CMS element/block `jv-author-footer`; контракт — platform SPEC-027 |
+| [SPEC-036-cms-guide-hub-cards](SPEC-036-cms-guide-hub-cards.md) | Backend CMS element/block `jv-guide-hub-cards`; контракт — platform SPEC-028 |
+| [SPEC-037-cms-editorial-team-grid](SPEC-037-cms-editorial-team-grid.md) | Backend CMS element/block `jv-editorial-team-grid`; контракт — platform SPEC-029 |
+| [SPEC-038-cms-inline-product-teaser](SPEC-038-cms-inline-product-teaser.md) | Backend CMS element/block `jv-inline-product-teaser`; контракт — platform SPEC-030 |
+| [SPEC-039-cms-instagram-style](SPEC-039-cms-instagram-style.md) | Backend CMS element/block `jv-instagram-style`; контракт — platform SPEC-031 |
+| [SPEC-040-cms-trust-rating](SPEC-040-cms-trust-rating.md) | Backend CMS element/block `jv-trust-rating`; контракт — platform SPEC-032 |
+| [SPEC-041-cms-app-download-promo](SPEC-041-cms-app-download-promo.md) | Backend CMS element/block `jv-app-download-promo`; контракт — platform SPEC-033 |
+| [SPEC-042-cms-loyalty-promo](SPEC-042-cms-loyalty-promo.md) | Backend CMS element/block `jv-loyalty-promo`; контракт — platform SPEC-034 |
+| [SPEC-045-cms-review-summary](SPEC-045-cms-review-summary.md) | Backend CMS element/block `jv-review-summary`; контракт — platform SPEC-037 |
+| [SPEC-046-cms-subcategory-links](SPEC-046-cms-subcategory-links.md) | Backend CMS element/block `jv-subcategory-links`; контракт — platform SPEC-038 |
+| [SPEC-047-cms-cross-room-section](SPEC-047-cms-cross-room-section.md) | Backend CMS element/block `jv-cross-room-section`; контракт — platform SPEC-039 |
