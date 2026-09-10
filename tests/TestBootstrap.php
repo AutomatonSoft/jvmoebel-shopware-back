@@ -38,7 +38,7 @@ clearTestMessengerStreams();
 
 $bootstrapper = (new TestBootstrapper())
     ->setPlatformEmbedded(false)
-    ->addActivePlugins('JvMarketConfiguration', 'JvCms', 'JvImport');
+    ->addActivePlugins('JvMarketConfiguration', 'JvCms', 'JvImport', 'JvStorefront');
 
 $bootstrapper->bootstrap();
 

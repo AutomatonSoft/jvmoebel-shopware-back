@@ -1,0 +1,50 @@
+{% block sw_cms_element_jv_shop_the_look %}
+	<div class="sw-cms-el-jv-shop-the-look">
+		<p v-if="eyebrow" class="sw-cms-el-jv-shop-the-look__eyebrow">{{ eyebrow }}</p>
+		<p class="sw-cms-el-jv-shop-the-look__title" :class="{ 'sw-cms-el-jv-shop-the-look__title--placeholder': !title }">
+			{{ title || $t('cms.elements.jv-shop-the-look.component.titlePlaceholder') }}
+		</p>
+
+		<div class="sw-cms-el-jv-shop-the-look__content">
+			<div
+				ref="image"
+				class="sw-cms-el-jv-shop-the-look__image"
+				:class="{ 'sw-cms-el-jv-shop-the-look__image--empty': !imageUrl }"
+				:style="imageUrl ? { backgroundImage: `url(${imageUrl})` } : {}"
+			>
+				<span v-if="!imageUrl" class="sw-cms-el-jv-shop-the-look__image-placeholder">
+					{{ $t('cms.elements.jv-shop-the-look.component.imagePlaceholder') }}
+				</span>
+				<span
+					v-for="(item, itemIndex) in items"
+					:key="item.id || itemIndex"
+					class="sw-cms-el-jv-shop-the-look__hotspot"
+					:class="{ 'is--dragging': isHotspotDragging(item), 'is--disabled': disabled }"
+					:style="hotspotStyle(item)"
+					@click.stop.prevent
+					@pointerdown="onHotspotPointerDown($event, item)"
+					@pointermove="onHotspotPointerMove"
+					@pointerup="onHotspotPointerUp"
+					@pointercancel="onHotspotPointerCancel"
+					@lostpointercapture="onHotspotPointerCaptureLost"
+				>
+					{{ itemIndex + 1 }}
+				</span>
+			</div>
+
+			<div class="sw-cms-el-jv-shop-the-look__items">
+				<div
+					v-for="(item, itemIndex) in items"
+					:key="`label-${item.id || itemIndex}`"
+					class="sw-cms-el-jv-shop-the-look__item"
+				>
+					<span>{{ itemIndex + 1 }}</span>
+					{{ itemName(item, itemIndex) }}
+				</div>
+				<div v-if="!items.length" class="sw-cms-el-jv-shop-the-look__empty">
+					{{ $t('cms.elements.jv-shop-the-look.component.noItems') }}
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}

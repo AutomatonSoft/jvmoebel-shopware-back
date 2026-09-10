@@ -1,0 +1,23 @@
+.sw-cms-preview-jv-category-rail {
+    padding: 12px;
+
+    &__title {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    &__list {
+        display: flex;
+        gap: 6px;
+    }
+
+    &__item {
+        background: #e3e9ef;
+        border-radius: 999px;
+        display: block;
+        height: 28px;
+        width: 28px;
+    }
+}

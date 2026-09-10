@@ -2,7 +2,7 @@
 
 namespace Jv\Import\Integration\CosmoShop;
 
-use Shopware\Core\Framework\Uuid\Uuid;
+use Jv\Import\Service\ProductImport\ProductManufacturerIdentity;
 
 final class CosmoShopManufacturerIdentity
 {
@@ -13,6 +13,10 @@ final class CosmoShopManufacturerIdentity
             throw new \InvalidArgumentException('CosmoShop manufacturer name must not be empty.');
         }
 
-        return Uuid::fromStringToHex('jvmoebel.product-manufacturer.cosmoshop.'.mb_strtolower($name));
+        if ('jvmoebel' === mb_strtolower($name)) {
+            return ProductManufacturerIdentity::jvmoebel();
+        }
+
+        return \Shopware\Core\Framework\Uuid\Uuid::fromStringToHex('jvmoebel.product-manufacturer.cosmoshop.'.mb_strtolower($name));
     }
 }

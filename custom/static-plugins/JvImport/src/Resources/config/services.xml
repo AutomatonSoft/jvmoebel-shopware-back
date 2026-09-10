@@ -51,6 +51,7 @@
         </service>
 
         <service id="Jv\Import\Integration\CosmoShop\Normalizer\CosmoShopProductImportDataNormalizer"/>
+        <service id="Jv\Import\Integration\CosmoShop\Customer\CosmoShopS512LegacyEncoder"/>
         <service id="Jv\Import\Service\ProductImport\Validation\CosmoShopProductImportDataValidator"/>
         <service id="Jv\Import\Service\ProductImport\BuildShopwareProductImportRecordService"/>
         <service id="Jv\Import\Service\ProductMediaImport\ValidateCosmoShopProductMediaCoverService"/>
@@ -69,6 +70,92 @@
         </service>
         <service id="Jv\Import\Core\Content\CatalogCategoryAttribute\CatalogCategoryAttributeDefinition">
             <tag name="shopware.entity.definition" entity="jv_catalog_category_attribute"/>
+        </service>
+        <service id="Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunDefinition">
+            <tag name="shopware.entity.definition" entity="jv_aftercool_import_run"/>
+        </service>
+        <service id="Jv\Import\Core\Content\AfterCoolProductSource\AfterCoolProductSourceDefinition">
+            <tag name="shopware.entity.definition" entity="jv_aftercool_product_source"/>
+        </service>
+        <service id="Jv\Import\Core\Content\AfterCoolImportError\AfterCoolImportErrorDefinition">
+            <tag name="shopware.entity.definition" entity="jv_aftercool_import_error"/>
+        </service>
+        <service id="Jv\Import\Service\AfterCool\Persistence\AfterCoolImportRunStore">
+            <argument type="service" id="jv_aftercool_import_run.repository"/>
+        </service>
+        <service id="Jv\Import\Integration\AfterCool\AfterCoolResponseNormalizer"/>
+        <service id="Jv\Import\Integration\AfterCool\Mapper\AfterCoolListerProductMapper"/>
+        <service id="Jv\Import\Integration\AfterCool\Mapper\AfterCoolProductPageMapper"/>
+        <service id="Jv\Import\Integration\AfterCool\AfterCoolApiClient">
+            <argument type="service" id="http_client"/>
+            <argument type="service" id="logger"/>
+            <argument type="service" id="Jv\Import\Integration\AfterCool\AfterCoolResponseNormalizer"/>
+            <argument key="$baseUri">%env(AFTERCOOL_BASE_URI)%</argument>
+            <argument key="$username">%env(AFTERCOOL_USERNAME)%</argument>
+            <argument key="$password">%env(AFTERCOOL_PASSWORD)%</argument>
+            <argument key="$timeout">%env(float:AFTERCOOL_TIMEOUT)%</argument>
+        </service>
+        <service id="Jv\Import\Integration\AfterCool\Contract\AfterCoolApiClientInterface" alias="Jv\Import\Integration\AfterCool\AfterCoolApiClient"/>
+        <service id="Jv\Import\Integration\AfterCool\AfterCoolProductSource">
+            <argument type="service" id="Jv\Import\Integration\AfterCool\Contract\AfterCoolApiClientInterface"/>
+            <argument type="service" id="Jv\Import\Integration\AfterCool\Mapper\AfterCoolProductPageMapper"/>
+        </service>
+        <service id="Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface" alias="Jv\Import\Integration\AfterCool\AfterCoolProductSource"/>
+        <service id="Jv\Import\Service\AfterCool\Contract\AfterCoolImportProductSourceInterface" alias="Jv\Import\Integration\AfterCool\AfterCoolProductSource"/>
+        <service id="Jv\Import\Service\AfterCool\Write\AfterCoolShopwareProductWriter">
+            <argument type="service" id="Shopware\Core\Framework\Api\Sync\SyncService"/>
+        </service>
+        <service id="Jv\Import\Service\AfterCool\Media\LinkAfterCoolExternalMediaService"/>
+        <service id="Jv\Import\Service\AfterCool\Persistence\AfterCoolMediaStageStore">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+        </service>
+        <service id="Jv\Import\Service\AfterCool\Media\ProcessAfterCoolStagedMediaService">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\Media\LinkAfterCoolExternalMediaService"/>
+            <argument type="service" id="product.repository"/>
+        </service>
+        <service id="Jv\Import\Service\AfterCool\Import\ResolveAfterCoolProductPageService">
+            <argument type="service" id="jv_aftercool_product_source.repository"/>
+            <argument type="service" id="product.repository"/>
+        </service>
+        <service id="Jv\Import\Service\AfterCool\Persistence\AfterCoolPageCheckpointService">
+            <argument type="service" id="Jv\Import\Service\AfterCool\Write\AfterCoolShopwareProductWriter"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\Persistence\AfterCoolMediaStageStore"/>
+            <argument type="service" id="jv_aftercool_import_run.repository"/>
+            <argument type="service" id="jv_aftercool_product_source.repository"/>
+            <argument type="service" id="jv_aftercool_import_error.repository"/>
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+        </service>
+        <service id="Jv\Import\Service\AfterCool\Import\BuildAfterCoolShopwareProductRecordService"/>
+        <service id="Jv\Import\Service\AfterCool\Query\PreviewAfterCoolProductsService"/>
+        <service id="Jv\Import\Service\AfterCool\Query\ListAfterCoolFactoriesService"/>
+        <service id="Jv\Import\Service\AfterCool\Import\ImportAfterCoolPageService">
+            <argument type="service" id="Jv\Import\Service\AfterCool\Contract\AfterCoolImportProductSourceInterface"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\Import\ResolveAfterCoolProductPageService"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\Import\BuildAfterCoolShopwareProductRecordService"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\Persistence\AfterCoolPageCheckpointService"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\Media\ProcessAfterCoolStagedMediaService"/>
+            <argument type="service" id="Jv\Import\Service\ProductImport\ResolveDefaultProductTaxService"/>
+            <argument type="service" id="jv_aftercool_import_run.repository"/>
+            <argument type="service" id="lock.factory"/>
+        </service>
+        <service id="Jv\Import\Service\AfterCool\Import\StartAfterCoolImportService">
+            <argument type="service" id="Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\Persistence\AfterCoolImportRunStore"/>
+            <argument type="service" id="messenger.bus.default"/>
+            <argument type="service" id="lock.factory"/>
+        </service>
+        <service id="Jv\Import\MessageHandler\AfterCoolImportPageMessageHandler"/>
+        <service id="Jv\Import\Subscriber\AfterCoolImportFailureSubscriber">
+            <argument type="service" id="Jv\Import\Service\AfterCool\Persistence\AfterCoolImportRunStore"/>
+            <argument type="service" id="logger"/>
+        </service>
+        <service id="Jv\Import\Controller\AfterCoolImportController" public="true">
+            <argument type="service" id="Jv\Import\Service\AfterCool\Query\ListAfterCoolFactoriesService"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\Import\StartAfterCoolImportService"/>
+            <argument type="service" id="jv_aftercool_import_run.repository"/>
+            <argument type="service" id="jv_aftercool_import_error.repository"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\Query\PreviewAfterCoolProductsService"/>
         </service>
 
         <service id="Jv\Import\Service\ProductImport\PrepareCosmoShopProductImportRecordService">
@@ -103,6 +190,46 @@
         </service>
         <service id="Jv\Import\Command\BootstrapCatalogProductImportProfileCommand">
             <argument type="service" id="import_export_profile.repository"/>
+        </service>
+        <service id="Jv\Import\Integration\CosmoShop\Customer\CosmoShopCustomerPasswordCsvReader"/>
+        <service id="Jv\Import\Integration\CosmoShop\Customer\CosmoShopCustomerAddressCsvReader"/>
+        <service id="Jv\Import\Integration\CosmoShop\Customer\CosmoShopCustomerWishlistCsvReader"/>
+        <service id="Jv\Import\Service\CustomerImport\ApplyCosmoShopCustomerAddressesService">
+            <argument type="service" id="Jv\Import\Integration\CosmoShop\Customer\CosmoShopCustomerAddressCsvReader"/>
+            <argument type="service" id="customer.repository"/>
+            <argument type="service" id="customer_address.repository"/>
+            <argument type="service" id="country.repository"/>
+            <argument type="service" id="salutation.repository"/>
+        </service>
+        <service id="Jv\Import\Command\ApplyCosmoShopCustomerAddressesCommand">
+            <argument type="service" id="Jv\Import\Service\CustomerImport\ApplyCosmoShopCustomerAddressesService"/>
+            <argument type="service" id="logger"/>
+            <argument key="$environment">%kernel.environment%</argument>
+        </service>
+        <service id="Jv\Import\Service\CustomerImport\ApplyCosmoShopCustomerPasswordsService">
+            <argument type="service" id="Jv\Import\Integration\CosmoShop\Customer\CosmoShopCustomerPasswordCsvReader"/>
+            <argument type="service" id="customer.repository"/>
+        </service>
+        <service id="Jv\Import\Command\ApplyCosmoShopCustomerPasswordsCommand">
+            <argument type="service" id="Jv\Import\Service\CustomerImport\ApplyCosmoShopCustomerPasswordsService"/>
+            <argument type="service" id="logger"/>
+            <argument key="$environment">%kernel.environment%</argument>
+        </service>
+        <service id="Jv\Import\Service\CustomerImport\ApplyCosmoShopCustomerWishlistsService">
+            <argument type="service" id="Jv\Import\Integration\CosmoShop\Customer\CosmoShopCustomerWishlistCsvReader"/>
+            <argument type="service" id="customer.repository"/>
+            <argument type="service" id="product.repository"/>
+            <argument type="service" id="customer_wishlist.repository"/>
+            <argument type="service" id="customer_wishlist_product.repository"/>
+        </service>
+        <service id="Jv\Import\Command\ApplyCosmoShopCustomerWishlistsCommand">
+            <argument type="service" id="Jv\Import\Service\CustomerImport\ApplyCosmoShopCustomerWishlistsService"/>
+            <argument type="service" id="logger"/>
+            <argument key="$environment">%kernel.environment%</argument>
+        </service>
+        <service id="Jv\Import\Command\BootstrapCosmoShopCustomerImportProfileCommand">
+            <argument type="service" id="import_export_profile.repository"/>
+            <argument type="service" id="sales_channel.repository"/>
         </service>
         <service id="Jv\Import\Command\PrepareCatalogShopwareImportCsvCommand"/>
         <service id="Jv\Import\Command\BackfillCatalogAttributeCategoryRelationsCommand"/>

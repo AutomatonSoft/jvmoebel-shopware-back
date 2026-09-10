@@ -1,0 +1,2 @@
+const e=`{% block sw_cms_element_jv_home_editorial_preview %} <div class="sw-cms-el-preview-jv-home-editorial"> <span class="sw-cms-el-preview-jv-home-editorial__statement"></span> <div class="sw-cms-el-preview-jv-home-editorial__content"> <strong>{{ $t('cms.elements.jv-home-editorial.label') }}</strong> <span></span> <span></span> </div> <div class="sw-cms-el-preview-jv-home-editorial__sections"> <span></span> <span></span> </div> </div> {% endblock %}`,s={template:e};export{s as default};
+//# sourceMappingURL=index-_-gawrCV.js.map

@@ -1,3 +1,9 @@
+import './service/cms-validation';
+import './scss/cms-validation.scss';
+import './extension/sw-cms-detail';
+import './extension/sw-cms-section';
+import './extension/sw-cms-page-form';
+
 import './module/sw-cms/elements/jv-button';
 import './module/sw-cms/blocks/jv-button/jv-button-primary';
 import './module/sw-cms/blocks/jv-button/jv-button-secondary';
@@ -14,6 +20,16 @@ import './module/sw-cms/elements/jv-room-grid';
 import './module/sw-cms/blocks/jv-room-grid/jv-room-grid';
 import './module/sw-cms/elements/jv-product-grid';
 import './module/sw-cms/blocks/jv-product-grid/jv-product-grid';
+import './module/sw-cms/elements/jv-shop-the-look';
+import './module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look';
+import './module/sw-cms/elements/jv-home-editorial';
+import './module/sw-cms/blocks/jv-home-editorial/jv-home-editorial';
+import './module/sw-cms/elements/jv-faq';
+import './module/sw-cms/blocks/jv-faq/jv-faq';
+import './module/sw-cms/elements/jv-category-rail';
+import './module/sw-cms/blocks/jv-category-rail/jv-category-rail';
+import './module/sw-cms/elements/jv-why-jvmoebel';
+import './module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel';
 import deDE from './snippet/de-DE.json';
 import enGB from './snippet/en-GB.json';
 

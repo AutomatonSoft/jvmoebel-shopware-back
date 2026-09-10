@@ -1,0 +1,52 @@
+.sw-cms-el-config-jv-home-editorial {
+    &__section {
+        border-top: 1px solid #d1d9e0;
+        margin-top: 20px;
+        padding-top: 16px;
+    }
+
+    &__section-header,
+    &__subsection-header,
+    &__card-header,
+    &__paragraph-header {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+
+    &__subsection-header {
+        margin-top: 16px;
+    }
+
+    &__card,
+    &__paragraph {
+        border: 1px solid #d1d9e0;
+        border-radius: 6px;
+        margin-bottom: 12px;
+        padding: 12px;
+    }
+
+    &__paragraph {
+        background: #f9fafb;
+    }
+
+    &__card.jv-cms-validation-block--invalid {
+        border-color: var(--color-border-critical-default);
+    }
+
+    &__paragraph-error {
+        margin-bottom: 12px;
+    }
+
+    &__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: flex-end;
+    }
+
+    &__labels h4 {
+        margin-bottom: 12px;
+    }
+}

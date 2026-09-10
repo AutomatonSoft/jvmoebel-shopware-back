@@ -121,21 +121,56 @@
           "emptyTitle": "Hero-Titel"
         },
         "config": {
-          "title": {
-            "label": "Titel",
-            "placeholder": "Ein Zuhause, das zu dir passt."
+          "ariaLabel": {
+            "label": "Carousel Aria-Label",
+            "helpText": "Optional. Für Screenreader, wenn der Carousel keinen sichtbaren Titel hat."
           },
-          "eyebrow": {
-            "label": "Eyebrow",
-            "placeholder": "Die neue Wohnkollektion"
+          "autoplay": {
+            "label": "Autoplay"
           },
-          "description": {
-            "label": "Beschreibung",
-            "placeholder": "Möbel für den Alltag."
+          "autoplayIntervalMs": {
+            "label": "Autoplay-Intervall (ms)",
+            "helpText": "4000–15000. Standard: 7000."
           },
-          "imageMedia": {
-            "label": "Hintergrundbild",
-            "caption": "Hero-Hintergrundbild hochladen"
+          "slides": {
+            "title": "Slides",
+            "add": "Slide hinzufügen",
+            "remove": "Entfernen",
+            "cardTitle": "Slide {index}",
+            "id": {
+              "label": "Slide-ID",
+              "helpText": "Optionale stabile ID für Analytics. Leer lassen für Auto-Generierung."
+            },
+            "layout": {
+              "label": "Layout",
+              "featured": "Featured",
+              "caption": "Caption"
+            },
+            "titleField": {
+              "label": "Titel",
+              "placeholder": "Ein Zuhause, das zu dir passt."
+            },
+            "url": {
+              "label": "Banner-Link",
+              "placeholder": "/living oder https://…"
+            },
+            "eyebrow": {
+              "label": "Eyebrow",
+              "placeholder": "Die neue Wohnkollektion"
+            },
+            "description": {
+              "label": "Beschreibung",
+              "placeholder": "Möbel für den Alltag."
+            },
+            "imageMedia": {
+              "label": "Hintergrundbild",
+              "caption": "Slide-Hintergrundbild hochladen"
+            },
+            "promotion": {
+              "title": "Promotions-Badge",
+              "label": "Beschriftung",
+              "value": "Wert"
+            }
           },
           "primaryLink": {
             "title": "Primärer CTA"
@@ -301,6 +336,320 @@
             }
           }
         }
+      },
+      "jv-home-editorial": {
+        "label": "Editorial-Inhalt",
+        "component": {
+          "statementPlaceholder": "Einleitende Aussage",
+          "titlePlaceholder": "Editorial-Titel",
+          "showMorePlaceholder": "Alles anzeigen",
+          "noSections": "Keine aufklappbaren Abschnitte konfiguriert"
+        },
+        "config": {
+          "appearance": {
+            "label": "Darstellung",
+            "card": "Karte",
+            "plain": "Schlicht"
+          },
+          "statement": {
+            "label": "Einleitende Aussage",
+            "placeholder": "Unser Service steht für höchste Qualität."
+          },
+          "title": {
+            "label": "Titel",
+            "placeholder": "Willkommen bei JVMöbel"
+          },
+          "introduction": {
+            "title": "Einleitung"
+          },
+          "paragraph": {
+            "title": "Absatz {index}",
+            "add": "Absatz hinzufügen",
+            "placeholder": "Text und Links eingeben …"
+          },
+          "sections": {
+            "title": "Aufklappbare Abschnitte",
+            "add": "Abschnitt hinzufügen",
+            "cardTitle": "Abschnitt {index}",
+            "paragraphs": "Absätze",
+            "paragraphRequired": "Mindestens einen Absatz hinzufügen und ausfüllen.",
+            "id": {
+              "label": "ID",
+              "helpText": "Stabile technische ID. Wird für neue Abschnitte automatisch erzeugt."
+            },
+            "titleField": {
+              "label": "Optionaler Titel",
+              "placeholder": "Gesund und schön schlafen"
+            }
+          },
+          "labels": {
+            "title": "Beschriftungen des Aufklappbereichs"
+          },
+          "showMoreLabel": {
+            "label": "Beschriftung im geschlossenen Zustand",
+            "placeholder": "Alles anzeigen"
+          },
+          "showLessLabel": {
+            "label": "Beschriftung im geöffneten Zustand",
+            "placeholder": "Weniger anzeigen"
+          },
+          "moveUp": "Nach oben",
+          "moveDown": "Nach unten",
+          "remove": "Entfernen"
+        }
+      },
+      "jv-faq": {
+        "label": "FAQ",
+        "component": {
+          "titlePlaceholder": "FAQ-Titel",
+          "noItems": "Keine Fragen konfiguriert"
+        },
+        "config": {
+          "title": {
+            "label": "Titel",
+            "placeholder": "Häufige Fragen zu Rabattcodes"
+          },
+          "eyebrow": {
+            "label": "Eyebrow",
+            "placeholder": "Gut zu wissen"
+          },
+          "description": {
+            "label": "Beschreibung",
+            "placeholder": "Informationen zu Aktionen, Codes und reduzierten Artikeln."
+          },
+          "items": {
+            "title": "Fragen und Antworten",
+            "add": "Frage hinzufügen",
+            "cardTitle": "Frage {index}",
+            "moveUp": "Nach oben",
+            "moveDown": "Nach unten",
+            "remove": "Entfernen",
+            "id": {
+              "label": "ID",
+              "helpText": "Stabile technische ID. Wird für neue Fragen automatisch erzeugt."
+            },
+            "question": {
+              "label": "Frage",
+              "placeholder": "Wie kann ich einen Rabattcode einlösen?",
+              "required": "Bitte eine Frage eingeben."
+            },
+            "answer": {
+              "label": "Antwort",
+              "placeholder": "Antworttext und Links eingeben …",
+              "required": "Bitte eine Antwort eingeben."
+            }
+          }
+        }
+      },
+      "jv-shop-the-look": {
+        "label": "Shop the Look",
+        "component": {
+          "titlePlaceholder": "Abschnittstitel",
+          "imagePlaceholder": "Raumbild auswählen",
+          "itemPlaceholder": "Element {index}",
+          "noItems": "Keine Look-Elemente konfiguriert"
+        },
+        "config": {
+          "title": {
+            "label": "Abschnittstitel",
+            "placeholder": "Diesen Look nach Hause holen."
+          },
+          "eyebrow": {
+            "label": "Eyebrow",
+            "placeholder": "Ein Raum, ein Look"
+          },
+          "description": {
+            "label": "Beschreibung",
+            "placeholder": "Entdecken Sie die Möbel dieses Raumes."
+          },
+          "imageMedia": {
+            "label": "Raumbild",
+            "caption": "Shop-the-Look-Bild hochladen"
+          },
+          "items": {
+            "title": "Look-Elemente",
+            "add": "Element hinzufügen",
+            "remove": "Entfernen",
+            "moveUp": "Nach oben",
+            "moveDown": "Nach unten",
+            "cardTitle": "Element {index}",
+            "manualHelpText": "Wird nur verwendet, wenn kein Shopware-Produkt ausgewählt ist.",
+            "productId": {
+              "label": "Produkt",
+              "placeholder": "Produkt auswählen oder manuelle Felder verwenden",
+              "helpText": "Ein ausgewähltes Produkt liefert Name und Sales-Channel-SEO-URL."
+            },
+            "name": {
+              "label": "Manueller Name",
+              "placeholder": "Alba Modulsofa"
+            },
+            "description": {
+              "label": "Beschreibung",
+              "placeholder": "Optionale redaktionelle Beschreibung"
+            },
+            "url": {
+              "label": "Manueller Link",
+              "placeholder": "/produkt/alba"
+            },
+            "hotspotX": {
+              "label": "Hotspot X (%)"
+            },
+            "hotspotY": {
+              "label": "Hotspot Y (%)"
+            }
+          },
+          "viewAll": {
+            "title": "Alle-anzeigen-Link",
+            "label": {
+              "label": "Label",
+              "placeholder": "Wohnzimmer entdecken"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/wohnzimmer"
+            }
+          }
+        }
+      },
+      "jv-category-rail": {
+        "label": "Kategorie-Leiste",
+        "component": {
+          "titlePlaceholder": "Abschnittstitel",
+          "categoryLabelPlaceholder": "Kategorie-Label",
+          "noCategories": "Keine Kategorien konfiguriert"
+        },
+        "config": {
+          "title": {
+            "label": "Abschnittstitel",
+            "placeholder": "Beliebte Kategorien"
+          },
+          "eyebrow": {
+            "label": "Eyebrow",
+            "placeholder": "Schnell entdecken"
+          },
+          "description": {
+            "label": "Beschreibung",
+            "placeholder": "Direkt zu den passenden Möbeln."
+          },
+          "layout": {
+            "label": "Layout",
+            "rail": "Horizontale Leiste",
+            "grid": "Responsives Grid"
+          },
+          "categories": {
+            "title": "Kategorien",
+            "add": "Kategorie hinzufügen",
+            "remove": "Entfernen",
+            "cardTitle": "Kategorie {index}",
+            "id": {
+              "label": "ID",
+              "helpText": "Optionale stabile ID. Leer = Label und Index."
+            },
+            "categoryId": {
+              "label": "Kategorie",
+              "placeholder": "Kategorie auswählen"
+            },
+            "label": {
+              "label": "Label"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/living/sofas"
+            },
+            "imageMedia": {
+              "label": "Bild",
+              "caption": "Kategoriebild hochladen"
+            }
+          },
+          "viewAll": {
+            "title": "Alle-anzeigen-Link",
+            "label": {
+              "label": "Label",
+              "placeholder": "Alle Kategorien"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/shop"
+            }
+          }
+        }
+      },
+      "jv-why-jvmoebel": {
+        "label": "Warum JVMöbel",
+        "component": {
+          "markPlaceholder": "JVM",
+          "titlePlaceholder": "Abschnittstitel",
+          "benefitTitlePlaceholder": "Vorteilstitel",
+          "noBenefits": "Keine Vorteile konfiguriert"
+        },
+        "config": {
+          "mark": {
+            "label": "Brand Mark",
+            "placeholder": "JVM"
+          },
+          "tagline": {
+            "label": "Tagline",
+            "placeholder": "Für Räume mit Persönlichkeit"
+          },
+          "title": {
+            "label": "Abschnittstitel",
+            "placeholder": "Warum JVMöbel?"
+          },
+          "eyebrow": {
+            "label": "Eyebrow",
+            "placeholder": "Mehr als nur Möbel"
+          },
+          "description": {
+            "label": "Beschreibung",
+            "placeholder": "Wir verbinden Design mit persönlichem Service."
+          },
+          "benefits": {
+            "title": "Vorteile",
+            "add": "Vorteil hinzufügen",
+            "remove": "Entfernen",
+            "cardTitle": "Vorteil {index}",
+            "id": {
+              "label": "ID",
+              "helpText": "Optionale stabile ID. Leer = Titel und Index."
+            },
+            "iconMode": {
+              "label": "Icon-Typ",
+              "preset": "Standard-Icon",
+              "media": "Eigenes Bild"
+            },
+            "icon": {
+              "label": "Icon",
+              "advice": "Beratung",
+              "design": "Design",
+              "payment": "Zahlung"
+            },
+            "iconMedia": {
+              "label": "Icon-Bild",
+              "caption": "Icon hochladen oder aus Medien wählen"
+            },
+            "titleField": {
+              "label": "Titel"
+            },
+            "description": {
+              "label": "Beschreibung"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/kontakt"
+            }
+          },
+          "viewAll": {
+            "title": "Alle-anzeigen-Link",
+            "label": {
+              "label": "Label",
+              "placeholder": "Mehr über JVMöbel"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/ueber-uns"
+            }
+          }
+        }
       }
     },
     "blocks": {
@@ -330,6 +679,21 @@
       },
       "jv-product-grid": {
         "label": "Produkt-Grid"
+      },
+      "jv-home-editorial": {
+        "label": "Editorial-Inhalt"
+      },
+      "jv-faq": {
+        "label": "FAQ"
+      },
+      "jv-shop-the-look": {
+        "label": "Shop the Look"
+      },
+      "jv-category-rail": {
+        "label": "Kategorie-Leiste"
+      },
+      "jv-why-jvmoebel": {
+        "label": "Warum JVMöbel"
       }
     }
   },
@@ -343,7 +707,9 @@
             "hero": "Hero",
             "newsletter": "Newsletter",
             "room": "Raum",
-            "commerce": "Commerce"
+            "commerce": "Commerce",
+            "category": "Kategorie",
+            "brand": "Marke"
           }
         }
       }

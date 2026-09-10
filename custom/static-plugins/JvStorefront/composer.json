@@ -1,0 +1,28 @@
+{
+    "name": "jvmoebel/storefront",
+    "description": "JVMöbel storefront configuration (header/footer shell)",
+    "type": "shopware-platform-plugin",
+    "license": "proprietary",
+    "version": "0.1.0",
+    "require": {
+        "php": "^8.5",
+        "shopware/core": "~6.7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Jv\\Storefront\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Jv\\Storefront\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "shopware-plugin-class": "Jv\\Storefront\\JvStorefront",
+        "label": {
+            "de-DE": "JVMöbel Storefront",
+            "en-GB": "JVMöbel Storefront"
+        }
+    }
+}

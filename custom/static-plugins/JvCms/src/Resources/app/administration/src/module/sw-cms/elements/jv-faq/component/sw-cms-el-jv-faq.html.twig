@@ -1,0 +1,25 @@
+{% block sw_cms_element_jv_faq %}
+	<div class="sw-cms-el-jv-faq">
+		<div class="sw-cms-el-jv-faq__intro">
+			<div v-if="eyebrow" class="sw-cms-el-jv-faq__eyebrow">{{ eyebrow }}</div>
+			<div class="sw-cms-el-jv-faq__title">
+				{{ title || $t('cms.elements.jv-faq.component.titlePlaceholder') }}
+			</div>
+			<p v-if="description" class="sw-cms-el-jv-faq__description">{{ description }}</p>
+		</div>
+
+		<div v-if="items.length" class="sw-cms-el-jv-faq__items">
+			<div
+				v-for="(item, itemIndex) in items.slice(0, 5)"
+				:key="item.id || itemIndex"
+				class="sw-cms-el-jv-faq__item"
+			>
+				<strong>{{ item.question }}</strong>
+				<span aria-hidden="true">⌄</span>
+			</div>
+		</div>
+		<div v-else class="sw-cms-el-jv-faq__empty">
+			{{ $t('cms.elements.jv-faq.component.noItems') }}
+		</div>
+	</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% block sw_cms_element_jv_home_editorial %}
+	<div
+		class="sw-cms-el-jv-home-editorial"
+		:class="`sw-cms-el-jv-home-editorial--${appearance}`"
+	>
+		<div class="sw-cms-el-jv-home-editorial__intro">
+			<div class="sw-cms-el-jv-home-editorial__statement">
+				{{ statement || $t('cms.elements.jv-home-editorial.component.statementPlaceholder') }}
+			</div>
+			<div>
+				<div class="sw-cms-el-jv-home-editorial__title">
+					{{ title || $t('cms.elements.jv-home-editorial.component.titlePlaceholder') }}
+				</div>
+				<p
+					v-for="(paragraph, paragraphIndex) in introduction.slice(0, 2)"
+					:key="paragraphIndex"
+					class="sw-cms-el-jv-home-editorial__paragraph"
+				>
+					{{ paragraph }}
+				</p>
+			</div>
+		</div>
+
+		<div class="sw-cms-el-jv-home-editorial__disclosure">
+			<strong>{{ showMoreLabel }}</strong>
+			<span aria-hidden="true">⌄</span>
+		</div>
+
+		<div v-if="sections.length" class="sw-cms-el-jv-home-editorial__grid">
+			<div
+				v-for="(section, sectionIndex) in sections.slice(0, 4)"
+				:key="section.id || sectionIndex"
+				class="sw-cms-el-jv-home-editorial__section"
+			>
+				<strong v-if="section.title">{{ section.title }}</strong>
+				<p>{{ section.previewParagraphs[0] }}</p>
+			</div>
+		</div>
+		<div v-else class="sw-cms-el-jv-home-editorial__empty">
+			{{ $t('cms.elements.jv-home-editorial.component.noSections') }}
+		</div>
+	</div>
+{% endblock %}

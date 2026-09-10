@@ -1,0 +1,66 @@
+{
+    "jv-storefront-settings": {
+        "general": {
+            "title": "Storefront-Einstellungen",
+            "description": "Globale Header- und Footer-Konfiguration"
+        },
+        "salesChannel": {
+            "title": "Verkaufskanal",
+            "label": "Verkaufskanal"
+        },
+        "branding": {
+            "title": "Branding",
+            "logo": "Storefront-Logo",
+            "logoCaption": "Storefront-Logo auswählen"
+        },
+        "footer": {
+            "title": "Footer-Texte",
+            "eyebrow": "About Eyebrow",
+            "titleField": "About Titel",
+            "description": "About Beschreibung",
+            "copyright": "Copyright-Text",
+            "revocationEnabled": "Widerruf aktiv",
+            "revocationLabel": "Widerruf-Button",
+            "revocationEmail": "Widerruf E-Mail"
+        },
+        "social": {
+            "title": "Social Links"
+        },
+        "payment": {
+            "title": "Zahlungs-Badges"
+        },
+        "list": {
+            "label": "Label",
+            "url": "URL",
+            "position": "Position",
+            "active": "Aktiv",
+            "icon": "Icon",
+            "iconCaption": "Icon auswählen",
+            "openInNewTab": "In neuem Tab öffnen",
+            "iconMissing": "Kein Icon"
+        },
+        "modal": {
+            "socialCreate": "Social Link hinzufügen",
+            "socialEdit": "Social Link bearbeiten",
+            "paymentCreate": "Zahlungs-Badge hinzufügen",
+            "paymentEdit": "Zahlungs-Badge bearbeiten"
+        },
+        "actions": {
+            "add": "Hinzufügen"
+        },
+        "notifications": {
+            "saved": "Storefront-Einstellungen gespeichert.",
+            "saveFailed": "Storefront-Einstellungen konnten nicht gespeichert werden.",
+            "socialSaved": "Social Link gespeichert.",
+            "socialSaveFailed": "Social Link konnte nicht gespeichert werden.",
+            "socialValidationFailed": "Bitte Label, URL und Icon ausfüllen.",
+            "socialDeleted": "Social Link gelöscht.",
+            "socialDeleteFailed": "Social Link konnte nicht gelöscht werden.",
+            "paymentSaved": "Zahlungs-Badge gespeichert.",
+            "paymentSaveFailed": "Zahlungs-Badge konnte nicht gespeichert werden.",
+            "paymentValidationFailed": "Bitte Label und Icon ausfüllen.",
+            "paymentDeleted": "Zahlungs-Badge gelöscht.",
+            "paymentDeleteFailed": "Zahlungs-Badge konnte nicht gelöscht werden."
+        }
+    }
+}

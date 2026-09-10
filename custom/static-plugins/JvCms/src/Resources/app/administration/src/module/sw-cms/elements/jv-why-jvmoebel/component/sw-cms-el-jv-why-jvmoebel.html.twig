@@ -1,0 +1,39 @@
+{% block sw_cms_element_jv_why_jvmoebel %}
+	<div class="sw-cms-el-jv-why-jvmoebel">
+		<div class="sw-cms-el-jv-why-jvmoebel__mark-column">
+			<div v-if="mark" class="sw-cms-el-jv-why-jvmoebel__mark">{{ mark }}</div>
+			<div v-else class="sw-cms-el-jv-why-jvmoebel__mark sw-cms-el-jv-why-jvmoebel__mark--placeholder">
+				{{ $t('cms.elements.jv-why-jvmoebel.component.markPlaceholder') }}
+			</div>
+			<div v-if="tagline" class="sw-cms-el-jv-why-jvmoebel__tagline">{{ tagline }}</div>
+		</div>
+
+		<div class="sw-cms-el-jv-why-jvmoebel__content">
+			<div v-if="eyebrow" class="sw-cms-el-jv-why-jvmoebel__eyebrow">{{ eyebrow }}</div>
+			<div v-if="title" class="sw-cms-el-jv-why-jvmoebel__title">{{ title }}</div>
+			<div v-else class="sw-cms-el-jv-why-jvmoebel__title sw-cms-el-jv-why-jvmoebel__title--placeholder">
+				{{ $t('cms.elements.jv-why-jvmoebel.component.titlePlaceholder') }}
+			</div>
+			<div v-if="description" class="sw-cms-el-jv-why-jvmoebel__description">{{ description }}</div>
+
+			<div v-if="benefits.length" class="sw-cms-el-jv-why-jvmoebel__list">
+				<div
+					v-for="(benefit, benefitIndex) in benefits"
+					:key="`jv-why-jvmoebel-preview-${benefitIndex}`"
+					class="sw-cms-el-jv-why-jvmoebel__item"
+				>
+					<span class="sw-cms-el-jv-why-jvmoebel__item-icon">{{ benefit.icon || 'design' }}</span>
+					<div class="sw-cms-el-jv-why-jvmoebel__item-copy">
+						<strong>{{ benefit.title || $t('cms.elements.jv-why-jvmoebel.component.benefitTitlePlaceholder') }}</strong>
+						<p v-if="benefit.description">{{ benefit.description }}</p>
+					</div>
+				</div>
+			</div>
+			<div v-else class="sw-cms-el-jv-why-jvmoebel__empty">
+				{{ $t('cms.elements.jv-why-jvmoebel.component.noBenefits') }}
+			</div>
+
+			<div v-if="viewAllLabel" class="sw-cms-el-jv-why-jvmoebel__view-all">{{ viewAllLabel }}</div>
+		</div>
+	</div>
+{% endblock %}

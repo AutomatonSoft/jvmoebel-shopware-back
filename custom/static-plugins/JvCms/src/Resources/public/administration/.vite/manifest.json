@@ -1,6 +1,6 @@
 {
   "main.js": {
-    "file": "assets/jv-cms-BjvH6xlG.js",
+    "file": "assets/jv-cms-pjnseIte.js",
     "name": "jv-cms",
     "src": "main.js",
     "isEntry": true,
@@ -43,7 +43,35 @@
       "module/sw-cms/elements/jv-product-grid/config/index.js",
       "module/sw-cms/elements/jv-product-grid/component/index.js",
       "module/sw-cms/blocks/jv-product-grid/jv-product-grid/preview/index.js",
-      "module/sw-cms/blocks/jv-product-grid/jv-product-grid/component/index.js"
+      "module/sw-cms/blocks/jv-product-grid/jv-product-grid/component/index.js",
+      "module/sw-cms/elements/jv-shop-the-look/preview/index.js",
+      "module/sw-cms/elements/jv-shop-the-look/config/index.js",
+      "module/sw-cms/elements/jv-shop-the-look/component/index.js",
+      "module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look/preview/index.js",
+      "module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look/component/index.js",
+      "module/sw-cms/elements/jv-home-editorial/preview/index.js",
+      "module/sw-cms/elements/jv-home-editorial/config/index.js",
+      "module/sw-cms/elements/jv-home-editorial/component/index.js",
+      "module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/preview/index.js",
+      "module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/component/index.js",
+      "module/sw-cms/elements/jv-faq/preview/index.js",
+      "module/sw-cms/elements/jv-faq/config/index.js",
+      "module/sw-cms/elements/jv-faq/component/index.js",
+      "module/sw-cms/blocks/jv-faq/jv-faq/preview/index.js",
+      "module/sw-cms/blocks/jv-faq/jv-faq/component/index.js",
+      "module/sw-cms/elements/jv-category-rail/preview/index.js",
+      "module/sw-cms/elements/jv-category-rail/config/index.js",
+      "module/sw-cms/elements/jv-category-rail/component/index.js",
+      "module/sw-cms/blocks/jv-category-rail/jv-category-rail/preview/index.js",
+      "module/sw-cms/blocks/jv-category-rail/jv-category-rail/component/index.js",
+      "module/sw-cms/elements/jv-why-jvmoebel/preview/index.js",
+      "module/sw-cms/elements/jv-why-jvmoebel/config/index.js",
+      "module/sw-cms/elements/jv-why-jvmoebel/component/index.js",
+      "module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel/preview/index.js",
+      "module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel/component/index.js"
+    ],
+    "css": [
+      "assets/jv-cms-CNrbVlWh.css"
     ]
   },
   "module/sw-cms/blocks/jv-button/jv-button-link/component/index.js": {
@@ -91,6 +119,42 @@
       "assets/index-DKrLRM_7.css"
     ]
   },
+  "module/sw-cms/blocks/jv-category-rail/jv-category-rail/component/index.js": {
+    "file": "assets/index-Dusf5MIG.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-category-rail/jv-category-rail/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-FXhlzErf.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-category-rail/jv-category-rail/preview/index.js": {
+    "file": "assets/index-ILKa4VZj.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-category-rail/jv-category-rail/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BBqgw90K.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-faq/jv-faq/component/index.js": {
+    "file": "assets/index-DsIPREBq.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-faq/jv-faq/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BtEdmG6F.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-faq/jv-faq/preview/index.js": {
+    "file": "assets/index-DGp_Qoek.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-faq/jv-faq/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BTT0UeeF.css"
+    ]
+  },
   "module/sw-cms/blocks/jv-global-search/jv-global-search/component/index.js": {
     "file": "assets/index-ClqZmAJo.js",
     "name": "index",
@@ -119,6 +183,24 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-BT4Uv-nv.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/component/index.js": {
+    "file": "assets/index-DbpRozBh.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DFDuMenX.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/preview/index.js": {
+    "file": "assets/index-DdP8Urs8.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BKywnAF-.css"
     ]
   },
   "module/sw-cms/blocks/jv-newsletter/jv-newsletter/component/index.js": {
@@ -172,6 +254,24 @@
       "assets/index-DhrCSTwN.css"
     ]
   },
+  "module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look/component/index.js": {
+    "file": "assets/index-Bp_ct0hx.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DCy-0fLO.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look/preview/index.js": {
+    "file": "assets/index-BIUFIdaS.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DRrl3i8L.css"
+    ]
+  },
   "module/sw-cms/blocks/jv-side-navigation/jv-side-navigation/component/index.js": {
     "file": "assets/index-CrA-vDtU.js",
     "name": "index",
@@ -188,6 +288,24 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-C855RAsj.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel/component/index.js": {
+    "file": "assets/index-BNvpkD1R.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DWz8PQ0H.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel/preview/index.js": {
+    "file": "assets/index-BDvqu_7R.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BrRugZro.css"
     ]
   },
   "module/sw-cms/elements/jv-button/component/index.js": {
@@ -212,6 +330,60 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-D4IckMm7.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-category-rail/component/index.js": {
+    "file": "assets/index-AnwCKJHv.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-category-rail/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-86Pd4qen.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-category-rail/config/index.js": {
+    "file": "assets/index-CNqLiLu9.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-category-rail/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-Dkrk-6W5.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-category-rail/preview/index.js": {
+    "file": "assets/index-BXUD2-Bc.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-category-rail/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-Blid_j87.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-faq/component/index.js": {
+    "file": "assets/index-3nRUFl0C.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-faq/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BfimdR6n.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-faq/config/index.js": {
+    "file": "assets/index-BKir8EEk.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-faq/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DQE1EWE7.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-faq/preview/index.js": {
+    "file": "assets/index-CYgrWzwu.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-faq/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DTpw0lRZ.css"
     ]
   },
   "module/sw-cms/elements/jv-global-search/component/index.js": {
@@ -239,7 +411,7 @@
     ]
   },
   "module/sw-cms/elements/jv-hero/component/index.js": {
-    "file": "assets/index-DlfovZZi.js",
+    "file": "assets/index-BkGYub9c.js",
     "name": "index",
     "src": "module/sw-cms/elements/jv-hero/component/index.js",
     "isDynamicEntry": true,
@@ -248,12 +420,12 @@
     ]
   },
   "module/sw-cms/elements/jv-hero/config/index.js": {
-    "file": "assets/index-qY_Pd4R-.js",
+    "file": "assets/index-BLaq8JaT.js",
     "name": "index",
     "src": "module/sw-cms/elements/jv-hero/config/index.js",
     "isDynamicEntry": true,
     "css": [
-      "assets/index-Ds0b-IFy.css"
+      "assets/index-BTKbBJJs.css"
     ]
   },
   "module/sw-cms/elements/jv-hero/preview/index.js": {
@@ -263,6 +435,33 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-CXkpjpEl.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-home-editorial/component/index.js": {
+    "file": "assets/index-D2P0FUh4.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-home-editorial/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-C-hKOn8U.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-home-editorial/config/index.js": {
+    "file": "assets/index-9cdSutTK.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-home-editorial/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-B6d9Q3bZ.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-home-editorial/preview/index.js": {
+    "file": "assets/index-_-gawrCV.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-home-editorial/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CKk0oJG6.css"
     ]
   },
   "module/sw-cms/elements/jv-newsletter/component/index.js": {
@@ -346,6 +545,33 @@
       "assets/index-CL-CDUMe.css"
     ]
   },
+  "module/sw-cms/elements/jv-shop-the-look/component/index.js": {
+    "file": "assets/index-Bwng74PP.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-shop-the-look/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-Dq6_HUcC.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-shop-the-look/config/index.js": {
+    "file": "assets/index-Fd-eTgdX.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-shop-the-look/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DntydX4r.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-shop-the-look/preview/index.js": {
+    "file": "assets/index-oVGmts59.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-shop-the-look/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DwPRe1bH.css"
+    ]
+  },
   "module/sw-cms/elements/jv-side-navigation/component/index.js": {
     "file": "assets/index-Dr_0zyGm.js",
     "name": "index",
@@ -371,6 +597,33 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-DB4fQlLF.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-why-jvmoebel/component/index.js": {
+    "file": "assets/index-DksinXIK.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-why-jvmoebel/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DwAUYmoV.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-why-jvmoebel/config/index.js": {
+    "file": "assets/index-FVNTZwZ2.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-why-jvmoebel/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BviYk8wf.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-why-jvmoebel/preview/index.js": {
+    "file": "assets/index-B7wDVh0W.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-why-jvmoebel/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-D4uEN92m.css"
     ]
   }
 }
