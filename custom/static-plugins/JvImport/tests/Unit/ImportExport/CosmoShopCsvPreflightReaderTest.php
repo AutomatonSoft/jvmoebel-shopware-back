@@ -28,6 +28,21 @@ final class CosmoShopCsvPreflightReaderTest extends TestCase
         }
     }
 
+    public function testItPreservesBackslashesBeforeRfc4180Quotes(): void
+    {
+        $reader = $this->reader();
+        $name = 'Product \\"Quoted"';
+        $resource = $this->resource($this->header()."\nSKU-001;4260174423463;119.00;\"".str_replace('"', '""', $name)."\";0;1;0;0;0;0;1;1;1\n");
+
+        try {
+            $rows = iterator_to_array($reader->read($this->config(), $resource, 0));
+        } finally {
+            fclose($resource);
+        }
+
+        self::assertSame($name, $rows[0]['name']);
+    }
+
     #[DataProvider('invalidCsvFiles')]
     public function testItRejectsInvalidFileStructure(string $csv, string $message): void
     {

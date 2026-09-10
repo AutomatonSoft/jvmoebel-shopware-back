@@ -93,3 +93,5 @@ SPEC-NNN-short-name.md
 | [SPEC-016-cms-home-editorial](SPEC-016-cms-home-editorial.md) | Backend CMS element/block `jv-home-editorial` (вводный и раскрываемый rich-text контент); контракт — frontend `docs/components/jv-home-editorial.md` |
 | [SPEC-017-cms-faq](SPEC-017-cms-faq.md) | Backend CMS element/block `jv-faq` (упорядоченные вопросы и rich-text ответы); контракт — frontend `docs/components/jv-faq.md` |
 | [SPEC-018-cms-why-jvmoebel](SPEC-018-cms-why-jvmoebel.md) | Backend CMS element/block `jv-why-jvmoebel` (brand mark, benefits, view all); контракт — platform SPEC-013 |
+| [SPEC-019-cosmoshop-customer-import](SPEC-019-cosmoshop-customer-import.md) | Импорт клиентов и newsletter recipients немецкого CosmoShop через штатный Shopware Import/Export |
+| [SPEC-020-cosmoshop-customer-wishlist-import](SPEC-020-cosmoshop-customer-wishlist-import.md) | Импорт wishlist зарегистрированных клиентов немецкого CosmoShop |
