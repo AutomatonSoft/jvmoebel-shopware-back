@@ -1,6 +1,6 @@
 {
   "main.js": {
-    "file": "assets/jv-cms-pjnseIte.js",
+    "file": "assets/jv-cms-DcMToAeA.js",
     "name": "jv-cms",
     "src": "main.js",
     "isEntry": true,
@@ -68,7 +68,17 @@
       "module/sw-cms/elements/jv-why-jvmoebel/config/index.js",
       "module/sw-cms/elements/jv-why-jvmoebel/component/index.js",
       "module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel/preview/index.js",
-      "module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel/component/index.js"
+      "module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel/component/index.js",
+      "module/sw-cms/elements/jv-social-block/preview/index.js",
+      "module/sw-cms/elements/jv-social-block/config/index.js",
+      "module/sw-cms/elements/jv-social-block/component/index.js",
+      "module/sw-cms/blocks/jv-social-block/jv-social-block/preview/index.js",
+      "module/sw-cms/blocks/jv-social-block/jv-social-block/component/index.js",
+      "module/sw-cms/elements/jv-text-custom-tables/preview/index.js",
+      "module/sw-cms/elements/jv-text-custom-tables/config/index.js",
+      "module/sw-cms/elements/jv-text-custom-tables/component/index.js",
+      "module/sw-cms/blocks/jv-text-custom-tables/jv-text-custom-tables/preview/index.js",
+      "module/sw-cms/blocks/jv-text-custom-tables/jv-text-custom-tables/component/index.js"
     ],
     "css": [
       "assets/jv-cms-CNrbVlWh.css"
@@ -288,6 +298,42 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-C855RAsj.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-social-block/jv-social-block/component/index.js": {
+    "file": "assets/index-CSLvGSO5.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-social-block/jv-social-block/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-geqc6gD1.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-social-block/jv-social-block/preview/index.js": {
+    "file": "assets/index-DaG9Pnzy.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-social-block/jv-social-block/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-C_eBYDOL.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-text-custom-tables/jv-text-custom-tables/component/index.js": {
+    "file": "assets/index-DYE0-PGb.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-text-custom-tables/jv-text-custom-tables/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-Cj3SgLmP.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-text-custom-tables/jv-text-custom-tables/preview/index.js": {
+    "file": "assets/index-CwvLwV-2.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-text-custom-tables/jv-text-custom-tables/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-C38KzPN7.css"
     ]
   },
   "module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel/component/index.js": {
@@ -597,6 +643,60 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-DB4fQlLF.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-social-block/component/index.js": {
+    "file": "assets/index-BgqMffvJ.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-social-block/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DPm2kmGQ.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-social-block/config/index.js": {
+    "file": "assets/index-BPThUf0R.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-social-block/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-D57F863_.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-social-block/preview/index.js": {
+    "file": "assets/index-Ck1cxA5U.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-social-block/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DfxTXyWj.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-text-custom-tables/component/index.js": {
+    "file": "assets/index-SjenY0JV.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-text-custom-tables/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-Bd2dPAPk.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-text-custom-tables/config/index.js": {
+    "file": "assets/index-BnPkleTe.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-text-custom-tables/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-6ms9BODA.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-text-custom-tables/preview/index.js": {
+    "file": "assets/index-DEVe78En.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-text-custom-tables/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DvcRB_j6.css"
     ]
   },
   "module/sw-cms/elements/jv-why-jvmoebel/component/index.js": {

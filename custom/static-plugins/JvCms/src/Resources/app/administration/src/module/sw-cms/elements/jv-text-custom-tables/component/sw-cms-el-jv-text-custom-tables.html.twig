@@ -1,0 +1,37 @@
+{% block sw_cms_element_jv_text_custom_tables %}
+	<div class="sw-cms-el-jv-text-custom-tables">
+		<p v-if="topText" class="sw-cms-el-jv-text-custom-tables__text">{{ topText }}</p>
+		<p v-else class="sw-cms-el-jv-text-custom-tables__placeholder">
+			{{ $t('cms.elements.jv-text-custom-tables.component.topTextPlaceholder') }}
+		</p>
+
+		<div v-if="sections.length" class="sw-cms-el-jv-text-custom-tables__sections">
+			<section
+				v-for="(section, sectionIndex) in sections"
+				:key="section.id || sectionIndex"
+				class="sw-cms-el-jv-text-custom-tables__section"
+			>
+				<h3>{{ section.title || $t('cms.elements.jv-text-custom-tables.component.sectionTitlePlaceholder', { index: sectionIndex + 1 }) }}</h3>
+				<div v-if="section.rows.length" class="sw-cms-el-jv-text-custom-tables__table">
+					<div
+						v-for="(row, rowIndex) in section.rows.slice(0, 4)"
+						:key="rowIndex"
+						class="sw-cms-el-jv-text-custom-tables__row"
+					>
+						<strong>{{ row.left || $t('cms.elements.jv-text-custom-tables.component.leftCellPlaceholder') }}</strong>
+						<span>{{ row.right || $t('cms.elements.jv-text-custom-tables.component.rightCellPlaceholder') }}</span>
+					</div>
+				</div>
+				<p v-if="section.text" class="sw-cms-el-jv-text-custom-tables__text">{{ section.text }}</p>
+			</section>
+		</div>
+		<div v-else class="sw-cms-el-jv-text-custom-tables__empty">
+			{{ $t('cms.elements.jv-text-custom-tables.component.noSections') }}
+		</div>
+
+		<p v-if="bottomText" class="sw-cms-el-jv-text-custom-tables__text">{{ bottomText }}</p>
+		<p v-else class="sw-cms-el-jv-text-custom-tables__placeholder">
+			{{ $t('cms.elements.jv-text-custom-tables.component.bottomTextPlaceholder') }}
+		</p>
+	</div>
+{% endblock %}

@@ -1,0 +1,2 @@
+const e=`{% block sw_cms_element_jv_text_custom_tables_preview %} <div class="sw-cms-el-preview-jv-text-custom-tables"> <strong>{{ $t('cms.elements.jv-text-custom-tables.label') }}</strong> <span></span> <div class="sw-cms-el-preview-jv-text-custom-tables__table"> <i></i><i></i> <i></i><i></i> </div> <span></span> </div> {% endblock %}`,s={template:e};export{s as default};
+//# sourceMappingURL=index-DEVe78En.js.map

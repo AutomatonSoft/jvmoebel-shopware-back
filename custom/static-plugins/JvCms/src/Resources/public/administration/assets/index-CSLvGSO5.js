@@ -1,0 +1,2 @@
+const c='{% block sw_cms_block_jv_social_block %} <div class="sw-cms-block-jv-social-block"> <slot name="content"> {% block sw_cms_block_jv_social_block_slot_content %}{% endblock %} </slot> </div> {% endblock %}',o={template:c};export{o as default};
+//# sourceMappingURL=index-CSLvGSO5.js.map
