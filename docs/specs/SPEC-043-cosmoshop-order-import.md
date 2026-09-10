@@ -1,4 +1,4 @@
-# SPEC-021 — Импорт исторических заказов CosmoShop
+# SPEC-043 — Импорт исторических заказов CosmoShop
 
 ## Цель
 
@@ -152,8 +152,11 @@ Shopware price schema, а не ограничить или округлить е
 В актуальном snapshot также подтверждены 6 361 `normal`, 30 `ustid-befreit` и
 6 `non-eu` VAT modes, а также 6 359 `brutto` и 38 `netto` price displays.
 `normal/brutto` записывается с `taxStatus=gross`, `normal/netto` — с
-`taxStatus=net`, а оба tax-free режима — с `taxStatus=tax-free`;
-`positionPrice` всегда исключает shipping в той же налоговой базе.
+`taxStatus=net`, а оба tax-free режима — с `taxStatus=tax-free`.
+Для `taxStatus=net` `netPrice` и `positionPrice` остаются net, но payable
+`totalPrice/rawTotal`, transaction amount и delivery shipping total включают
+source tax; для tax-free tax не добавляется. `positionPrice` всегда исключает
+shipping в той же налоговой базе.
 
 ### Оплата, доставка и состояния
 
@@ -335,7 +338,9 @@ transaction references, artifact names, JSON lines и exception messages не
 failure process boundary логирует только exception class и завершает команду
 failure без повторной печати исходного исключения Symfony Application.
 
-Repeat по тому же checksum ничего не перезаписывает и считается `existing`.
+Checksum включает immutable source JSON и mapping projection version. Поэтому
+изменение projection безопасно переобрабатывает уже импортированный aggregate,
+а повтор после этого снова считается `existing` по новому checksum.
 Изменившийся source aggregate обновляется только если target row уже имеет
 совпадающие historical-import market/source markers. Существующий target order
 без markers не усыновляется и не перезаписывается. Partial aggregate write не

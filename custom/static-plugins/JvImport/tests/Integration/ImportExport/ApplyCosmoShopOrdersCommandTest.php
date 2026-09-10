@@ -252,6 +252,9 @@ final class ApplyCosmoShopOrdersCommandTest extends AbstractCosmoShopImportExpor
             $record = $this->record($sourceOrderId, (string) (94000 + $sourceOrderId - 74400), null);
             $record['price_display'] = $display;
             $record['vat_type'] = $vatType;
+            $record['line_items'] = [$record['line_items'][0]];
+            $record['total_net'] = '100.0000000000';
+            $record['total_tax'] = '19.0000000000';
             if ('normal' !== $vatType) {
                 $record['total_tax'] = '0.0000000000';
                 foreach ($record['line_items'] as &$line) {
@@ -276,7 +279,10 @@ final class ApplyCosmoShopOrdersCommandTest extends AbstractCosmoShopImportExpor
                 self::assertInstanceOf(OrderEntity::class, $order);
                 $expectedStatus = 'ustid-befreit' === $record['vat_type'] ? 'tax-free' : ('netto' === $record['price_display'] ? 'net' : 'gross');
                 self::assertSame($expectedStatus, $order->getPrice()->getTaxStatus());
-                self::assertSame('ustid-befreit' === $record['vat_type'] || 'netto' === $record['price_display'] ? 100.0 : 119.0, $order->getPrice()->getPositionPrice());
+                self::assertSame(100.0, $order->getPrice()->getNetPrice());
+                self::assertSame('ustid-befreit' === $record['vat_type'] ? 100.0 : ('netto' === $record['price_display'] ? 100.0 : 119.0), $order->getPrice()->getPositionPrice());
+                self::assertSame('ustid-befreit' === $record['vat_type'] ? 100.0 : 119.0, $order->getPrice()->getTotalPrice());
+                self::assertSame('ustid-befreit' === $record['vat_type'] ? 100.0 : 119.0, $order->getTransactions()?->first()?->getAmount()->getTotalPrice());
             }
         } finally {
             foreach ($records as $record) {

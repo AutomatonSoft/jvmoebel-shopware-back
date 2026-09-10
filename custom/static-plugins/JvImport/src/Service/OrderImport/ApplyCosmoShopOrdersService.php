@@ -30,6 +30,7 @@ use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 final readonly class ApplyCosmoShopOrdersService
 {
     private const int CHUNK_SIZE = 50;
+    private const string MAPPING_VERSION = '2026-09-10.2';
     private const array PAYMENT_KEYS = ['amazon_pay', 'cash_on_delivery', 'easycredit', 'installment_purchase', 'invoice', 'klarna', 'klarna_pay_later', 'klarna_pay_now', 'klarna_payments', 'paypal', 'paypal_express', 'prepayment_discount', 'santander_financing', 'skrill', 'split_deposit'];
     private const array SHIPPING_KEYS = ['freight_forwarder', 'freight_forwarder_to_installation_location', 'self_pickup'];
 
@@ -173,7 +174,7 @@ final readonly class ApplyCosmoShopOrdersService
 
         foreach ($valid as $record) {
             $orderId = CosmoShopOrderIdentity::orderId($market, $record['source_order_id']);
-            $checksum = hash('sha256', json_encode($record, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+            $checksum = hash('sha256', self::MAPPING_VERSION."\0".json_encode($record, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
             $existing = $existingById[$orderId] ?? null;
             $deepLinkCode = null;
             if (null !== $existing) {
@@ -520,9 +521,11 @@ final readonly class ApplyCosmoShopOrdersService
         }
         $totalNet = (float) $record['total_net'];
         $totalTax = (float) $record['total_tax'];
-        $total = 'gross' === $taxStatus ? $totalNet + $totalTax : $totalNet;
-        $shippingTotal = 'gross' === $taxStatus ? $shippingNet + $shippingTax : $shippingNet;
-        $positionPrice = 'net' === $taxStatus ? $totalNet - $shippingNet : $total - $shippingTotal;
+        $grossTotal = $totalNet + $totalTax;
+        $grossShipping = $shippingNet + $shippingTax;
+        $payableTotal = 'tax-free' === $taxStatus ? $totalNet : $grossTotal;
+        $shippingTotal = 'tax-free' === $taxStatus ? $shippingNet : $grossShipping;
+        $positionPrice = 'net' === $taxStatus ? $totalNet - $shippingNet : $payableTotal - $shippingTotal;
 
         return [
             'id' => CosmoShopOrderIdentity::orderId($market, $record['source_order_id']),
@@ -536,7 +539,7 @@ final readonly class ApplyCosmoShopOrdersService
             'billingAddressId' => $billingId,
             'primaryOrderTransactionId' => CosmoShopOrderIdentity::transactionId($market, $record['source_order_id']),
             'primaryOrderDeliveryId' => CosmoShopOrderIdentity::deliveryId($market, $record['source_order_id']),
-            'price' => $this->cartPrice($total, $totalNet, $totalTax, $positionPrice, $taxStatus, $orderTaxes),
+            'price' => $this->cartPrice($payableTotal, $totalNet, $totalTax, $positionPrice, $taxStatus, $orderTaxes),
             'shippingCosts' => $this->aggregatePrice($shippingTotal, $shippingNet, $shippingTax, $shippingTaxes),
             'itemRounding' => $this->rounding(),
             'totalRounding' => $this->rounding(),
@@ -548,6 +551,7 @@ final readonly class ApplyCosmoShopOrdersService
                 'jv_cosmoshop_source_order_id' => $record['source_order_id'],
                 'jv_cosmoshop_source_customer_id' => $record['source_customer_id'],
                 'jv_cosmoshop_source_checksum' => $checksum,
+                'jv_cosmoshop_mapping_version' => self::MAPPING_VERSION,
                 'jv_cosmoshop_source_created_at' => $record['created_at'],
                 'jv_cosmoshop_source_submitted_at' => $record['submitted_at'],
                 'jv_cosmoshop_source_paid_at' => $record['paid_at'],
@@ -565,7 +569,7 @@ final readonly class ApplyCosmoShopOrdersService
                 'id' => CosmoShopOrderIdentity::transactionId($market, $record['source_order_id']),
                 'paymentMethodId' => CosmoShopOrderIdentity::paymentMethodId($market, $record['payment']['key']),
                 'stateId' => $transactionStateId,
-                'amount' => $this->aggregatePrice($total, $totalNet, $totalTax, $orderTaxes),
+                'amount' => $this->aggregatePrice($payableTotal, $totalNet, $totalTax, $orderTaxes),
                 'customFields' => ['jv_cosmoshop_payment_key' => $record['payment']['key'], 'jv_cosmoshop_payment_label' => $record['payment']['label'], 'jv_cosmoshop_payment_source_plugin' => $record['payment']['source_plugin'], 'jv_cosmoshop_transaction_reference' => $record['payment']['transaction_reference']],
             ]],
             'deliveries' => [[
