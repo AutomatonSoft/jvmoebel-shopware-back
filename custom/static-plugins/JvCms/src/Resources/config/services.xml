@@ -57,6 +57,20 @@
 
         <service id="Jv\Cms\Service\Search\SynonymDictionaryLoader"/>
 
+        <service id="Jv\Cms\Service\Validation\CmsElementValidator">
+            <argument type="tagged_iterator" tag="jv.cms.element_validation_rule"/>
+        </service>
+
+        <service id="Jv\Cms\Service\Validation\FaqCmsElementValidationRule">
+            <tag name="jv.cms.element_validation_rule"/>
+        </service>
+
+        <service id="Jv\Cms\Service\Validation\HomeEditorialCmsElementValidationRule">
+            <tag name="jv.cms.element_validation_rule"/>
+        </service>
+
+        <service id="Jv\Cms\Service\Validation\CmsSlotWriteValidator"/>
+
         <service id="Jv\Cms\Service\Search\QueryFilterInterpreter">
             <factory service="Jv\Cms\Service\Search\QueryFilterInterpreterFactory" method="create"/>
         </service>

@@ -1,3 +1,9 @@
+import './service/cms-validation';
+import './scss/cms-validation.scss';
+import './extension/sw-cms-detail';
+import './extension/sw-cms-section';
+import './extension/sw-cms-page-form';
+
 import './module/sw-cms/elements/jv-button';
 import './module/sw-cms/blocks/jv-button/jv-button-primary';
 import './module/sw-cms/blocks/jv-button/jv-button-secondary';

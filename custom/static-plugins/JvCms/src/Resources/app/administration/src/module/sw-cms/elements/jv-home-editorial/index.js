@@ -1,4 +1,6 @@
 /** Registers CMS element `jv-home-editorial`. */
+import validationRules from './validation';
+
 Shopware.Component.register('sw-cms-el-preview-jv-home-editorial', () => import('./preview'));
 Shopware.Component.register('sw-cms-el-config-jv-home-editorial', () => import('./config'));
 Shopware.Component.register('sw-cms-el-jv-home-editorial', () => import('./component'));
@@ -19,3 +21,5 @@ Shopware.Service('cmsService').registerCmsElement({
         showLessLabel: { source: 'static', value: '' },
     },
 });
+
+Shopware.Service('jvCmsValidationService').register('jv-home-editorial', validationRules);

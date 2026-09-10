@@ -77,7 +77,7 @@ Root всегда содержит `apiAlias`, `title`, nullable `eyebrow`, null
 - Items сортируются по `position`, при равенстве — по исходному индексу.
 - Backend не интерпретирует и не рисует rich text. Next.js sanitizer удаляет scripts, event handlers, unsafe protocols и неподдерживаемую разметку перед render.
 - Administration при перестановке items записывает последовательные `position`; для новых items генерируется стабильный `id`.
-- Administration локально выделяет item и показывает critical-сообщение, пока question или answer не заполнены. Проверка не блокирует сохранение CMS-страницы.
+- Administration использует общий механизм из [SPEC-019](SPEC-019-cms-validation.md): незаполненные question и answer получают собственную подсветку и локализованный текст ошибки. Ошибка также выделяет item, карточку CMS block в Element settings и CMS block на canvas. Это правило не устанавливает `blockSave` и не блокирует сохранение CMS-страницы.
 
 ## Ошибки и повтор
 
@@ -114,6 +114,8 @@ module/sw-cms/blocks/jv-faq/jv-faq/
 
 `main.js` импортирует element и block. Snippets используют `cms.elements.jv-faq.*` и `cms.blocks.jv-faq.label`.
 
+Специфичное правило находится в `elements/jv-faq/validation.js`, подключается при регистрации element и использует общий Administration mixin. Серверное правило `FaqCmsElementValidationRule` регистрируется с tag `jv.cms.element_validation_rule`; оно сохраняет неблокирующий режим. Общая инфраструктура и инструкция подключения описаны в [SPEC-019](SPEC-019-cms-validation.md).
+
 ## Проверка
 
 Автоматические тесты покрывают:
@@ -123,15 +125,18 @@ module/sw-cms/blocks/jv-faq/jv-faq/
 - trim, rich text и отбрасывание invalid/incomplete items;
 - fallback ID, position sorting и tie-break;
 - malformed persisted config;
-- DI registration, `CmsSlotsDataResolver` и `StructEncoder` contract.
+- DI registration, `CmsSlotsDataResolver` и `StructEncoder` contract;
+- маршрутизацию правила через `CmsElementValidator`, точные пути ошибок question/answer и неблокирующее значение по умолчанию.
 
 Ручная приёмка:
 
 - block виден в Text;
 - root-поля сохраняются;
 - вопросы добавляются, удаляются и переставляются;
-- item без question или answer выделяется локальной ошибкой, которая исчезает после заполнения полей и не блокирует сохранение страницы;
+- незаполненные question и answer получают отдельные локализованные ошибки, а содержащий их item выделяется;
+- CMS block с ошибкой выделяется в Element settings и на canvas;
+- ошибки исчезают после заполнения полей и не блокируют сохранение страницы;
 - rich-text links сохраняются после reload;
 - Store API payload принимается frontend parser и соответствует mock страницы скидок.
 
-Полный стандартный набор проверок описан в `docs/WORKFLOW.md`. В рамках задачи запускаются только проверки синтаксиса, без автотестов.
+Полный стандартный набор проверок описан в `docs/WORKFLOW.md`.

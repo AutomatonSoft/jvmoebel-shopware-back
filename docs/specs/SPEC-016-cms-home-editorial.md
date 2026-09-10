@@ -78,7 +78,7 @@ Root всегда содержит `apiAlias`, `appearance`, `statement`, `title
 - Секции сортируются по `position`, при равенстве — по исходному индексу.
 - Backend не интерпретирует и не рисует rich text. Next.js sanitizer удаляет scripts, event handlers, unsafe protocols и неподдерживаемую разметку перед render.
 - Administration при перестановке секций записывает последовательные `position`; для новых секций генерируется стабильный `id`.
-- Administration локально выделяет секцию и показывает critical-сообщение, пока в ней нет хотя бы одного непустого string paragraph. Эта проверка не блокирует сохранение CMS-страницы.
+- Administration использует общий механизм из [SPEC-019](SPEC-019-cms-validation.md): если paragraph уже существует, ошибка и локализованный текст привязываются к его `sw-text-editor`; если paragraphs отсутствуют, сообщение показывается на уровне секции. Ошибка также выделяет секцию, карточку CMS block в Element settings и CMS block на canvas. Это правило не устанавливает `blockSave` и не блокирует сохранение CMS-страницы.
 
 ## Ошибки и повтор
 
@@ -115,6 +115,8 @@ module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/
 
 `main.js` импортирует element и block. Snippets используют `cms.elements.jv-home-editorial.*` и `cms.blocks.jv-home-editorial.label`.
 
+Специфичное правило находится в `elements/jv-home-editorial/validation.js`, подключается при регистрации element и использует общий Administration mixin. Серверное правило `HomeEditorialCmsElementValidationRule` регистрируется с tag `jv.cms.element_validation_rule`; оно сохраняет неблокирующий режим. Общая инфраструктура и инструкция подключения описаны в [SPEC-019](SPEC-019-cms-validation.md).
+
 ## Проверка
 
 Автоматические тесты покрывают:
@@ -124,15 +126,18 @@ module/sw-cms/blocks/jv-home-editorial/jv-home-editorial/
 - rich text, trim и отбрасывание invalid/empty paragraphs и sections;
 - fallback ID, nullable title, position sorting и tie-break;
 - fallback `appearance` и malformed persisted config;
-- DI registration, `CmsSlotsDataResolver` и `StructEncoder` contract.
+- DI registration, `CmsSlotsDataResolver` и `StructEncoder` contract;
+- маршрутизацию правила через `CmsElementValidator`, точные пути ошибок paragraph и неблокирующее значение по умолчанию.
 
 Ручная приёмка:
 
 - block виден в Text;
 - все root-поля и `card` / `plain` сохраняются;
 - абзацы и секции добавляются, удаляются и переставляются;
-- секция без заполненного paragraph выделяется локальной ошибкой, которая исчезает после заполнения хотя бы одного paragraph и не блокирует сохранение страницы;
+- секция без заполненного paragraph выделяется локальной ошибкой; существующие пустые editors получают собственный текст ошибки;
+- CMS block с такой секцией выделяется в Element settings и на canvas;
+- ошибка исчезает после заполнения хотя бы одного paragraph и не блокирует сохранение страницы;
 - rich-text links сохраняются после reload;
 - Store API payload принимается frontend parser и соответствует визуальному образцу `example/jv-home-editorial.html`.
 
-Полный стандартный набор проверок описан в `docs/WORKFLOW.md`. В рамках задачи запускаются только проверки синтаксиса, без автотестов.
+Полный стандартный набор проверок описан в `docs/WORKFLOW.md`.

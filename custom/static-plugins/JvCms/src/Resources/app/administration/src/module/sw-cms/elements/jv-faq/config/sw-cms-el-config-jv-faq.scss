@@ -20,12 +20,8 @@
         padding: 12px;
     }
 
-    &__card--invalid {
+    &__card.jv-cms-validation-block--invalid {
         border-color: var(--color-border-critical-default);
-    }
-
-    &__item-error {
-        margin-bottom: 12px;
     }
 
     &__actions {

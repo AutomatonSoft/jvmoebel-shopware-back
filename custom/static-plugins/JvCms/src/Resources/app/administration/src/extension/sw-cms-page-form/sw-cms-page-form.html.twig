@@ -1,0 +1,43 @@
+{% block sw_cms_page_form_card %}
+<mt-card
+    position-identifier="sw-cms-page-form-block"
+    class="sw-cms-page-form__block-card"
+    :class="{ 'jv-cms-validation-settings-block--invalid': jvCmsBlockHasValidationErrors(block) }"
+    :title="$t(getBlockTitle(block))"
+>
+    <template #headerRight>
+        <div class="sw-cms-page-form__block-device-actions">
+            <mt-icon :name="getDeviceActive('mobile', section, block)" />
+
+            <mt-icon :name="getDeviceActive('tablet', section, block)" />
+
+            <mt-icon :name="getDeviceActive('desktop', section, block)" />
+        </div>
+    </template>
+
+    {% block sw_cms_page_form_card_content %}
+    <div
+        v-for="(element, blockIndex) in block.slots"
+        :key="blockIndex"
+        class="sw-cms-page-form__element-config"
+    >
+        <template v-if="displayNotification(section, block)">
+            <mt-banner variant="info">
+                {{ $t('sw-cms.blocks.blockDisableState') }}
+            </mt-banner>
+        </template>
+
+        {% block sw_cms_page_form_element_config %}
+        <sw-cms-form-sync :element="element">
+            <component
+                :is="cmsElements[element.type].configComponent"
+                :element="element"
+                :element-data="cmsElements[element.type]"
+                @element-update="elementUpdate"
+            />
+        </sw-cms-form-sync>
+        {% endblock %}
+    </div>
+    {% endblock %}
+</mt-card>
+{% endblock %}

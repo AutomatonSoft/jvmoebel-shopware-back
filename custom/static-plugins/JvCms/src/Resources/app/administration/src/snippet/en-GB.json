@@ -421,7 +421,6 @@
             "title": "Questions and answers",
             "add": "Add question",
             "cardTitle": "Question {index}",
-            "required": "Question and answer must both be filled in.",
             "moveUp": "Move up",
             "moveDown": "Move down",
             "remove": "Remove",
@@ -431,11 +430,13 @@
             },
             "question": {
               "label": "Question",
-              "placeholder": "How can I redeem a discount code?"
+              "placeholder": "How can I redeem a discount code?",
+              "required": "Enter a question."
             },
             "answer": {
               "label": "Answer",
-              "placeholder": "Enter answer text and links …"
+              "placeholder": "Enter answer text and links …",
+              "required": "Enter an answer."
             }
           }
         }

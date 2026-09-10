@@ -2,7 +2,9 @@
   "base": "/bundles/jvcms/administration/",
   "entryPoints": {
     "jv-cms": {
-      "css": [],
+      "css": [
+        "/bundles/jvcms/administration/assets/jv-cms-CNrbVlWh.css"
+      ],
       "dynamic": [
         "/bundles/jvcms/administration/assets/index-BG8c_r_5.js",
         "/bundles/jvcms/administration/assets/index-CgBpReOW.js",
@@ -49,12 +51,12 @@
         "/bundles/jvcms/administration/assets/index-BIUFIdaS.js",
         "/bundles/jvcms/administration/assets/index-Bp_ct0hx.js",
         "/bundles/jvcms/administration/assets/index-_-gawrCV.js",
-        "/bundles/jvcms/administration/assets/index-BfSv-kPA.js",
+        "/bundles/jvcms/administration/assets/index-9cdSutTK.js",
         "/bundles/jvcms/administration/assets/index-D2P0FUh4.js",
         "/bundles/jvcms/administration/assets/index-DdP8Urs8.js",
         "/bundles/jvcms/administration/assets/index-DbpRozBh.js",
         "/bundles/jvcms/administration/assets/index-CYgrWzwu.js",
-        "/bundles/jvcms/administration/assets/index-CUfEhBlQ.js",
+        "/bundles/jvcms/administration/assets/index-BKir8EEk.js",
         "/bundles/jvcms/administration/assets/index-3nRUFl0C.js",
         "/bundles/jvcms/administration/assets/index-DGp_Qoek.js",
         "/bundles/jvcms/administration/assets/index-DsIPREBq.js",
@@ -70,7 +72,7 @@
         "/bundles/jvcms/administration/assets/index-BNvpkD1R.js"
       ],
       "js": [
-        "/bundles/jvcms/administration/assets/jv-cms-BzLXTfS7.js"
+        "/bundles/jvcms/administration/assets/jv-cms-pjnseIte.js"
       ],
       "legacy": false,
       "preload": []

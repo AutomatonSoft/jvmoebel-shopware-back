@@ -1,6 +1,6 @@
 {
   "main.js": {
-    "file": "assets/jv-cms-BzLXTfS7.js",
+    "file": "assets/jv-cms-pjnseIte.js",
     "name": "jv-cms",
     "src": "main.js",
     "isEntry": true,
@@ -69,6 +69,9 @@
       "module/sw-cms/elements/jv-why-jvmoebel/component/index.js",
       "module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel/preview/index.js",
       "module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel/component/index.js"
+    ],
+    "css": [
+      "assets/jv-cms-CNrbVlWh.css"
     ]
   },
   "module/sw-cms/blocks/jv-button/jv-button-link/component/index.js": {
@@ -366,12 +369,12 @@
     ]
   },
   "module/sw-cms/elements/jv-faq/config/index.js": {
-    "file": "assets/index-CUfEhBlQ.js",
+    "file": "assets/index-BKir8EEk.js",
     "name": "index",
     "src": "module/sw-cms/elements/jv-faq/config/index.js",
     "isDynamicEntry": true,
     "css": [
-      "assets/index-7HcPrnKK.css"
+      "assets/index-DQE1EWE7.css"
     ]
   },
   "module/sw-cms/elements/jv-faq/preview/index.js": {
@@ -444,12 +447,12 @@
     ]
   },
   "module/sw-cms/elements/jv-home-editorial/config/index.js": {
-    "file": "assets/index-BfSv-kPA.js",
+    "file": "assets/index-9cdSutTK.js",
     "name": "index",
     "src": "module/sw-cms/elements/jv-home-editorial/config/index.js",
     "isDynamicEntry": true,
     "css": [
-      "assets/index-D6g1sFoe.css"
+      "assets/index-B6d9Q3bZ.css"
     ]
   },
   "module/sw-cms/elements/jv-home-editorial/preview/index.js": {
