@@ -59,6 +59,10 @@
             <tag name="shopware.cms.data_resolver"/>
         </service>
 
+        <service id="Jv\Cms\DataResolver\Element\CustomTablesCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
         <service id="Jv\Cms\Service\Search\SynonymDictionaryLoader"/>
 
         <service id="Jv\Cms\Service\Validation\CmsElementValidator">

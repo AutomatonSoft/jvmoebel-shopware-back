@@ -686,6 +686,58 @@
             }
           }
         }
+      },
+      "jv-text-custom-tables": {
+        "label": "Text mit eigenen Tabellen",
+        "component": {
+          "topTextPlaceholder": "Text über den Tabellen",
+          "bottomTextPlaceholder": "Text unter den Tabellen",
+          "sectionTitlePlaceholder": "Abschnitt {index}",
+          "leftCellPlaceholder": "Bezeichnung",
+          "rightCellPlaceholder": "Wert",
+          "noSections": "Keine Tabellenabschnitte konfiguriert"
+        },
+        "config": {
+          "topText": {
+            "label": "Text über Tabellen",
+            "placeholder": "Text, Überschriften und Links eingeben …"
+          },
+          "bottomText": {
+            "label": "Text unter Tabellen",
+            "placeholder": "Text, Überschriften und Links eingeben …"
+          },
+          "sections": {
+            "title": "Tabellenabschnitte",
+            "add": "Tabellenabschnitt hinzufügen",
+            "cardTitle": "Tabellenabschnitt {index}",
+            "moveUp": "Nach oben",
+            "moveDown": "Nach unten",
+            "remove": "Entfernen",
+            "titleField": {
+              "label": "Abschnittstitel",
+              "placeholder": "Banküberweisung"
+            },
+            "text": {
+              "label": "Text unter Tabelle",
+              "placeholder": "Text, Überschriften und Links eingeben …"
+            }
+          },
+          "rows": {
+            "title": "Tabellenzeilen",
+            "add": "Zeile hinzufügen",
+            "moveUp": "Nach oben",
+            "moveDown": "Nach unten",
+            "remove": "Entfernen",
+            "left": {
+              "label": "Linke Spalte",
+              "placeholder": "Fälligkeit"
+            },
+            "right": {
+              "label": "Rechte Spalte",
+              "placeholder": "Sofort nach Bestellung"
+            }
+          }
+        }
       }
     },
     "blocks": {
@@ -733,6 +785,9 @@
       },
       "jv-social-block": {
         "label": "Social Media"
+      },
+      "jv-text-custom-tables": {
+        "label": "Text mit eigenen Tabellen"
       }
     }
   },

@@ -32,6 +32,8 @@ import './module/sw-cms/elements/jv-why-jvmoebel';
 import './module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel';
 import './module/sw-cms/elements/jv-social-block';
 import './module/sw-cms/blocks/jv-social-block/jv-social-block';
+import './module/sw-cms/elements/jv-text-custom-tables';
+import './module/sw-cms/blocks/jv-text-custom-tables/jv-text-custom-tables';
 import deDE from './snippet/de-DE.json';
 import enGB from './snippet/en-GB.json';
 
