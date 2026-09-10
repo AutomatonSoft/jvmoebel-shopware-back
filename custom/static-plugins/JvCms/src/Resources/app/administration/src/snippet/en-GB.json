@@ -686,6 +686,58 @@
             }
           }
         }
+      },
+      "jv-text-custom-tables": {
+        "label": "Text with custom tables",
+        "component": {
+          "topTextPlaceholder": "Text above the tables",
+          "bottomTextPlaceholder": "Text below the tables",
+          "sectionTitlePlaceholder": "Section {index}",
+          "leftCellPlaceholder": "Label",
+          "rightCellPlaceholder": "Value",
+          "noSections": "No table sections configured"
+        },
+        "config": {
+          "topText": {
+            "label": "Text above tables",
+            "placeholder": "Enter text, headings and links …"
+          },
+          "bottomText": {
+            "label": "Text below tables",
+            "placeholder": "Enter text, headings and links …"
+          },
+          "sections": {
+            "title": "Table sections",
+            "add": "Add table section",
+            "cardTitle": "Table section {index}",
+            "moveUp": "Move up",
+            "moveDown": "Move down",
+            "remove": "Remove",
+            "titleField": {
+              "label": "Section title",
+              "placeholder": "Bank transfer"
+            },
+            "text": {
+              "label": "Text below table",
+              "placeholder": "Enter text, headings and links …"
+            }
+          },
+          "rows": {
+            "title": "Table rows",
+            "add": "Add row",
+            "moveUp": "Move up",
+            "moveDown": "Move down",
+            "remove": "Remove",
+            "left": {
+              "label": "Left column",
+              "placeholder": "Due date"
+            },
+            "right": {
+              "label": "Right column",
+              "placeholder": "Immediately after ordering"
+            }
+          }
+        }
       }
     },
     "blocks": {
@@ -733,6 +785,9 @@
       },
       "jv-social-block": {
         "label": "Social media"
+      },
+      "jv-text-custom-tables": {
+        "label": "Text with custom tables"
       }
     }
   },

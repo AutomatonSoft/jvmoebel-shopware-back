@@ -1,6 +1,6 @@
 {
   "main.js": {
-    "file": "assets/jv-cms-C-znYkL1.js",
+    "file": "assets/jv-cms-DcMToAeA.js",
     "name": "jv-cms",
     "src": "main.js",
     "isEntry": true,
@@ -73,7 +73,12 @@
       "module/sw-cms/elements/jv-social-block/config/index.js",
       "module/sw-cms/elements/jv-social-block/component/index.js",
       "module/sw-cms/blocks/jv-social-block/jv-social-block/preview/index.js",
-      "module/sw-cms/blocks/jv-social-block/jv-social-block/component/index.js"
+      "module/sw-cms/blocks/jv-social-block/jv-social-block/component/index.js",
+      "module/sw-cms/elements/jv-text-custom-tables/preview/index.js",
+      "module/sw-cms/elements/jv-text-custom-tables/config/index.js",
+      "module/sw-cms/elements/jv-text-custom-tables/component/index.js",
+      "module/sw-cms/blocks/jv-text-custom-tables/jv-text-custom-tables/preview/index.js",
+      "module/sw-cms/blocks/jv-text-custom-tables/jv-text-custom-tables/component/index.js"
     ],
     "css": [
       "assets/jv-cms-CNrbVlWh.css"
@@ -311,6 +316,24 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-C_eBYDOL.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-text-custom-tables/jv-text-custom-tables/component/index.js": {
+    "file": "assets/index-DYE0-PGb.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-text-custom-tables/jv-text-custom-tables/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-Cj3SgLmP.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-text-custom-tables/jv-text-custom-tables/preview/index.js": {
+    "file": "assets/index-CwvLwV-2.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-text-custom-tables/jv-text-custom-tables/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-C38KzPN7.css"
     ]
   },
   "module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel/component/index.js": {
@@ -647,6 +670,33 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-DfxTXyWj.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-text-custom-tables/component/index.js": {
+    "file": "assets/index-SjenY0JV.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-text-custom-tables/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-Bd2dPAPk.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-text-custom-tables/config/index.js": {
+    "file": "assets/index-BnPkleTe.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-text-custom-tables/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-6ms9BODA.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-text-custom-tables/preview/index.js": {
+    "file": "assets/index-DEVe78En.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-text-custom-tables/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DvcRB_j6.css"
     ]
   },
   "module/sw-cms/elements/jv-why-jvmoebel/component/index.js": {
