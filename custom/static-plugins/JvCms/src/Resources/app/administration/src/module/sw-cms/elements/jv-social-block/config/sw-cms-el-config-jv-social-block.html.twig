@@ -1,0 +1,100 @@
+{% block sw_cms_el_config_jv_social_block %}
+	<div class="sw-cms-el-config-jv-social-block">
+		<mt-text-field
+			v-model:model-value="element.config.title.value"
+			:label="$t('cms.elements.jv-social-block.config.title.label')"
+			:placeholder="$t('cms.elements.jv-social-block.config.title.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<div
+			class="sw-cms-el-config-jv-social-block__section"
+			:class="cmsValidationBlockClass('items')"
+		>
+			<div class="sw-cms-el-config-jv-social-block__section-header">
+				<h4>{{ $t('cms.elements.jv-social-block.config.items.title') }}</h4>
+				<mt-button size="small" variant="secondary" @click="addItem">
+					{{ $t('cms.elements.jv-social-block.config.items.add') }}
+				</mt-button>
+			</div>
+
+			<mt-banner
+				v-if="cmsValidationBlockError('items')"
+				variant="critical"
+			>
+				{{ cmsValidationBlockError('items').detail }}
+			</mt-banner>
+
+			<div
+				v-for="(item, itemIndex) in items"
+				:key="item.id || itemIndex"
+				class="sw-cms-el-config-jv-social-block__card"
+				:class="cmsValidationBlockClass(`items.${itemIndex}`)"
+			>
+				<div class="sw-cms-el-config-jv-social-block__card-header">
+					<strong>{{ $t('cms.elements.jv-social-block.config.items.cardTitle', { index: itemIndex + 1 }) }}</strong>
+					<div class="sw-cms-el-config-jv-social-block__actions">
+						<mt-button size="small" variant="secondary" :disabled="itemIndex === 0" @click="moveItem(itemIndex, -1)">
+							{{ $t('cms.elements.jv-social-block.config.items.moveUp') }}
+						</mt-button>
+						<mt-button size="small" variant="secondary" :disabled="itemIndex === items.length - 1" @click="moveItem(itemIndex, 1)">
+							{{ $t('cms.elements.jv-social-block.config.items.moveDown') }}
+						</mt-button>
+						<mt-button size="small" variant="critical" @click="removeItem(itemIndex)">
+							{{ $t('cms.elements.jv-social-block.config.items.remove') }}
+						</mt-button>
+					</div>
+				</div>
+
+				<div class="sw-cms-el-config-jv-social-block__media">
+					<label class="sw-cms-el-config-jv-social-block__media-label">
+						{{ $t('cms.elements.jv-social-block.config.items.imageMedia.label') }}
+					</label>
+
+					<sw-media-upload-v2
+						variant="regular"
+						:upload-tag="itemUploadTag(itemIndex)"
+						:source="itemPreviewSource(item)"
+						:allow-multi-select="false"
+						:default-folder="cmsPageState.pageEntityName"
+						:caption="$t('cms.elements.jv-social-block.config.items.imageMedia.caption')"
+						@media-upload-sidebar-open="onOpenItemMediaModal(itemIndex)"
+						@media-upload-remove-image="onItemImageRemove(itemIndex)"
+					/>
+
+					<sw-upload-listener
+						:upload-tag="itemUploadTag(itemIndex)"
+						auto-upload
+						@media-upload-finish="onItemUpload(itemIndex, $event)"
+					/>
+				</div>
+
+				<mt-text-field
+					v-model:model-value="item.name"
+					:label="$t('cms.elements.jv-social-block.config.items.name.label')"
+					:placeholder="$t('cms.elements.jv-social-block.config.items.name.placeholder')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="item.url"
+					:label="$t('cms.elements.jv-social-block.config.items.url.label')"
+					:placeholder="$t('cms.elements.jv-social-block.config.items.url.placeholder')"
+					:error="cmsValidationFieldError(`items.${itemIndex}.url`)"
+					@update:model-value="onUpdate"
+				/>
+			</div>
+		</div>
+
+		<sw-media-modal-v2
+			v-if="mediaModalIndex !== null"
+			variant="full"
+			:caption="$t('cms.elements.jv-social-block.config.items.imageMedia.caption')"
+			:entity-context="cmsPageState.entityName"
+			:allow-multi-select="false"
+			:initial-folder-id="cmsPageState.defaultMediaFolderId"
+			@media-modal-selection-change="onItemSelectionChanges"
+			@modal-close="onCloseItemMediaModal"
+		/>
+	</div>
+{% endblock %}

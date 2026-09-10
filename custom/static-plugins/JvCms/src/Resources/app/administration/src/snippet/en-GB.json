@@ -650,6 +650,42 @@
             }
           }
         }
+      },
+      "jv-social-block": {
+        "label": "Social media",
+        "component": {
+          "titlePlaceholder": "Social media title",
+          "itemPlaceholder": "Social channel {index}",
+          "noItems": "No social channels configured"
+        },
+        "config": {
+          "title": {
+            "label": "Title",
+            "placeholder": "Our social media channels – follow JVMöbel online"
+          },
+          "items": {
+            "title": "Social channels",
+            "add": "Add social channel",
+            "required": "Add at least one social channel.",
+            "cardTitle": "Social channel {index}",
+            "moveUp": "Move up",
+            "moveDown": "Move down",
+            "remove": "Remove",
+            "imageMedia": {
+              "label": "Image",
+              "caption": "Upload or select a social channel image"
+            },
+            "name": {
+              "label": "Name",
+              "placeholder": "Facebook"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "https://www.facebook.com/jvmoebel.de",
+              "required": "Enter a link for this social channel."
+            }
+          }
+        }
       }
     },
     "blocks": {
@@ -694,6 +730,9 @@
       },
       "jv-why-jvmoebel": {
         "label": "Why JVMöbel"
+      },
+      "jv-social-block": {
+        "label": "Social media"
       }
     }
   },
@@ -709,7 +748,8 @@
             "room": "Room",
             "commerce": "Commerce",
             "category": "Category",
-            "brand": "Brand"
+            "brand": "Brand",
+            "social-media-blocks": "Social media Blocks"
           }
         }
       }

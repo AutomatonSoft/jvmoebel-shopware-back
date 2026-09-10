@@ -120,3 +120,4 @@ SPEC-NNN-short-name.md
 | [SPEC-045-cms-review-summary](SPEC-045-cms-review-summary.md) | Backend CMS element/block `jv-review-summary`; контракт — platform SPEC-037 |
 | [SPEC-046-cms-subcategory-links](SPEC-046-cms-subcategory-links.md) | Backend CMS element/block `jv-subcategory-links`; контракт — platform SPEC-038 |
 | [SPEC-047-cms-cross-room-section](SPEC-047-cms-cross-room-section.md) | Backend CMS element/block `jv-cross-room-section`; контракт — platform SPEC-039 |
+| [SPEC-048-cms-social-block](SPEC-048-cms-social-block.md) | Backend CMS element/block `jv-social-block` (заголовок и social items с media/name/url); контракт — platform SPEC-048 |
