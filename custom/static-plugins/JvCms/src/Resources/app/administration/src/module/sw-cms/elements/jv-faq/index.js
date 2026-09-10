@@ -1,4 +1,6 @@
 /** Registers CMS element `jv-faq`. */
+import validationRules from './validation';
+
 Shopware.Component.register('sw-cms-el-preview-jv-faq', () => import('./preview'));
 Shopware.Component.register('sw-cms-el-config-jv-faq', () => import('./config'));
 Shopware.Component.register('sw-cms-el-jv-faq', () => import('./component'));
@@ -16,3 +18,5 @@ Shopware.Service('cmsService').registerCmsElement({
         items: { source: 'static', value: [] },
     },
 });
+
+Shopware.Service('jvCmsValidationService').register('jv-faq', validationRules);

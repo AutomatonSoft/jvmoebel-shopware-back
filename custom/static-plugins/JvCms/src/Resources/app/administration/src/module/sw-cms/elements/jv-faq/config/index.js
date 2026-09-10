@@ -11,6 +11,7 @@ export default {
 
     mixins: [
         Mixin.getByName('cms-element'),
+        Mixin.getByName('jv-cms-validation'),
     ],
 
     computed: {
@@ -91,13 +92,6 @@ export default {
                 question: '',
                 answer: '',
             };
-        },
-
-        itemIsValid(item) {
-            return typeof item?.question === 'string'
-                && Boolean(item.question.trim())
-                && typeof item?.answer === 'string'
-                && Boolean(item.answer.trim());
         },
 
         syncItemPositions() {

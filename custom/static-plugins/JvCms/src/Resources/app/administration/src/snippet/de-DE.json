@@ -421,7 +421,6 @@
             "title": "Fragen und Antworten",
             "add": "Frage hinzufügen",
             "cardTitle": "Frage {index}",
-            "required": "Frage und Antwort müssen ausgefüllt sein.",
             "moveUp": "Nach oben",
             "moveDown": "Nach unten",
             "remove": "Entfernen",
@@ -431,11 +430,13 @@
             },
             "question": {
               "label": "Frage",
-              "placeholder": "Wie kann ich einen Rabattcode einlösen?"
+              "placeholder": "Wie kann ich einen Rabattcode einlösen?",
+              "required": "Bitte eine Frage eingeben."
             },
             "answer": {
               "label": "Antwort",
-              "placeholder": "Antworttext und Links eingeben …"
+              "placeholder": "Antworttext und Links eingeben …",
+              "required": "Bitte eine Antwort eingeben."
             }
           }
         }

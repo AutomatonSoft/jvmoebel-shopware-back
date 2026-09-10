@@ -31,7 +31,7 @@
         background: #f9fafb;
     }
 
-    &__card--invalid {
+    &__card.jv-cms-validation-block--invalid {
         border-color: var(--color-border-critical-default);
     }
 

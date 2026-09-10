@@ -11,6 +11,7 @@ export default {
 
     mixins: [
         Mixin.getByName('cms-element'),
+        Mixin.getByName('jv-cms-validation'),
     ],
 
     computed: {
@@ -139,11 +140,6 @@ export default {
                 position,
                 paragraphs: [],
             };
-        },
-
-        sectionHasValidParagraph(section) {
-            return Array.isArray(section?.paragraphs)
-                && section.paragraphs.some((paragraph) => typeof paragraph === 'string' && paragraph.trim());
         },
 
         syncSectionPositions() {

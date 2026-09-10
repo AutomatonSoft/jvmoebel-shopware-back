@@ -69,7 +69,7 @@
 				v-for="(section, sectionIndex) in sections"
 				:key="section.id || sectionIndex"
 				class="sw-cms-el-config-jv-home-editorial__card"
-				:class="{ 'sw-cms-el-config-jv-home-editorial__card--invalid': !sectionHasValidParagraph(section) }"
+				:class="cmsValidationBlockClass(`sections.${sectionIndex}`)"
 			>
 				<div class="sw-cms-el-config-jv-home-editorial__card-header">
 					<strong>{{ $t('cms.elements.jv-home-editorial.config.sections.cardTitle', { index: sectionIndex + 1 }) }}</strong>
@@ -108,12 +108,12 @@
 				</div>
 
 				<mt-banner
-					v-if="!sectionHasValidParagraph(section)"
+					v-if="cmsValidationBlockError(`sections.${sectionIndex}`)"
 					class="sw-cms-el-config-jv-home-editorial__paragraph-error"
 					variant="critical"
 					:show-icon="true"
 				>
-					{{ $t('cms.elements.jv-home-editorial.config.sections.paragraphRequired') }}
+					{{ cmsValidationBlockError(`sections.${sectionIndex}`).detail }}
 				</mt-banner>
 
 				<div
@@ -139,6 +139,7 @@
 					<sw-text-editor
 						v-model:value="section.paragraphs[paragraphIndex]"
 						:placeholder="$t('cms.elements.jv-home-editorial.config.paragraph.placeholder')"
+						:error="cmsValidationFieldError(`sections.${sectionIndex}.paragraphs.${paragraphIndex}`)"
 						@update:value="onUpdate"
 					/>
 				</div>
