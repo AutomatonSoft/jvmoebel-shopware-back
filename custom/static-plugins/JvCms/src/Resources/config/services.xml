@@ -55,6 +55,98 @@
             <tag name="shopware.cms.data_resolver"/>
         </service>
 
+        <service id="Jv\Cms\DataResolver\Element\CountdownPromoCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\PromoDealTilesCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\RelatedLookCardsCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\ChipRailCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\TrendLookGridCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\LookSceneCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\ColorWorldPickerCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\ArticleHeroCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\TableOfContentsCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\ExpertTipCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\ExpertQuoteCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\ExpertProfileCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\AuthorFooterCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\GuideHubCardsCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\EditorialTeamGridCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\InlineProductTeaserCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\InstagramStyleCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\TrustRatingCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\AppDownloadPromoCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\LoyaltyPromoCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\ReviewSummaryCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\SubcategoryLinksCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
+        <service id="Jv\Cms\DataResolver\Element\CrossRoomSectionCmsElementResolver">
+            <tag name="shopware.cms.data_resolver"/>
+        </service>
+
         <service id="Jv\Cms\DataResolver\Element\SocialBlockCmsElementResolver">
             <tag name="shopware.cms.data_resolver"/>
         </service>

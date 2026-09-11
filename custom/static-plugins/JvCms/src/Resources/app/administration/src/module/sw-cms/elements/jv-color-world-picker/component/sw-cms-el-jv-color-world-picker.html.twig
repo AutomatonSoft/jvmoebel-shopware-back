@@ -1,0 +1,16 @@
+{% block sw_cms_element_jv_color_world_picker %}
+	<div class="sw-cms-el-jv-color-world-picker">
+		<div class="sw-cms-el-jv-color-world-picker__title">
+			{{ title || $t('cms.elements.jv-color-world-picker.component.titlePlaceholder') }}
+		</div>
+		<div v-if="colors.length" class="sw-cms-el-jv-color-world-picker__swatches">
+			<span
+				v-for="(color, index) in colors.slice(0, 6)"
+				:key="index"
+				class="sw-cms-el-jv-color-world-picker__swatch"
+				:style="{ backgroundColor: color.hex || '#d1d9e0' }"
+				:title="color.name"
+			></span>
+		</div>
+	</div>
+{% endblock %}

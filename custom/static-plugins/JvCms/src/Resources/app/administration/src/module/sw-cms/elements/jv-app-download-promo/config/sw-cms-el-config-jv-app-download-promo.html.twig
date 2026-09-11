@@ -1,0 +1,69 @@
+{% block sw_cms_el_config_jv_app_download_promo %}
+	<div class="sw-cms-el-config-jv-app-download-promo">
+		<mt-text-field
+			v-model:model-value="element.config.title.value"
+			:label="$t('cms.elements.jv-app-download-promo.config.title.label')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-textarea
+			v-model:model-value="element.config.description.value"
+			:label="$t('cms.elements.jv-app-download-promo.config.description.label')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-text-field
+			v-model:model-value="element.config.appStoreUrl.value"
+			:label="$t('cms.elements.jv-app-download-promo.config.appStoreUrl.label')"
+			:help-text="$t('cms.elements.jv-app-download-promo.config.appStoreUrl.helpText')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-text-field
+			v-model:model-value="element.config.playStoreUrl.value"
+			:label="$t('cms.elements.jv-app-download-promo.config.playStoreUrl.label')"
+			:help-text="$t('cms.elements.jv-app-download-promo.config.playStoreUrl.helpText')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-text-field
+			v-model:model-value="element.config.promoCode.value"
+			:label="$t('cms.elements.jv-app-download-promo.config.promoCode.label')"
+			@update:model-value="onUpdate"
+		/>
+
+		<div class="sw-cms-el-config-jv-app-download-promo__media">
+			<label class="sw-cms-el-config-jv-app-download-promo__media-label">
+				{{ $t('cms.elements.jv-app-download-promo.config.qrImageMedia.label') }}
+			</label>
+
+			<sw-media-upload-v2
+				variant="regular"
+				:upload-tag="uploadTag()"
+				:source="qrImagePreviewSource"
+				:allow-multi-select="false"
+				:default-folder="cmsPageState.pageEntityName"
+				:caption="$t('cms.elements.jv-app-download-promo.config.qrImageMedia.caption')"
+				@media-upload-sidebar-open="onOpenMediaModal"
+				@media-upload-remove-image="onQrImageRemove"
+			/>
+
+			<sw-upload-listener
+				:upload-tag="uploadTag()"
+				auto-upload
+				@media-upload-finish="onQrImageUpload"
+			/>
+		</div>
+
+		<sw-media-modal-v2
+			v-if="mediaModalOpen"
+			variant="full"
+			:caption="$t('cms.elements.jv-app-download-promo.config.qrImageMedia.caption')"
+			:entity-context="cmsPageState.entityName"
+			:allow-multi-select="false"
+			:initial-folder-id="cmsPageState.defaultMediaFolderId"
+			@media-modal-selection-change="onMediaSelectionChanges"
+			@modal-close="onCloseMediaModal"
+		/>
+	</div>
+{% endblock %}

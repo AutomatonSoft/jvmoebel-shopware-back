@@ -1,0 +1,62 @@
+{% block sw_cms_el_config_jv_table_of_contents %}
+	<div class="sw-cms-el-config-jv-table-of-contents">
+		<mt-text-field
+			v-model:model-value="element.config.title.value"
+			:label="$t('cms.elements.jv-table-of-contents.config.title.label')"
+			:placeholder="$t('cms.elements.jv-table-of-contents.config.title.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<div class="sw-cms-el-config-jv-table-of-contents__section">
+			<div class="sw-cms-el-config-jv-table-of-contents__section-header">
+				<h4>{{ $t('cms.elements.jv-table-of-contents.config.items.title') }}</h4>
+				<mt-button size="small" variant="secondary" @click="addItem">
+					{{ $t('cms.elements.jv-table-of-contents.config.items.add') }}
+				</mt-button>
+			</div>
+
+			<div
+				v-for="(item, itemIndex) in items"
+				:key="item.id || itemIndex"
+				class="sw-cms-el-config-jv-table-of-contents__card"
+			>
+				<div class="sw-cms-el-config-jv-table-of-contents__card-header">
+					<strong>{{ $t('cms.elements.jv-table-of-contents.config.items.cardTitle', { index: itemIndex + 1 }) }}</strong>
+					<div class="sw-cms-el-config-jv-table-of-contents__card-actions">
+						<mt-button size="small" variant="secondary" :disabled="itemIndex === 0" @click="moveItem(itemIndex, -1)">
+							{{ $t('cms.elements.jv-table-of-contents.config.items.moveUp') }}
+						</mt-button>
+						<mt-button size="small" variant="secondary" :disabled="itemIndex === items.length - 1" @click="moveItem(itemIndex, 1)">
+							{{ $t('cms.elements.jv-table-of-contents.config.items.moveDown') }}
+						</mt-button>
+						<mt-button size="small" variant="critical" @click="removeItem(itemIndex)">
+							{{ $t('cms.elements.jv-table-of-contents.config.items.remove') }}
+						</mt-button>
+					</div>
+				</div>
+
+				<mt-text-field
+					v-model:model-value="item.id"
+					:label="$t('cms.elements.jv-table-of-contents.config.items.id.label')"
+					:help-text="$t('cms.elements.jv-table-of-contents.config.items.id.helpText')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="item.label"
+					:label="$t('cms.elements.jv-table-of-contents.config.items.label.label')"
+					:placeholder="$t('cms.elements.jv-table-of-contents.config.items.label.placeholder')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="item.anchorId"
+					:label="$t('cms.elements.jv-table-of-contents.config.items.anchorId.label')"
+					:placeholder="$t('cms.elements.jv-table-of-contents.config.items.anchorId.placeholder')"
+					:help-text="$t('cms.elements.jv-table-of-contents.config.items.anchorId.helpText')"
+					@update:model-value="onUpdate"
+				/>
+			</div>
+		</div>
+	</div>
+{% endblock %}

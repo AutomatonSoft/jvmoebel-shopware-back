@@ -1,0 +1,20 @@
+.sw-cms-el-jv-color-world-picker {
+    padding: 16px;
+
+    &__title {
+        font-weight: 600;
+        margin-bottom: 12px;
+    }
+
+    &__swatches {
+        display: flex;
+        gap: 8px;
+    }
+
+    &__swatch {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 1px solid #d1d9e0;
+    }
+}

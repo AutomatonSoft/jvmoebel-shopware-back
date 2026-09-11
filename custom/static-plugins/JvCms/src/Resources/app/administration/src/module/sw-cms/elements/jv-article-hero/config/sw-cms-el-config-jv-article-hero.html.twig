@@ -1,0 +1,73 @@
+{% block sw_cms_el_config_jv_article_hero %}
+	<div class="sw-cms-el-config-jv-article-hero">
+		<mt-text-field
+			v-model:model-value="element.config.title.value"
+			:label="$t('cms.elements.jv-article-hero.config.title.label')"
+			:placeholder="$t('cms.elements.jv-article-hero.config.title.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-text-field
+			v-model:model-value="element.config.eyebrow.value"
+			:label="$t('cms.elements.jv-article-hero.config.eyebrow.label')"
+			:placeholder="$t('cms.elements.jv-article-hero.config.eyebrow.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-textarea
+			v-model:model-value="element.config.description.value"
+			:label="$t('cms.elements.jv-article-hero.config.description.label')"
+			:placeholder="$t('cms.elements.jv-article-hero.config.description.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<div class="sw-cms-el-config-jv-article-hero__section">
+			<label class="sw-cms-el-config-jv-article-hero__media-label">
+				{{ $t('cms.elements.jv-article-hero.config.imageMedia.label') }}
+			</label>
+
+			<sw-media-upload-v2
+				variant="regular"
+				:upload-tag="imageUploadTag"
+				:source="imagePreviewSource"
+				:allow-multi-select="false"
+				:default-folder="cmsPageState.pageEntityName"
+				:caption="$t('cms.elements.jv-article-hero.config.imageMedia.caption')"
+				@media-upload-sidebar-open="onOpenImageMediaModal"
+				@media-upload-remove-image="onImageRemove"
+			/>
+
+			<sw-upload-listener
+				:upload-tag="imageUploadTag"
+				auto-upload
+				@media-upload-finish="onImageUpload"
+			/>
+		</div>
+
+		<mt-text-field
+			v-model:model-value="element.config.publishedAt.value"
+			:label="$t('cms.elements.jv-article-hero.config.publishedAt.label')"
+			:placeholder="$t('cms.elements.jv-article-hero.config.publishedAt.placeholder')"
+			:help-text="$t('cms.elements.jv-article-hero.config.publishedAt.helpText')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-number-field
+			v-model:model-value="element.config.readTimeMinutes.value"
+			:label="$t('cms.elements.jv-article-hero.config.readTimeMinutes.label')"
+			:placeholder="$t('cms.elements.jv-article-hero.config.readTimeMinutes.placeholder')"
+			:help-text="$t('cms.elements.jv-article-hero.config.readTimeMinutes.helpText')"
+			:number-type="'int'"
+			:min="1"
+			@update:model-value="onUpdate"
+		/>
+
+		<sw-media-modal-v2
+			v-if="mediaModalIsOpen"
+			:allow-multi-select="false"
+			:entity-context="cmsPageState.pageEntityName"
+			@media-modal-selection-change="onImageSelectionChanges"
+			@media-modal-close="onCloseImageMediaModal"
+		/>
+	</div>
+{% endblock %}

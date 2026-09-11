@@ -1,0 +1,15 @@
+.sw-cms-el-jv-countdown-promo {
+    padding: 16px;
+    border: 1px dashed var(--color-border-primary-default);
+    border-radius: 4px;
+
+    &__title {
+        display: block;
+        margin-bottom: 8px;
+    }
+
+    &__hint {
+        color: var(--color-text-secondary-default);
+        font-size: 12px;
+    }
+}

@@ -1,0 +1,2 @@
+const o='{% block sw_cms_block_jv_trend_look_grid %} <div class="sw-cms-block-jv-trend-look-grid"> <slot name="content"></slot> </div> {% endblock %}',t={template:o};export{t as default};
+//# sourceMappingURL=index-DToxjpzA.js.map

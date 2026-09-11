@@ -1,0 +1,9 @@
+{% block sw_cms_element_jv_article_hero %}
+	<div class="sw-cms-el-jv-article-hero">
+		<div v-if="eyebrow" class="sw-cms-el-jv-article-hero__eyebrow">{{ eyebrow }}</div>
+		<div class="sw-cms-el-jv-article-hero__title">
+			{{ title || $t('cms.elements.jv-article-hero.component.titlePlaceholder') }}
+		</div>
+		<p v-if="description" class="sw-cms-el-jv-article-hero__description">{{ description }}</p>
+	</div>
+{% endblock %}

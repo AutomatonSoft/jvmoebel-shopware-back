@@ -1,0 +1,68 @@
+{% block sw_cms_el_config_jv_chip_rail %}
+	<div class="sw-cms-el-config-jv-chip-rail">
+		<mt-text-field
+			v-model:model-value="element.config.title.value"
+			:label="$t('cms.elements.jv-chip-rail.config.title.label')"
+			:placeholder="$t('cms.elements.jv-chip-rail.config.title.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-text-field
+			v-model:model-value="element.config.eyebrow.value"
+			:label="$t('cms.elements.jv-chip-rail.config.eyebrow.label')"
+			:placeholder="$t('cms.elements.jv-chip-rail.config.eyebrow.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<div class="sw-cms-el-config-jv-chip-rail__section">
+			<div class="sw-cms-el-config-jv-chip-rail__section-header">
+				<h4>{{ $t('cms.elements.jv-chip-rail.config.chips.title') }}</h4>
+				<mt-button size="small" variant="secondary" @click="addChip">
+					{{ $t('cms.elements.jv-chip-rail.config.chips.add') }}
+				</mt-button>
+			</div>
+
+			<div
+				v-for="(chip, chipIndex) in chips"
+				:key="chip.id || chipIndex"
+				class="sw-cms-el-config-jv-chip-rail__card"
+			>
+				<div class="sw-cms-el-config-jv-chip-rail__card-header">
+					<strong>{{ $t('cms.elements.jv-chip-rail.config.chips.cardTitle', { index: chipIndex + 1 }) }}</strong>
+					<div class="sw-cms-el-config-jv-chip-rail__actions">
+						<mt-button size="small" variant="secondary" :disabled="chipIndex === 0" @click="moveChip(chipIndex, -1)">
+							{{ $t('cms.elements.jv-chip-rail.config.chips.moveUp') }}
+						</mt-button>
+						<mt-button size="small" variant="secondary" :disabled="chipIndex === chips.length - 1" @click="moveChip(chipIndex, 1)">
+							{{ $t('cms.elements.jv-chip-rail.config.chips.moveDown') }}
+						</mt-button>
+						<mt-button size="small" variant="critical" @click="removeChip(chipIndex)">
+							{{ $t('cms.elements.jv-chip-rail.config.chips.remove') }}
+						</mt-button>
+					</div>
+				</div>
+
+				<mt-text-field
+					v-model:model-value="chip.id"
+					:label="$t('cms.elements.jv-chip-rail.config.chips.id.label')"
+					:help-text="$t('cms.elements.jv-chip-rail.config.chips.id.helpText')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="chip.label"
+					:label="$t('cms.elements.jv-chip-rail.config.chips.label.label')"
+					:placeholder="$t('cms.elements.jv-chip-rail.config.chips.label.placeholder')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="chip.url"
+					:label="$t('cms.elements.jv-chip-rail.config.chips.url.label')"
+					:placeholder="$t('cms.elements.jv-chip-rail.config.chips.url.placeholder')"
+					@update:model-value="onUpdate"
+				/>
+			</div>
+		</div>
+	</div>
+{% endblock %}
