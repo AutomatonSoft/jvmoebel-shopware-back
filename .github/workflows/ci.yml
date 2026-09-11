@@ -66,11 +66,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate deployment environment contract
-        run: bin/validate-deployment-env-template
+      - name: Validate deployment Compose
+        env:
+          DATA_NETWORK: jvmoebel_ci_data
+          APP_NETWORK: jvmoebel_ci_app
+          SHOPWARE_NETWORK_ALIAS: shopware-ci
+          SHOPWARE_STORAGE_PATH: /tmp/jvmoebel-ci-storage
+          INSTALL_LOCALE: de-DE
+          INSTALL_CURRENCY: EUR
+          INSTALL_ADMIN_USERNAME: ci-admin
+          INSTALL_ADMIN_PASSWORD: ci-not-a-production-secret
+          INSTALL_ADMIN_EMAIL: ci@example.invalid
+          SALES_CHANNEL_URL: http://localhost:8000
+        run: docker compose -f compose.deploy.yml config --quiet
 
       - name: Validate setup script syntax
-        run: bash -n bin/setup-local bin/validate-deployment-env-template
+        run: bash -n bin/setup-local
 
       - name: Setup PHP 8.5
         uses: shivammathur/setup-php@v2
