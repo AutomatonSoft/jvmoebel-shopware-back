@@ -36,7 +36,7 @@ Do not implement an undocumented architectural assumption from memory or from a 
 - Do not modify Shopware core, `vendor/`, generated files or third-party plugins unless the task explicitly requires a reviewed exception.
 - Update the relevant specification and documentation when behavior, data, API, messages or architectural boundaries change.
 - Ask for a decision when an unresolved choice changes public behavior, data compatibility or architecture. For local implementation details, follow the existing project conventions and continue.
-- Do not commit, amend, push, deploy or modify external systems unless explicitly requested.
+- Commit each logically complete and verified change, following the commit rules in `jvmoebel-shopware-docs` (`docs/05-development-workflow.md`, section 4). A commit contains only the files of that change; never include unrelated user changes. Do not push, amend published history, deploy or modify external systems unless explicitly requested.
 
 ## Verification and handoff
 
