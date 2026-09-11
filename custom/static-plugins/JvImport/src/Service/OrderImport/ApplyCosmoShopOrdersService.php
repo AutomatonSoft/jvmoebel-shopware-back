@@ -2,8 +2,6 @@
 
 namespace Jv\Import\Service\OrderImport;
 
-use Doctrine\DBAL\ArrayParameterType;
-use Doctrine\DBAL\Connection;
 use Jv\Import\Integration\CosmoShop\Customer\CosmoShopCustomerIdentity;
 use Jv\Import\Integration\CosmoShop\Order\CosmoShopOrderIdentity;
 use Jv\Import\Integration\CosmoShop\Order\CosmoShopOrderJsonlReader;
@@ -11,7 +9,6 @@ use Jv\Import\Service\OrderImport\Dto\ApplyCosmoShopOrdersResult;
 use Jv\Import\Service\OrderImport\Exception\CosmoShopOrderConfigurationException;
 use Jv\Import\Service\ProductImport\ProductImportIdentity;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
-use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Customer\CustomerCollection;
 use Shopware\Core\Checkout\Order\OrderCollection;
 use Shopware\Core\Content\Product\ProductCollection;
@@ -20,9 +17,7 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
-use Shopware\Core\Framework\Struct\ArrayStruct;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\AbstractIncrementStorage;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 
 final readonly class ApplyCosmoShopOrdersService
@@ -31,21 +26,20 @@ final readonly class ApplyCosmoShopOrdersService
     private const string MAPPING_VERSION = '2026-09-10.4';
 
     /** @param EntityRepository<OrderCollection> $orderRepository
-     * @param EntityRepository<CustomerCollection>                                                            $customerRepository
-     * @param EntityRepository<ProductCollection>                                                             $productRepository
-     * @param EntityRepository<\Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection> $orderLineItemRepository
+     * @param EntityRepository<CustomerCollection> $customerRepository
+     * @param EntityRepository<ProductCollection>  $productRepository
      */
     public function __construct(
         private CosmoShopOrderJsonlReader $reader,
         private EntityRepository $orderRepository,
         private EntityRepository $customerRepository,
         private EntityRepository $productRepository,
-        private EntityRepository $orderLineItemRepository,
         private CosmoShopOrderReferenceResolver $references,
         private CosmoShopLegacyMethodBootstrapper $legacyMethods,
-        private AbstractIncrementStorage $incrementStorage,
-        private Connection $connection,
-        private LoggerInterface $logger,
+        private CosmoShopHistoricalOrderWriter $writer,
+        private CosmoShopOrderNumberRangeSynchronizer $numberRanges,
+        private CosmoShopOrderPriceProjector $prices,
+        private CosmoShopOrderSourceProjection $sourceProjection,
     ) {
     }
 
@@ -82,7 +76,7 @@ final readonly class ApplyCosmoShopOrdersService
             $this->applyChunk($market, $chunk, $dryRun, $context, $counts, $sourceIds, $orderNumbers, $writtenOrderNumbers, $salesChannel, $countryIds, $states, $salutations);
         }
         if (!$dryRun) {
-            $this->raiseOrderNumberRange($market, $writtenOrderNumbers);
+            $this->numberRanges->synchronize($market, $writtenOrderNumbers);
         }
 
         return new ApplyCosmoShopOrdersResult($counts);
@@ -90,19 +84,19 @@ final readonly class ApplyCosmoShopOrdersService
 
     /**
      * @param list<\Jv\Import\Integration\CosmoShop\Order\CosmoShopOrderData> $records
-     * @param array<string, int>         $counts
-     * @param array<int, true>           $sourceIds
-     * @param array<string, true>        $orderNumbers
-     * @param list<string>               $writtenOrderNumbers
-     * @param array<string, string>      $countryIds
-     * @param array<string, string>      $states
-     * @param array<string, string>      $salutations
+     * @param array<string, int>                                              $counts
+     * @param array<int, true>                                                $sourceIds
+     * @param array<string, true>                                             $orderNumbers
+     * @param list<string>                                                    $writtenOrderNumbers
+     * @param array<string, string>                                           $countryIds
+     * @param array<string, string>                                           $states
+     * @param array<string, string>                                           $salutations
      */
     private function applyChunk(Market $market, array $records, bool $dryRun, Context $context, array &$counts, array &$sourceIds, array &$orderNumbers, array &$writtenOrderNumbers, SalesChannelEntity $salesChannel, array $countryIds, array $states, array $salutations): void
     {
         $valid = [];
         foreach ($records as $source) {
-            $record = $this->payloadProjection($source);
+            $record = $this->sourceProjection->project($source);
             $record['_checksum'] = $source->checksum(self::MAPPING_VERSION);
             $sourceId = $record['source_order_id'] ?? null;
             if (!is_int($sourceId) || isset($sourceIds[$sourceId])) {
@@ -212,49 +206,8 @@ final readonly class ApplyCosmoShopOrdersService
             }
         }
         if (!$dryRun && [] !== $pendingWrites) {
-            array_push($writtenOrderNumbers, ...$this->writeChunk($pendingWrites, $context, $counts));
+            array_push($writtenOrderNumbers, ...$this->writer->write($pendingWrites, $context, $counts));
         }
-    }
-
-    /**
-     * @param list<array{payload: array<string, mixed>, orderNumber: string}> $pendingWrites
-     * @param array<string, int>                                              $counts
-     *
-     * @return list<string>
-     */
-    private function writeChunk(array $pendingWrites, Context $context, array &$counts): array
-    {
-        $context->addExtension(HistoricalOrderStockStorage::CONTEXT_EXTENSION, new ArrayStruct());
-        $writtenNumbers = [];
-        try {
-            try {
-                $this->connection->transactional(function () use ($pendingWrites, $context): void {
-                    $this->removeStaleLineItemsBatch(array_map(static fn (array $write): array => $write['payload'], $pendingWrites), $context);
-                    $this->orderRepository->upsert(array_column($pendingWrites, 'payload'), $context);
-                });
-                $counts['written'] += count($pendingWrites);
-                $writtenNumbers = array_column($pendingWrites, 'orderNumber');
-            } catch (\Throwable $exception) {
-                $this->logger->warning('Historical order import chunk write failed; retrying records individually.', [...$this->runContext($context), 'exceptionClass' => $exception::class]);
-                foreach ($pendingWrites as $write) {
-                    try {
-                        $this->connection->transactional(function () use ($write, $context): void {
-                            $this->removeStaleLineItemsBatch([$write['payload']], $context);
-                            $this->orderRepository->upsert([$write['payload']], $context);
-                        });
-                        ++$counts['written'];
-                        $writtenNumbers[] = $write['orderNumber'];
-                    } catch (\Throwable $exception) {
-                        $this->logger->error('Historical order import record write failed.', [...$this->runContext($context), 'exceptionClass' => $exception::class]);
-                        ++$counts['failed'];
-                    }
-                }
-            }
-        } finally {
-            $context->removeExtension(HistoricalOrderStockStorage::CONTEXT_EXTENSION);
-        }
-
-        return $writtenNumbers;
     }
 
     private function isCompleteAddress(mixed $address, bool $requiresEmail = false): bool
@@ -317,11 +270,11 @@ final readonly class ApplyCosmoShopOrdersService
         foreach ($record['line_items'] as $line) {
             $net = (float) $line['total_net'];
             $tax = (float) $line['total_tax'];
-            $this->addTax($orderTaxes, (float) $line['tax_rate'], $net, $tax);
+            $this->prices->add($orderTaxes, (float) $line['tax_rate'], $net, $tax);
             if ('shipping' === $line['kind']) {
                 $shippingNet += $net;
                 $shippingTax += $tax;
-                $this->addTax($shippingTaxes, (float) $line['tax_rate'], $net, $tax);
+                $this->prices->add($shippingTaxes, (float) $line['tax_rate'], $net, $tax);
                 continue;
             }
             if ('payment_adjustment' === $line['kind'] && 0.0 === $net && 0.0 === $tax) {
@@ -357,7 +310,7 @@ final readonly class ApplyCosmoShopOrdersService
                 'quantity' => (int) $line['quantity'],
                 'productId' => $productId,
                 'referencedId' => $productId,
-                'price' => $this->price('gross' === $taxStatus ? (float) $line['unit_net'] + (float) $line['unit_tax'] : (float) $line['unit_net'], $total, (int) $line['quantity'], (float) $line['tax_rate'], $tax),
+                'price' => $this->prices->item('gross' === $taxStatus ? (float) $line['unit_net'] + (float) $line['unit_tax'] : (float) $line['unit_net'], $total, (int) $line['quantity'], (float) $line['tax_rate'], $tax),
                 'payload' => $payload,
             ];
         }
@@ -381,10 +334,10 @@ final readonly class ApplyCosmoShopOrdersService
             'billingAddressId' => $billingId,
             'primaryOrderTransactionId' => CosmoShopOrderIdentity::transactionId($market, $record['source_order_id']),
             'primaryOrderDeliveryId' => CosmoShopOrderIdentity::deliveryId($market, $record['source_order_id']),
-            'price' => $this->cartPrice($payableTotal, $totalNet, $totalTax, $positionPrice, $taxStatus, $orderTaxes),
-            'shippingCosts' => $this->aggregatePrice($shippingTotal, $shippingNet, $shippingTax, $shippingTaxes),
-            'itemRounding' => $this->rounding(),
-            'totalRounding' => $this->rounding(),
+            'price' => $this->prices->cart($payableTotal, $totalNet, $positionPrice, $taxStatus, $orderTaxes),
+            'shippingCosts' => $this->prices->aggregate($shippingTotal, $shippingNet, $shippingTax, $shippingTaxes),
+            'itemRounding' => $this->prices->rounding(),
+            'totalRounding' => $this->prices->rounding(),
             'deepLinkCode' => $existingDeepLinkCode ?? Uuid::randomHex(),
             'customerComment' => $record['customer_comment'],
             'customFields' => [
@@ -411,7 +364,7 @@ final readonly class ApplyCosmoShopOrdersService
                 'id' => CosmoShopOrderIdentity::transactionId($market, $record['source_order_id']),
                 'paymentMethodId' => CosmoShopOrderIdentity::paymentMethodId($market, $record['payment']['key']),
                 'stateId' => $transactionStateId,
-                'amount' => $this->aggregatePrice($payableTotal, $totalNet, $totalTax, $orderTaxes),
+                'amount' => $this->prices->aggregate($payableTotal, $totalNet, $totalTax, $orderTaxes),
                 'customFields' => ['jv_cosmoshop_payment_key' => $record['payment']['key'], 'jv_cosmoshop_payment_label' => $record['payment']['label'], 'jv_cosmoshop_payment_source_plugin' => $record['payment']['source_plugin'], 'jv_cosmoshop_transaction_reference' => $record['payment']['transaction_reference']],
             ]],
             'deliveries' => [[
@@ -419,7 +372,7 @@ final readonly class ApplyCosmoShopOrdersService
                 'shippingMethodId' => CosmoShopOrderIdentity::shippingMethodId($market, $record['shipping']['key']),
                 'stateId' => $deliveryStateId,
                 'shippingOrderAddressId' => $shippingId,
-                'shippingCosts' => $this->aggregatePrice($shippingTotal, $shippingNet, $shippingTax, $shippingTaxes),
+                'shippingCosts' => $this->prices->aggregate($shippingTotal, $shippingNet, $shippingTax, $shippingTaxes),
                 'trackingCodes' => [],
                 'shippingDateEarliest' => $record['submitted_at'],
                 'shippingDateLatest' => $record['submitted_at'],
@@ -451,78 +404,6 @@ final readonly class ApplyCosmoShopOrdersService
         };
     }
 
-    /** @param list<array<string, mixed>> $payloads */
-    private function removeStaleLineItemsBatch(array $payloads, Context $context): void
-    {
-        $orderIds = array_map(static fn (array $payload): string => $payload['id'], $payloads);
-        if ([] === $orderIds) {
-            return;
-        }
-        $rows = $this->connection->fetchAllAssociative(
-            "SELECT HEX(id) AS id, HEX(order_id) AS order_id FROM order_line_item WHERE order_id IN (?) AND JSON_UNQUOTE(JSON_EXTRACT(payload, '$.jv_cosmoshop_historical_import')) = 'true'",
-            [array_map(static fn (string $id): string => hex2bin($id), $orderIds)],
-            [ArrayParameterType::BINARY],
-        );
-        if ([] === $rows) {
-            return;
-        }
-        $incomingByOrder = [];
-        foreach ($payloads as $payload) {
-            $incomingByOrder[$payload['id']] = array_map(static fn (array $line): string => $line['id'], $payload['lineItems'] ?? []);
-        }
-        $staleIds = [];
-        foreach ($rows as $row) {
-            $lineId = strtolower((string) $row['id']);
-            $orderId = strtolower((string) $row['order_id']);
-            if (!in_array($lineId, $incomingByOrder[$orderId] ?? [], true)) {
-                $staleIds[] = $lineId;
-            }
-        }
-        if ([] !== $staleIds) {
-            $this->orderLineItemRepository->delete(array_map(static fn (string $id): array => ['id' => $id], $staleIds), $context);
-        }
-    }
-
-    /** @return array<string, scalar> */
-    private function runContext(Context $context): array
-    {
-        $extension = $context->getExtension('jv_cosmoshop_import_run');
-
-        return $extension instanceof ArrayStruct ? $extension->all() : [];
-    }
-
-    /** @return array<string, mixed> */
-    private function price(float $unit, float $total, int $quantity, float $taxRate, float $tax, ?float $net = null): array
-    {
-        return ['unitPrice' => $unit, 'totalPrice' => $total, 'quantity' => $quantity, 'calculatedTaxes' => [['taxRate' => $taxRate, 'price' => $net ?? $total, 'tax' => $tax]], 'taxRules' => [['taxRate' => $taxRate, 'percentage' => 100.0]]];
-    }
-
-    /**
-     * @param array<string, array{taxRate: float, price: float, tax: float}> $taxes
-     *
-     * @return array<string, mixed>
-     */
-    private function aggregatePrice(float $total, float $net, float $tax, array $taxes): array
-    {
-        $taxes = array_map(static fn (array $tax): array => [...$tax, 'price' => $tax['price'] + $tax['tax']], $taxes);
-
-        return ['unitPrice' => $total, 'totalPrice' => $total, 'quantity' => 1, 'calculatedTaxes' => array_values($taxes), 'taxRules' => $this->taxRules($taxes, $total)];
-    }
-
-    /**
-     * @param array<string, array{taxRate: float, price: float, tax: float}> $taxes
-     *
-     * @return array<string, mixed>
-     */
-    private function cartPrice(float $total, float $net, float $tax, float $positionPrice, string $taxStatus, array $taxes): array
-    {
-        $taxes = 'tax-free' === $taxStatus ? array_map(static fn (array $tax): array => [...$tax, 'price' => $tax['price'] * 0, 'tax' => 0.0], $taxes) : array_map(static fn (array $tax): array => [...$tax, 'price' => 'gross' === $taxStatus ? $tax['price'] + $tax['tax'] : $tax['price']], $taxes);
-
-        $taxRuleBasis = 'net' === $taxStatus ? $net : $total;
-
-        return ['netPrice' => $net, 'totalPrice' => $total, 'positionPrice' => $positionPrice, 'rawTotal' => $total, 'taxStatus' => $taxStatus, 'calculatedTaxes' => array_values($taxes), 'taxRules' => $this->taxRules($taxes, $taxRuleBasis)];
-    }
-
     /** @param array<string, mixed> $record */
     private function taxStatus(array $record): string
     {
@@ -531,76 +412,5 @@ final readonly class ApplyCosmoShopOrdersService
         }
 
         return 'netto' === $record['price_display'] ? 'net' : 'gross';
-    }
-
-    /** @param array<string, array{taxRate: float, price: float, tax: float}> $taxes */
-    private function addTax(array &$taxes, float $taxRate, float $net, float $tax): void
-    {
-        $key = 'rate-'.$taxRate;
-        if (!isset($taxes[$key])) {
-            $taxes[$key] = ['taxRate' => $taxRate, 'price' => 0.0, 'tax' => 0.0];
-        }
-        $taxes[$key]['price'] += $net;
-        $taxes[$key]['tax'] += $tax;
-    }
-
-    /**
-     * @param array<string, array{taxRate: float, price: float, tax: float}> $taxes
-     *
-     * @return list<array{taxRate: float, percentage: float}>
-     */
-    private function taxRules(array $taxes, float $net): array
-    {
-        if (0.0 === $net) {
-            return [];
-        }
-
-        return array_values(array_map(static fn (array $tax): array => ['taxRate' => $tax['taxRate'], 'percentage' => 100.0 * $tax['price'] / $net], $taxes));
-    }
-
-    /** @return array{decimals: int, interval: float, roundForNet: bool} */
-    private function rounding(): array
-    {
-        return ['decimals' => 2, 'interval' => 0.01, 'roundForNet' => false];
-    }
-
-    /** @param list<string> $numbers */
-    private function raiseOrderNumberRange(Market $market, array $numbers): void
-    {
-        $numbers = [...$numbers, ...$this->connection->fetchFirstColumn('SELECT order_number FROM `order` WHERE JSON_EXTRACT(custom_fields, \'$.jv_cosmoshop_historical_import\') = true AND JSON_UNQUOTE(JSON_EXTRACT(custom_fields, \'$.jv_cosmoshop_source_market\')) = ?', [$market->domain()])];
-        $numericNumbers = array_map(static fn (string $number): int => (int) $number, array_filter($numbers, static fn (string $number): bool => ctype_digit($number)));
-        if ([] === $numericNumbers) {
-            return;
-        }
-        $range = $this->connection->fetchAssociative(
-            'SELECT LOWER(HEX(r.id)) AS id, r.pattern, r.start FROM number_range r JOIN number_range_type t ON t.id=r.type_id JOIN number_range_sales_channel n ON n.number_range_id=r.id AND n.sales_channel_id = UNHEX(:salesChannelId) WHERE t.technical_name = :type ORDER BY r.id LIMIT 1',
-            ['type' => 'order', 'salesChannelId' => $market->salesChannelId()],
-        );
-        if (!is_array($range)) {
-            $range = $this->connection->fetchAssociative(
-                'SELECT LOWER(HEX(r.id)) AS id, r.pattern, r.start FROM number_range r JOIN number_range_type t ON t.id=r.type_id WHERE t.technical_name = :type AND r.global = 1 AND NOT EXISTS (SELECT 1 FROM number_range_sales_channel assigned WHERE assigned.number_range_id = r.id AND assigned.sales_channel_id IS NOT NULL) ORDER BY r.id LIMIT 1',
-                ['type' => 'order'],
-            );
-        }
-        if (!is_array($range) || !is_string($range['id'] ?? null)) {
-            return;
-        }
-        $config = ['id' => $range['id'], 'pattern' => (string) ($range['pattern'] ?? '{n}'), 'start' => null === $range['start'] ? null : (int) $range['start']];
-        if ($this->incrementStorage->preview($config) <= max($numericNumbers)) {
-            $this->incrementStorage->set($range['id'], max($numericNumbers));
-        }
-    }
-
-    /**
-     * Transitional Shopware payload projection boundary. Source JSON keys are confined to the normalizer;
-     * this converts the immutable aggregate into the legacy mapping shape while payload construction is
-     * being kept backward-compatible with existing historical records.
-     *
-     * @return array<string, mixed>
-     */
-    private function payloadProjection(\Jv\Import\Integration\CosmoShop\Order\CosmoShopOrderData $order): array
-    {
-        $address = static fn (\Jv\Import\Integration\CosmoShop\Order\CosmoShopOrderAddress $a): array => ['source_type' => $a->sourceType, 'source_address_id' => $a->sourceAddressId, 'salutation' => $a->salutation, 'title' => $a->title, 'first_name' => $a->firstName, 'last_name' => $a->lastName, 'company' => $a->company, 'street' => $a->street, 'zipcode' => $a->zipcode, 'city' => $a->city, 'country' => $a->country, 'state' => $a->state, 'email' => $a->email, 'phone' => $a->phone, 'vat_id' => $a->vatId];
-        return ['source_order_id' => $order->sourceOrderId, 'source_customer_id' => $order->sourceCustomerId, 'order_number' => $order->orderNumber, 'created_at' => $order->createdAt, 'submitted_at' => $order->submittedAt, 'paid_at' => $order->paidAt, 'total_net' => $order->totalNet, 'total_tax' => $order->totalTax, 'customer_comment' => $order->customerComment, 'price_display' => $order->priceDisplay, 'vat_type' => $order->vatType->value, 'processing_status' => $order->processingStatus->value, 'billing_address' => $address($order->billingAddress), 'shipping_address' => null === $order->shippingAddress ? null : $address($order->shippingAddress), 'packing_addresses' => array_map($address, $order->packingAddresses), 'payment' => ['key' => $order->payment->key->value, 'label' => $order->payment->label, 'source_plugin' => $order->payment->sourcePlugin, 'transaction_reference' => $order->payment->transactionReference], 'shipping' => ['key' => $order->shipping->key->value, 'label' => $order->shipping->label, 'source_carrier_id' => $order->shipping->sourceCarrierId], 'line_items' => array_map(static fn (\Jv\Import\Integration\CosmoShop\Order\CosmoShopOrderLineItem $line): array => ['source_position_id' => $line->sourcePositionId, 'position' => $line->position, 'kind' => $line->kind, 'main_product_number' => $line->mainProductNumber, 'product_number' => $line->productNumber, 'label' => $line->label, 'description' => $line->description, 'quantity' => $line->quantity, 'tax_rate' => $line->taxRate, 'unit_net' => $line->unitNet, 'unit_tax' => $line->unitTax, 'total_net' => $line->totalNet, 'total_tax' => $line->totalTax, 'snapshot' => $line->snapshot], $order->lineItems), 'history' => array_map(static fn (\Jv\Import\Integration\CosmoShop\Order\CosmoShopOrderHistoryEntry $entry): array => ['occurred_at' => $entry->occurredAt, 'status' => $entry->status->value], $order->history), 'mail_artifact_ref' => $order->mailArtifactRef];
     }
 }

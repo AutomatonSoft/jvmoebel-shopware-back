@@ -8,17 +8,17 @@ use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\System\Country\CountryCollection;
 use Shopware\Core\System\SalesChannel\SalesChannelCollection;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 use Shopware\Core\System\Salutation\SalutationCollection;
-use Shopware\Core\System\Country\CountryCollection;
 use Shopware\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateCollection;
 
 final readonly class CosmoShopOrderReferenceResolver
 {
     /** @param EntityRepository<SalesChannelCollection> $salesChannels
-     * @param EntityRepository<SalutationCollection> $salutations
-     * @param EntityRepository<CountryCollection> $countries
+     * @param EntityRepository<SalutationCollection>        $salutations
+     * @param EntityRepository<CountryCollection>           $countries
      * @param EntityRepository<StateMachineStateCollection> $states
      */
     public function __construct(private EntityRepository $salesChannels, private EntityRepository $salutations, private EntityRepository $countries, private EntityRepository $states)

@@ -42,6 +42,8 @@ final class CosmoShopOrderJsonlReaderTest extends TestCase
         try {
             $items = iterator_to_array((new CosmoShopOrderJsonlReader())->read($path));
             self::assertSame(10, $items[0]['record']->sourceOrderId());
+            self::assertSame('Max', $items[0]['record']->billingAddress->firstName);
+            self::assertSame('invoice', $items[0]['record']->payment->key->value);
             self::assertEquals(['invalid' => true], $items[1]);
         } finally {
             unlink($path);

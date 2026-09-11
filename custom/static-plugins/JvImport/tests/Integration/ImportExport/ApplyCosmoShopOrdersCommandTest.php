@@ -45,8 +45,11 @@ final class ApplyCosmoShopOrdersCommandTest extends AbstractCosmoShopImportExpor
         $migration->update($connection);
         $setId = $connection->fetchOne('SELECT id FROM custom_field_set WHERE name = ?', ['jv_cosmoshop_order_import']);
         self::assertNotFalse($setId);
-        self::assertSame(26, (int) $connection->fetchOne('SELECT COUNT(*) FROM custom_field WHERE set_id = ?', [$setId]));
-        self::assertSame(4, (int) $connection->fetchOne('SELECT COUNT(*) FROM custom_field_set_relation WHERE set_id = ?', [$setId]));
+        $fields = [
+            'jv_cosmoshop_historical_import' => 'bool', 'jv_cosmoshop_source_market' => 'text', 'jv_cosmoshop_source_order_id' => 'int', 'jv_cosmoshop_source_customer_id' => 'int', 'jv_cosmoshop_source_checksum' => 'text', 'jv_cosmoshop_mapping_version' => 'text', 'jv_cosmoshop_source_created_at' => 'datetime', 'jv_cosmoshop_source_submitted_at' => 'datetime', 'jv_cosmoshop_source_paid_at' => 'datetime', 'jv_cosmoshop_source_price_display' => 'text', 'jv_cosmoshop_source_vat_type' => 'text', 'jv_cosmoshop_tax_status' => 'text', 'jv_cosmoshop_status_history' => 'json', 'jv_cosmoshop_packing_addresses' => 'json', 'jv_cosmoshop_mail_artifact_present' => 'bool', 'jv_cosmoshop_source_address_id' => 'int', 'jv_cosmoshop_source_address_type' => 'text', 'jv_cosmoshop_source_salutation' => 'text', 'jv_cosmoshop_source_state' => 'text', 'jv_cosmoshop_payment_key' => 'text', 'jv_cosmoshop_payment_label' => 'text', 'jv_cosmoshop_payment_source_plugin' => 'text', 'jv_cosmoshop_transaction_reference' => 'text', 'jv_cosmoshop_shipping_key' => 'text', 'jv_cosmoshop_shipping_label' => 'text', 'jv_cosmoshop_shipping_source_carrier_id' => 'int',
+        ];
+        ksort($fields);
+        self::assertSame($fields, $connection->fetchAllKeyValue('SELECT name, type FROM custom_field WHERE set_id = ? ORDER BY name', [$setId]));
         self::assertSame(['order', 'order_address', 'order_delivery', 'order_transaction'], $connection->fetchFirstColumn('SELECT entity_name FROM custom_field_set_relation WHERE set_id = ? ORDER BY entity_name', [$setId]));
     }
 
