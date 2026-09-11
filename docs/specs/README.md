@@ -117,6 +117,7 @@ SPEC-NNN-short-name.md
 | [SPEC-040-cms-trust-rating](SPEC-040-cms-trust-rating.md) | Backend CMS element/block `jv-trust-rating`; контракт — platform SPEC-032 |
 | [SPEC-041-cms-app-download-promo](SPEC-041-cms-app-download-promo.md) | Backend CMS element/block `jv-app-download-promo`; контракт — platform SPEC-033 |
 | [SPEC-042-cms-loyalty-promo](SPEC-042-cms-loyalty-promo.md) | Backend CMS element/block `jv-loyalty-promo`; контракт — platform SPEC-034 |
+| [SPEC-043-cosmoshop-order-import](SPEC-043-cosmoshop-order-import.md) | Импорт исторических заказов немецкого CosmoShop без checkout/analytics side effects |
 | [SPEC-045-cms-review-summary](SPEC-045-cms-review-summary.md) | Backend CMS element/block `jv-review-summary`; контракт — platform SPEC-037 |
 | [SPEC-046-cms-subcategory-links](SPEC-046-cms-subcategory-links.md) | Backend CMS element/block `jv-subcategory-links`; контракт — platform SPEC-038 |
 | [SPEC-047-cms-cross-room-section](SPEC-047-cms-cross-room-section.md) | Backend CMS element/block `jv-cross-room-section`; контракт — platform SPEC-039 |
