@@ -621,6 +621,91 @@
           }
         }
       },
+      "jv-promo-banner": {
+        "label": "Promo Banner",
+        "component": {
+          "emptyTitle": "Promo Banner",
+          "canvasHint": "Breiter Promo-Banner — UI rendert Next.js"
+        },
+        "config": {
+          "title": { "label": "Titel" },
+          "eyebrow": { "label": "Eyebrow" },
+          "description": { "label": "Beschreibung" },
+          "contentPosition": {
+            "label": "Textposition",
+            "left": "Links",
+            "right": "Rechts"
+          },
+          "imageMedia": {
+            "label": "Bild",
+            "caption": "Hintergrundbild"
+          },
+          "link": {
+            "title": "Link (optional)",
+            "label": { "label": "Link-Beschriftung" },
+            "url": { "label": "Link-URL" },
+            "size": {
+              "label": "Link-Größe",
+              "small": "Klein",
+              "medium": "Mittel",
+              "large": "Groß"
+            }
+          }
+        }
+      },
+      "jv-offer-rail": {
+        "label": "Offer Rail",
+        "component": {
+          "emptyTitle": "Offer Rail",
+          "offerCount": "Angebote"
+        },
+        "config": {
+          "title": { "label": "Titel" },
+          "eyebrow": { "label": "Eyebrow" },
+          "description": { "label": "Beschreibung" },
+          "ariaLabel": { "label": "Aria-Label" },
+          "offers": {
+            "title": "Angebote",
+            "add": "Angebot hinzufügen",
+            "remove": "Entfernen",
+            "cardTitle": "Angebot {index}",
+            "imageMedia": {
+              "label": "Bild",
+              "caption": "Angebotsbild"
+            },
+            "title": { "label": "Titel" },
+            "subtitle": { "label": "Untertitel" },
+            "ctaLabel": { "label": "CTA-Text" },
+            "url": { "label": "URL" },
+            "endsAt": {
+              "label": "Endet am",
+              "helpText": "ISO-8601 mit Zeitzone, z. B. 2026-09-30T23:59:59+02:00"
+            },
+            "legalText": { "label": "Rechtstext" }
+          }
+        }
+      },
+      "jv-benefit-strip": {
+        "label": "Benefit Strip",
+        "component": {
+          "emptyTitle": "Benefit Strip",
+          "itemCount": "Vorteile"
+        },
+        "config": {
+          "items": {
+            "title": "Vorteile",
+            "add": "Vorteil hinzufügen",
+            "remove": "Entfernen",
+            "cardTitle": "Vorteil {index}",
+            "iconMedia": {
+              "label": "Icon",
+              "caption": "Icon aus Medienbibliothek"
+            },
+            "title": { "label": "Titel" },
+            "description": { "label": "Beschreibung" }
+          }
+        }
+      },
       "jv-promo-deal-tiles": {
         "label": "Promo Deal Tiles",
         "component": {
@@ -1590,6 +1675,15 @@
       },
       "jv-countdown-promo": {
         "label": "Countdown Promo"
+      },
+      "jv-promo-banner": {
+        "label": "Promo Banner"
+      },
+      "jv-offer-rail": {
+        "label": "Offer Rail"
+      },
+      "jv-benefit-strip": {
+        "label": "Benefit Strip"
       },
       "jv-promo-deal-tiles": {
         "label": "Promo Deal Tiles"

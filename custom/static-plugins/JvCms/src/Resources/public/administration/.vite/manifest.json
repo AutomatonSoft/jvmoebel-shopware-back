@@ -1,6 +1,6 @@
 {
   "main.js": {
-    "file": "assets/jv-cms-D2Q9WD9d.js",
+    "file": "assets/jv-cms-BjJjFWK3.js",
     "name": "jv-cms",
     "src": "main.js",
     "isEntry": true,
@@ -74,6 +74,21 @@
       "module/sw-cms/elements/jv-countdown-promo/component/index.js",
       "module/sw-cms/blocks/jv-countdown-promo/jv-countdown-promo/preview/index.js",
       "module/sw-cms/blocks/jv-countdown-promo/jv-countdown-promo/component/index.js",
+      "module/sw-cms/elements/jv-promo-banner/preview/index.js",
+      "module/sw-cms/elements/jv-promo-banner/config/index.js",
+      "module/sw-cms/elements/jv-promo-banner/component/index.js",
+      "module/sw-cms/blocks/jv-promo-banner/jv-promo-banner/preview/index.js",
+      "module/sw-cms/blocks/jv-promo-banner/jv-promo-banner/component/index.js",
+      "module/sw-cms/elements/jv-offer-rail/preview/index.js",
+      "module/sw-cms/elements/jv-offer-rail/config/index.js",
+      "module/sw-cms/elements/jv-offer-rail/component/index.js",
+      "module/sw-cms/blocks/jv-offer-rail/jv-offer-rail/preview/index.js",
+      "module/sw-cms/blocks/jv-offer-rail/jv-offer-rail/component/index.js",
+      "module/sw-cms/elements/jv-benefit-strip/preview/index.js",
+      "module/sw-cms/elements/jv-benefit-strip/config/index.js",
+      "module/sw-cms/elements/jv-benefit-strip/component/index.js",
+      "module/sw-cms/blocks/jv-benefit-strip/jv-benefit-strip/preview/index.js",
+      "module/sw-cms/blocks/jv-benefit-strip/jv-benefit-strip/component/index.js",
       "module/sw-cms/elements/jv-promo-deal-tiles/preview/index.js",
       "module/sw-cms/elements/jv-promo-deal-tiles/config/index.js",
       "module/sw-cms/elements/jv-promo-deal-tiles/component/index.js",
@@ -242,6 +257,24 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-DOj4nuED.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-benefit-strip/jv-benefit-strip/component/index.js": {
+    "file": "assets/index-DnCHRuLq.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-benefit-strip/jv-benefit-strip/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CZMqxs8g.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-benefit-strip/jv-benefit-strip/preview/index.js": {
+    "file": "assets/index-DeY4O_m8.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-benefit-strip/jv-benefit-strip/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DjiTqocm.css"
     ]
   },
   "module/sw-cms/blocks/jv-button/jv-button-link/component/index.js": {
@@ -583,6 +616,24 @@
       "assets/index-CGHWm_mD.css"
     ]
   },
+  "module/sw-cms/blocks/jv-offer-rail/jv-offer-rail/component/index.js": {
+    "file": "assets/index-BT9WjSfM.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-offer-rail/jv-offer-rail/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CiYYOC8Z.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-offer-rail/jv-offer-rail/preview/index.js": {
+    "file": "assets/index-BMq4bliL.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-offer-rail/jv-offer-rail/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-Dt0Lh9ko.css"
+    ]
+  },
   "module/sw-cms/blocks/jv-product-grid/jv-product-grid/component/index.js": {
     "file": "assets/index-bSNzF7he.js",
     "name": "index",
@@ -599,6 +650,21 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-CUoAPTvW.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-promo-banner/jv-promo-banner/component/index.js": {
+    "file": "assets/index-V6k7qADe.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-promo-banner/jv-promo-banner/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-promo-banner/jv-promo-banner/preview/index.js": {
+    "file": "assets/index-CC-tkpfQ.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-promo-banner/jv-promo-banner/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-Dj1WtH7W.css"
     ]
   },
   "module/sw-cms/blocks/jv-promo-deal-tiles/jv-promo-deal-tiles/component/index.js": {
@@ -893,6 +959,33 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-BvjId0RK.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-benefit-strip/component/index.js": {
+    "file": "assets/index-DSgo-Uhy.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-benefit-strip/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-Cc0xL3f2.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-benefit-strip/config/index.js": {
+    "file": "assets/index-72GKIFhA.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-benefit-strip/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DqP4wS9B.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-benefit-strip/preview/index.js": {
+    "file": "assets/index-BQcZ_fvx.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-benefit-strip/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-2he4fRrP.css"
     ]
   },
   "module/sw-cms/elements/jv-button/component/index.js": {
@@ -1429,6 +1522,33 @@
       "assets/index-CWD0PwKz.css"
     ]
   },
+  "module/sw-cms/elements/jv-offer-rail/component/index.js": {
+    "file": "assets/index-CyMbabZM.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-offer-rail/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DGvoV9kC.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-offer-rail/config/index.js": {
+    "file": "assets/index-Bg4qwdT4.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-offer-rail/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BHkwMgaE.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-offer-rail/preview/index.js": {
+    "file": "assets/index-AUr6GIeB.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-offer-rail/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-Skis65iQ.css"
+    ]
+  },
   "module/sw-cms/elements/jv-product-grid/component/index.js": {
     "file": "assets/index-dq32JsaK.js",
     "name": "index",
@@ -1454,6 +1574,33 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-K-3EoiyK.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-promo-banner/component/index.js": {
+    "file": "assets/index-DjNj4RV2.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-promo-banner/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CmyZKbmQ.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-promo-banner/config/index.js": {
+    "file": "assets/index-tiWAzhdQ.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-promo-banner/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-D9e1kP1H.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-promo-banner/preview/index.js": {
+    "file": "assets/index-5Dwk7-OE.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-promo-banner/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DgRqNaMx.css"
     ]
   },
   "module/sw-cms/elements/jv-promo-deal-tiles/component/index.js": {

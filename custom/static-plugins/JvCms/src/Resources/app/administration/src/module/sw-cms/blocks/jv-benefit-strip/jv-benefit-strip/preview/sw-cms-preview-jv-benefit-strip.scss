@@ -1,0 +1,28 @@
+.sw-cms-preview-jv-benefit-strip {
+    padding: 12px;
+
+    &__title {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    &__grid {
+        display: grid;
+        gap: 6px;
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    &__card {
+        background: #f0f2f5;
+        border-radius: 4px;
+        height: 28px;
+
+        &--featured {
+            grid-row: span 2;
+            height: auto;
+            min-height: 62px;
+        }
+    }
+}
