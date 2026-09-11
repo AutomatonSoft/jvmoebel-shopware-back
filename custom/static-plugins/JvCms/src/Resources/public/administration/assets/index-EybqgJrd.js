@@ -1,0 +1,2 @@
+const e=`{% block sw_cms_element_editorial_team_grid %} <div class="sw-cms-el-jv-editorial-team-grid"> <div class="sw-cms-el-jv-editorial-team-grid__label">{{ $t('cms.elements.jv-editorial-team-grid.label') }}</div> </div> {% endblock %}`,{Mixin:i}=Shopware,t={template:e,mixins:[i.getByName("cms-element")],created(){this.initElementConfig("jv-editorial-team-grid")}};export{t as default};
+//# sourceMappingURL=index-EybqgJrd.js.map

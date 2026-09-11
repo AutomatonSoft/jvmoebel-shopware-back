@@ -1,0 +1,96 @@
+{% block sw_cms_el_config_jv_color_world_picker %}
+	<div class="sw-cms-el-config-jv-color-world-picker">
+		<mt-text-field
+			v-model:model-value="element.config.title.value"
+			:label="$t('cms.elements.jv-color-world-picker.config.title.label')"
+			:placeholder="$t('cms.elements.jv-color-world-picker.config.title.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-textarea
+			v-model:model-value="element.config.description.value"
+			:label="$t('cms.elements.jv-color-world-picker.config.description.label')"
+			:placeholder="$t('cms.elements.jv-color-world-picker.config.description.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<div class="sw-cms-el-config-jv-color-world-picker__section">
+			<div class="sw-cms-el-config-jv-color-world-picker__section-header">
+				<h4>{{ $t('cms.elements.jv-color-world-picker.config.colors.title') }}</h4>
+				<mt-button size="small" variant="secondary" @click="addColor">
+					{{ $t('cms.elements.jv-color-world-picker.config.colors.add') }}
+				</mt-button>
+			</div>
+
+			<div
+				v-for="(color, colorIndex) in colors"
+				:key="color.id || colorIndex"
+				class="sw-cms-el-config-jv-color-world-picker__card"
+			>
+				<div class="sw-cms-el-config-jv-color-world-picker__card-header">
+					<strong>{{ $t('cms.elements.jv-color-world-picker.config.colors.cardTitle', { index: colorIndex + 1 }) }}</strong>
+					<div class="sw-cms-el-config-jv-color-world-picker__card-actions">
+						<mt-button size="small" variant="secondary" :disabled="colorIndex === 0" @click="moveColor(colorIndex, -1)">
+							{{ $t('cms.elements.jv-color-world-picker.config.colors.moveUp') }}
+						</mt-button>
+						<mt-button size="small" variant="secondary" :disabled="colorIndex === colors.length - 1" @click="moveColor(colorIndex, 1)">
+							{{ $t('cms.elements.jv-color-world-picker.config.colors.moveDown') }}
+						</mt-button>
+						<mt-button size="small" variant="critical" @click="removeColor(colorIndex)">
+							{{ $t('cms.elements.jv-color-world-picker.config.colors.remove') }}
+						</mt-button>
+					</div>
+				</div>
+
+				<mt-text-field
+					v-model:model-value="color.name"
+					:label="$t('cms.elements.jv-color-world-picker.config.colors.name.label')"
+					:placeholder="$t('cms.elements.jv-color-world-picker.config.colors.name.placeholder')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="color.url"
+					:label="$t('cms.elements.jv-color-world-picker.config.colors.url.label')"
+					:placeholder="$t('cms.elements.jv-color-world-picker.config.colors.url.placeholder')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="color.hex"
+					:label="$t('cms.elements.jv-color-world-picker.config.colors.hex.label')"
+					:placeholder="$t('cms.elements.jv-color-world-picker.config.colors.hex.placeholder')"
+					:help-text="$t('cms.elements.jv-color-world-picker.config.colors.hex.helpText')"
+					@update:model-value="onUpdate"
+				/>
+
+				<div class="sw-cms-el-config-jv-color-world-picker__media">
+					<label>{{ $t('cms.elements.jv-color-world-picker.config.colors.imageMedia.label') }}</label>
+					<sw-media-upload-v2
+						variant="regular"
+						:upload-tag="colorImageUploadTag(colorIndex)"
+						:source="colorImagePreviewSource(color)"
+						:allow-multi-select="false"
+						:default-folder="cmsPageState.pageEntityName"
+						:caption="$t('cms.elements.jv-color-world-picker.config.colors.imageMedia.caption')"
+						@media-upload-sidebar-open="onOpenColorMediaModal(colorIndex)"
+						@media-upload-remove-image="onColorImageRemove(colorIndex)"
+					/>
+					<sw-upload-listener
+						:upload-tag="colorImageUploadTag(colorIndex)"
+						auto-upload
+						@media-upload-finish="onColorImageUpload(colorIndex, $event)"
+					/>
+				</div>
+			</div>
+		</div>
+
+		<sw-media-modal-v2
+			v-if="mediaModalIsOpen"
+			:allow-multi-select="false"
+			:entity-context="cmsPageState.pageEntityName"
+			@media-modal-selection-change="onColorImageSelectionChanges"
+			@media-modal-close="onCloseColorMediaModal"
+		/>
+	</div>
+{% endblock %}

@@ -574,6 +574,560 @@
           }
         }
       },
+      "jv-countdown-promo": {
+        "label": "Countdown Promo",
+        "component": {
+          "emptyTitle": "Countdown Promo",
+          "canvasHint": "Promo countdown — UI renders in Next.js"
+        },
+        "config": {
+          "title": {
+            "label": "Title",
+            "placeholder": "Only today"
+          },
+          "eyebrow": {
+            "label": "Eyebrow",
+            "placeholder": "SALETEMBER"
+          },
+          "description": {
+            "label": "Description",
+            "placeholder": "20% off selected sofas"
+          },
+          "endsAt": {
+            "label": "Ends at",
+            "placeholder": "2026-09-15T23:59:59+02:00",
+            "helpText": "ISO 8601 datetime. Invalid values are dropped in Store API data."
+          },
+          "promoCode": {
+            "label": "Promo code",
+            "placeholder": "SAVE20"
+          },
+          "link": {
+            "title": "Link",
+            "label": {
+              "label": "Link label",
+              "placeholder": "Shop now"
+            },
+            "url": {
+              "label": "Link URL",
+              "placeholder": "/sale"
+            },
+            "size": {
+              "label": "Link size",
+              "small": "Small",
+              "medium": "Medium",
+              "large": "Large"
+            }
+          }
+        }
+      },
+      "jv-promo-deal-tiles": {
+        "label": "Promo Deal Tiles",
+        "component": {
+          "emptyTitle": "Promo Deal Tiles",
+          "canvasHint": "{count} deal tiles — UI renders in Next.js"
+        },
+        "config": {
+          "title": {
+            "label": "Title",
+            "placeholder": "Homie Days"
+          },
+          "eyebrow": {
+            "label": "Eyebrow",
+            "placeholder": "Until Sunday"
+          },
+          "tiles": {
+            "title": "Deal tiles",
+            "add": "Add tile",
+            "remove": "Remove",
+            "cardTitle": "Tile {index}",
+            "id": {
+              "label": "ID"
+            },
+            "label": {
+              "label": "Label"
+            },
+            "description": {
+              "label": "Description"
+            },
+            "discountLabel": {
+              "label": "Discount label"
+            },
+            "endsAt": {
+              "label": "Ends at",
+              "placeholder": "2026-09-14T23:59:59+02:00"
+            },
+            "imageMedia": {
+              "label": "Image",
+              "caption": "Choose deal image"
+            },
+            "link": {
+              "label": {
+                "label": "Link label"
+              },
+              "url": {
+                "label": "Link URL",
+                "placeholder": "/sale/sofas"
+              },
+              "size": {
+                "label": "Link size",
+                "small": "Small",
+                "medium": "Medium",
+                "large": "Large"
+              }
+            }
+          }
+        }
+      },
+      "jv-related-look-cards": {
+        "label": "Related Look Cards",
+        "component": {
+          "emptyTitle": "Related Look Cards",
+          "canvasHint": "{count} look cards — UI renders in Next.js"
+        },
+        "config": {
+          "title": {
+            "label": "Title",
+            "placeholder": "More looks"
+          },
+          "cards": {
+            "title": "Look cards",
+            "add": "Add card",
+            "remove": "Remove",
+            "cardTitle": "Card {index}",
+            "id": {
+              "label": "ID",
+              "helpText": "Optional stable ID. Empty uses card-{index}."
+            },
+            "titleField": {
+              "label": "Title"
+            },
+            "description": {
+              "label": "Description"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/shop-the-look/skandi-bathroom"
+            },
+            "imageMedia": {
+              "label": "Image",
+              "caption": "Choose look image"
+            }
+          }
+        }
+      },
+      "jv-chip-rail": {
+        "label": "Chip Rail",
+        "component": {
+          "emptyTitle": "Chip Rail",
+          "canvasHint": "{count} chips — UI renders in Next.js"
+        },
+        "config": {
+          "title": {
+            "label": "Title",
+            "placeholder": "Gifts by budget"
+          },
+          "eyebrow": {
+            "label": "Eyebrow",
+            "placeholder": "Browse by budget"
+          },
+          "chips": {
+            "title": "Chips",
+            "add": "Add chip",
+            "cardTitle": "Chip {index}",
+            "moveUp": "Move up",
+            "moveDown": "Move down",
+            "remove": "Remove",
+            "id": {
+              "label": "ID",
+              "helpText": "Optional stable ID. Empty uses chip-{index}."
+            },
+            "label": {
+              "label": "Label",
+              "placeholder": "Under 50 €"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/gifts?budget=50"
+            }
+          }
+        }
+      },
+      "jv-expert-tip": {
+        "label": "Expert tip",
+        "config": {
+          "label": {
+            "label": "Badge label",
+            "placeholder": "Tipp",
+            "helpText": "Empty defaults to \"Tipp\"."
+          },
+          "title": {
+            "label": "Title",
+            "placeholder": "Distance from the wall"
+          },
+          "body": {
+            "label": "Body",
+            "placeholder": "Expert advice …"
+          }
+        }
+      },
+      "jv-expert-quote": {
+        "label": "Expert quote",
+        "config": {
+          "quote": {
+            "label": "Quote",
+            "placeholder": "Moody interiors work through contrast."
+          },
+          "authorName": {
+            "label": "Author name",
+            "placeholder": "Frederic Nehrenheim"
+          },
+          "authorRole": {
+            "label": "Author role",
+            "placeholder": "Interior expert"
+          }
+        }
+      },
+      "jv-expert-profile": {
+        "label": "Expert profile",
+        "config": {
+          "name": {
+            "label": "Name",
+            "placeholder": "Frederic Nehrenheim"
+          },
+          "role": {
+            "label": "Role",
+            "placeholder": "Interior expert"
+          },
+          "bio": {
+            "label": "Bio",
+            "placeholder": "Short profile text"
+          },
+          "imageMedia": {
+            "label": "Photo",
+            "caption": "Choose expert photo"
+          },
+          "link": {
+            "title": "Profile link",
+            "label": {
+              "label": "Label",
+              "placeholder": "View profile"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/profile/frederic-nehrenheim"
+            }
+          }
+        }
+      },
+      "jv-author-footer": {
+        "label": "Author footer",
+        "config": {
+          "authorName": {
+            "label": "Author name",
+            "placeholder": "Editorial team"
+          },
+          "expertise": {
+            "label": "Expertise",
+            "placeholder": "Furnishing & guides"
+          },
+          "bio": {
+            "label": "Bio",
+            "placeholder": "Our team reviews all content."
+          },
+          "imageMedia": {
+            "label": "Photo",
+            "caption": "Choose author photo"
+          },
+          "link": {
+            "title": "Author link",
+            "label": {
+              "label": "Label",
+              "placeholder": "About the team"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/editorial-team"
+            }
+          }
+        }
+      },
+      "jv-guide-hub-cards": {
+        "label": "Guide hub cards",
+        "config": {
+          "title": {
+            "label": "Title",
+            "placeholder": "Furniture guides"
+          },
+          "eyebrow": {
+            "label": "Eyebrow",
+            "placeholder": "Guides"
+          },
+          "cards": {
+            "title": "Guide cards",
+            "add": "Add card",
+            "remove": "Remove",
+            "cardTitle": "Card {index}",
+            "id": {
+              "label": "ID",
+              "helpText": "Optional stable ID. Empty uses title and index."
+            },
+            "titleField": {
+              "label": "Title"
+            },
+            "description": {
+              "label": "Description"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/guide-sofa"
+            },
+            "imageMedia": {
+              "label": "Image",
+              "caption": "Choose guide image"
+            }
+          }
+        }
+      },
+      "jv-editorial-team-grid": {
+        "label": "Editorial team grid",
+        "config": {
+          "title": {
+            "label": "Title",
+            "placeholder": "Editorial team"
+          },
+          "members": {
+            "title": "Team members",
+            "add": "Add member",
+            "remove": "Remove",
+            "cardTitle": "Member {index}",
+            "id": {
+              "label": "ID",
+              "helpText": "Optional stable ID. Empty uses name and index."
+            },
+            "name": {
+              "label": "Name"
+            },
+            "role": {
+              "label": "Role"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/editorial/anna-schmidt"
+            },
+            "imageMedia": {
+              "label": "Photo",
+              "caption": "Choose member photo"
+            }
+          }
+        }
+      },
+      "jv-look-scene": {
+        "label": "Look Scene",
+        "component": {
+          "titlePlaceholder": "Look scene title",
+          "productPlaceholder": "Product"
+        },
+        "config": {
+          "title": {
+            "label": "Title",
+            "placeholder": "Fine Living"
+          },
+          "description": {
+            "label": "Description",
+            "placeholder": "Living room in Studio Line"
+          },
+          "imageMedia": {
+            "label": "Image",
+            "caption": "Upload room image"
+          },
+          "products": {
+            "title": "Products",
+            "add": "Add product",
+            "cardTitle": "Product {index}",
+            "moveUp": "Move up",
+            "moveDown": "Move down",
+            "remove": "Remove",
+            "productId": {
+              "label": "Product",
+              "placeholder": "Choose product",
+              "helpText": "Optional. Name and URL are resolved from the catalog."
+            },
+            "name": {
+              "label": "Name (manual)",
+              "placeholder": "HUDSON corner sofa",
+              "helpText": "Required when no product is selected."
+            },
+            "url": {
+              "label": "Link (manual)",
+              "placeholder": "/product/hudson-corner-sofa",
+              "helpText": "Required when no product is selected."
+            }
+          },
+          "viewAll": {
+            "title": "View all link",
+            "label": {
+              "label": "Label",
+              "placeholder": "Shop the look"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/trends-looks/fine-living"
+            }
+          }
+        }
+      },
+      "jv-color-world-picker": {
+        "label": "Color World Picker",
+        "component": {
+          "titlePlaceholder": "Season colours"
+        },
+        "config": {
+          "title": {
+            "label": "Title",
+            "placeholder": "Season colours"
+          },
+          "description": {
+            "label": "Description",
+            "placeholder": "Snow white, ice blue and more"
+          },
+          "colors": {
+            "title": "Colours",
+            "add": "Add colour",
+            "cardTitle": "Colour {index}",
+            "moveUp": "Move up",
+            "moveDown": "Move down",
+            "remove": "Remove",
+            "name": {
+              "label": "Name",
+              "placeholder": "Snow white"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/christmas-shop/white"
+            },
+            "hex": {
+              "label": "Hex colour",
+              "placeholder": "#FFFAFA",
+              "helpText": "Optional. #RGB or #RRGGBB only."
+            },
+            "imageMedia": {
+              "label": "Image",
+              "caption": "Optional colour swatch"
+            }
+          }
+        }
+      },
+      "jv-article-hero": {
+        "label": "Article Hero",
+        "component": {
+          "titlePlaceholder": "Article title"
+        },
+        "config": {
+          "title": {
+            "label": "Title",
+            "placeholder": "How to place your sofa"
+          },
+          "eyebrow": {
+            "label": "Eyebrow",
+            "placeholder": "Guide"
+          },
+          "description": {
+            "label": "Description",
+            "placeholder": "Short article introduction"
+          },
+          "imageMedia": {
+            "label": "Image",
+            "caption": "Upload hero image"
+          },
+          "publishedAt": {
+            "label": "Published at",
+            "placeholder": "2026-03-01",
+            "helpText": "ISO 8601 date or datetime. Invalid values are dropped."
+          },
+          "readTimeMinutes": {
+            "label": "Read time (minutes)",
+            "placeholder": "5",
+            "helpText": "Integer ≥ 1. Invalid values are dropped."
+          }
+        }
+      },
+      "jv-table-of-contents": {
+        "label": "Table of Contents",
+        "component": {
+          "titlePlaceholder": "On this page",
+          "itemPlaceholder": "Section",
+          "noItems": "No entries configured"
+        },
+        "config": {
+          "title": {
+            "label": "Title",
+            "placeholder": "On this page"
+          },
+          "items": {
+            "title": "Entries",
+            "add": "Add entry",
+            "cardTitle": "Entry {index}",
+            "moveUp": "Move up",
+            "moveDown": "Move down",
+            "remove": "Remove",
+            "id": {
+              "label": "ID",
+              "helpText": "Stable technical ID. Empty = auto-generated."
+            },
+            "label": {
+              "label": "Label",
+              "placeholder": "Place the sofa"
+            },
+            "anchorId": {
+              "label": "Anchor ID",
+              "placeholder": "place-the-sofa",
+              "helpText": "a-z, A-Z, 0-9, _ and - only."
+            }
+          }
+        }
+      },
+      "jv-trend-look-grid": {
+        "label": "Trend Look Grid",
+        "component": {
+          "emptyTitle": "Trend Look Grid",
+          "canvasHint": "{count} trend cards — UI renders in Next.js"
+        },
+        "config": {
+          "title": {
+            "label": "Title",
+            "placeholder": "Trends & Looks"
+          },
+          "eyebrow": {
+            "label": "Eyebrow",
+            "placeholder": "Inspiration"
+          },
+          "cards": {
+            "title": "Trend cards",
+            "add": "Add card",
+            "remove": "Remove",
+            "cardTitle": "Card {index}",
+            "id": {
+              "label": "ID",
+              "helpText": "Optional stable ID. Empty uses card-{index}."
+            },
+            "titleField": {
+              "label": "Title"
+            },
+            "description": {
+              "label": "Description"
+            },
+            "url": {
+              "label": "Link",
+              "placeholder": "/trends-looks/modern-minimal"
+            },
+            "imageMedia": {
+              "label": "Image",
+              "caption": "Choose trend image"
+            }
+          }
+        }
+      },
       "jv-why-jvmoebel": {
         "label": "Why JVMöbel",
         "component": {
@@ -647,6 +1201,257 @@
             "url": {
               "label": "Link",
               "placeholder": "/about-us"
+            }
+          }
+        }
+      },
+      "jv-inline-product-teaser": {
+        "label": "Inline Product Teaser",
+        "component": {
+          "emptyTitle": "Product teaser",
+          "canvasHint": "Resolved product or manual name + link on the storefront."
+        },
+        "config": {
+          "productId": {
+            "label": "Product",
+            "placeholder": "Select product"
+          },
+          "name": {
+            "label": "Name (manual)",
+            "helpText": "Used when no product is selected or product is unavailable."
+          },
+          "description": {
+            "label": "Description override"
+          },
+          "url": {
+            "label": "Link (manual)",
+            "helpText": "Required in manual mode when no product is resolved."
+          },
+          "imageMedia": {
+            "label": "Image override",
+            "caption": "Optional image when product cover is missing or in manual mode."
+          }
+        }
+      },
+      "jv-instagram-style": {
+        "label": "Instagram Style",
+        "component": {
+          "emptyTitle": "Instagram style",
+          "canvasHint": "Handle and image are required on the storefront."
+        },
+        "config": {
+          "handle": {
+            "label": "Handle",
+            "placeholder": "home24",
+            "helpText": "Leading @ is optional; stored without @."
+          },
+          "caption": {
+            "label": "Caption"
+          },
+          "imageMedia": {
+            "label": "Image",
+            "caption": "Select image"
+          },
+          "link": {
+            "title": "Link (optional)",
+            "label": {
+              "label": "Label"
+            },
+            "url": {
+              "label": "URL"
+            }
+          }
+        }
+      },
+      "jv-trust-rating": {
+        "label": "Trust Rating",
+        "component": {
+          "emptyTitle": "Trust rating",
+          "canvasHint": "Rating and review count for the storefront trust block."
+        },
+        "config": {
+          "rating": {
+            "label": "Rating",
+            "helpText": "0.1–5.0, one decimal. Invalid values become null."
+          },
+          "reviewCount": {
+            "label": "Review count"
+          },
+          "providerLabel": {
+            "label": "Provider label"
+          },
+          "link": {
+            "title": "Link (optional)",
+            "label": {
+              "label": "Label"
+            },
+            "url": {
+              "label": "URL"
+            }
+          }
+        }
+      },
+      "jv-app-download-promo": {
+        "label": "App Download Promo",
+        "component": {
+          "emptyTitle": "App download promo",
+          "canvasHint": "Title and at least one store URL required on the storefront."
+        },
+        "config": {
+          "title": {
+            "label": "Title"
+          },
+          "description": {
+            "label": "Description"
+          },
+          "appStoreUrl": {
+            "label": "App Store URL",
+            "helpText": "Absolute https URL only."
+          },
+          "playStoreUrl": {
+            "label": "Play Store URL",
+            "helpText": "Absolute https URL only."
+          },
+          "promoCode": {
+            "label": "Promo code"
+          },
+          "qrImageMedia": {
+            "label": "QR code image",
+            "caption": "Optional QR image"
+          }
+        }
+      },
+      "jv-loyalty-promo": {
+        "label": "Loyalty Promo",
+        "component": {
+          "emptyTitle": "Loyalty promo",
+          "canvasHint": "Title and benefits for the loyalty program block."
+        },
+        "config": {
+          "title": {
+            "label": "Title"
+          },
+          "description": {
+            "label": "Description"
+          },
+          "promoCode": {
+            "label": "Promo code"
+          },
+          "imageMedia": {
+            "label": "Image",
+            "caption": "Optional image"
+          },
+          "benefits": {
+            "title": "Benefits",
+            "add": "Add benefit",
+            "remove": "Remove",
+            "cardTitle": "Benefit {index}",
+            "id": {
+              "label": "ID"
+            },
+            "text": {
+              "label": "Text"
+            }
+          },
+          "link": {
+            "title": "Link (optional)",
+            "label": {
+              "label": "Label"
+            },
+            "url": {
+              "label": "URL"
+            },
+            "size": {
+              "label": "Size",
+              "small": "Small",
+              "medium": "Medium",
+              "large": "Large"
+            }
+          }
+        }
+      },
+      "jv-review-summary": {
+        "label": "Review Summary",
+        "component": {
+          "emptyTitle": "Review summary",
+          "canvasHint": "Static review summary text for the storefront."
+        },
+        "config": {
+          "summary": {
+            "label": "Summary"
+          },
+          "sourceLabel": {
+            "label": "Source label"
+          },
+          "rating": {
+            "label": "Rating (optional)",
+            "helpText": "0.1–5.0, one decimal. Invalid values become null."
+          }
+        }
+      },
+      "jv-subcategory-links": {
+        "label": "Subcategory Links",
+        "component": {
+          "emptyTitle": "Subcategory links",
+          "canvasHint": "SEO chip links for subcategories."
+        },
+        "config": {
+          "title": {
+            "label": "Title"
+          },
+          "links": {
+            "title": "Links",
+            "add": "Add link",
+            "remove": "Remove",
+            "cardTitle": "Link {index}",
+            "id": {
+              "label": "ID"
+            },
+            "label": {
+              "label": "Label"
+            },
+            "url": {
+              "label": "URL"
+            }
+          }
+        }
+      },
+      "jv-cross-room-section": {
+        "label": "Cross Room Section",
+        "component": {
+          "emptyTitle": "Cross room section",
+          "canvasHint": "Themed room cards for seasonal cross-room content."
+        },
+        "config": {
+          "title": {
+            "label": "Title"
+          },
+          "eyebrow": {
+            "label": "Eyebrow"
+          },
+          "rooms": {
+            "title": "Rooms",
+            "add": "Add room",
+            "remove": "Remove",
+            "cardTitle": "Room {index}",
+            "id": {
+              "label": "ID"
+            },
+            "label": {
+              "label": "Label"
+            },
+            "titleField": {
+              "label": "Title"
+            },
+            "description": {
+              "label": "Description"
+            },
+            "url": {
+              "label": "URL"
+            },
+            "imageMedia": {
+              "label": "Image",
+              "caption": "Select room image"
             }
           }
         }
@@ -783,6 +1588,75 @@
       "jv-why-jvmoebel": {
         "label": "Why JVMöbel"
       },
+      "jv-countdown-promo": {
+        "label": "Countdown Promo"
+      },
+      "jv-promo-deal-tiles": {
+        "label": "Promo Deal Tiles"
+      },
+      "jv-related-look-cards": {
+        "label": "Related Look Cards"
+      },
+      "jv-chip-rail": {
+        "label": "Chip Rail"
+      },
+      "jv-trend-look-grid": {
+        "label": "Trend Look Grid"
+      },
+      "jv-expert-tip": {
+        "label": "Expert tip"
+      },
+      "jv-expert-quote": {
+        "label": "Expert quote"
+      },
+      "jv-expert-profile": {
+        "label": "Expert profile"
+      },
+      "jv-author-footer": {
+        "label": "Author footer"
+      },
+      "jv-guide-hub-cards": {
+        "label": "Guide hub cards"
+      },
+      "jv-editorial-team-grid": {
+        "label": "Editorial team grid"
+      },
+      "jv-look-scene": {
+        "label": "Look Scene"
+      },
+      "jv-color-world-picker": {
+        "label": "Color World Picker"
+      },
+      "jv-article-hero": {
+        "label": "Article Hero"
+      },
+      "jv-table-of-contents": {
+        "label": "Table of Contents"
+      },
+      "jv-inline-product-teaser": {
+        "label": "Inline Product Teaser"
+      },
+      "jv-instagram-style": {
+        "label": "Instagram Style"
+      },
+      "jv-trust-rating": {
+        "label": "Trust Rating"
+      },
+      "jv-app-download-promo": {
+        "label": "App Download Promo"
+      },
+      "jv-loyalty-promo": {
+        "label": "Loyalty Promo"
+      },
+      "jv-review-summary": {
+        "label": "Review Summary"
+      },
+      "jv-subcategory-links": {
+        "label": "Subcategory Links"
+      },
+      "jv-cross-room-section": {
+        "label": "Cross Room Section"
+      },
       "jv-social-block": {
         "label": "Social media"
       },
@@ -804,6 +1678,10 @@
             "commerce": "Commerce",
             "category": "Category",
             "brand": "Brand",
+            "promo": "Promo",
+            "trust": "Trust",
+            "inspiration": "Inspiration",
+            "editorial": "Editorial",
             "social-media-blocks": "Social media Blocks"
           }
         }

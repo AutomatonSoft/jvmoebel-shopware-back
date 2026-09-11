@@ -1,0 +1,2 @@
+const s=`{% block sw_cms_block_jv_instagram_style_preview %} <div class="sw-cms-preview-jv-instagram-style"> <span class="sw-cms-preview-jv-instagram-style__image"></span> <span class="sw-cms-preview-jv-instagram-style__label">{{ $t('cms.blocks.jv-instagram-style.label') }}</span> </div> {% endblock %}`,a={template:s};export{a as default};
+//# sourceMappingURL=index-w_Sgb9Mi.js.map

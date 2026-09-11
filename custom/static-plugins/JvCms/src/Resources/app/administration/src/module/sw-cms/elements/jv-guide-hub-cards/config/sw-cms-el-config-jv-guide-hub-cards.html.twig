@@ -1,0 +1,99 @@
+{% block sw_cms_el_config_jv_guide_hub_cards %}
+	<div class="sw-cms-el-config-jv-guide-hub-cards">
+		<mt-text-field
+			v-model:model-value="element.config.title.value"
+			:label="$t('cms.elements.jv-guide-hub-cards.config.title.label')"
+			:placeholder="$t('cms.elements.jv-guide-hub-cards.config.title.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-text-field
+			v-model:model-value="element.config.eyebrow.value"
+			:label="$t('cms.elements.jv-guide-hub-cards.config.eyebrow.label')"
+			:placeholder="$t('cms.elements.jv-guide-hub-cards.config.eyebrow.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<div class="sw-cms-el-config-jv-guide-hub-cards__section">
+			<div class="sw-cms-el-config-jv-guide-hub-cards__section-header">
+				<h4>{{ $t('cms.elements.jv-guide-hub-cards.config.cards.title') }}</h4>
+				<mt-button size="small" variant="secondary" @click="addCard">
+					{{ $t('cms.elements.jv-guide-hub-cards.config.cards.add') }}
+				</mt-button>
+			</div>
+
+			<div
+				v-for="(card, cardIndex) in cards"
+				:key="card.id || cardIndex"
+				class="sw-cms-el-config-jv-guide-hub-cards__card"
+			>
+				<div class="sw-cms-el-config-jv-guide-hub-cards__card-header">
+					<strong>{{ $t('cms.elements.jv-guide-hub-cards.config.cards.cardTitle', { index: cardIndex + 1 }) }}</strong>
+					<mt-button size="small" variant="critical" @click="removeCard(cardIndex)">
+						{{ $t('cms.elements.jv-guide-hub-cards.config.cards.remove') }}
+					</mt-button>
+				</div>
+
+				<div class="sw-cms-el-config-jv-guide-hub-cards__media">
+					<label class="sw-cms-el-config-jv-guide-hub-cards__media-label">
+						{{ $t('cms.elements.jv-guide-hub-cards.config.cards.imageMedia.label') }}
+					</label>
+
+					<sw-media-upload-v2
+						variant="regular"
+						:upload-tag="cardUploadTag(cardIndex)"
+						:source="cardPreviewSource(card)"
+						:allow-multi-select="false"
+						:default-folder="cmsPageState.pageEntityName"
+						:caption="$t('cms.elements.jv-guide-hub-cards.config.cards.imageMedia.caption')"
+						@media-upload-sidebar-open="onOpenCardMediaModal(cardIndex)"
+						@media-upload-remove-image="onCardRemove(cardIndex)"
+					/>
+
+					<sw-upload-listener
+						:upload-tag="cardUploadTag(cardIndex)"
+						auto-upload
+						@media-upload-finish="onCardUpload(cardIndex, $event)"
+					/>
+				</div>
+
+				<mt-text-field
+					v-model:model-value="card.id"
+					:label="$t('cms.elements.jv-guide-hub-cards.config.cards.id.label')"
+					:help-text="$t('cms.elements.jv-guide-hub-cards.config.cards.id.helpText')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="card.title"
+					:label="$t('cms.elements.jv-guide-hub-cards.config.cards.titleField.label')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-textarea
+					v-model:model-value="card.description"
+					:label="$t('cms.elements.jv-guide-hub-cards.config.cards.description.label')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="card.url"
+					:label="$t('cms.elements.jv-guide-hub-cards.config.cards.url.label')"
+					:placeholder="$t('cms.elements.jv-guide-hub-cards.config.cards.url.placeholder')"
+					@update:model-value="onUpdate"
+				/>
+			</div>
+		</div>
+
+		<sw-media-modal-v2
+			v-if="mediaModalIndex !== null"
+			variant="full"
+			:caption="$t('cms.elements.jv-guide-hub-cards.config.cards.imageMedia.caption')"
+			:entity-context="cmsPageState.entityName"
+			:allow-multi-select="false"
+			:initial-folder-id="cmsPageState.defaultMediaFolderId"
+			@media-modal-selection-change="onCardSelectionChanges"
+			@modal-close="onCloseCardMediaModal"
+		/>
+	</div>
+{% endblock %}

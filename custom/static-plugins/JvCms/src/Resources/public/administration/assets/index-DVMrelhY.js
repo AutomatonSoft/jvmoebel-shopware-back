@@ -1,0 +1,2 @@
+const e='{% block sw_cms_element_jv_color_world_picker_preview %} <div class="sw-cms-el-preview-jv-color-world-picker"> <span class="sw-cms-el-preview-jv-color-world-picker__label">Color World Picker</span> </div> {% endblock %}',l={template:e};export{l as default};
+//# sourceMappingURL=index-DVMrelhY.js.map

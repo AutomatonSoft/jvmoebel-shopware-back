@@ -1,0 +1,2 @@
+const s=`{% block sw_cms_block_jv_related_look_cards_preview %} <div class="sw-cms-preview-jv-related-look-cards"> <span class="sw-cms-preview-jv-related-look-cards__title">{{ $t('cms.blocks.jv-related-look-cards.label') }}</span> <div class="sw-cms-preview-jv-related-look-cards__list"> <span class="sw-cms-preview-jv-related-look-cards__card"></span> <span class="sw-cms-preview-jv-related-look-cards__card"></span> </div> </div> {% endblock %}`,e={template:s};export{e as default};
+//# sourceMappingURL=index-ndPpWt3P.js.map

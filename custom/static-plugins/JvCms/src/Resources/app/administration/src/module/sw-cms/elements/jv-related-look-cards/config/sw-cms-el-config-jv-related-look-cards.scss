@@ -1,0 +1,30 @@
+.sw-cms-el-config-jv-related-look-cards {
+    &__section {
+        border-top: 1px solid #d1d9e0;
+        margin-top: 20px;
+        padding-top: 16px;
+    }
+
+    &__section-header,
+    &__card-header {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+
+    &__card {
+        border: 1px solid #d1d9e0;
+        border-radius: 6px;
+        margin-bottom: 12px;
+        padding: 12px;
+    }
+
+    &__media-label {
+        color: #52667a;
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+}

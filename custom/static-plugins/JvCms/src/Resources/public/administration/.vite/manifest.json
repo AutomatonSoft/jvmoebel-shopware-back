@@ -1,6 +1,6 @@
 {
   "main.js": {
-    "file": "assets/jv-cms-DcMToAeA.js",
+    "file": "assets/jv-cms-D2Q9WD9d.js",
     "name": "jv-cms",
     "src": "main.js",
     "isEntry": true,
@@ -69,6 +69,121 @@
       "module/sw-cms/elements/jv-why-jvmoebel/component/index.js",
       "module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel/preview/index.js",
       "module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel/component/index.js",
+      "module/sw-cms/elements/jv-countdown-promo/preview/index.js",
+      "module/sw-cms/elements/jv-countdown-promo/config/index.js",
+      "module/sw-cms/elements/jv-countdown-promo/component/index.js",
+      "module/sw-cms/blocks/jv-countdown-promo/jv-countdown-promo/preview/index.js",
+      "module/sw-cms/blocks/jv-countdown-promo/jv-countdown-promo/component/index.js",
+      "module/sw-cms/elements/jv-promo-deal-tiles/preview/index.js",
+      "module/sw-cms/elements/jv-promo-deal-tiles/config/index.js",
+      "module/sw-cms/elements/jv-promo-deal-tiles/component/index.js",
+      "module/sw-cms/blocks/jv-promo-deal-tiles/jv-promo-deal-tiles/preview/index.js",
+      "module/sw-cms/blocks/jv-promo-deal-tiles/jv-promo-deal-tiles/component/index.js",
+      "module/sw-cms/elements/jv-related-look-cards/preview/index.js",
+      "module/sw-cms/elements/jv-related-look-cards/config/index.js",
+      "module/sw-cms/elements/jv-related-look-cards/component/index.js",
+      "module/sw-cms/blocks/jv-related-look-cards/jv-related-look-cards/preview/index.js",
+      "module/sw-cms/blocks/jv-related-look-cards/jv-related-look-cards/component/index.js",
+      "module/sw-cms/elements/jv-chip-rail/preview/index.js",
+      "module/sw-cms/elements/jv-chip-rail/config/index.js",
+      "module/sw-cms/elements/jv-chip-rail/component/index.js",
+      "module/sw-cms/blocks/jv-chip-rail/jv-chip-rail/preview/index.js",
+      "module/sw-cms/blocks/jv-chip-rail/jv-chip-rail/component/index.js",
+      "module/sw-cms/elements/jv-trend-look-grid/preview/index.js",
+      "module/sw-cms/elements/jv-trend-look-grid/config/index.js",
+      "module/sw-cms/elements/jv-trend-look-grid/component/index.js",
+      "module/sw-cms/blocks/jv-trend-look-grid/jv-trend-look-grid/preview/index.js",
+      "module/sw-cms/blocks/jv-trend-look-grid/jv-trend-look-grid/component/index.js",
+      "module/sw-cms/elements/jv-look-scene/preview/index.js",
+      "module/sw-cms/elements/jv-look-scene/config/index.js",
+      "module/sw-cms/elements/jv-look-scene/component/index.js",
+      "module/sw-cms/blocks/jv-look-scene/jv-look-scene/preview/index.js",
+      "module/sw-cms/blocks/jv-look-scene/jv-look-scene/component/index.js",
+      "module/sw-cms/elements/jv-color-world-picker/preview/index.js",
+      "module/sw-cms/elements/jv-color-world-picker/config/index.js",
+      "module/sw-cms/elements/jv-color-world-picker/component/index.js",
+      "module/sw-cms/blocks/jv-color-world-picker/jv-color-world-picker/preview/index.js",
+      "module/sw-cms/blocks/jv-color-world-picker/jv-color-world-picker/component/index.js",
+      "module/sw-cms/elements/jv-article-hero/preview/index.js",
+      "module/sw-cms/elements/jv-article-hero/config/index.js",
+      "module/sw-cms/elements/jv-article-hero/component/index.js",
+      "module/sw-cms/blocks/jv-article-hero/jv-article-hero/preview/index.js",
+      "module/sw-cms/blocks/jv-article-hero/jv-article-hero/component/index.js",
+      "module/sw-cms/elements/jv-table-of-contents/preview/index.js",
+      "module/sw-cms/elements/jv-table-of-contents/config/index.js",
+      "module/sw-cms/elements/jv-table-of-contents/component/index.js",
+      "module/sw-cms/blocks/jv-table-of-contents/jv-table-of-contents/preview/index.js",
+      "module/sw-cms/blocks/jv-table-of-contents/jv-table-of-contents/component/index.js",
+      "module/sw-cms/elements/jv-expert-tip/preview/index.js",
+      "module/sw-cms/elements/jv-expert-tip/config/index.js",
+      "module/sw-cms/elements/jv-expert-tip/component/index.js",
+      "module/sw-cms/blocks/jv-expert-tip/jv-expert-tip/preview/index.js",
+      "module/sw-cms/blocks/jv-expert-tip/jv-expert-tip/component/index.js",
+      "module/sw-cms/elements/jv-expert-quote/preview/index.js",
+      "module/sw-cms/elements/jv-expert-quote/config/index.js",
+      "module/sw-cms/elements/jv-expert-quote/component/index.js",
+      "module/sw-cms/blocks/jv-expert-quote/jv-expert-quote/preview/index.js",
+      "module/sw-cms/blocks/jv-expert-quote/jv-expert-quote/component/index.js",
+      "module/sw-cms/elements/jv-expert-profile/preview/index.js",
+      "module/sw-cms/elements/jv-expert-profile/config/index.js",
+      "module/sw-cms/elements/jv-expert-profile/component/index.js",
+      "module/sw-cms/blocks/jv-expert-profile/jv-expert-profile/preview/index.js",
+      "module/sw-cms/blocks/jv-expert-profile/jv-expert-profile/component/index.js",
+      "module/sw-cms/elements/jv-author-footer/preview/index.js",
+      "module/sw-cms/elements/jv-author-footer/config/index.js",
+      "module/sw-cms/elements/jv-author-footer/component/index.js",
+      "module/sw-cms/blocks/jv-author-footer/jv-author-footer/preview/index.js",
+      "module/sw-cms/blocks/jv-author-footer/jv-author-footer/component/index.js",
+      "module/sw-cms/elements/jv-guide-hub-cards/preview/index.js",
+      "module/sw-cms/elements/jv-guide-hub-cards/config/index.js",
+      "module/sw-cms/elements/jv-guide-hub-cards/component/index.js",
+      "module/sw-cms/blocks/jv-guide-hub-cards/jv-guide-hub-cards/preview/index.js",
+      "module/sw-cms/blocks/jv-guide-hub-cards/jv-guide-hub-cards/component/index.js",
+      "module/sw-cms/elements/jv-editorial-team-grid/preview/index.js",
+      "module/sw-cms/elements/jv-editorial-team-grid/config/index.js",
+      "module/sw-cms/elements/jv-editorial-team-grid/component/index.js",
+      "module/sw-cms/blocks/jv-editorial-team-grid/jv-editorial-team-grid/preview/index.js",
+      "module/sw-cms/blocks/jv-editorial-team-grid/jv-editorial-team-grid/component/index.js",
+      "module/sw-cms/elements/jv-inline-product-teaser/preview/index.js",
+      "module/sw-cms/elements/jv-inline-product-teaser/config/index.js",
+      "module/sw-cms/elements/jv-inline-product-teaser/component/index.js",
+      "module/sw-cms/blocks/jv-inline-product-teaser/jv-inline-product-teaser/preview/index.js",
+      "module/sw-cms/blocks/jv-inline-product-teaser/jv-inline-product-teaser/component/index.js",
+      "module/sw-cms/elements/jv-instagram-style/preview/index.js",
+      "module/sw-cms/elements/jv-instagram-style/config/index.js",
+      "module/sw-cms/elements/jv-instagram-style/component/index.js",
+      "module/sw-cms/blocks/jv-instagram-style/jv-instagram-style/preview/index.js",
+      "module/sw-cms/blocks/jv-instagram-style/jv-instagram-style/component/index.js",
+      "module/sw-cms/elements/jv-trust-rating/preview/index.js",
+      "module/sw-cms/elements/jv-trust-rating/config/index.js",
+      "module/sw-cms/elements/jv-trust-rating/component/index.js",
+      "module/sw-cms/blocks/jv-trust-rating/jv-trust-rating/preview/index.js",
+      "module/sw-cms/blocks/jv-trust-rating/jv-trust-rating/component/index.js",
+      "module/sw-cms/elements/jv-app-download-promo/preview/index.js",
+      "module/sw-cms/elements/jv-app-download-promo/config/index.js",
+      "module/sw-cms/elements/jv-app-download-promo/component/index.js",
+      "module/sw-cms/blocks/jv-app-download-promo/jv-app-download-promo/preview/index.js",
+      "module/sw-cms/blocks/jv-app-download-promo/jv-app-download-promo/component/index.js",
+      "module/sw-cms/elements/jv-loyalty-promo/preview/index.js",
+      "module/sw-cms/elements/jv-loyalty-promo/config/index.js",
+      "module/sw-cms/elements/jv-loyalty-promo/component/index.js",
+      "module/sw-cms/blocks/jv-loyalty-promo/jv-loyalty-promo/preview/index.js",
+      "module/sw-cms/blocks/jv-loyalty-promo/jv-loyalty-promo/component/index.js",
+      "module/sw-cms/elements/jv-review-summary/preview/index.js",
+      "module/sw-cms/elements/jv-review-summary/config/index.js",
+      "module/sw-cms/elements/jv-review-summary/component/index.js",
+      "module/sw-cms/blocks/jv-review-summary/jv-review-summary/preview/index.js",
+      "module/sw-cms/blocks/jv-review-summary/jv-review-summary/component/index.js",
+      "module/sw-cms/elements/jv-subcategory-links/preview/index.js",
+      "module/sw-cms/elements/jv-subcategory-links/config/index.js",
+      "module/sw-cms/elements/jv-subcategory-links/component/index.js",
+      "module/sw-cms/blocks/jv-subcategory-links/jv-subcategory-links/preview/index.js",
+      "module/sw-cms/blocks/jv-subcategory-links/jv-subcategory-links/component/index.js",
+      "module/sw-cms/elements/jv-cross-room-section/preview/index.js",
+      "module/sw-cms/elements/jv-cross-room-section/config/index.js",
+      "module/sw-cms/elements/jv-cross-room-section/component/index.js",
+      "module/sw-cms/blocks/jv-cross-room-section/jv-cross-room-section/preview/index.js",
+      "module/sw-cms/blocks/jv-cross-room-section/jv-cross-room-section/component/index.js",
       "module/sw-cms/elements/jv-social-block/preview/index.js",
       "module/sw-cms/elements/jv-social-block/config/index.js",
       "module/sw-cms/elements/jv-social-block/component/index.js",
@@ -82,6 +197,51 @@
     ],
     "css": [
       "assets/jv-cms-CNrbVlWh.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-app-download-promo/jv-app-download-promo/component/index.js": {
+    "file": "assets/index-CVmKpxe4.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-app-download-promo/jv-app-download-promo/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-app-download-promo/jv-app-download-promo/preview/index.js": {
+    "file": "assets/index-DoJUSfii.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-app-download-promo/jv-app-download-promo/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CGZVvwB8.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-article-hero/jv-article-hero/component/index.js": {
+    "file": "assets/index-P9PjP9hj.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-article-hero/jv-article-hero/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-article-hero/jv-article-hero/preview/index.js": {
+    "file": "assets/index-7r1z04XH.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-article-hero/jv-article-hero/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CffCQ4SM.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-author-footer/jv-author-footer/component/index.js": {
+    "file": "assets/index-N9CXW03r.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-author-footer/jv-author-footer/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-author-footer/jv-author-footer/preview/index.js": {
+    "file": "assets/index-DtLJft_H.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-author-footer/jv-author-footer/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DOj4nuED.css"
     ]
   },
   "module/sw-cms/blocks/jv-button/jv-button-link/component/index.js": {
@@ -147,6 +307,126 @@
       "assets/index-BBqgw90K.css"
     ]
   },
+  "module/sw-cms/blocks/jv-chip-rail/jv-chip-rail/component/index.js": {
+    "file": "assets/index-BERetcVr.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-chip-rail/jv-chip-rail/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-chip-rail/jv-chip-rail/preview/index.js": {
+    "file": "assets/index-DGZdHA6m.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-chip-rail/jv-chip-rail/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-chiftT08.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-color-world-picker/jv-color-world-picker/component/index.js": {
+    "file": "assets/index-BFPtgpSa.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-color-world-picker/jv-color-world-picker/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-color-world-picker/jv-color-world-picker/preview/index.js": {
+    "file": "assets/index-D154ZrmY.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-color-world-picker/jv-color-world-picker/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CTLXFjOj.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-countdown-promo/jv-countdown-promo/component/index.js": {
+    "file": "assets/index-Cq2bywMo.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-countdown-promo/jv-countdown-promo/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-countdown-promo/jv-countdown-promo/preview/index.js": {
+    "file": "assets/index-I39eJWQh.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-countdown-promo/jv-countdown-promo/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-ClgI1_6c.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-cross-room-section/jv-cross-room-section/component/index.js": {
+    "file": "assets/index-Bw0NT7s-.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-cross-room-section/jv-cross-room-section/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-cross-room-section/jv-cross-room-section/preview/index.js": {
+    "file": "assets/index-DXKXAyfD.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-cross-room-section/jv-cross-room-section/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CZ1NYBWb.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-editorial-team-grid/jv-editorial-team-grid/component/index.js": {
+    "file": "assets/index-BJEibcDw.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-editorial-team-grid/jv-editorial-team-grid/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-editorial-team-grid/jv-editorial-team-grid/preview/index.js": {
+    "file": "assets/index-Dqc9GtyC.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-editorial-team-grid/jv-editorial-team-grid/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DSvj50FB.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-expert-profile/jv-expert-profile/component/index.js": {
+    "file": "assets/index-BxW8Bjh4.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-expert-profile/jv-expert-profile/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-expert-profile/jv-expert-profile/preview/index.js": {
+    "file": "assets/index-DWBWT7BP.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-expert-profile/jv-expert-profile/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-6uNL6Wf1.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-expert-quote/jv-expert-quote/component/index.js": {
+    "file": "assets/index-DTsWXaBK.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-expert-quote/jv-expert-quote/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-expert-quote/jv-expert-quote/preview/index.js": {
+    "file": "assets/index-CI8p8gdx.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-expert-quote/jv-expert-quote/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-Bxk_YVO2.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-expert-tip/jv-expert-tip/component/index.js": {
+    "file": "assets/index-B6zkx5hH.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-expert-tip/jv-expert-tip/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-expert-tip/jv-expert-tip/preview/index.js": {
+    "file": "assets/index-sK6GA-XF.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-expert-tip/jv-expert-tip/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CR2mg3CP.css"
+    ]
+  },
   "module/sw-cms/blocks/jv-faq/jv-faq/component/index.js": {
     "file": "assets/index-DsIPREBq.js",
     "name": "index",
@@ -178,6 +458,21 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-Dylr0cDZ.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-guide-hub-cards/jv-guide-hub-cards/component/index.js": {
+    "file": "assets/index-BdpJzksJ.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-guide-hub-cards/jv-guide-hub-cards/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-guide-hub-cards/jv-guide-hub-cards/preview/index.js": {
+    "file": "assets/index-BM6w2del.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-guide-hub-cards/jv-guide-hub-cards/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-D3sNpzNY.css"
     ]
   },
   "module/sw-cms/blocks/jv-hero/jv-hero/component/index.js": {
@@ -213,6 +508,66 @@
       "assets/index-BKywnAF-.css"
     ]
   },
+  "module/sw-cms/blocks/jv-inline-product-teaser/jv-inline-product-teaser/component/index.js": {
+    "file": "assets/index-BjZbQFLw.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-inline-product-teaser/jv-inline-product-teaser/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-inline-product-teaser/jv-inline-product-teaser/preview/index.js": {
+    "file": "assets/index-B6ZaLDQY.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-inline-product-teaser/jv-inline-product-teaser/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-LPPAWXvl.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-instagram-style/jv-instagram-style/component/index.js": {
+    "file": "assets/index-BRF98Chk.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-instagram-style/jv-instagram-style/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-instagram-style/jv-instagram-style/preview/index.js": {
+    "file": "assets/index-w_Sgb9Mi.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-instagram-style/jv-instagram-style/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BKUmWdkk.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-look-scene/jv-look-scene/component/index.js": {
+    "file": "assets/index-D6eevqML.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-look-scene/jv-look-scene/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-look-scene/jv-look-scene/preview/index.js": {
+    "file": "assets/index-BFcNlLFI.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-look-scene/jv-look-scene/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CqzNTf3u.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-loyalty-promo/jv-loyalty-promo/component/index.js": {
+    "file": "assets/index-ZQEMhuTj.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-loyalty-promo/jv-loyalty-promo/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-loyalty-promo/jv-loyalty-promo/preview/index.js": {
+    "file": "assets/index-B0ylusuz.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-loyalty-promo/jv-loyalty-promo/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-B6d2WfKs.css"
+    ]
+  },
   "module/sw-cms/blocks/jv-newsletter/jv-newsletter/component/index.js": {
     "file": "assets/index-DBfWqKbz.js",
     "name": "index",
@@ -244,6 +599,51 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-CUoAPTvW.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-promo-deal-tiles/jv-promo-deal-tiles/component/index.js": {
+    "file": "assets/index-DYDBuO8p.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-promo-deal-tiles/jv-promo-deal-tiles/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-promo-deal-tiles/jv-promo-deal-tiles/preview/index.js": {
+    "file": "assets/index-Dq9t6KGu.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-promo-deal-tiles/jv-promo-deal-tiles/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BVepXgaV.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-related-look-cards/jv-related-look-cards/component/index.js": {
+    "file": "assets/index-CUJgKQVg.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-related-look-cards/jv-related-look-cards/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-related-look-cards/jv-related-look-cards/preview/index.js": {
+    "file": "assets/index-ndPpWt3P.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-related-look-cards/jv-related-look-cards/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-aiDb4jI2.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-review-summary/jv-review-summary/component/index.js": {
+    "file": "assets/index-DylL-F5t.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-review-summary/jv-review-summary/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-review-summary/jv-review-summary/preview/index.js": {
+    "file": "assets/index-BE2iim1w.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-review-summary/jv-review-summary/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DYXiNTJv.css"
     ]
   },
   "module/sw-cms/blocks/jv-room-grid/jv-room-grid/component/index.js": {
@@ -318,6 +718,36 @@
       "assets/index-C_eBYDOL.css"
     ]
   },
+  "module/sw-cms/blocks/jv-subcategory-links/jv-subcategory-links/component/index.js": {
+    "file": "assets/index-C_saztNX.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-subcategory-links/jv-subcategory-links/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-subcategory-links/jv-subcategory-links/preview/index.js": {
+    "file": "assets/index-BnfN6fn7.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-subcategory-links/jv-subcategory-links/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CluK1dEA.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-table-of-contents/jv-table-of-contents/component/index.js": {
+    "file": "assets/index-BSsoCzGa.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-table-of-contents/jv-table-of-contents/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-table-of-contents/jv-table-of-contents/preview/index.js": {
+    "file": "assets/index-Dj6bZylM.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-table-of-contents/jv-table-of-contents/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DEwh711w.css"
+    ]
+  },
   "module/sw-cms/blocks/jv-text-custom-tables/jv-text-custom-tables/component/index.js": {
     "file": "assets/index-DYE0-PGb.js",
     "name": "index",
@@ -336,6 +766,36 @@
       "assets/index-C38KzPN7.css"
     ]
   },
+  "module/sw-cms/blocks/jv-trend-look-grid/jv-trend-look-grid/component/index.js": {
+    "file": "assets/index-DToxjpzA.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-trend-look-grid/jv-trend-look-grid/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-trend-look-grid/jv-trend-look-grid/preview/index.js": {
+    "file": "assets/index-NXbJygjI.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-trend-look-grid/jv-trend-look-grid/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-IgkWOFRC.css"
+    ]
+  },
+  "module/sw-cms/blocks/jv-trust-rating/jv-trust-rating/component/index.js": {
+    "file": "assets/index-BR8eeVtx.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-trust-rating/jv-trust-rating/component/index.js",
+    "isDynamicEntry": true
+  },
+  "module/sw-cms/blocks/jv-trust-rating/jv-trust-rating/preview/index.js": {
+    "file": "assets/index-CrQJ5bBr.js",
+    "name": "index",
+    "src": "module/sw-cms/blocks/jv-trust-rating/jv-trust-rating/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CiGsrQRm.css"
+    ]
+  },
   "module/sw-cms/blocks/jv-why-jvmoebel/jv-why-jvmoebel/component/index.js": {
     "file": "assets/index-BNvpkD1R.js",
     "name": "index",
@@ -352,6 +812,87 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-BrRugZro.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-app-download-promo/component/index.js": {
+    "file": "assets/index-EMiAPlII.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-app-download-promo/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CSs7-ZzT.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-app-download-promo/config/index.js": {
+    "file": "assets/index-BkWx06ZA.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-app-download-promo/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index--4TPEZhb.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-app-download-promo/preview/index.js": {
+    "file": "assets/index-kCT_ZWcC.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-app-download-promo/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-N6R3rbNE.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-article-hero/component/index.js": {
+    "file": "assets/index-B6IFufDp.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-article-hero/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-icIiY2l3.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-article-hero/config/index.js": {
+    "file": "assets/index-VpUBv4a5.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-article-hero/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CuVLooJB.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-article-hero/preview/index.js": {
+    "file": "assets/index-WQ01n-MH.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-article-hero/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BoATnNaQ.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-author-footer/component/index.js": {
+    "file": "assets/index-P9SMA18O.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-author-footer/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BKvplLri.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-author-footer/config/index.js": {
+    "file": "assets/index-Ba6otrSF.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-author-footer/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-nf-7XN7W.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-author-footer/preview/index.js": {
+    "file": "assets/index-DFzdknVB.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-author-footer/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BvjId0RK.css"
     ]
   },
   "module/sw-cms/elements/jv-button/component/index.js": {
@@ -405,6 +946,222 @@
       "assets/index-Blid_j87.css"
     ]
   },
+  "module/sw-cms/elements/jv-chip-rail/component/index.js": {
+    "file": "assets/index-16WB110y.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-chip-rail/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CZsxhaqB.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-chip-rail/config/index.js": {
+    "file": "assets/index-DKcxxvFc.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-chip-rail/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-uQjDXBu3.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-chip-rail/preview/index.js": {
+    "file": "assets/index-JtD_j2it.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-chip-rail/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-B_aaCzaB.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-color-world-picker/component/index.js": {
+    "file": "assets/index-qC2iDlhX.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-color-world-picker/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-D0D1Bo1-.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-color-world-picker/config/index.js": {
+    "file": "assets/index-DyqG6F6J.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-color-world-picker/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BjT50jO2.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-color-world-picker/preview/index.js": {
+    "file": "assets/index-DVMrelhY.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-color-world-picker/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BszJhUVc.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-countdown-promo/component/index.js": {
+    "file": "assets/index-COtnDDAb.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-countdown-promo/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DpU-74WI.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-countdown-promo/config/index.js": {
+    "file": "assets/index-Daap7VIM.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-countdown-promo/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DPHURaRW.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-countdown-promo/preview/index.js": {
+    "file": "assets/index-DTGJr_tP.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-countdown-promo/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-B8pYfzOg.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-cross-room-section/component/index.js": {
+    "file": "assets/index-CUpbN4UX.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-cross-room-section/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-WIbO0eqZ.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-cross-room-section/config/index.js": {
+    "file": "assets/index-BRM5zqPa.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-cross-room-section/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DdY6eqcw.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-cross-room-section/preview/index.js": {
+    "file": "assets/index-C2NYPrfu.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-cross-room-section/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-4CnuMdMx.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-editorial-team-grid/component/index.js": {
+    "file": "assets/index-EybqgJrd.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-editorial-team-grid/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DIOsiMoK.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-editorial-team-grid/config/index.js": {
+    "file": "assets/index-rocxapUG.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-editorial-team-grid/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CBSHSt9K.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-editorial-team-grid/preview/index.js": {
+    "file": "assets/index-CxiZ3Zwc.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-editorial-team-grid/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-gP-34Ran.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-expert-profile/component/index.js": {
+    "file": "assets/index-B0XE-k4l.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-expert-profile/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CcAGVVOZ.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-expert-profile/config/index.js": {
+    "file": "assets/index-BKEqjJrI.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-expert-profile/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CfrchmFA.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-expert-profile/preview/index.js": {
+    "file": "assets/index-B_KIn9_O.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-expert-profile/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-7PrJ-M2B.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-expert-quote/component/index.js": {
+    "file": "assets/index-eE9xBTs5.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-expert-quote/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BpfNVB7t.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-expert-quote/config/index.js": {
+    "file": "assets/index-CHZmMXIy.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-expert-quote/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CrUYQyAw.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-expert-quote/preview/index.js": {
+    "file": "assets/index-CO7ubgY8.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-expert-quote/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CgPHf26K.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-expert-tip/component/index.js": {
+    "file": "assets/index-DNqbsO3V.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-expert-tip/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-COj4CSyA.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-expert-tip/config/index.js": {
+    "file": "assets/index-DrJzn1Ip.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-expert-tip/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-Cdv3vdl-.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-expert-tip/preview/index.js": {
+    "file": "assets/index-DwV68Okc.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-expert-tip/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-nbfahkgn.css"
+    ]
+  },
   "module/sw-cms/elements/jv-faq/component/index.js": {
     "file": "assets/index-3nRUFl0C.js",
     "name": "index",
@@ -454,6 +1211,33 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-Dew1hQZY.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-guide-hub-cards/component/index.js": {
+    "file": "assets/index-DjQ9yPgu.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-guide-hub-cards/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-k6l-s8fl.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-guide-hub-cards/config/index.js": {
+    "file": "assets/index-Bis7D9eD.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-guide-hub-cards/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-Bzoy1N6D.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-guide-hub-cards/preview/index.js": {
+    "file": "assets/index--bzynHVP.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-guide-hub-cards/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BLBZxgPJ.css"
     ]
   },
   "module/sw-cms/elements/jv-hero/component/index.js": {
@@ -510,6 +1294,114 @@
       "assets/index-CKk0oJG6.css"
     ]
   },
+  "module/sw-cms/elements/jv-inline-product-teaser/component/index.js": {
+    "file": "assets/index-CarV9esy.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-inline-product-teaser/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CNxasiVr.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-inline-product-teaser/config/index.js": {
+    "file": "assets/index-BTtBZ7ur.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-inline-product-teaser/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-hXodEQzU.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-inline-product-teaser/preview/index.js": {
+    "file": "assets/index-DG8NO6g_.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-inline-product-teaser/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-Df82jhG9.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-instagram-style/component/index.js": {
+    "file": "assets/index-CVyei3vG.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-instagram-style/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-B2lagAQE.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-instagram-style/config/index.js": {
+    "file": "assets/index-DlTeg2D8.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-instagram-style/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-hwbC0v47.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-instagram-style/preview/index.js": {
+    "file": "assets/index-rxKjX2Ne.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-instagram-style/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BzPgAVrd.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-look-scene/component/index.js": {
+    "file": "assets/index-Dns0f-DQ.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-look-scene/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BD37Bm5-.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-look-scene/config/index.js": {
+    "file": "assets/index-CNO94O0v.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-look-scene/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-lgK1IxtU.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-look-scene/preview/index.js": {
+    "file": "assets/index-CIwh4m8U.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-look-scene/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-ru4EhxZV.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-loyalty-promo/component/index.js": {
+    "file": "assets/index-B5HVRPvE.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-loyalty-promo/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-3ihg2O_b.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-loyalty-promo/config/index.js": {
+    "file": "assets/index-DlMFRAtG.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-loyalty-promo/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-C9YGdEmp.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-loyalty-promo/preview/index.js": {
+    "file": "assets/index-kz1pGI-x.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-loyalty-promo/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-YTl3Tv66.css"
+    ]
+  },
   "module/sw-cms/elements/jv-newsletter/component/index.js": {
     "file": "assets/index-wHMRj_2w.js",
     "name": "index",
@@ -562,6 +1454,87 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-K-3EoiyK.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-promo-deal-tiles/component/index.js": {
+    "file": "assets/index-dMiIFH2m.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-promo-deal-tiles/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-Csi6o2Sb.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-promo-deal-tiles/config/index.js": {
+    "file": "assets/index-DY-anhmp.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-promo-deal-tiles/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CWuJfaYh.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-promo-deal-tiles/preview/index.js": {
+    "file": "assets/index-B8Dq2Hht.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-promo-deal-tiles/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-C6tdmeNz.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-related-look-cards/component/index.js": {
+    "file": "assets/index-BalQ5c3T.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-related-look-cards/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BUmpMemp.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-related-look-cards/config/index.js": {
+    "file": "assets/index-CWIjVjra.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-related-look-cards/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-Bvg4uFMK.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-related-look-cards/preview/index.js": {
+    "file": "assets/index-I8_A09UJ.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-related-look-cards/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-H-MZ2-0r.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-review-summary/component/index.js": {
+    "file": "assets/index-8NoSa2HV.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-review-summary/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DEYFGvKS.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-review-summary/config/index.js": {
+    "file": "assets/index-DYQB9KhW.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-review-summary/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CvofWzpf.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-review-summary/preview/index.js": {
+    "file": "assets/index-CYZ-U9Tx.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-review-summary/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-C0cSrywg.css"
     ]
   },
   "module/sw-cms/elements/jv-room-grid/component/index.js": {
@@ -672,6 +1645,60 @@
       "assets/index-DfxTXyWj.css"
     ]
   },
+  "module/sw-cms/elements/jv-subcategory-links/component/index.js": {
+    "file": "assets/index-DTv4nCp_.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-subcategory-links/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-aUxf9X5I.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-subcategory-links/config/index.js": {
+    "file": "assets/index-BCv8S4nS.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-subcategory-links/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CyEw8RNz.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-subcategory-links/preview/index.js": {
+    "file": "assets/index-DdkieB6O.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-subcategory-links/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BExapYLX.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-table-of-contents/component/index.js": {
+    "file": "assets/index-V39-IRnV.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-table-of-contents/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BpDkp91y.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-table-of-contents/config/index.js": {
+    "file": "assets/index-DsJTcJJD.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-table-of-contents/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-BIUtgyI0.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-table-of-contents/preview/index.js": {
+    "file": "assets/index-8V22S3Fv.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-table-of-contents/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DtfJtIIY.css"
+    ]
+  },
   "module/sw-cms/elements/jv-text-custom-tables/component/index.js": {
     "file": "assets/index-SjenY0JV.js",
     "name": "index",
@@ -697,6 +1724,60 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-DvcRB_j6.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-trend-look-grid/component/index.js": {
+    "file": "assets/index-CUOxlwKE.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-trend-look-grid/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CRTvUBDo.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-trend-look-grid/config/index.js": {
+    "file": "assets/index-CV8RwYIj.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-trend-look-grid/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-hDM81V14.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-trend-look-grid/preview/index.js": {
+    "file": "assets/index-DsWs_V7F.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-trend-look-grid/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DSoDzxLA.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-trust-rating/component/index.js": {
+    "file": "assets/index-_2Jq67SC.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-trust-rating/component/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DKPV7InH.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-trust-rating/config/index.js": {
+    "file": "assets/index-B1yU-HvE.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-trust-rating/config/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-CQRVpznU.css"
+    ]
+  },
+  "module/sw-cms/elements/jv-trust-rating/preview/index.js": {
+    "file": "assets/index-CHaAX_8I.js",
+    "name": "index",
+    "src": "module/sw-cms/elements/jv-trust-rating/preview/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-DiH_49tE.css"
     ]
   },
   "module/sw-cms/elements/jv-why-jvmoebel/component/index.js": {
