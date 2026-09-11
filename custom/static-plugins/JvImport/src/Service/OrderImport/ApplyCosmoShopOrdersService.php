@@ -72,7 +72,7 @@ final readonly class ApplyCosmoShopOrdersService
                 continue;
             }
             $record = $item['record'];
-            $chunk[] = $record->toArray();
+            $chunk[] = $record;
             if (self::CHUNK_SIZE === count($chunk)) {
                 $this->applyChunk($market, $chunk, $dryRun, $context, $counts, $sourceIds, $orderNumbers, $writtenOrderNumbers, $salesChannel, $countryIds, $states, $salutations);
                 $chunk = [];
@@ -89,7 +89,7 @@ final readonly class ApplyCosmoShopOrdersService
     }
 
     /**
-     * @param list<array<string, mixed>> $records
+     * @param list<\Jv\Import\Integration\CosmoShop\Order\CosmoShopOrderData> $records
      * @param array<string, int>         $counts
      * @param array<int, true>           $sourceIds
      * @param array<string, true>        $orderNumbers
@@ -101,7 +101,9 @@ final readonly class ApplyCosmoShopOrdersService
     private function applyChunk(Market $market, array $records, bool $dryRun, Context $context, array &$counts, array &$sourceIds, array &$orderNumbers, array &$writtenOrderNumbers, SalesChannelEntity $salesChannel, array $countryIds, array $states, array $salutations): void
     {
         $valid = [];
-        foreach ($records as $record) {
+        foreach ($records as $source) {
+            $record = $this->payloadProjection($source);
+            $record['_checksum'] = $source->checksum(self::MAPPING_VERSION);
             $sourceId = $record['source_order_id'] ?? null;
             if (!is_int($sourceId) || isset($sourceIds[$sourceId])) {
                 ++$counts['invalid'];
@@ -165,7 +167,7 @@ final readonly class ApplyCosmoShopOrdersService
         }
         foreach ($valid as $record) {
             $orderId = CosmoShopOrderIdentity::orderId($market, $record['source_order_id']);
-            $checksum = hash('sha256', self::MAPPING_VERSION."\0".json_encode($record, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+            $checksum = $record['_checksum'];
             $existing = $existingById[$orderId] ?? null;
             $deepLinkCode = null;
             if (null !== $existing) {
@@ -587,5 +589,18 @@ final readonly class ApplyCosmoShopOrdersService
         if ($this->incrementStorage->preview($config) <= max($numericNumbers)) {
             $this->incrementStorage->set($range['id'], max($numericNumbers));
         }
+    }
+
+    /**
+     * Transitional Shopware payload projection boundary. Source JSON keys are confined to the normalizer;
+     * this converts the immutable aggregate into the legacy mapping shape while payload construction is
+     * being kept backward-compatible with existing historical records.
+     *
+     * @return array<string, mixed>
+     */
+    private function payloadProjection(\Jv\Import\Integration\CosmoShop\Order\CosmoShopOrderData $order): array
+    {
+        $address = static fn (\Jv\Import\Integration\CosmoShop\Order\CosmoShopOrderAddress $a): array => ['source_type' => $a->sourceType, 'source_address_id' => $a->sourceAddressId, 'salutation' => $a->salutation, 'title' => $a->title, 'first_name' => $a->firstName, 'last_name' => $a->lastName, 'company' => $a->company, 'street' => $a->street, 'zipcode' => $a->zipcode, 'city' => $a->city, 'country' => $a->country, 'state' => $a->state, 'email' => $a->email, 'phone' => $a->phone, 'vat_id' => $a->vatId];
+        return ['source_order_id' => $order->sourceOrderId, 'source_customer_id' => $order->sourceCustomerId, 'order_number' => $order->orderNumber, 'created_at' => $order->createdAt, 'submitted_at' => $order->submittedAt, 'paid_at' => $order->paidAt, 'total_net' => $order->totalNet, 'total_tax' => $order->totalTax, 'customer_comment' => $order->customerComment, 'price_display' => $order->priceDisplay, 'vat_type' => $order->vatType->value, 'processing_status' => $order->processingStatus->value, 'billing_address' => $address($order->billingAddress), 'shipping_address' => null === $order->shippingAddress ? null : $address($order->shippingAddress), 'packing_addresses' => array_map($address, $order->packingAddresses), 'payment' => ['key' => $order->payment->key->value, 'label' => $order->payment->label, 'source_plugin' => $order->payment->sourcePlugin, 'transaction_reference' => $order->payment->transactionReference], 'shipping' => ['key' => $order->shipping->key->value, 'label' => $order->shipping->label, 'source_carrier_id' => $order->shipping->sourceCarrierId], 'line_items' => array_map(static fn (\Jv\Import\Integration\CosmoShop\Order\CosmoShopOrderLineItem $line): array => ['source_position_id' => $line->sourcePositionId, 'position' => $line->position, 'kind' => $line->kind, 'main_product_number' => $line->mainProductNumber, 'product_number' => $line->productNumber, 'label' => $line->label, 'description' => $line->description, 'quantity' => $line->quantity, 'tax_rate' => $line->taxRate, 'unit_net' => $line->unitNet, 'unit_tax' => $line->unitTax, 'total_net' => $line->totalNet, 'total_tax' => $line->totalTax, 'snapshot' => $line->snapshot], $order->lineItems), 'history' => array_map(static fn (\Jv\Import\Integration\CosmoShop\Order\CosmoShopOrderHistoryEntry $entry): array => ['occurred_at' => $entry->occurredAt, 'status' => $entry->status->value], $order->history), 'mail_artifact_ref' => $order->mailArtifactRef];
     }
 }

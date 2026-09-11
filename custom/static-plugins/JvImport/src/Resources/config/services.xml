@@ -256,7 +256,8 @@
         <service id="Jv\Import\Service\OrderImport\CosmoShopOrderReferenceResolver">
             <argument type="service" id="sales_channel.repository"/>
             <argument type="service" id="salutation.repository"/>
-            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="country.repository"/>
+            <argument type="service" id="state_machine_state.repository"/>
         </service>
         <service id="Jv\Import\Command\ApplyCosmoShopOrdersCommand">
             <argument type="service" id="Jv\Import\Service\OrderImport\ApplyCosmoShopOrdersService"/>

@@ -12,7 +12,13 @@ final class CosmoShopOrderNormalizer
             return null;
         }
 
-        return new CosmoShopOrderData($record);
+        $address = static fn (array $value): CosmoShopOrderAddress => new CosmoShopOrderAddress($value['source_type'], $value['source_address_id'] ?? null, $value['salutation'], $value['title'], $value['first_name'], $value['last_name'], $value['company'], $value['street'], $value['zipcode'], $value['city'], $value['country'], $value['state'], $value['email'], $value['phone'], $value['vat_id']);
+        $line = static fn (array $value): CosmoShopOrderLineItem => new CosmoShopOrderLineItem($value['source_position_id'], $value['position'], $value['kind'], $value['main_product_number'], $value['product_number'], $value['label'], $value['description'], $value['quantity'], $value['tax_rate'], $value['unit_net'], $value['unit_tax'], $value['total_net'], $value['total_tax'], $value['snapshot']);
+        $history = static fn (array $value): CosmoShopOrderHistoryEntry => new CosmoShopOrderHistoryEntry($value['occurred_at'], CosmoShopOrderHistoryStatus::from($value['status']));
+
+        return new CosmoShopOrderData(
+            $record['source_order_id'], $record['source_customer_id'], $record['order_number'], $record['created_at'], $record['submitted_at'], $record['paid_at'], $record['total_net'], $record['total_tax'], $record['customer_comment'], $record['price_display'], CosmoShopOrderVatType::from($record['vat_type']), CosmoShopOrderProcessingStatus::from($record['processing_status']), $address($record['billing_address']), null === $record['shipping_address'] ? null : $address($record['shipping_address']), array_map($address, $record['packing_addresses']), new CosmoShopOrderPayment(CosmoShopOrderPaymentKey::from($record['payment']['key']), $record['payment']['label'], $record['payment']['source_plugin'], $record['payment']['transaction_reference']), new CosmoShopOrderShipping(CosmoShopOrderShippingKey::from($record['shipping']['key']), $record['shipping']['label'], $record['shipping']['source_carrier_id']), array_map($line, $record['line_items']), array_map($history, $record['history']), $record['mail_artifact_ref'], json_encode($record, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+        );
     }
 
     /** @param array<string, mixed> $record */

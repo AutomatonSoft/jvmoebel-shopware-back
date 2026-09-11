@@ -2,7 +2,6 @@
 
 namespace Jv\Import\Service\OrderImport;
 
-use Doctrine\DBAL\Connection;
 use Jv\Import\Service\OrderImport\Dto\CosmoShopOrderReferences;
 use Jv\Import\Service\OrderImport\Exception\CosmoShopOrderConfigurationException;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
@@ -12,13 +11,17 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\System\SalesChannel\SalesChannelCollection;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 use Shopware\Core\System\Salutation\SalutationCollection;
+use Shopware\Core\System\Country\CountryCollection;
+use Shopware\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateCollection;
 
 final readonly class CosmoShopOrderReferenceResolver
 {
     /** @param EntityRepository<SalesChannelCollection> $salesChannels
      * @param EntityRepository<SalutationCollection> $salutations
+     * @param EntityRepository<CountryCollection> $countries
+     * @param EntityRepository<StateMachineStateCollection> $states
      */
-    public function __construct(private EntityRepository $salesChannels, private EntityRepository $salutations, private Connection $connection)
+    public function __construct(private EntityRepository $salesChannels, private EntityRepository $salutations, private EntityRepository $countries, private EntityRepository $states)
     {
     }
 
@@ -28,10 +31,19 @@ final readonly class CosmoShopOrderReferenceResolver
         if (!$salesChannel instanceof SalesChannelEntity) {
             throw new CosmoShopOrderConfigurationException('Market sales channel is unavailable.');
         }
-        $countryIds = array_flip($this->connection->fetchAllKeyValue('SELECT LOWER(HEX(id)), iso FROM country'));
+        $countryIds = [];
+        foreach ($this->countries->search(new Criteria(), $context) as $country) {
+            if (null !== $country->getIso()) {
+                $countryIds[strtoupper($country->getIso())] = $country->getId();
+            }
+        }
         $states = [];
-        foreach ($this->connection->fetchAllAssociative('SELECT LOWER(HEX(s.id)) id, s.technical_name name, m.technical_name machine_name FROM state_machine_state s INNER JOIN state_machine m ON m.id=s.state_machine_id WHERE (m.technical_name = ? AND s.technical_name IN (?, ?, ?)) OR (m.technical_name = ? AND s.technical_name IN (?, ?)) OR (m.technical_name = ? AND s.technical_name IN (?, ?))', ['order.state', 'in_progress', 'open', 'completed', 'order_transaction.state', 'paid', 'open', 'order_delivery.state', 'open', 'shipped']) as $row) {
-            $states[$row['machine_name'].'.'.$row['name']] = $row['id'];
+        $criteria = (new Criteria())->addAssociation('stateMachine');
+        foreach ($this->states->search($criteria, $context) as $state) {
+            $machine = $state->getStateMachine();
+            if (null !== $machine) {
+                $states[$machine->getTechnicalName().'.'.$state->getTechnicalName()] = $state->getId();
+            }
         }
         $salutations = [];
         foreach ($this->salutations->search(new Criteria(), $context) as $salutation) {
