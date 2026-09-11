@@ -10,6 +10,7 @@ use Jv\Import\Integration\CosmoShop\Order\CosmoShopOrderIdentity;
 use Jv\Import\Migration\Migration1770000021CreateCosmoShopOrderFields;
 use Jv\Import\Service\ProductImport\ProductImportIdentity;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Shopware\Core\Checkout\Cart\Event\CheckoutOrderPlacedEvent;
 use Shopware\Core\Checkout\Customer\CustomerCollection;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemEntity;
@@ -29,6 +30,8 @@ use Shopware\Core\System\NumberRange\Aggregate\NumberRangeType\NumberRangeTypeCo
 use Shopware\Core\System\NumberRange\NumberRangeCollection;
 use Shopware\Core\System\SalesChannel\SalesChannelCollection;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
+use Shopware\Core\System\StateMachine\StateMachineRegistry;
+use Shopware\Core\System\StateMachine\Transition;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\ApplicationTester;
@@ -156,6 +159,7 @@ final class ApplyCosmoShopOrdersCommandTest extends AbstractCosmoShopImportExpor
             self::assertEquals([$packingAddress], $repeated->getCustomFields()['jv_cosmoshop_packing_addresses'] ?? null);
 
             self::assertSame(CosmoShopCustomerIdentity::customerId($market, $sourceCustomerId), $repeated->getOrderCustomer()?->getCustomerId());
+            self::assertSame($market->domain().'-order-'.$sourceCustomerId, $repeated->getOrderCustomer()->getCustomerNumber());
             self::assertCount(2, $repeated->getAddresses() ?? []);
             self::assertCount(1, $repeated->getDeliveries() ?? []);
             self::assertCount(1, $repeated->getTransactions() ?? []);
@@ -209,7 +213,7 @@ final class ApplyCosmoShopOrdersCommandTest extends AbstractCosmoShopImportExpor
         }
     }
 
-    /** @dataProvider invalidSubmittedAtProvider */
+    #[DataProvider('invalidSubmittedAtProvider')]
     public function testStrictSubmittedAtRejectsInvalidTimestamp(string $submittedAt): void
     {
         $context = Context::createDefaultContext();
@@ -315,13 +319,14 @@ final class ApplyCosmoShopOrdersCommandTest extends AbstractCosmoShopImportExpor
         }
     }
 
-    public function testMissingRequiredCompletedStateFailsInsteadOfFallingBackToInProgress(): void
+    public function testMissingRequiredStateAbortsTheWholeRunBeforeAnyWrite(): void
     {
         $context = Context::createDefaultContext();
         $market = Market::Germany;
-        $record = $this->record(74508, '99508', null);
-        $record['processing_status'] = '5';
-        $file = $this->orderFile([$record]);
+        $inProgress = $this->record(74509, '99509', null);
+        $completed = $this->record(74508, '99508', null);
+        $completed['processing_status'] = '5';
+        $file = $this->orderFile([$inProgress, $completed]);
         $this->ensureMarketSalesChannel($market, $context);
         $this->ensureOrderNumberRange($context);
         /** @var Connection $connection */
@@ -331,10 +336,22 @@ final class ApplyCosmoShopOrdersCommandTest extends AbstractCosmoShopImportExpor
         $connection->executeStatement("UPDATE state_machine_state s INNER JOIN state_machine m ON m.id=s.state_machine_id SET s.technical_name='__red_completed_missing__' WHERE m.technical_name='order.state' AND s.technical_name='completed'");
         try {
             $tester = $this->command();
-            self::assertSame(Command::FAILURE, $tester->run(['command' => 'jv:cosmoshop:apply-orders', 'market' => $market->domain(), 'file' => $file]));
-            self::assertStringContainsString('failed=1', $tester->getDisplay(true));
+            self::assertSame(Command::FAILURE, $tester->run(
+                ['command' => 'jv:cosmoshop:apply-orders', 'market' => $market->domain(), 'file' => $file],
+                ['capture_stderr_separately' => true],
+            ));
+            $output = $tester->getDisplay(true)."\n".$tester->getErrorOutput(true);
+            self::assertStringContainsString('failed=1', $output);
+            // A configuration failure is detected before the first chunk, so even the valid neighbour is not written.
+            self::assertNull($this->order($orderRepository, CosmoShopOrderIdentity::orderId($market, 74509), $context));
+            self::assertNull($this->order($orderRepository, CosmoShopOrderIdentity::orderId($market, 74508), $context));
+            foreach (['99508', '99509', '74508', '74509'] as $sensitiveValue) {
+                self::assertStringNotContainsString($sensitiveValue, $output);
+            }
         } finally {
-            $this->deleteOrder($orderRepository, CosmoShopOrderIdentity::orderId($market, 74508), $context);
+            foreach ([74508, 74509] as $sourceOrderId) {
+                $this->deleteOrder($orderRepository, CosmoShopOrderIdentity::orderId($market, $sourceOrderId), $context);
+            }
             $connection->executeStatement("UPDATE state_machine_state s INNER JOIN state_machine m ON m.id=s.state_machine_id SET s.technical_name='completed' WHERE m.technical_name='order.state' AND s.technical_name='__red_completed_missing__'");
             unlink($file);
         }
@@ -426,6 +443,7 @@ final class ApplyCosmoShopOrdersCommandTest extends AbstractCosmoShopImportExpor
                 $order = $this->order($orderRepository, CosmoShopOrderIdentity::orderId($market, $sourceOrderId), $context);
                 self::assertInstanceOf(OrderEntity::class, $order);
                 self::assertNull($order->getOrderCustomer()?->getCustomerId());
+                self::assertNull($order->getOrderCustomer()?->getCustomerNumber());
             }
             self::assertNull($customerRepository->search(new Criteria([
                 CosmoShopCustomerIdentity::customerId($market, $missingSourceCustomerId),
@@ -638,6 +656,428 @@ final class ApplyCosmoShopOrdersCommandTest extends AbstractCosmoShopImportExpor
         }
     }
 
+    public function testProcessingStatusesMapToExactOrderDeliveryAndTransactionStates(): void
+    {
+        $context = Context::createDefaultContext();
+        $market = Market::Germany;
+        $completed = $this->record(74601, '96001', null);
+        $completed['processing_status'] = '5';
+        $open = $this->record(74602, '96002', null);
+        $open['processing_status'] = '8';
+        $file = $this->orderFile([$completed, $open]);
+        $this->ensureMarketSalesChannel($market, $context);
+        $this->ensureOrderNumberRange($context);
+        /** @var EntityRepository<OrderCollection> $orderRepository */
+        $orderRepository = static::getContainer()->get('order.repository');
+        try {
+            self::assertSame(Command::SUCCESS, $this->command()->run(['command' => 'jv:cosmoshop:apply-orders', 'market' => $market->domain(), 'file' => $file]));
+            foreach ([74601 => ['completed', 'shipped', 'open'], 74602 => ['open', 'open', 'open']] as $sourceOrderId => [$orderState, $deliveryState, $transactionState]) {
+                $order = $this->order($orderRepository, CosmoShopOrderIdentity::orderId($market, $sourceOrderId), $context);
+                self::assertInstanceOf(OrderEntity::class, $order);
+                self::assertSame($orderState, $order->getStateMachineState()?->getTechnicalName());
+                self::assertSame($deliveryState, $order->getDeliveries()?->first()?->getStateMachineState()?->getTechnicalName());
+                self::assertSame($transactionState, $order->getTransactions()?->first()?->getStateMachineState()?->getTechnicalName());
+            }
+        } finally {
+            foreach ([74601, 74602] as $sourceOrderId) {
+                $this->deleteOrder($orderRepository, CosmoShopOrderIdentity::orderId($market, $sourceOrderId), $context);
+            }
+            unlink($file);
+        }
+    }
+
+    public function testNonEuVatTypeIsImportedAsTaxFree(): void
+    {
+        $context = Context::createDefaultContext();
+        $market = Market::Germany;
+        $record = $this->record(74611, '96011', null);
+        $record['vat_type'] = 'non-eu';
+        $record['total_tax'] = '0.0000000000';
+        foreach ($record['line_items'] as &$line) {
+            $line['unit_tax'] = '0.0000000000';
+            $line['total_tax'] = '0.0000000000';
+        }
+        unset($line);
+        $file = $this->orderFile([$record]);
+        $this->ensureMarketSalesChannel($market, $context);
+        $this->ensureOrderNumberRange($context);
+        /** @var EntityRepository<OrderCollection> $orderRepository */
+        $orderRepository = static::getContainer()->get('order.repository');
+        try {
+            self::assertSame(Command::SUCCESS, $this->command()->run(['command' => 'jv:cosmoshop:apply-orders', 'market' => $market->domain(), 'file' => $file]));
+            $order = $this->order($orderRepository, CosmoShopOrderIdentity::orderId($market, 74611), $context);
+            self::assertInstanceOf(OrderEntity::class, $order);
+            self::assertSame('tax-free', $order->getPrice()->getTaxStatus());
+            self::assertSame(110.0, $order->getPrice()->getTotalPrice());
+            self::assertSame(110.0, $order->getPrice()->getNetPrice());
+            self::assertSame(0.0, $order->getPrice()->getCalculatedTaxes()->getAmount());
+            self::assertSame(110.0, $order->getTransactions()?->first()?->getAmount()->getTotalPrice());
+        } finally {
+            $this->deleteOrder($orderRepository, CosmoShopOrderIdentity::orderId($market, 74611), $context);
+            unlink($file);
+        }
+    }
+
+    public function testExplicitShippingAddressIsUsedForDeliveryAndBillingIsClonedWhenMissing(): void
+    {
+        $context = Context::createDefaultContext();
+        $market = Market::Germany;
+        $withShipping = $this->record(74621, '96021', null);
+        $shippingAddress = $withShipping['billing_address'];
+        $shippingAddress['source_type'] = 'lief';
+        $shippingAddress['street'] = 'Delivery street 9';
+        $shippingAddress['email'] = '';
+        $withShipping['shipping_address'] = $shippingAddress;
+        $withoutShipping = $this->record(74622, '96022', null);
+        $file = $this->orderFile([$withShipping, $withoutShipping]);
+        $this->ensureMarketSalesChannel($market, $context);
+        $this->ensureOrderNumberRange($context);
+        /** @var EntityRepository<OrderCollection> $orderRepository */
+        $orderRepository = static::getContainer()->get('order.repository');
+        try {
+            self::assertSame(Command::SUCCESS, $this->command()->run(['command' => 'jv:cosmoshop:apply-orders', 'market' => $market->domain(), 'file' => $file]));
+
+            $explicit = $this->order($orderRepository, CosmoShopOrderIdentity::orderId($market, 74621), $context);
+            self::assertInstanceOf(OrderEntity::class, $explicit);
+            $delivery = $explicit->getDeliveries()?->first();
+            self::assertSame(CosmoShopOrderIdentity::shippingAddressId($market, 74621), $delivery?->getShippingOrderAddressId());
+            self::assertSame('Delivery street 9', $delivery->getShippingOrderAddress()?->getStreet());
+            self::assertSame('Test street 1', $explicit->getAddresses()?->get($explicit->getBillingAddressId())?->getStreet());
+
+            $cloned = $this->order($orderRepository, CosmoShopOrderIdentity::orderId($market, 74622), $context);
+            self::assertInstanceOf(OrderEntity::class, $cloned);
+            $clonedDelivery = $cloned->getDeliveries()?->first();
+            self::assertSame(CosmoShopOrderIdentity::shippingAddressId($market, 74622), $clonedDelivery?->getShippingOrderAddressId());
+            self::assertNotSame($cloned->getBillingAddressId(), $clonedDelivery->getShippingOrderAddressId());
+            self::assertSame('Test street 1', $clonedDelivery->getShippingOrderAddress()?->getStreet());
+        } finally {
+            foreach ([74621, 74622] as $sourceOrderId) {
+                $this->deleteOrder($orderRepository, CosmoShopOrderIdentity::orderId($market, $sourceOrderId), $context);
+            }
+            unlink($file);
+        }
+    }
+
+    public function testMultipleShippingLinesAreSummedAndZeroValueProductIsPreserved(): void
+    {
+        $context = Context::createDefaultContext();
+        $market = Market::Germany;
+        $record = $this->record(74631, '96031', null);
+        $record['line_items'] = [
+            $this->line(746311, 'product', 'ORDER-HISTORICAL', 'ORDER-HISTORICAL-A', 'Historical product', 1, '100.0000000000', '19.0000000000'),
+            $this->line(746312, 'product', 'ORDER-FREE', 'ORDER-FREE-A', 'Free historical accessory', 2, '0.0000000000', '0.0000000000'),
+            $this->line(746313, 'shipping', 'versand', 'versand', 'Shipping part one', 1, '10.0000000000', '1.9000000000'),
+            $this->line(746314, 'shipping', 'versand', 'versand', 'Shipping part two', 1, '5.0000000000', '0.9500000000'),
+            $this->line(746315, 'payment_adjustment', 'zahlung', 'zahlung', 'Invoice', 1, '0.0000000000', '0.0000000000'),
+        ];
+        $record['total_net'] = '115.0000000000';
+        $record['total_tax'] = '21.8500000000';
+        $file = $this->orderFile([$record]);
+        $this->ensureMarketSalesChannel($market, $context);
+        $this->ensureOrderNumberRange($context);
+        /** @var EntityRepository<OrderCollection> $orderRepository */
+        $orderRepository = static::getContainer()->get('order.repository');
+        try {
+            self::assertSame(Command::SUCCESS, $this->command()->run(['command' => 'jv:cosmoshop:apply-orders', 'market' => $market->domain(), 'file' => $file]));
+            $order = $this->order($orderRepository, CosmoShopOrderIdentity::orderId($market, 74631), $context);
+            self::assertInstanceOf(OrderEntity::class, $order);
+            self::assertSame(136.85, $order->getPrice()->getTotalPrice());
+            self::assertSame(17.85, $order->getShippingCosts()->getTotalPrice());
+            self::assertSame(17.85, $order->getDeliveries()?->first()?->getShippingCosts()->getTotalPrice());
+            self::assertCount(2, $order->getLineItems() ?? []);
+            $free = $this->lineItem($order, 'Free historical accessory');
+            self::assertSame(2, $free->getQuantity());
+            self::assertSame(0.0, $free->getPrice()?->getTotalPrice());
+        } finally {
+            $this->deleteOrder($orderRepository, CosmoShopOrderIdentity::orderId($market, 74631), $context);
+            unlink($file);
+        }
+    }
+
+    public function testExistingOrderWithoutImportMarkersIsNeitherAdoptedNorOverwritten(): void
+    {
+        $context = Context::createDefaultContext();
+        $market = Market::Germany;
+        $orderId = CosmoShopOrderIdentity::orderId($market, 74641);
+        $record = $this->record(74641, '96041', null);
+        $changed = $record;
+        $changed['customer_comment'] = 'must not overwrite';
+        $initialFile = $this->orderFile([$record]);
+        $changedFile = $this->orderFile([$changed]);
+        $this->ensureMarketSalesChannel($market, $context);
+        $this->ensureOrderNumberRange($context);
+        /** @var Connection $connection */
+        $connection = static::getContainer()->get(Connection::class);
+        /** @var EntityRepository<OrderCollection> $orderRepository */
+        $orderRepository = static::getContainer()->get('order.repository');
+        try {
+            self::assertSame(Command::SUCCESS, $this->command()->run(['command' => 'jv:cosmoshop:apply-orders', 'market' => $market->domain(), 'file' => $initialFile]));
+            $connection->executeStatement('UPDATE `order` SET custom_fields = NULL, customer_comment = ? WHERE id = ?', ['operator edited', Uuid::fromHexToBytes($orderId)]);
+
+            $tester = $this->command();
+            self::assertSame(Command::FAILURE, $tester->run(['command' => 'jv:cosmoshop:apply-orders', 'market' => $market->domain(), 'file' => $changedFile]));
+            self::assertStringContainsString('collision=1', $tester->getDisplay(true));
+            self::assertStringContainsString('written=0', $tester->getDisplay(true));
+            $order = $this->order($orderRepository, $orderId, $context);
+            self::assertInstanceOf(OrderEntity::class, $order);
+            self::assertNull($order->getCustomFields());
+            self::assertSame('operator edited', $order->getCustomerComment());
+        } finally {
+            $this->deleteOrder($orderRepository, $orderId, $context);
+            unlink($initialFile);
+            unlink($changedFile);
+        }
+    }
+
+    public function testSameOrderNumberInAnotherMarketIsNotACollision(): void
+    {
+        $context = Context::createDefaultContext();
+        $austrianFile = $this->orderFile([$this->record(74651, '96051', null)]);
+        $germanFile = $this->orderFile([$this->record(74652, '96051', null)]);
+        $this->ensureMarketSalesChannel(Market::Germany, $context);
+        $this->ensureMarketSalesChannel(Market::Austria, $context);
+        $this->ensureOrderNumberRange($context);
+        /** @var EntityRepository<OrderCollection> $orderRepository */
+        $orderRepository = static::getContainer()->get('order.repository');
+        try {
+            self::assertSame(Command::SUCCESS, $this->command()->run(['command' => 'jv:cosmoshop:apply-orders', 'market' => Market::Austria->domain(), 'file' => $austrianFile]));
+            $tester = $this->command();
+            self::assertSame(Command::SUCCESS, $tester->run(['command' => 'jv:cosmoshop:apply-orders', 'market' => Market::Germany->domain(), 'file' => $germanFile]));
+            self::assertStringContainsString('written=1', $tester->getDisplay(true));
+            self::assertStringContainsString('collision=0', $tester->getDisplay(true));
+            foreach ([[Market::Austria, 74651], [Market::Germany, 74652]] as [$market, $sourceOrderId]) {
+                $order = $this->order($orderRepository, CosmoShopOrderIdentity::orderId($market, $sourceOrderId), $context);
+                self::assertInstanceOf(OrderEntity::class, $order);
+                self::assertSame('96051', $order->getOrderNumber());
+                self::assertSame($market->salesChannelId(), $order->getSalesChannelId());
+            }
+        } finally {
+            $this->deleteOrder($orderRepository, CosmoShopOrderIdentity::orderId(Market::Austria, 74651), $context);
+            $this->deleteOrder($orderRepository, CosmoShopOrderIdentity::orderId(Market::Germany, 74652), $context);
+            unlink($austrianFile);
+            unlink($germanFile);
+        }
+    }
+
+    public function testDuplicateSourceIdentitiesAreInvalid(): void
+    {
+        $context = Context::createDefaultContext();
+        $market = Market::Germany;
+        $first = $this->record(74661, '96061', null);
+        $duplicateOrder = $this->record(74661, '96062', null);
+        $duplicatePosition = $this->record(74663, '96063', null);
+        $duplicatePosition['line_items'][1]['source_position_id'] = $duplicatePosition['line_items'][0]['source_position_id'];
+        $file = $this->orderFile([$first, $duplicateOrder, $duplicatePosition]);
+        $this->ensureMarketSalesChannel($market, $context);
+        $this->ensureOrderNumberRange($context);
+        /** @var EntityRepository<OrderCollection> $orderRepository */
+        $orderRepository = static::getContainer()->get('order.repository');
+        try {
+            $tester = $this->command();
+            self::assertSame(Command::FAILURE, $tester->run(['command' => 'jv:cosmoshop:apply-orders', 'market' => $market->domain(), 'file' => $file]));
+            foreach (['processed=3', 'written=1', 'invalid=2'] as $counter) {
+                self::assertStringContainsString($counter, $tester->getDisplay(true));
+            }
+            self::assertSame('96061', $this->order($orderRepository, CosmoShopOrderIdentity::orderId($market, 74661), $context)?->getOrderNumber());
+            self::assertNull($this->order($orderRepository, CosmoShopOrderIdentity::orderId($market, 74663), $context));
+        } finally {
+            foreach ([74661, 74663] as $sourceOrderId) {
+                $this->deleteOrder($orderRepository, CosmoShopOrderIdentity::orderId($market, $sourceOrderId), $context);
+            }
+            unlink($file);
+        }
+    }
+
+    public function testUnknownSourceVocabularyIsInvalid(): void
+    {
+        $context = Context::createDefaultContext();
+        $market = Market::Germany;
+        $unknownPayment = $this->record(74671, '96071', null);
+        $unknownPayment['payment']['key'] = 'bitcoin';
+        $unknownStatus = $this->record(74672, '96072', null);
+        $unknownStatus['processing_status'] = '9';
+        $unknownShipping = $this->record(74673, '96073', null);
+        $unknownShipping['shipping']['key'] = 'drone';
+        $unknownSalutation = $this->record(74674, '96074', null);
+        $unknownSalutation['billing_address']['salutation'] = 'x';
+        $unknownKind = $this->record(74675, '96075', null);
+        $unknownKind['line_items'][0]['kind'] = 'voucher';
+        $file = $this->orderFile([$unknownPayment, $unknownStatus, $unknownShipping, $unknownSalutation, $unknownKind]);
+        $this->ensureMarketSalesChannel($market, $context);
+        $this->ensureOrderNumberRange($context);
+        try {
+            $tester = $this->command();
+            self::assertSame(Command::FAILURE, $tester->run(['command' => 'jv:cosmoshop:apply-orders', 'market' => $market->domain(), 'file' => $file]));
+            foreach (['processed=5', 'invalid=5', 'written=0'] as $counter) {
+                self::assertStringContainsString($counter, $tester->getDisplay(true));
+            }
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public function testNumberRangeIsNeverLowered(): void
+    {
+        $context = Context::createDefaultContext();
+        $market = Market::Germany;
+        $file = $this->orderFile([$this->record(74681, '96081', null)]);
+        $this->ensureMarketSalesChannel($market, $context);
+        $this->ensureOrderNumberRange($context);
+        /** @var Connection $connection */
+        $connection = static::getContainer()->get(Connection::class);
+        $connection->executeStatement("UPDATE number_range_state s INNER JOIN number_range r ON r.id = s.number_range_id INNER JOIN number_range_type t ON t.id = r.type_id SET s.last_value = 500000 WHERE t.technical_name = 'order'");
+        /** @var EntityRepository<OrderCollection> $orderRepository */
+        $orderRepository = static::getContainer()->get('order.repository');
+        try {
+            self::assertSame(Command::SUCCESS, $this->command()->run(['command' => 'jv:cosmoshop:apply-orders', 'market' => $market->domain(), 'file' => $file]));
+            self::assertSame(500000, (int) $connection->fetchOne("SELECT MIN(s.last_value) FROM number_range_state s INNER JOIN number_range r ON r.id = s.number_range_id INNER JOIN number_range_type t ON t.id = r.type_id WHERE t.technical_name = 'order'"));
+        } finally {
+            $this->deleteOrder($orderRepository, CosmoShopOrderIdentity::orderId($market, 74681), $context);
+            unlink($file);
+        }
+    }
+
+    public function testDerivedGrossAmountAboveTheSafetyCapIsInvalid(): void
+    {
+        $context = Context::createDefaultContext();
+        $market = Market::Germany;
+        $record = $this->record(74691, '96091', null);
+        $record['total_net'] = '99999999.99';
+        $record['total_tax'] = '0.02';
+        $record['line_items'] = [$this->line(746911, 'product', 'ORDER-HISTORICAL', 'ORDER-HISTORICAL-A', 'Historical product', 1, '99999999.99', '0.02')];
+        $file = $this->orderFile([$record]);
+        $this->ensureMarketSalesChannel($market, $context);
+        $this->ensureOrderNumberRange($context);
+        /** @var EntityRepository<OrderCollection> $orderRepository */
+        $orderRepository = static::getContainer()->get('order.repository');
+        try {
+            $tester = $this->command();
+            self::assertSame(Command::FAILURE, $tester->run(['command' => 'jv:cosmoshop:apply-orders', 'market' => $market->domain(), 'file' => $file]));
+            self::assertStringContainsString('invalid=1', $tester->getDisplay(true));
+            self::assertNull($this->order($orderRepository, CosmoShopOrderIdentity::orderId($market, 74691), $context));
+        } finally {
+            unlink($file);
+        }
+    }
+
+    public function testMonetaryValuesAreRoundedToCentsWhileSourceAmountsStayInThePayload(): void
+    {
+        $context = Context::createDefaultContext();
+        $market = Market::Germany;
+        $record = $this->record(74701, '97001', null);
+        $record['line_items'][0] = $this->line(747011, 'product', 'ORDER-HISTORICAL', 'ORDER-HISTORICAL-A', 'Precise historical product', 1, '84.0336134454', '15.9663865546');
+        $record['total_net'] = '94.0336134454';
+        $record['total_tax'] = '17.8663865546';
+        $file = $this->orderFile([$record]);
+        $this->ensureMarketSalesChannel($market, $context);
+        $this->ensureOrderNumberRange($context);
+        /** @var EntityRepository<OrderCollection> $orderRepository */
+        $orderRepository = static::getContainer()->get('order.repository');
+        try {
+            self::assertSame(Command::SUCCESS, $this->command()->run(['command' => 'jv:cosmoshop:apply-orders', 'market' => $market->domain(), 'file' => $file]));
+            $order = $this->order($orderRepository, CosmoShopOrderIdentity::orderId($market, 74701), $context);
+            self::assertInstanceOf(OrderEntity::class, $order);
+            self::assertSame(94.03, $order->getPrice()->getNetPrice());
+            self::assertSame(111.9, $order->getPrice()->getTotalPrice());
+            self::assertSame(17.87, $order->getPrice()->getCalculatedTaxes()->getAmount());
+            $line = $this->lineItem($order, 'Precise historical product');
+            self::assertSame(100.0, $line->getPrice()?->getUnitPrice());
+            self::assertSame(100.0, $line->getPrice()->getTotalPrice());
+            self::assertSame(15.97, $line->getPrice()->getCalculatedTaxes()->getAmount());
+            self::assertEquals(
+                ['tax_rate' => '19.00', 'unit_net' => '84.0336134454', 'unit_tax' => '15.9663865546', 'total_net' => '84.0336134454', 'total_tax' => '15.9663865546'],
+                $line->getPayloadValue('jv_cosmoshop_source_amounts'),
+            );
+        } finally {
+            $this->deleteOrder($orderRepository, CosmoShopOrderIdentity::orderId($market, 74701), $context);
+            unlink($file);
+        }
+    }
+
+    public function testHistoricalOrderStateTransitionsNeverMoveStockWhileAnUnmarkedOrderStillDoes(): void
+    {
+        $context = Context::createDefaultContext();
+        $market = Market::Germany;
+        $productNumber = 'ORDER-STOCK-001';
+        $productId = ProductImportIdentity::fromProductNumber($productNumber);
+        $orderId = CosmoShopOrderIdentity::orderId($market, 74711);
+        $record = $this->record(74711, '97011', null);
+        $record['line_items'][0] = $this->line(747111, 'product', $productNumber, $productNumber.'-A', 'Stock guarded product', 2, '200.0000000000', '38.0000000000');
+        $record['total_net'] = '210.0000000000';
+        $record['total_tax'] = '39.9000000000';
+        $file = $this->orderFile([$record]);
+        $this->ensureMarketSalesChannel($market, $context);
+        $this->ensureOrderNumberRange($context);
+        $this->createProduct($productNumber, '4260174423722', 'order-stock-001', $context);
+        /** @var Connection $connection */
+        $connection = static::getContainer()->get(Connection::class);
+        /** @var EntityRepository<OrderCollection> $orderRepository */
+        $orderRepository = static::getContainer()->get('order.repository');
+        /** @var EntityRepository<ProductCollection> $productRepository */
+        $productRepository = static::getContainer()->get('product.repository');
+        $stateMachine = static::getContainer()->get(StateMachineRegistry::class);
+        self::assertInstanceOf(StateMachineRegistry::class, $stateMachine);
+        try {
+            self::assertSame(Command::SUCCESS, $this->command()->run(['command' => 'jv:cosmoshop:apply-orders', 'market' => $market->domain(), 'file' => $file]));
+            self::assertSame(10, $this->productStock($productId, $context));
+
+            $stateMachine->transition(new Transition('order', $orderId, 'cancel', 'stateId'), $context);
+            self::assertSame(10, $this->productStock($productId, $context));
+            $stateMachine->transition(new Transition('order', $orderId, 'reopen', 'stateId'), $context);
+            self::assertSame(10, $this->productStock($productId, $context));
+
+            // The guard is marker-driven: the same aggregate without markers is an ordinary order.
+            $connection->executeStatement("UPDATE `order` SET custom_fields = JSON_REMOVE(custom_fields, '$.jv_cosmoshop_historical_import') WHERE id = ?", [Uuid::fromHexToBytes($orderId)]);
+            $connection->executeStatement("UPDATE order_line_item SET payload = JSON_REMOVE(payload, '$.jv_cosmoshop_historical_import') WHERE order_id = ?", [Uuid::fromHexToBytes($orderId)]);
+            $stateMachine->transition(new Transition('order', $orderId, 'cancel', 'stateId'), $context);
+            self::assertSame(12, $this->productStock($productId, $context));
+        } finally {
+            $this->deleteOrder($orderRepository, $orderId, $context);
+            $productRepository->delete([['id' => $productId]], $context);
+            unlink($file);
+        }
+    }
+
+    public function testDeletingAHistoricalOrderDoesNotRestockItsProducts(): void
+    {
+        $context = Context::createDefaultContext();
+        $market = Market::Germany;
+        $productNumber = 'ORDER-STOCK-002';
+        $productId = ProductImportIdentity::fromProductNumber($productNumber);
+        $orderId = CosmoShopOrderIdentity::orderId($market, 74721);
+        $record = $this->record(74721, '97021', null);
+        $record['line_items'][0] = $this->line(747211, 'product', $productNumber, $productNumber.'-A', 'Deleted stock guarded product', 3, '300.0000000000', '57.0000000000');
+        $record['total_net'] = '310.0000000000';
+        $record['total_tax'] = '58.9000000000';
+        $file = $this->orderFile([$record]);
+        $this->ensureMarketSalesChannel($market, $context);
+        $this->ensureOrderNumberRange($context);
+        $this->createProduct($productNumber, '4260174423739', 'order-stock-002', $context);
+        /** @var EntityRepository<OrderCollection> $orderRepository */
+        $orderRepository = static::getContainer()->get('order.repository');
+        /** @var EntityRepository<ProductCollection> $productRepository */
+        $productRepository = static::getContainer()->get('product.repository');
+        try {
+            self::assertSame(Command::SUCCESS, $this->command()->run(['command' => 'jv:cosmoshop:apply-orders', 'market' => $market->domain(), 'file' => $file]));
+            $orderRepository->delete([['id' => $orderId]], $context);
+            self::assertSame(10, $this->productStock($productId, $context));
+        } finally {
+            $this->deleteOrder($orderRepository, $orderId, $context);
+            $productRepository->delete([['id' => $productId]], $context);
+            unlink($file);
+        }
+    }
+
+    private function productStock(string $productId, Context $context): int
+    {
+        /** @var EntityRepository<ProductCollection> $repository */
+        $repository = static::getContainer()->get('product.repository');
+        $product = $repository->search(new Criteria([$productId]), $context)->first();
+        self::assertInstanceOf(ProductEntity::class, $product);
+
+        return $product->getStock();
+    }
+
     private function command(): ApplicationTester
     {
         $application = new Application(static::getKernel());
@@ -818,7 +1258,7 @@ final class ApplyCosmoShopOrdersCommandTest extends AbstractCosmoShopImportExpor
             'customer_comment' => '',
             'billing_address' => [
                 'source_type' => 'best',
-                'salutation' => 'mr',
+                'salutation' => 'm',
                 'title' => '',
                 'first_name' => 'Test',
                 'last_name' => 'Customer',
