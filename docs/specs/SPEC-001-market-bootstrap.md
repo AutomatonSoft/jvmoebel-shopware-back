@@ -2,7 +2,7 @@
 
 ## Цель
 
-Детерминированно подготовить одну установку Shopware с шестью Storefront-type sales channels для рынков JVMöbel: язык, валюта, страна, основной домен и Store API access key. Конфигурация должна быть идемпотентной и пригодной для локального bootstrap (`bin/setup-local`) и последующей миграции данных. Потребитель access key — отдельный Next.js-репозиторий.
+Детерминированно подготовить одну установку Shopware с шестью Storefront-type sales channels для рынков JVMöbel: язык, валюта, страна, основной домен и Store API access key. Конфигурация должна быть идемпотентной и пригодной для локального bootstrap (`bin/setup-local`) и deployment bootstrap. Потребитель access key — отдельный Next.js-репозиторий.
 
 ## Границы
 
@@ -12,23 +12,24 @@
 - подготовка отсутствующих языков и валют, нужных этим рынкам;
 - включение привязки покупателей к sales channel до миграции клиентов;
 - контракт `var/bootstrap/sales-channels.json` для локальной интеграции Next.js;
-- локальный сценарий `bin/setup-local`, который вызывает bootstrap после установки Shopware.
+- локальный сценарий `bin/setup-local`, который вызывает bootstrap после установки Shopware;
+- deployment hook, который после установки/обновления project plugins вызывает market bootstrap, актуализирует CosmoShop Import/Export profiles и повторно регистрирует scheduled tasks.
 
 Не входит:
 
 - импорт CosmoShop, каталог, SEO-редиректы, media-адаптер;
 - полная итальянская и польская локализация (`jvmobili.it`, `jvmeble.pl`);
 - курсы валют CHF/GBP сверх нейтрального `factor = 1.0`;
-- deployment- и staging-конфигурация окружений;
 - публикация штатного Twig Storefront.
 
 ## Сценарий
 
-1. Оператор запускает `./bin/setup-local` либо `bin/console jv:markets:bootstrap`.
+1. Оператор запускает `./bin/setup-local` либо `bin/console jv:markets:bootstrap`; при deployment команду вызывает общий post hook.
 2. Команда включает `core.systemWideLoginRegistration.isCustomerBoundToSalesChannel`.
 3. Use case готовит справочные данные (язык, валюта, snippet set) и upsert-ит шесть Storefront-каналов.
-4. При `--json` команда печатает массив результатов; `setup-local` сохраняет его в `var/bootstrap/sales-channels.json`.
-5. Повторный запуск не пересоздаёт каналы и не меняет access key; часть полей принудительно возвращается к definitions, остальная конфигурация сохраняется.
+4. Deployment hook после market bootstrap актуализирует CosmoShop Import/Export profiles и повторно регистрирует scheduled tasks уже после установки project plugins.
+5. При `--json` команда печатает массив результатов; `setup-local` сохраняет его в `var/bootstrap/sales-channels.json`.
+6. Повторный запуск не пересоздаёт каналы и не меняет access key; часть полей принудительно возвращается к definitions, остальная конфигурация сохраняется.
 
 Будущий сценарий (не реализуется в этой спецификации): смена языка для `jvmobili.it` и `jvmeble.pl` при локализации. Из-за принудительного upsert это не правка case в `Market`, а миграция существующего канала с живыми заказами и SEO URL: отдельный план переноса языка домена, переиндексации SEO и согласования с Next.js.
 
@@ -142,6 +143,7 @@ URL основного домена — единственная environment-spe
 - Команда: `jv:markets:bootstrap` (`--json` для контракта access key).
 - Use cases: `BootstrapMarketsService`, `PrepareMarketReferenceDataService`, `ConfigureCustomerScopeService`.
 - Конфигурация: `JV_MARKET_SALES_CHANNEL_URL_TEMPLATE` / `config/packages/jv_market_configuration.yaml`.
+- Deployment lifecycle: общий post hook в `.shopware-project.yml`.
 - Миграции схемы плагина не используются для этих данных: изменения выполняются командой.
 - Локальный оркестратор: `bin/setup-local` (установка, плагин, bootstrap, OpenSearch).
 

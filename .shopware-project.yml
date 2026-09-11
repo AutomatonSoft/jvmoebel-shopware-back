@@ -15,3 +15,11 @@ deployment:
       - JvMarketConfiguration
       - JvCms
       - JvImport
+  hooks:
+    post:
+      - title: Configure JVMöbel sales channels
+        script: bin/console jv:markets:bootstrap --no-interaction
+      - title: Configure CosmoShop import profiles
+        script: bin/console jv:catalog:bootstrap-import-profiles --no-interaction
+      - title: Register project scheduled tasks
+        script: bin/console scheduled-task:register --no-interaction
