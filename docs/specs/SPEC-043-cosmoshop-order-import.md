@@ -12,6 +12,59 @@ Analytics.
 Первая итерация относится только к `jvmoebel.de`. Идентичности включают рынок,
 поэтому source ID разных CosmoShop не пересекаются.
 
+## Архитектурный контракт следующей реализации
+
+Источник заказа проходит границу `OrderSourceInterface`: reader и normalizer в
+`Integration/CosmoShop/Order` возвращают типизированный `OrderImportData` из
+`Service/OrderImport/Dto`. Application service не принимает raw JSON или
+произвольную array shape. Конечные наборы source/status/VAT/payment/shipping
+значений представлены enum/value object. Ошибки source-invalid отделены от
+configuration и infrastructure failure: первая запись учитывается как invalid,
+две последние причины завершают запуск безопасной configuration/infrastructure
+ошибкой.
+
+Временные значения принимаются только как строгий RFC3339 с явным offset;
+empty, relative и несуществующая календарная дата отклоняются. Legacy exporter
+может передавать naive DATETIME только после трактовки как Europe/Berlin и
+сериализации в UTC `Z`. История допускает ровно `open`, `in_progress`,
+`completed`, `shipped`, `cancelled`, `paid`; неизвестный status invalid, raw
+action и PII не переносятся. Mapping exact: `1` → order `in_progress` и
+delivery `open`, `5` → `completed`/`shipped`, `8` → `open`/`open`. Отсутствие
+требуемого state — configuration failure всего запуска, fallback запрещён.
+
+Каждое source и derived monetary value проверяется safety cap
+`abs(value) <= 99999999.99 EUR`; extreme values вроде
+`+/-9999999999.9999999999` invalid. `unlinked_customer` увеличивается только
+для полностью valid/ready order без target customer, `missing_product` — только
+для реально спроецированных product positions; projection/configuration failure
+не увеличивает эти counters.
+
+Непустой VAT ID попадает в штатное `orderCustomer.vatIds`. Salutation mapping:
+`f/w` → `mrs`, `m` → `mr`, `d/empty` → `not_specified`; штатные salutation IDs
+записываются в `orderCustomer` и addresses. В address не создаётся
+несуществующее `email`, а email/VAT не дублируются в custom fields без отдельной
+необходимости.
+
+Bootstrap/migration создаёт определения используемых custom fields и relations к
+`order`, `order_transaction`, `order_delivery`, `order_address`; dry-run не
+создаёт schema/data definitions. Number range выбирается тем же способом, что
+Shopware для данного sales channel: сначала market assignment, затем global
+range; выбор не определяется `ORDER BY start`. Счётчик обновляется через active
+`AbstractIncrementStorage`, монотонно относительно imported maximum.
+
+References sales channel/countries/salutations/states/methods разрешаются один
+раз за `execute` до chunk loop. Customer/product lookup остаётся batched per
+chunk. Stale line cleanup выполняется одним indexed parameterized batch query на
+chunk по binary `order_id IN`, без `LOWER(HEX(order_id))` и без query-per-order.
+
+Stock protection не добавляет marker SQL к обычному checkout insert/update.
+Historical import/create/update/delete lifecycle остаётся stock-neutral; SQL
+допустим только для пакетного определения marker existing rows, включая capture
+до deletion. Child-service logs наследуют operation/environment/runId команды и
+не содержат PII, raw source или exception message. Import counters и run ID
+попадают в структурированный observability log согласно platform operations
+contract.
+
 ## Границы
 
 Входят:
@@ -398,4 +451,4 @@ Acceptance до включения Lead Management/Analytics проверяет:
 Shopware DB: полный ignored export, dry-run, apply, repeat и reconciliation по
 orders/positions/addresses/totals/status/missing links. Architect получает
 только агрегаты и checksums и выборочно проверяет target Shopware. До решения по
-518 неполным orders полный DE migration не считается принятой.
+522 неполным orders полный DE migration не считается принятой.

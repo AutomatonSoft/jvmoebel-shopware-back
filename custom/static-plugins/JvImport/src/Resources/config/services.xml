@@ -242,12 +242,21 @@
             <argument type="service" id="order.repository"/>
             <argument type="service" id="customer.repository"/>
             <argument type="service" id="product.repository"/>
-            <argument type="service" id="payment_method.repository"/>
-            <argument type="service" id="shipping_method.repository"/>
-            <argument type="service" id="sales_channel.repository"/>
             <argument type="service" id="order_line_item.repository"/>
+            <argument type="service" id="Jv\Import\Service\OrderImport\CosmoShopOrderReferenceResolver"/>
+            <argument type="service" id="Jv\Import\Service\OrderImport\CosmoShopLegacyMethodBootstrapper"/>
+            <argument type="service" id="Shopware\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\AbstractIncrementStorage"/>
             <argument type="service" id="Doctrine\DBAL\Connection"/>
             <argument type="service" id="logger"/>
+        </service>
+        <service id="Jv\Import\Service\OrderImport\CosmoShopLegacyMethodBootstrapper">
+            <argument type="service" id="payment_method.repository"/>
+            <argument type="service" id="shipping_method.repository"/>
+        </service>
+        <service id="Jv\Import\Service\OrderImport\CosmoShopOrderReferenceResolver">
+            <argument type="service" id="sales_channel.repository"/>
+            <argument type="service" id="salutation.repository"/>
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
         </service>
         <service id="Jv\Import\Command\ApplyCosmoShopOrdersCommand">
             <argument type="service" id="Jv\Import\Service\OrderImport\ApplyCosmoShopOrdersService"/>

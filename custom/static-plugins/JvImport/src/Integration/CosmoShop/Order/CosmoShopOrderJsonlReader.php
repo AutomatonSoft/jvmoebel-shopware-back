@@ -4,7 +4,11 @@ namespace Jv\Import\Integration\CosmoShop\Order;
 
 final class CosmoShopOrderJsonlReader
 {
-    /** @return \Generator<int, array{record?: array<string, mixed>, invalid?: true}> */
+    public function __construct(private readonly ?CosmoShopOrderNormalizer $normalizer = null)
+    {
+    }
+
+    /** @return \Generator<int, array{record?: CosmoShopOrderData, invalid?: true}> */
     public function read(string $file): \Generator
     {
         $stream = fopen($file, 'rb');
@@ -29,7 +33,12 @@ final class CosmoShopOrderJsonlReader
                     yield ['invalid' => true];
                     continue;
                 }
-                yield ['record' => $record];
+                $normalized = ($this->normalizer ?? new CosmoShopOrderNormalizer())->normalize($record);
+                if (null === $normalized) {
+                    yield ['invalid' => true];
+                    continue;
+                }
+                yield ['record' => $normalized];
             }
         } finally {
             fclose($stream);

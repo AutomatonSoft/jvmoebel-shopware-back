@@ -22,7 +22,7 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 final class HistoricalOrderStockStorage extends AbstractStockStorage implements EventSubscriberInterface
 {
     public const CONTEXT_EXTENSION = 'jv_cosmoshop_historical_order_import';
-    private const CAPTURED_EXTENSION = 'jv_cosmoshop_historical_line_items';
+    public const CAPTURED_EXTENSION = 'jv_cosmoshop_historical_line_items';
 
     public static function getSubscribedEvents(): array
     {
@@ -49,20 +49,16 @@ final class HistoricalOrderStockStorage extends AbstractStockStorage implements 
         if (null !== $context->getExtension(self::CONTEXT_EXTENSION)) {
             return;
         }
-
-        $ids = array_values(array_unique(array_map(static fn (StockAlteration $change): string => $change->lineItemId, $changes)));
         $captured = $context->getExtension(self::CAPTURED_EXTENSION);
-        $historical = $captured instanceof ArrayStruct ? $captured->get('ids') : [];
-        $historical = is_array($historical) ? $historical : [];
-        if ([] !== $ids) {
-            $hexIds = array_map(static fn (string $id): string => ctype_xdigit($id) && 32 === strlen($id) ? strtolower($id) : strtolower(bin2hex($id)), $ids);
-            $historical = [...$historical, ...$this->connection->fetchFirstColumn("SELECT LOWER(HEX(id)) FROM order_line_item WHERE id IN (?) AND JSON_EXTRACT(payload, '$.jv_cosmoshop_historical_import') = true", [array_map('hex2bin', $hexIds)], [ArrayParameterType::BINARY])];
-            $changes = array_values(array_filter($changes, static fn (StockAlteration $change): bool => !in_array(ctype_xdigit($change->lineItemId) && 32 === strlen($change->lineItemId) ? strtolower($change->lineItemId) : strtolower(bin2hex($change->lineItemId)), $historical, true)));
+        if ($captured instanceof ArrayStruct) {
+            $historical = $captured->get('ids');
+            if (is_array($historical)) {
+                $changes = array_values(array_filter($changes, static fn (StockAlteration $change): bool => !in_array(strtolower($change->lineItemId), array_map('strtolower', $historical), true)));
+            }
         }
         if ([] === $changes) {
             return;
         }
-
         $this->decorated->alter($changes, $context);
     }
 
@@ -72,10 +68,30 @@ final class HistoricalOrderStockStorage extends AbstractStockStorage implements 
         if ([] === $ids) {
             return;
         }
+        $commands = $event->getCommandsForEntity('order_line_item');
+        $hasHistoricalPayload = false;
+        $hasExistingWrite = false;
+        foreach ($commands as $command) {
+            $payload = $command->getPayload();
+            $hasHistoricalPayload = $hasHistoricalPayload || self::payloadIsHistorical($payload);
+            $hasExistingWrite = $hasExistingWrite || $command->getEntityExistence()->exists();
+        }
+        // New ordinary checkout line-items cannot be historical and must not incur marker SQL.
+        if (!$hasHistoricalPayload && !$hasExistingWrite) {
+            return;
+        }
         $historical = $this->connection->fetchFirstColumn("SELECT LOWER(HEX(id)) FROM order_line_item WHERE id IN (?) AND JSON_EXTRACT(payload, '$.jv_cosmoshop_historical_import') = true", [array_map(static fn (string $id): string => Uuid::fromHexToBytes($id), $ids)], [ArrayParameterType::BINARY]);
         if ([] !== $historical) {
             $event->getContext()->addExtension(self::CAPTURED_EXTENSION, new ArrayStruct(['ids' => $historical]));
         }
+    }
+
+    /** @param array<string, mixed> $payload */
+    private static function payloadIsHistorical(array $payload): bool
+    {
+        $customFields = $payload['customFields'] ?? $payload['custom_fields'] ?? $payload['payload'] ?? null;
+
+        return is_array($customFields) && true === ($customFields['jv_cosmoshop_historical_import'] ?? false);
     }
 
     /** @param list<string> $productIds */

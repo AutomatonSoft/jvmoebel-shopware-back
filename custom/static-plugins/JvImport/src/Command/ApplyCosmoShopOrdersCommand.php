@@ -6,6 +6,7 @@ use Jv\Import\Service\OrderImport\ApplyCosmoShopOrdersService;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\Struct\ArrayStruct;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -41,7 +42,9 @@ final class ApplyCosmoShopOrdersCommand extends Command
         $context = ['operation' => 'cosmoshop_order_import', 'runId' => Uuid::randomHex(), 'environment' => $this->environment, 'dryRun' => (bool) $input->getOption('dry-run')];
         $this->logger->info('CosmoShop order import started.', $context);
         try {
-            $result = $this->service->execute($market, $file, (bool) $input->getOption('dry-run'), Context::createCLIContext());
+            $shopwareContext = Context::createCLIContext();
+            $shopwareContext->addExtension('jv_cosmoshop_import_run', new ArrayStruct($context));
+            $result = $this->service->execute($market, $file, (bool) $input->getOption('dry-run'), $shopwareContext);
         } catch (\Throwable $exception) {
             $this->logger->error('CosmoShop order import failed.', [...$context, 'exceptionClass' => $exception::class]);
             $output->writeln('failed=1');

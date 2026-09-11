@@ -8,14 +8,12 @@ use Jv\Import\Integration\CosmoShop\Customer\CosmoShopCustomerIdentity;
 use Jv\Import\Integration\CosmoShop\Order\CosmoShopOrderIdentity;
 use Jv\Import\Integration\CosmoShop\Order\CosmoShopOrderJsonlReader;
 use Jv\Import\Service\OrderImport\Dto\ApplyCosmoShopOrdersResult;
+use Jv\Import\Service\OrderImport\Exception\CosmoShopOrderConfigurationException;
 use Jv\Import\Service\ProductImport\ProductImportIdentity;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Customer\CustomerCollection;
 use Shopware\Core\Checkout\Order\OrderCollection;
-use Shopware\Core\Checkout\Payment\PaymentMethodCollection;
-use Shopware\Core\Checkout\Shipping\ShippingMethodCollection;
-use Shopware\Core\Checkout\Shipping\ShippingMethodEntity;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
@@ -24,22 +22,17 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopware\Core\Framework\Struct\ArrayStruct;
 use Shopware\Core\Framework\Uuid\Uuid;
-use Shopware\Core\System\SalesChannel\SalesChannelCollection;
+use Shopware\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\AbstractIncrementStorage;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 
 final readonly class ApplyCosmoShopOrdersService
 {
     private const int CHUNK_SIZE = 50;
     private const string MAPPING_VERSION = '2026-09-10.4';
-    private const array PAYMENT_KEYS = ['amazon_pay', 'cash_on_delivery', 'easycredit', 'installment_purchase', 'invoice', 'klarna', 'klarna_pay_later', 'klarna_pay_now', 'klarna_payments', 'paypal', 'paypal_express', 'prepayment_discount', 'santander_financing', 'skrill', 'split_deposit'];
-    private const array SHIPPING_KEYS = ['freight_forwarder', 'freight_forwarder_to_installation_location', 'self_pickup'];
 
     /** @param EntityRepository<OrderCollection> $orderRepository
      * @param EntityRepository<CustomerCollection>                                                            $customerRepository
      * @param EntityRepository<ProductCollection>                                                             $productRepository
-     * @param EntityRepository<PaymentMethodCollection>                                                       $paymentMethodRepository
-     * @param EntityRepository<ShippingMethodCollection>                                                      $shippingMethodRepository
-     * @param EntityRepository<SalesChannelCollection>                                                        $salesChannelRepository
      * @param EntityRepository<\Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection> $orderLineItemRepository
      */
     public function __construct(
@@ -47,10 +40,10 @@ final readonly class ApplyCosmoShopOrdersService
         private EntityRepository $orderRepository,
         private EntityRepository $customerRepository,
         private EntityRepository $productRepository,
-        private EntityRepository $paymentMethodRepository,
-        private EntityRepository $shippingMethodRepository,
-        private EntityRepository $salesChannelRepository,
         private EntityRepository $orderLineItemRepository,
+        private CosmoShopOrderReferenceResolver $references,
+        private CosmoShopLegacyMethodBootstrapper $legacyMethods,
+        private AbstractIncrementStorage $incrementStorage,
         private Connection $connection,
         private LoggerInterface $logger,
     ) {
@@ -59,6 +52,14 @@ final readonly class ApplyCosmoShopOrdersService
     public function execute(Market $market, string $file, bool $dryRun, Context $context): ApplyCosmoShopOrdersResult
     {
         $counts = array_fill_keys(['processed', 'ready', 'written', 'existing', 'invalid', 'collision', 'unlinked_customer', 'missing_product', 'incomplete_address', 'failed'], 0);
+        $references = $this->references->resolve($market, $context);
+        $salesChannel = $references->salesChannel;
+        $countryIds = $references->countryIds;
+        $states = $references->states;
+        $salutations = $references->salutations;
+        if (!$dryRun) {
+            $this->legacyMethods->prepare($market, $salesChannel, $context);
+        }
         $chunk = [];
         $sourceIds = [];
         /** @var array<string, true> $orderNumbers */
@@ -70,14 +71,15 @@ final readonly class ApplyCosmoShopOrdersService
                 ++$counts['invalid'];
                 continue;
             }
-            $chunk[] = $item['record'];
+            $record = $item['record'];
+            $chunk[] = $record->toArray();
             if (self::CHUNK_SIZE === count($chunk)) {
-                $this->applyChunk($market, $chunk, $dryRun, $context, $counts, $sourceIds, $orderNumbers, $writtenOrderNumbers);
+                $this->applyChunk($market, $chunk, $dryRun, $context, $counts, $sourceIds, $orderNumbers, $writtenOrderNumbers, $salesChannel, $countryIds, $states, $salutations);
                 $chunk = [];
             }
         }
         if ([] !== $chunk) {
-            $this->applyChunk($market, $chunk, $dryRun, $context, $counts, $sourceIds, $orderNumbers, $writtenOrderNumbers);
+            $this->applyChunk($market, $chunk, $dryRun, $context, $counts, $sourceIds, $orderNumbers, $writtenOrderNumbers, $salesChannel, $countryIds, $states, $salutations);
         }
         if (!$dryRun) {
             $this->raiseOrderNumberRange($market, $writtenOrderNumbers);
@@ -92,8 +94,11 @@ final readonly class ApplyCosmoShopOrdersService
      * @param array<int, true>           $sourceIds
      * @param array<string, true>        $orderNumbers
      * @param list<string>               $writtenOrderNumbers
+     * @param array<string, string>      $countryIds
+     * @param array<string, string>      $states
+     * @param array<string, string>      $salutations
      */
-    private function applyChunk(Market $market, array $records, bool $dryRun, Context $context, array &$counts, array &$sourceIds, array &$orderNumbers, array &$writtenOrderNumbers): void
+    private function applyChunk(Market $market, array $records, bool $dryRun, Context $context, array &$counts, array &$sourceIds, array &$orderNumbers, array &$writtenOrderNumbers, SalesChannelEntity $salesChannel, array $countryIds, array $states, array $salutations): void
     {
         $valid = [];
         foreach ($records as $record) {
@@ -105,10 +110,6 @@ final readonly class ApplyCosmoShopOrdersService
             $sourceIds[$sourceId] = true;
             if (!$this->isCompleteAddress($record['billing_address'] ?? null, true) || (null !== ($record['shipping_address'] ?? null) && !$this->isCompleteAddress($record['shipping_address']))) {
                 ++$counts['incomplete_address'];
-                continue;
-            }
-            if (!$this->hasRequiredShape($record)) {
-                ++$counts['invalid'];
                 continue;
             }
             /** @var string $orderNumber */
@@ -162,16 +163,6 @@ final readonly class ApplyCosmoShopOrdersService
                 $products[$product->getId()] = true;
             }
         }
-        $salesChannel = $this->salesChannelRepository->search(new Criteria([$market->salesChannelId()]), $context)->first();
-        if (!$salesChannel instanceof SalesChannelEntity) {
-            throw new \RuntimeException('Market sales channel is unavailable.');
-        }
-        if (!$dryRun) {
-            $this->ensureLegacyMethods($market, $valid, $salesChannel, $context);
-        }
-        $countryIds = $this->countryIds($valid);
-        $states = $this->stateIds();
-
         foreach ($valid as $record) {
             $orderId = CosmoShopOrderIdentity::orderId($market, $record['source_order_id']);
             $checksum = hash('sha256', self::MAPPING_VERSION."\0".json_encode($record, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
@@ -195,21 +186,24 @@ final readonly class ApplyCosmoShopOrdersService
                 continue;
             }
             try {
-                if (is_int($record['source_customer_id']) && 0 !== $record['source_customer_id'] && !isset($customers[CosmoShopCustomerIdentity::customerId($market, $record['source_customer_id'])])) {
-                    ++$counts['unlinked_customer'];
-                } elseif (null === $record['source_customer_id']) {
-                    ++$counts['unlinked_customer'];
-                }
+                $unlinkedCustomer = (is_int($record['source_customer_id']) && 0 !== $record['source_customer_id'] && !isset($customers[CosmoShopCustomerIdentity::customerId($market, $record['source_customer_id'])])) || null === $record['source_customer_id'];
+                $missingProduct = 0;
                 foreach ($record['line_items'] as $line) {
                     if ('product' === ($line['kind'] ?? '') && (!is_string($line['main_product_number'] ?? null) || !isset($products[ProductImportIdentity::fromProductNumber($line['main_product_number'])]))) {
-                        ++$counts['missing_product'];
+                        ++$missingProduct;
                     }
                 }
-                $payload = $this->payload($market, $record, $checksum, $customers, $products, $countryIds, $states, $salesChannel, $deepLinkCode);
-            } catch (\Throwable) {
-                ++$counts['invalid'];
+                $payload = $this->payload($market, $record, $checksum, $customers, $products, $countryIds, $states, $salutations, $salesChannel, $deepLinkCode);
+            } catch (CosmoShopOrderConfigurationException $exception) {
+                if ('state' === $exception->reason) {
+                    ++$counts['failed'];
+                } else {
+                    ++$counts['invalid'];
+                }
                 continue;
             }
+            $counts['unlinked_customer'] += $unlinkedCustomer ? 1 : 0;
+            $counts['missing_product'] += $missingProduct;
             ++$counts['ready'];
             if (!$dryRun) {
                 $pendingWrites[] = ['payload' => $payload, 'orderNumber' => $record['order_number']];
@@ -233,25 +227,23 @@ final readonly class ApplyCosmoShopOrdersService
         try {
             try {
                 $this->connection->transactional(function () use ($pendingWrites, $context): void {
-                    foreach ($pendingWrites as $write) {
-                        $this->removeStaleLineItems($write['payload'], $context);
-                    }
+                    $this->removeStaleLineItemsBatch(array_map(static fn (array $write): array => $write['payload'], $pendingWrites), $context);
                     $this->orderRepository->upsert(array_column($pendingWrites, 'payload'), $context);
                 });
                 $counts['written'] += count($pendingWrites);
                 $writtenNumbers = array_column($pendingWrites, 'orderNumber');
             } catch (\Throwable $exception) {
-                $this->logger->warning('Historical order import chunk write failed; retrying records individually.', ['exceptionClass' => $exception::class]);
+                $this->logger->warning('Historical order import chunk write failed; retrying records individually.', [...$this->runContext($context), 'exceptionClass' => $exception::class]);
                 foreach ($pendingWrites as $write) {
                     try {
                         $this->connection->transactional(function () use ($write, $context): void {
-                            $this->removeStaleLineItems($write['payload'], $context);
+                            $this->removeStaleLineItemsBatch([$write['payload']], $context);
                             $this->orderRepository->upsert([$write['payload']], $context);
                         });
                         ++$counts['written'];
                         $writtenNumbers[] = $write['orderNumber'];
                     } catch (\Throwable $exception) {
-                        $this->logger->error('Historical order import record write failed.', ['exceptionClass' => $exception::class]);
+                        $this->logger->error('Historical order import record write failed.', [...$this->runContext($context), 'exceptionClass' => $exception::class]);
                         ++$counts['failed'];
                     }
                 }
@@ -261,130 +253,6 @@ final readonly class ApplyCosmoShopOrdersService
         }
 
         return $writtenNumbers;
-    }
-
-    /** @param array<string, mixed> $record */
-    private function hasRequiredShape(array $record): bool
-    {
-        $keys = ['schema_version', 'source_order_id', 'source_customer_id', 'order_number', 'created_at', 'submitted_at', 'paid_at', 'currency', 'language', 'price_display', 'vat_type', 'processing_status', 'total_net', 'total_tax', 'customer_comment', 'billing_address', 'shipping_address', 'packing_addresses', 'payment', 'shipping', 'line_items', 'history', 'mail_artifact_ref'];
-        $actualKeys = array_keys($record);
-        sort($actualKeys);
-        sort($keys);
-        if ($actualKeys !== $keys || 1 !== $record['schema_version'] || !is_int($record['source_order_id']) || (!is_int($record['source_customer_id']) && null !== $record['source_customer_id']) || !is_string($record['order_number']) || '' === $record['order_number'] || !$this->isNullableDateTime($record['created_at']) || !$this->isDateTime($record['submitted_at']) || !$this->isNullableDateTime($record['paid_at']) || !in_array($record['currency'], ['EUR'], true) || !in_array($record['language'], ['de'], true) || !in_array($record['price_display'], ['brutto', 'netto'], true) || !in_array($record['vat_type'], ['normal', 'ustid-befreit', 'non-eu'], true) || !in_array($record['processing_status'], ['1', '5', '8'], true) || !$this->isDecimal($record['total_net']) || !$this->isDecimal($record['total_tax']) || !is_string($record['customer_comment']) || !$this->isNullableString($record['mail_artifact_ref']) || !is_array($record['packing_addresses']) || !is_array($record['line_items']) || [] === $record['line_items'] || !$this->isAddress($record['billing_address'], ['best']) || (null !== $record['shipping_address'] && !$this->isAddress($record['shipping_address'], ['lief'])) || !$this->isPayment($record['payment']) || !$this->isShipping($record['shipping']) || !is_array($record['history'])) {
-            return false;
-        }
-        foreach ($record['packing_addresses'] as $address) {
-            if (!$this->isAddress($address, ['pack'])) {
-                return false;
-            }
-        }
-        foreach ($record['history'] as $history) {
-            if (!is_array($history) || ['occurred_at', 'status'] !== array_keys($history) || !$this->isDateTime($history['occurred_at']) || !is_string($history['status'])) {
-                return false;
-            }
-        }
-        $positions = [];
-        foreach ($record['line_items'] as $line) {
-            if (!$this->isLineItem($line) || isset($positions[$line['source_position_id']])) {
-                return false;
-            }
-            $positions[$line['source_position_id']] = true;
-        }
-
-        return true;
-    }
-
-    private function isNullableDateTime(mixed $value): bool
-    {
-        return null === $value || $this->isDateTime($value);
-    }
-
-    private function isDateTime(mixed $value): bool
-    {
-        if (!is_string($value)) {
-            return false;
-        }
-        try {
-            new \DateTimeImmutable($value);
-        } catch (\Throwable) {
-            return false;
-        }
-
-        return true;
-    }
-
-    private function isNullableString(mixed $value): bool
-    {
-        return null === $value || is_string($value);
-    }
-
-    /** @param list<string> $sourceTypes */
-    private function isAddress(mixed $address, array $sourceTypes): bool
-    {
-        if (!is_array($address) || !$this->hasOnlyKeys($address, ['source_type', 'salutation', 'title', 'first_name', 'last_name', 'company', 'street', 'zipcode', 'city', 'country', 'state', 'email', 'phone', 'vat_id'], ['source_address_id']) || !in_array($address['source_type'] ?? null, $sourceTypes, true)) {
-            return false;
-        }
-        if (array_key_exists('source_address_id', $address) && (!is_int($address['source_address_id']) && null !== $address['source_address_id'])) {
-            return false;
-        }
-        foreach (['salutation', 'title', 'first_name', 'last_name', 'company', 'street', 'zipcode', 'city', 'country', 'state', 'email', 'phone', 'vat_id'] as $key) {
-            if (!is_string($address[$key] ?? null)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private function isPayment(mixed $payment): bool
-    {
-        return is_array($payment) && $this->hasOnlyKeys($payment, ['key', 'label', 'source_plugin', 'transaction_reference']) && in_array($payment['key'] ?? null, self::PAYMENT_KEYS, true) && is_string($payment['label'] ?? null) && is_string($payment['source_plugin'] ?? null) && $this->isNullableString($payment['transaction_reference'] ?? null);
-    }
-
-    private function isShipping(mixed $shipping): bool
-    {
-        return is_array($shipping) && $this->hasOnlyKeys($shipping, ['key', 'label', 'source_carrier_id']) && in_array($shipping['key'] ?? null, self::SHIPPING_KEYS, true) && is_string($shipping['label'] ?? null) && (!is_int($shipping['source_carrier_id'] ?? null) && null !== ($shipping['source_carrier_id'] ?? null) ? false : true);
-    }
-
-    private function isLineItem(mixed $line): bool
-    {
-        if (!is_array($line) || !$this->hasOnlyKeys($line, ['source_position_id', 'position', 'kind', 'main_product_number', 'product_number', 'label', 'description', 'quantity', 'tax_rate', 'unit_net', 'unit_tax', 'total_net', 'total_tax', 'snapshot']) || !is_int($line['source_position_id'] ?? null) || !is_int($line['position'] ?? null) || !in_array($line['kind'] ?? null, ['product', 'shipping', 'payment_adjustment'], true) || !is_int($line['quantity'] ?? null) || 0 >= $line['quantity'] || !is_array($line['snapshot'] ?? null)) {
-            return false;
-        }
-        foreach (['main_product_number', 'product_number', 'label', 'description'] as $key) {
-            if (!is_string($line[$key] ?? null)) {
-                return false;
-            }
-        }
-        foreach (['tax_rate', 'unit_net', 'unit_tax', 'total_net', 'total_tax'] as $key) {
-            if (!$this->isDecimal($line[$key] ?? null)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /** @param array<string, mixed> $value
-     * @param list<string> $required
-     * @param list<string> $optional
-     */
-    private function hasOnlyKeys(array $value, array $required, array $optional = []): bool
-    {
-        $actual = array_keys($value);
-        sort($actual);
-        $allowed = array_merge($required, $optional);
-        sort($allowed);
-        if ([] !== array_diff($actual, $allowed)) {
-            return false;
-        }
-
-        return [] === array_diff($required, $actual);
-    }
-
-    private function isDecimal(mixed $value): bool
-    {
-        return is_string($value) && 1 === preg_match('/^-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$/D', $value) && is_finite((float) $value);
     }
 
     private function isCompleteAddress(mixed $address, bool $requiresEmail = false): bool
@@ -405,52 +273,24 @@ final readonly class ApplyCosmoShopOrdersService
         return true;
     }
 
-    /** @param list<array<string, mixed>> $records
-     * @return array<string, string>
-     */
-    private function countryIds(array $records): array
-    {
-        $codes = [];
-        foreach ($records as $record) {
-            $codes[] = strtoupper($record['billing_address']['country']);
-            if (is_array($record['shipping_address'] ?? null)) {
-                $codes[] = strtoupper($record['shipping_address']['country']);
-            }
-        }
-        $rows = $this->connection->fetchAllKeyValue('SELECT LOWER(HEX(id)), iso FROM country WHERE iso IN (?)', [array_values(array_unique($codes))], [ArrayParameterType::STRING]);
-
-        return array_flip($rows);
-    }
-
-    /** @return array<string, string> */
-    private function stateIds(): array
-    {
-        $rows = $this->connection->fetchAllAssociative('SELECT LOWER(HEX(s.id)) id, s.technical_name name, m.technical_name machine_name FROM state_machine_state s INNER JOIN state_machine m ON m.id=s.state_machine_id WHERE (m.technical_name = ? AND s.technical_name IN (?, ?, ?)) OR (m.technical_name = ? AND s.technical_name IN (?, ?)) OR (m.technical_name = ? AND s.technical_name IN (?, ?))', ['order.state', 'in_progress', 'open', 'completed', 'order_transaction.state', 'paid', 'open', 'order_delivery.state', 'open', 'shipped']);
-        $states = [];
-        foreach ($rows as $row) {
-            $states[$row['machine_name'].'.'.$row['name']] = $row['id'];
-        }
-
-        return $states;
-    }
-
     /**
      * @param array<string, mixed>  $record
      * @param array<string, true>   $customers
      * @param array<string, true>   $products
      * @param array<string, string> $countryIds
      * @param array<string, string> $states
+     * @param array<string, string> $salutations
      *
      * @return array<string, mixed>
      */
-    private function payload(Market $market, array $record, string $checksum, array $customers, array $products, array $countryIds, array $states, object $salesChannel, ?string $existingDeepLinkCode): array
+    private function payload(Market $market, array $record, string $checksum, array $customers, array $products, array $countryIds, array $states, array $salutations, object $salesChannel, ?string $existingDeepLinkCode): array
     {
         $orderState = '5' === $record['processing_status'] ? 'completed' : ('8' === $record['processing_status'] ? 'open' : 'in_progress');
-        $stateId = $states['order.state.'.$orderState] ?? $states['order.state.in_progress'] ?? null;
+        $stateId = $states['order.state.'.$orderState] ?? null;
         $transactionStateId = null !== ($record['paid_at'] ?? null) ? ($states['order_transaction.state.paid'] ?? null) : ($states['order_transaction.state.open'] ?? null);
-        $deliveryStateId = '5' === $record['processing_status'] ? ($states['order_delivery.state.shipped'] ?? $states['order_delivery.state.open'] ?? null) : ($states['order_delivery.state.open'] ?? null);
+        $deliveryStateId = '5' === $record['processing_status'] ? ($states['order_delivery.state.shipped'] ?? null) : ($states['order_delivery.state.open'] ?? null);
         if (null === $stateId || null === $transactionStateId || null === $deliveryStateId) {
-            throw new \RuntimeException('Required state is unavailable.');
+            throw new CosmoShopOrderConfigurationException('Required state is unavailable.', 'state');
         }
         $billing = $record['billing_address'];
         $shipping = is_array($record['shipping_address'] ?? null) ? $record['shipping_address'] : $billing;
@@ -562,8 +402,8 @@ final readonly class ApplyCosmoShopOrdersService
                 'jv_cosmoshop_packing_addresses' => $record['packing_addresses'],
                 'jv_cosmoshop_mail_artifact_present' => null !== ($record['mail_artifact_ref'] ?? null),
             ],
-            'orderCustomer' => ['id' => CosmoShopOrderIdentity::orderCustomerId($market, $record['source_order_id']), 'customerId' => $customerId, 'email' => $billing['email'], 'firstName' => $billing['first_name'], 'lastName' => $billing['last_name'], 'customerNumber' => 'historical-'.$record['source_order_id']],
-            'addresses' => [$this->address($billingId, $billing, $countryIds), $this->address($shippingId, $shipping, $countryIds)],
+            'orderCustomer' => ['id' => CosmoShopOrderIdentity::orderCustomerId($market, $record['source_order_id']), 'customerId' => $customerId, 'email' => $billing['email'], 'firstName' => $billing['first_name'], 'lastName' => $billing['last_name'], 'salutationId' => $salutations[$this->salutationKey($billing['salutation'])] ?? null, 'vatIds' => '' !== $billing['vat_id'] ? [$billing['vat_id']] : null, 'customerNumber' => 'historical-'.$record['source_order_id']],
+            'addresses' => [$this->address($billingId, $billing, $countryIds, $salutations), $this->address($shippingId, $shipping, $countryIds, $salutations)],
             'lineItems' => $lineItems,
             'transactions' => [[
                 'id' => CosmoShopOrderIdentity::transactionId($market, $record['source_order_id']),
@@ -588,34 +428,65 @@ final readonly class ApplyCosmoShopOrdersService
 
     /** @param array<string, mixed> $address
      * @param array<string, string> $countryIds
+     * @param array<string, string> $salutations
      *
      * @return array<string, mixed>
      */
-    private function address(string $id, array $address, array $countryIds): array
+    private function address(string $id, array $address, array $countryIds, array $salutations): array
     {
         $countryId = $countryIds[strtoupper($address['country'])] ?? null;
         if (null === $countryId) {
-            throw new \RuntimeException('Country unavailable.');
+            throw new CosmoShopOrderConfigurationException('Country unavailable.', 'country');
         }
 
-        return ['id' => $id, 'firstName' => $address['first_name'], 'lastName' => $address['last_name'], 'company' => $address['company'], 'title' => $address['title'], 'street' => $address['street'], 'zipcode' => $address['zipcode'], 'city' => $address['city'], 'countryId' => $countryId, 'email' => $address['email'], 'phoneNumber' => $address['phone'], 'customFields' => ['jv_cosmoshop_source_address_id' => $address['source_address_id'] ?? null, 'jv_cosmoshop_source_address_type' => $address['source_type'], 'jv_cosmoshop_source_salutation' => $address['salutation'], 'jv_cosmoshop_source_state' => $address['state'], 'jv_cosmoshop_source_email' => $address['email'], 'jv_cosmoshop_source_vat_id' => $address['vat_id']]];
+        return ['id' => $id, 'firstName' => $address['first_name'], 'lastName' => $address['last_name'], 'salutationId' => $salutations[$this->salutationKey($address['salutation'])] ?? null, 'company' => $address['company'], 'title' => $address['title'], 'street' => $address['street'], 'zipcode' => $address['zipcode'], 'city' => $address['city'], 'countryId' => $countryId, 'phoneNumber' => $address['phone'], 'customFields' => ['jv_cosmoshop_source_address_id' => $address['source_address_id'] ?? null, 'jv_cosmoshop_source_address_type' => $address['source_type'], 'jv_cosmoshop_source_salutation' => $address['salutation'], 'jv_cosmoshop_source_state' => $address['state']]];
     }
 
-    /** @param array<string, mixed> $payload */
-    private function removeStaleLineItems(array $payload, Context $context): void
+    private function salutationKey(string $source): string
     {
-        $existingIds = $this->connection->fetchFirstColumn(
-            "SELECT LOWER(HEX(id)) FROM order_line_item WHERE LOWER(HEX(order_id)) = ? AND JSON_UNQUOTE(JSON_EXTRACT(payload, '$.jv_cosmoshop_historical_import')) = 'true'",
-            [$payload['id']],
-        );
-        if ([] === $existingIds) {
+        return match (strtolower($source)) {
+            'f', 'w' => 'mrs', 'm' => 'mr', default => 'not_specified',
+        };
+    }
+
+    /** @param list<array<string, mixed>> $payloads */
+    private function removeStaleLineItemsBatch(array $payloads, Context $context): void
+    {
+        $orderIds = array_map(static fn (array $payload): string => $payload['id'], $payloads);
+        if ([] === $orderIds) {
             return;
         }
-        $incomingIds = array_map(static fn (array $line): string => $line['id'], $payload['lineItems'] ?? []);
-        $staleIds = array_values(array_diff($existingIds, $incomingIds));
+        $rows = $this->connection->fetchAllAssociative(
+            "SELECT HEX(id) AS id, HEX(order_id) AS order_id FROM order_line_item WHERE order_id IN (?) AND JSON_UNQUOTE(JSON_EXTRACT(payload, '$.jv_cosmoshop_historical_import')) = 'true'",
+            [array_map(static fn (string $id): string => hex2bin($id), $orderIds)],
+            [ArrayParameterType::BINARY],
+        );
+        if ([] === $rows) {
+            return;
+        }
+        $incomingByOrder = [];
+        foreach ($payloads as $payload) {
+            $incomingByOrder[$payload['id']] = array_map(static fn (array $line): string => $line['id'], $payload['lineItems'] ?? []);
+        }
+        $staleIds = [];
+        foreach ($rows as $row) {
+            $lineId = strtolower((string) $row['id']);
+            $orderId = strtolower((string) $row['order_id']);
+            if (!in_array($lineId, $incomingByOrder[$orderId] ?? [], true)) {
+                $staleIds[] = $lineId;
+            }
+        }
         if ([] !== $staleIds) {
             $this->orderLineItemRepository->delete(array_map(static fn (string $id): array => ['id' => $id], $staleIds), $context);
         }
+    }
+
+    /** @return array<string, scalar> */
+    private function runContext(Context $context): array
+    {
+        $extension = $context->getExtension('jv_cosmoshop_import_run');
+
+        return $extension instanceof ArrayStruct ? $extension->all() : [];
     }
 
     /** @return array<string, mixed> */
@@ -691,51 +562,30 @@ final readonly class ApplyCosmoShopOrdersService
         return ['decimals' => 2, 'interval' => 0.01, 'roundForNet' => false];
     }
 
-    /** @param list<array<string, mixed>> $records */
-    private function ensureLegacyMethods(Market $market, array $records, SalesChannelEntity $salesChannel, Context $context): void
-    {
-        $payments = [];
-        $shippings = [];
-        foreach ($records as $record) {
-            $payments[$record['payment']['key']] = $record['payment']['label'];
-            $shippings[$record['shipping']['key']] = $record['shipping']['label'];
-        }
-        $paymentRows = [];
-        foreach ($payments as $key => $label) {
-            $paymentRows[] = ['id' => CosmoShopOrderIdentity::paymentMethodId($market, $key), 'technicalName' => 'jv_cosmoshop_'.$market->domain().'_payment_'.$key, 'name' => $label, 'active' => false];
-        }
-        $shippingRows = [];
-        $defaultShipping = $this->shippingMethodRepository->search(new Criteria([$salesChannel->getShippingMethodId()]), $context)->first();
-        if (!$defaultShipping instanceof ShippingMethodEntity) {
-            throw new \RuntimeException('Market shipping method is unavailable.');
-        }
-        foreach ($shippings as $key => $label) {
-            $shippingRows[] = ['id' => CosmoShopOrderIdentity::shippingMethodId($market, $key), 'technicalName' => 'jv_cosmoshop_'.$market->domain().'_shipping_'.$key, 'name' => $label, 'active' => false, 'deliveryTimeId' => $defaultShipping->getDeliveryTimeId()];
-        }
-        $this->paymentMethodRepository->upsert($paymentRows, $context);
-        $this->shippingMethodRepository->upsert($shippingRows, $context);
-    }
-
     /** @param list<string> $numbers */
     private function raiseOrderNumberRange(Market $market, array $numbers): void
     {
         $numbers = [...$numbers, ...$this->connection->fetchFirstColumn('SELECT order_number FROM `order` WHERE JSON_EXTRACT(custom_fields, \'$.jv_cosmoshop_historical_import\') = true AND JSON_UNQUOTE(JSON_EXTRACT(custom_fields, \'$.jv_cosmoshop_source_market\')) = ?', [$market->domain()])];
-        $numericNumbers = array_map(
-            static fn (string $number): int => (int) $number,
-            array_filter($numbers, static fn (string $number): bool => ctype_digit($number)),
-        );
+        $numericNumbers = array_map(static fn (string $number): int => (int) $number, array_filter($numbers, static fn (string $number): bool => ctype_digit($number)));
         if ([] === $numericNumbers) {
             return;
         }
-        $range = $this->connection->fetchAssociative('SELECT r.id, s.id AS state_id FROM number_range r JOIN number_range_type t ON t.id=r.type_id LEFT JOIN number_range_state s ON s.number_range_id=r.id WHERE t.technical_name=? ORDER BY r.start DESC LIMIT 1', ['order']);
-        if (!is_array($range) || !isset($range['id'])) {
+        $range = $this->connection->fetchAssociative(
+            'SELECT LOWER(HEX(r.id)) AS id, r.pattern, r.start FROM number_range r JOIN number_range_type t ON t.id=r.type_id JOIN number_range_sales_channel n ON n.number_range_id=r.id AND n.sales_channel_id = UNHEX(:salesChannelId) WHERE t.technical_name = :type ORDER BY r.id LIMIT 1',
+            ['type' => 'order', 'salesChannelId' => $market->salesChannelId()],
+        );
+        if (!is_array($range)) {
+            $range = $this->connection->fetchAssociative(
+                'SELECT LOWER(HEX(r.id)) AS id, r.pattern, r.start FROM number_range r JOIN number_range_type t ON t.id=r.type_id WHERE t.technical_name = :type AND r.global = 1 AND NOT EXISTS (SELECT 1 FROM number_range_sales_channel assigned WHERE assigned.number_range_id = r.id AND assigned.sales_channel_id IS NOT NULL) ORDER BY r.id LIMIT 1',
+                ['type' => 'order'],
+            );
+        }
+        if (!is_array($range) || !is_string($range['id'] ?? null)) {
             return;
         }
-        if (null === ($range['state_id'] ?? null)) {
-            $this->connection->executeStatement('INSERT INTO number_range_state (id, number_range_id, `last_value`, created_at) VALUES (?, ?, ?, ?)', [Uuid::fromHexToBytes(Uuid::randomHex()), $range['id'], max($numericNumbers), (new \DateTimeImmutable())->format('Y-m-d H:i:s.v')]);
-
-            return;
+        $config = ['id' => $range['id'], 'pattern' => (string) ($range['pattern'] ?? '{n}'), 'start' => null === $range['start'] ? null : (int) $range['start']];
+        if ($this->incrementStorage->preview($config) <= max($numericNumbers)) {
+            $this->incrementStorage->set($range['id'], max($numericNumbers));
         }
-        $this->connection->executeStatement('UPDATE number_range_state SET `last_value`=GREATEST(`last_value`, ?), updated_at=? WHERE number_range_id=?', [max($numericNumbers), (new \DateTimeImmutable())->format('Y-m-d H:i:s.v'), $range['id']]);
     }
 }

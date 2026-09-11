@@ -8,6 +8,10 @@ use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Product\Stock\AbstractStockStorage;
 use Shopware\Core\Content\Product\Stock\StockAlteration;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWriteEvent;
+use Shopware\Core\Framework\DataAbstractionLayer\Write\Command\WriteCommand;
+use Shopware\Core\Framework\DataAbstractionLayer\Write\EntityExistence;
+use Shopware\Core\Framework\DataAbstractionLayer\Write\WriteContext;
 
 final class HistoricalOrderStockStorageTest extends TestCase
 {
@@ -17,17 +21,19 @@ final class HistoricalOrderStockStorageTest extends TestCase
         $connection = $this->createMock(Connection::class);
         $historicalId = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
         $normalId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
-        $connection->expects(self::once())->method('fetchFirstColumn')->willReturn([$historicalId]);
         $decorated->expects(self::once())->method('alter')->with(
             self::callback(static fn (array $changes): bool => 1 === count($changes) && $normalId === $changes[0]->lineItemId),
             self::isInstanceOf(Context::class),
         );
 
+        $context = Context::createDefaultContext();
+        $connection->expects(self::once())->method('fetchFirstColumn')->willReturn([$historicalId]);
         $storage = new HistoricalOrderStockStorage($decorated, $connection);
+        $storage->captureHistoricalLines($this->historicalWriteEvent($context, $historicalId));
         $storage->alter([
             new StockAlteration($historicalId, 'product-a', 2, 0),
             new StockAlteration($normalId, 'product-b', 2, 0),
-        ], Context::createDefaultContext());
+        ], $context);
     }
 
     public function testOnlyHistoricalBatchIsDropped(): void
@@ -35,10 +41,46 @@ final class HistoricalOrderStockStorageTest extends TestCase
         $decorated = $this->createMock(AbstractStockStorage::class);
         $connection = $this->createMock(Connection::class);
         $historicalId = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
-        $connection->method('fetchFirstColumn')->willReturn([$historicalId]);
         $decorated->expects(self::never())->method('alter');
 
+        $context = Context::createDefaultContext();
+        $connection->expects(self::once())->method('fetchFirstColumn')->willReturn([$historicalId]);
         $storage = new HistoricalOrderStockStorage($decorated, $connection);
-        $storage->alter([new StockAlteration($historicalId, 'product-a', 2, 0)], Context::createDefaultContext());
+        $storage->captureHistoricalLines($this->historicalWriteEvent($context, $historicalId));
+        $storage->alter([new StockAlteration($historicalId, 'product-a', 2, 0)], $context);
+    }
+
+    public function testOrdinaryCheckoutCreateDoesNotRunMarkerQuery(): void
+    {
+        $decorated = $this->createMock(AbstractStockStorage::class);
+        $connection = $this->createMock(Connection::class);
+        $normalId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+        $decorated->expects(self::once())->method('alter');
+        $context = Context::createDefaultContext();
+        $existence = $this->createMock(EntityExistence::class);
+        $existence->method('exists')->willReturn(false);
+        $command = $this->createMock(WriteCommand::class);
+        $command->method('getEntityName')->willReturn('order_line_item');
+        $command->method('getDecodedPrimaryKey')->willReturn(['id' => $normalId]);
+        $command->method('getPayload')->willReturn(['payload' => []]);
+        $command->method('getEntityExistence')->willReturn($existence);
+        $event = EntityWriteEvent::create(WriteContext::createFromContext($context), [$command]);
+
+        $storage = new HistoricalOrderStockStorage($decorated, $connection);
+        $storage->captureHistoricalLines($event);
+        $storage->alter([new StockAlteration($normalId, 'product-b', 2, 0)], $context);
+    }
+
+    private function historicalWriteEvent(Context $context, string $id): EntityWriteEvent
+    {
+        $existence = $this->createMock(EntityExistence::class);
+        $existence->method('exists')->willReturn(false);
+        $command = $this->createMock(WriteCommand::class);
+        $command->method('getEntityName')->willReturn('order_line_item');
+        $command->method('getDecodedPrimaryKey')->willReturn(['id' => $id]);
+        $command->method('getPayload')->willReturn(['payload' => ['jv_cosmoshop_historical_import' => true]]);
+        $command->method('getEntityExistence')->willReturn($existence);
+
+        return EntityWriteEvent::create(WriteContext::createFromContext($context), [$command]);
     }
 }
