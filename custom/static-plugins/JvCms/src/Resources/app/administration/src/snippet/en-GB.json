@@ -621,6 +621,91 @@
           }
         }
       },
+      "jv-promo-banner": {
+        "label": "Promo Banner",
+        "component": {
+          "emptyTitle": "Promo Banner",
+          "canvasHint": "Wide promo banner — UI renders in Next.js"
+        },
+        "config": {
+          "title": { "label": "Title" },
+          "eyebrow": { "label": "Eyebrow" },
+          "description": { "label": "Description" },
+          "contentPosition": {
+            "label": "Content position",
+            "left": "Left",
+            "right": "Right"
+          },
+          "imageMedia": {
+            "label": "Image",
+            "caption": "Background image"
+          },
+          "link": {
+            "title": "Link (optional)",
+            "label": { "label": "Link label" },
+            "url": { "label": "Link URL" },
+            "size": {
+              "label": "Link size",
+              "small": "Small",
+              "medium": "Medium",
+              "large": "Large"
+            }
+          }
+        }
+      },
+      "jv-offer-rail": {
+        "label": "Offer Rail",
+        "component": {
+          "emptyTitle": "Offer Rail",
+          "offerCount": "offers"
+        },
+        "config": {
+          "title": { "label": "Title" },
+          "eyebrow": { "label": "Eyebrow" },
+          "description": { "label": "Description" },
+          "ariaLabel": { "label": "Aria label" },
+          "offers": {
+            "title": "Offers",
+            "add": "Add offer",
+            "remove": "Remove",
+            "cardTitle": "Offer {index}",
+            "imageMedia": {
+              "label": "Image",
+              "caption": "Offer image"
+            },
+            "title": { "label": "Title" },
+            "subtitle": { "label": "Subtitle" },
+            "ctaLabel": { "label": "CTA label" },
+            "url": { "label": "URL" },
+            "endsAt": {
+              "label": "Ends at",
+              "helpText": "ISO-8601 with timezone, e.g. 2026-09-30T23:59:59+02:00"
+            },
+            "legalText": { "label": "Legal text" }
+          }
+        }
+      },
+      "jv-benefit-strip": {
+        "label": "Benefit Strip",
+        "component": {
+          "emptyTitle": "Benefit Strip",
+          "itemCount": "benefits"
+        },
+        "config": {
+          "items": {
+            "title": "Benefits",
+            "add": "Add benefit",
+            "remove": "Remove",
+            "cardTitle": "Benefit {index}",
+            "iconMedia": {
+              "label": "Icon",
+              "caption": "Icon from media library"
+            },
+            "title": { "label": "Title" },
+            "description": { "label": "Description" }
+          }
+        }
+      },
       "jv-promo-deal-tiles": {
         "label": "Promo Deal Tiles",
         "component": {
@@ -1590,6 +1675,15 @@
       },
       "jv-countdown-promo": {
         "label": "Countdown Promo"
+      },
+      "jv-promo-banner": {
+        "label": "Promo Banner"
+      },
+      "jv-offer-rail": {
+        "label": "Offer Rail"
+      },
+      "jv-benefit-strip": {
+        "label": "Benefit Strip"
       },
       "jv-promo-deal-tiles": {
         "label": "Promo Deal Tiles"
