@@ -12,7 +12,7 @@ Analytics.
 Первая итерация относится только к `jvmoebel.de`. Идентичности включают рынок,
 поэтому source ID разных CosmoShop не пересекаются.
 
-## Архитектурный контракт следующей реализации
+## Архитектурный контракт
 
 Источник заказа проходит границу `OrderSourceInterface`: reader и normalizer в
 `Integration/CosmoShop/Order` возвращают типизированный `OrderImportData` из
@@ -64,6 +64,43 @@ Historical import/create/update/delete lifecycle остаётся stock-neutral;
 не содержат PII, raw source или exception message. Import counters и run ID
 попадают в структурированный observability log согласно platform operations
 contract.
+
+### Детализация контракта
+
+- Граница источника: `Service/OrderImport/Contract/OrderSourceInterface::read(string
+  $location): iterable<OrderImportData|InvalidOrderRecord>`. DTO и enums контракта
+  находятся в `Service/OrderImport/Dto`. Реализация —
+  `Integration/CosmoShop/Order/CosmoShopOrderJsonlSource`, которая получает reader
+  и normalizer через конструктор. Конструктор application service не зависит от
+  классов `Integration`.
+- Source salutation закрыт словарём `m`, `f`, `w`, `d` и пустой строкой; прочие
+  значения делают строку invalid.
+- Все значения Shopware price structures (unit/total, calculated taxes,
+  `netPrice`, `totalPrice`, `positionPrice`, shipping costs, transaction amount)
+  округляются half-up до `0.01` от авторитетных source-значений. Итоги заказа
+  берутся из source `total_net/total_tax`, а не суммой округлённых позиций.
+  Исходные decimal strings позиции сохраняются в line-item payload
+  `jv_cosmoshop_source_amounts` (`tax_rate`, `unit_net`, `unit_tax`, `total_net`,
+  `total_tax`). Safety cap применяется и к производным gross-значениям позиции и
+  заказа.
+- `orderCustomer.customerNumber` равен номеру привязанного Shopware customer; для
+  guest и unlinked orders он `null`. Source ID в customer number не используется.
+- Configuration failure (sales channel, `order.state`
+  `open/in_progress/completed`, `order_transaction.state` `open/paid`,
+  `order_delivery.state` `open/shipped`, legacy methods) обнаруживается до чтения
+  файла и прерывает запуск без записи.
+- Исторический заказ остаётся stock-neutral во всём жизненном цикле: import,
+  update, delete и state transitions `cancel`/`reopen`. Защита переходов не
+  добавляет marker SQL в обычный checkout insert; допустим один marker lookup на
+  state transition заказа. Следствие: `product.sales` не учитывает исторические
+  продажи, сортировка по продажам начинается с go-live. Учёт истории в
+  `product.sales` возможен только отдельным backfill, а не через stock lifecycle.
+- Открытый операционный риск вне этой итерации: Administration «Recalculate»
+  (`RecalculationService`) пересчитает `product` позиции исторического заказа по
+  текущим ценам. До отдельного решения исторические заказы не пересчитываются;
+  блокировка или предупреждение — отдельная задача.
+- `MAPPING_VERSION` повышается при каждом изменении проекции, чтобы повторный
+  apply переписал уже импортированные orders.
 
 ## Границы
 
@@ -348,7 +385,8 @@ jv_cosmoshop_mail_artifact_present
 Source payment/transaction reference и customer comment сохраняются в
 соответствующих Shopware полях, но никогда не входят в console/log report.
 
-После каждого apply глобальный Shopware order number range поднимается не ниже
+После каждого apply выбранный по правилам Shopware order number range
+(market assignment, затем global) поднимается не ниже
 максимального импортированного числового order number. Уже более высокое
 значение не уменьшается. Это предотвращает создание нового заказа с занятым
 историческим номером.
@@ -429,7 +467,7 @@ Acceptance до включения Lead Management/Analytics проверяет:
 
 ## Проверка
 
-Мои RED-тесты основных сценариев должны подтвердить:
+Автоматические тесты подтверждают:
 
 - deterministic market-scoped IDs;
 - dry-run, apply и repeat одного полного order aggregate;
@@ -446,9 +484,18 @@ Acceptance до включения Lead Management/Analytics проверяет:
 - command output/logging не раскрывает source или exception material;
 - import не dispatch-ит `checkout.order.placed`, не меняет stock и не создаёт
   email/analytics side effects.
+- status `5`/`8`, `non-eu`, explicit `lief` и клон billing, сумма нескольких
+  shipping lines и нулевая product line спроецированы точно;
+- существующий order без markers не усыновляется, одинаковый number другого
+  market не является collision, неизвестный source vocabulary invalid;
+- округление до центов с сохранением source amounts и derived safety cap;
+- cancel/reopen/delete исторического заказа не меняют stock, а тот же заказ без
+  marker меняет;
+- configuration failure прерывает запуск до первой записи;
+- stale-line cleanup выполняет один batched binary lookup на chunk.
 
-Ручная приёмка после реализации выполняется имплементером на disposable
-Shopware DB: полный ignored export, dry-run, apply, repeat и reconciliation по
-orders/positions/addresses/totals/status/missing links. Architect получает
-только агрегаты и checksums и выборочно проверяет target Shopware. До решения по
+Ручная приёмка после реализации выполняется на disposable Shopware DB: полный
+ignored export, dry-run, apply, repeat и reconciliation по
+orders/positions/addresses/totals/status/missing links. В отчёт приёмки попадают
+только агрегаты и checksums; target Shopware проверяется выборочно. До решения по
 522 неполным orders полный DE migration не считается принятой.
