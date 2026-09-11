@@ -98,7 +98,7 @@ CosmoShop — внешний инструмент и не входит в backen
 # 1. Сначала reference data: внешний exporter сформировал JSON справочников
 #    для выбранного рынка. Это не JSONL и не промежуточный product export.
 bin/console jv:catalog:upsert-cosmoshop-references \
-  /path/to/cosmoshop-references.json \
+  data/import/cosmoshop/jvmoebel.de-references.json \
   --market=jvmoebel.de \
   --no-interaction
 

@@ -21,6 +21,14 @@ x-shopware-runtime: &shopware-runtime
   SYMFONY_TRUSTED_PROXIES: REMOTE_ADDR
   JV_MARKET_SALES_CHANNEL_URL_TEMPLATE: https://{domain}
 
+# Aftercool credentials are exposed only to the HTTP entry point and the
+# asynchronous importer. Bootstrap and scheduler do not call Aftercool.
+x-aftercool-runtime: &aftercool-runtime
+  AFTERCOOL_BASE_URI: ${AFTERCOOL_BASE_URI:?AFTERCOOL_BASE_URI is required}
+  AFTERCOOL_USERNAME: ${AFTERCOOL_USERNAME:?AFTERCOOL_USERNAME is required}
+  AFTERCOOL_PASSWORD: ${AFTERCOOL_PASSWORD:?AFTERCOOL_PASSWORD is required}
+  AFTERCOOL_TIMEOUT: ${AFTERCOOL_TIMEOUT:-20}
+
 x-shopware-storage: &shopware-storage
   - ${SHOPWARE_STORAGE_PATH:?SHOPWARE_STORAGE_PATH is required}/files:/var/www/html/files
   - ${SHOPWARE_STORAGE_PATH:?SHOPWARE_STORAGE_PATH is required}/bundles:/var/www/html/public/bundles
@@ -57,7 +65,8 @@ services:
     cpus: ${WEB_CPU_LIMIT:-2.0}
     pids_limit: ${WEB_PIDS_LIMIT:-512}
     stop_grace_period: 30s
-    environment: *shopware-runtime
+    environment:
+      <<: [*shopware-runtime, *aftercool-runtime]
     depends_on: { bootstrap: { condition: service_completed_successfully } }
     volumes: *shopware-storage
     networks:
@@ -82,7 +91,8 @@ services:
     pids_limit: ${WORKER_PIDS_LIMIT:-256}
     stop_grace_period: 60s
     command: ["php", "bin/console", "messenger:consume", "async", "low_priority", "--memory-limit=512M", "--time-limit=3600"]
-    environment: *shopware-runtime
+    environment:
+      <<: [*shopware-runtime, *aftercool-runtime]
     depends_on: { bootstrap: { condition: service_completed_successfully } }
     volumes: *shopware-storage
     networks: [database, application]
