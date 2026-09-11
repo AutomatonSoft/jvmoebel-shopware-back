@@ -21,8 +21,10 @@ final class HistoricalOrderStockStorageTest extends TestCase
         $connection = $this->createMock(Connection::class);
         $historicalId = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
         $normalId = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+        // The core stock subscriber builds StockAlteration::$lineItemId from a plain, un-hexed
+        // `id` column select, so it always arrives as raw binary, never as a hex string.
         $decorated->expects(self::once())->method('alter')->with(
-            self::callback(static fn (array $changes): bool => 1 === count($changes) && $normalId === $changes[0]->lineItemId),
+            self::callback(static fn (array $changes): bool => 1 === count($changes) && hex2bin($normalId) === $changes[0]->lineItemId),
             self::isInstanceOf(Context::class),
         );
 
@@ -31,8 +33,8 @@ final class HistoricalOrderStockStorageTest extends TestCase
         $storage = new HistoricalOrderStockStorage($decorated, $connection);
         $storage->captureHistoricalLines($this->historicalWriteEvent($context, $historicalId));
         $storage->alter([
-            new StockAlteration($historicalId, 'product-a', 2, 0),
-            new StockAlteration($normalId, 'product-b', 2, 0),
+            new StockAlteration((string) hex2bin($historicalId), 'product-a', 2, 0),
+            new StockAlteration((string) hex2bin($normalId), 'product-b', 2, 0),
         ], $context);
     }
 
@@ -47,7 +49,7 @@ final class HistoricalOrderStockStorageTest extends TestCase
         $connection->expects(self::once())->method('fetchFirstColumn')->willReturn([$historicalId]);
         $storage = new HistoricalOrderStockStorage($decorated, $connection);
         $storage->captureHistoricalLines($this->historicalWriteEvent($context, $historicalId));
-        $storage->alter([new StockAlteration($historicalId, 'product-a', 2, 0)], $context);
+        $storage->alter([new StockAlteration((string) hex2bin($historicalId), 'product-a', 2, 0)], $context);
     }
 
     public function testOrdinaryCheckoutCreateDoesNotRunMarkerQuery(): void
@@ -68,7 +70,7 @@ final class HistoricalOrderStockStorageTest extends TestCase
 
         $storage = new HistoricalOrderStockStorage($decorated, $connection);
         $storage->captureHistoricalLines($event);
-        $storage->alter([new StockAlteration($normalId, 'product-b', 2, 0)], $context);
+        $storage->alter([new StockAlteration((string) hex2bin($normalId), 'product-b', 2, 0)], $context);
     }
 
     private function historicalWriteEvent(Context $context, string $id): EntityWriteEvent

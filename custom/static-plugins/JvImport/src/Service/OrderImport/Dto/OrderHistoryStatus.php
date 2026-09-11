@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Jv\Import\Integration\CosmoShop\Order;
+namespace Jv\Import\Service\OrderImport\Dto;
 
-enum CosmoShopOrderHistoryStatus: string
+enum OrderHistoryStatus: string
 {
     case OPEN = 'open';
     case IN_PROGRESS = 'in_progress';

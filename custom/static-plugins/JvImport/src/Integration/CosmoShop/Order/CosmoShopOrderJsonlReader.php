@@ -2,13 +2,12 @@
 
 namespace Jv\Import\Integration\CosmoShop\Order;
 
+use Jv\Import\Service\OrderImport\Dto\InvalidOrderRecord;
+
+/** Streams the CosmoShop order JSONL file without loading it into memory. It only decodes lines; it never validates their shape. */
 final class CosmoShopOrderJsonlReader
 {
-    public function __construct(private readonly ?CosmoShopOrderNormalizer $normalizer = null)
-    {
-    }
-
-    /** @return \Generator<int, array{record?: CosmoShopOrderData, invalid?: true}> */
+    /** @return \Generator<int, array<string, mixed>|InvalidOrderRecord> */
     public function read(string $file): \Generator
     {
         $stream = fopen($file, 'rb');
@@ -20,25 +19,20 @@ final class CosmoShopOrderJsonlReader
             while (false !== ($line = fgets($stream))) {
                 $line = rtrim($line, "\r\n");
                 if ('' === $line) {
-                    yield ['invalid' => true];
+                    yield new InvalidOrderRecord();
                     continue;
                 }
                 try {
-                    $record = json_decode($line, true, 512, JSON_THROW_ON_ERROR);
+                    $record = json_decode($line, true, 512, \JSON_THROW_ON_ERROR);
                 } catch (\JsonException) {
-                    yield ['invalid' => true];
+                    yield new InvalidOrderRecord();
                     continue;
                 }
                 if (!is_array($record)) {
-                    yield ['invalid' => true];
+                    yield new InvalidOrderRecord();
                     continue;
                 }
-                $normalized = ($this->normalizer ?? new CosmoShopOrderNormalizer())->normalize($record);
-                if (null === $normalized) {
-                    yield ['invalid' => true];
-                    continue;
-                }
-                yield ['record' => $normalized];
+                yield $record;
             }
         } finally {
             fclose($stream);

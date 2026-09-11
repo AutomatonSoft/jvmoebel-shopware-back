@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Jv\Import\Integration\CosmoShop\Order;
+namespace Jv\Import\Service\OrderImport\Dto;
 
-enum CosmoShopOrderVatType: string
+enum OrderVatType: string
 {
     case NORMAL = 'normal';
     case EU_EXEMPT = 'ustid-befreit';

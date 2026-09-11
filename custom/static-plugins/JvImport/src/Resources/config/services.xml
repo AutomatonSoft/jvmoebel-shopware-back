@@ -232,39 +232,26 @@
             <argument type="service" id="sales_channel.repository"/>
         </service>
         <service id="Jv\Import\Integration\CosmoShop\Order\CosmoShopOrderJsonlReader"/>
+        <service id="Jv\Import\Integration\CosmoShop\Order\CosmoShopOrderNormalizer"/>
+        <service id="Jv\Import\Integration\CosmoShop\Order\CosmoShopOrderJsonlSource"/>
+        <service id="Jv\Import\Service\OrderImport\Contract\OrderSourceInterface" alias="Jv\Import\Integration\CosmoShop\Order\CosmoShopOrderJsonlSource"/>
         <service id="Jv\Import\Service\OrderImport\HistoricalOrderStockStorage" decorates="Shopware\Core\Content\Product\Stock\StockStorage">
             <argument type="service" id="Jv\Import\Service\OrderImport\HistoricalOrderStockStorage.inner"/>
             <argument type="service" id="Doctrine\DBAL\Connection"/>
             <tag name="kernel.event_subscriber"/>
         </service>
-        <service id="Jv\Import\Service\OrderImport\ApplyCosmoShopOrdersService">
-            <argument type="service" id="Jv\Import\Integration\CosmoShop\Order\CosmoShopOrderJsonlReader"/>
-            <argument type="service" id="order.repository"/>
-            <argument type="service" id="customer.repository"/>
-            <argument type="service" id="product.repository"/>
-            <argument type="service" id="Jv\Import\Service\OrderImport\CosmoShopOrderReferenceResolver"/>
-            <argument type="service" id="Jv\Import\Service\OrderImport\CosmoShopLegacyMethodBootstrapper"/>
-            <argument type="service" id="Jv\Import\Service\OrderImport\CosmoShopHistoricalOrderWriter"/>
-            <argument type="service" id="Jv\Import\Service\OrderImport\CosmoShopOrderNumberRangeSynchronizer"/>
-            <argument type="service" id="Jv\Import\Service\OrderImport\CosmoShopOrderPriceProjector"/>
-            <argument type="service" id="Jv\Import\Service\OrderImport\CosmoShopOrderSourceProjection"/>
-        </service>
+        <service id="Jv\Import\Service\OrderImport\ApplyCosmoShopOrdersService"/>
+        <service id="Jv\Import\Service\OrderImport\BuildHistoricalOrderPayloadService"/>
         <service id="Jv\Import\Service\OrderImport\CosmoShopLegacyMethodBootstrapper">
             <argument type="service" id="payment_method.repository"/>
             <argument type="service" id="shipping_method.repository"/>
         </service>
-        <service id="Jv\Import\Service\OrderImport\CosmoShopHistoricalOrderWriter">
-            <argument type="service" id="order.repository"/>
-            <argument type="service" id="order_line_item.repository"/>
-            <argument type="service" id="Doctrine\DBAL\Connection"/>
-            <argument type="service" id="logger"/>
-        </service>
+        <service id="Jv\Import\Service\OrderImport\CosmoShopHistoricalOrderWriter"/>
         <service id="Jv\Import\Service\OrderImport\CosmoShopOrderNumberRangeSynchronizer">
             <argument type="service" id="Shopware\Core\System\NumberRange\ValueGenerator\Pattern\IncrementStorage\AbstractIncrementStorage"/>
             <argument type="service" id="Doctrine\DBAL\Connection"/>
         </service>
         <service id="Jv\Import\Service\OrderImport\CosmoShopOrderPriceProjector"/>
-        <service id="Jv\Import\Service\OrderImport\CosmoShopOrderSourceProjection"/>
         <service id="Jv\Import\Service\OrderImport\CosmoShopOrderReferenceResolver">
             <argument type="service" id="sales_channel.repository"/>
             <argument type="service" id="salutation.repository"/>

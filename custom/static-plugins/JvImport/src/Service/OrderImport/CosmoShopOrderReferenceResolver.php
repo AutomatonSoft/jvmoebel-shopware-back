@@ -49,7 +49,24 @@ final readonly class CosmoShopOrderReferenceResolver
         foreach ($this->salutations->search(new Criteria(), $context) as $salutation) {
             $salutations[(string) $salutation->get('salutationKey')] = $salutation->getUniqueIdentifier();
         }
+        $this->assertRequiredStatesArePresent($states);
 
         return new CosmoShopOrderReferences($salesChannel, $countryIds, $states, $salutations);
+    }
+
+    /** @param array<string, string> $states */
+    private function assertRequiredStatesArePresent(array $states): void
+    {
+        // SPEC-021: a missing required state is a configuration failure that must abort the whole run before any read.
+        $required = [
+            'order.state.open', 'order.state.in_progress', 'order.state.completed',
+            'order_transaction.state.open', 'order_transaction.state.paid',
+            'order_delivery.state.open', 'order_delivery.state.shipped',
+        ];
+        foreach ($required as $key) {
+            if (!isset($states[$key])) {
+                throw new CosmoShopOrderConfigurationException(sprintf('Required state machine state "%s" is unavailable.', $key));
+            }
+        }
     }
 }

@@ -16,7 +16,10 @@ final readonly class CosmoShopOrderNumberRangeSynchronizer
     /** @param list<string> $written */
     public function synchronize(Market $market, array $written): void
     {
-        $numbers = [...$written, ...$this->connection->fetchFirstColumn('SELECT order_number FROM `order` WHERE JSON_EXTRACT(custom_fields, \'$.jv_cosmoshop_historical_import\') = true AND JSON_UNQUOTE(JSON_EXTRACT(custom_fields, \'$.jv_cosmoshop_source_market\')) = ?', [$market->domain()])];
+        // `order`.custom_fields is a registered custom-field-set JsonField: Shopware normalises the
+        // registered bool value to a JSON number on write (`1`, not `true`), so both textual forms
+        // are matched.
+        $numbers = [...$written, ...$this->connection->fetchFirstColumn("SELECT order_number FROM `order` WHERE JSON_UNQUOTE(JSON_EXTRACT(custom_fields, '\$.jv_cosmoshop_historical_import')) IN ('1', 'true') AND JSON_UNQUOTE(JSON_EXTRACT(custom_fields, '\$.jv_cosmoshop_source_market')) = ?", [$market->domain()])];
         $numbers = array_map(static fn (string $number): int => (int) $number, array_filter($numbers, static fn (string $number): bool => ctype_digit($number)));
         if ([] === $numbers) {
             return;

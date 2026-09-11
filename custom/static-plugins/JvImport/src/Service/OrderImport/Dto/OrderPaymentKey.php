@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace Jv\Import\Integration\CosmoShop\Order;
+namespace Jv\Import\Service\OrderImport\Dto;
 
-enum CosmoShopOrderPaymentKey: string
+enum OrderPaymentKey: string
 {
     case AMAZON_PAY = 'amazon_pay';
     case CASH_ON_DELIVERY = 'cash_on_delivery';

@@ -2,10 +2,7 @@
 
 namespace Jv\Import\Service\OrderImport\Exception;
 
+/** A required reference (sales channel, state machine state, legacy method) is unavailable; the whole run aborts before any write. */
 final class CosmoShopOrderConfigurationException extends \RuntimeException
 {
-    public function __construct(string $message, public readonly string $reason = 'configuration')
-    {
-        parent::__construct($message);
-    }
 }
