@@ -53,3 +53,21 @@ docker compose down
 Стандартные dev-порты Shopware (`8080`, `5173`, `5773`, `9998`, `9999`) также опубликованы на `127.0.0.1` для Administration и Storefront watchers/hot reload. Само наличие mapping не запускает watcher: нужная dev-команда запускается отдельно во время работы над соответствующим интерфейсом.
 
 Xdebug доступен только в контейнере `web` и подключается к IDE по `host.docker.internal:9003`; отладка запускается по trigger (например, cookie, query-параметр или `XDEBUG_TRIGGER`). Порт 9003 наружу не публикуется.
+
+## Конфигурация staging и production
+
+Полный контракт переменных для `compose.deploy.yml` хранится в
+`.env.deploy.example`. Для каждого окружения deployment runtime использует
+отдельный защищённый env-файл с реальными значениями; этот файл не коммитится.
+Новая runtime-переменная одновременно добавляется в Compose и в шаблон. CI
+проверяет их согласованность командой:
+
+```bash
+bin/validate-deployment-env-template
+```
+
+Aftercool credentials обязательны для `web` и `worker`: первый обслуживает
+Administration preview и запуск импорта, второй выполняет импорт в фоне.
+До развёртывания нужно задать `AFTERCOOL_BASE_URI`, `AFTERCOOL_USERNAME`,
+`AFTERCOOL_PASSWORD` и при необходимости `AFTERCOOL_TIMEOUT` в защищённой
+конфигурации соответствующего окружения.
