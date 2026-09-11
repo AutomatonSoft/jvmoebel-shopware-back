@@ -4,7 +4,10 @@
 
 Реализовать в плагине `JvCms` CMS element/block `jv-faq`: редактор задаёт текст секции и упорядоченные вопросы с rich-text ответами, а Store API отдаёт канонический `data` для существующего Next.js renderer.
 
-Межрепозиторный контракт на момент задачи: `frontend/docs/components/jv-faq.md`, parser `frontend/src/features/cms/contracts/faq.ts` и mock `frontend/src/features/offers/fixtures/discount-offers-page.ts`.
+Межрепозиторный контракт: `jvmoebel-shopware-docs` /
+`docs/specs/SPEC-041-cms-faq.md`. Реализация parser описана также в
+`frontend/docs/components/jv-faq.md`, `frontend/src/features/cms/contracts/faq.ts`
+и mock `frontend/src/features/offers/fixtures/discount-offers-page.ts`.
 
 Только backend: Administration, resolver, typed structs и тесты. Публичная разметка, accordion и sanitizer остаются в Next.js (`CmsFaq`).
 

@@ -216,4 +216,5 @@ module/sw-cms/blocks/jv-social-block/jv-social-block/
 - Store API отвечает массивом `data.items` по примеру выше;
 - повреждённые UUID/config не вызывают HTTP 500.
 
-По запросу задачи тесты и полная Administration build не запускаются; выполняются только синтаксические проверки изменённых PHP, JavaScript, JSON, XML, Twig/SCSS там, где доступен синтаксический инструмент.
+Полный стандартный набор проверок, включая сборку Administration после изменения
+её исходников, описан в `docs/WORKFLOW.md`.
