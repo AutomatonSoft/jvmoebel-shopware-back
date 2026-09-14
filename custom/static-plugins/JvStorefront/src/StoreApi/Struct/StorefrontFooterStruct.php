@@ -7,10 +7,12 @@ use Shopware\Core\Framework\Struct\Struct;
 final class StorefrontFooterStruct extends Struct
 {
     /**
-     * @param list<StorefrontNavigationItemStruct> $categoryNavigation
-     * @param list<StorefrontNavigationItemStruct> $serviceNavigation
-     * @param list<StorefrontSocialLinkStruct>     $socialLinks
-     * @param list<StorefrontPaymentBadgeStruct>   $paymentBadges
+     * @param list<StorefrontNavigationItemStruct>    $categoryNavigation
+     * @param list<StorefrontNavigationItemStruct>    $serviceNavigation
+     * @param list<StorefrontSocialLinkStruct>        $socialLinks
+     * @param list<StorefrontPaymentBadgeStruct>      $paymentBadges
+     * @param list<StorefrontShippingBadgeStruct>     $shippingBadges
+     * @param list<StorefrontInternationalLinkStruct> $internationalLinks
      */
     public function __construct(
         protected StorefrontFooterAboutStruct $about,
@@ -20,6 +22,8 @@ final class StorefrontFooterStruct extends Struct
         protected array $serviceNavigation,
         protected array $socialLinks,
         protected array $paymentBadges,
+        protected array $shippingBadges,
+        protected array $internationalLinks,
     ) {
     }
 
@@ -60,6 +64,18 @@ final class StorefrontFooterStruct extends Struct
     public function getPaymentBadges(): array
     {
         return $this->paymentBadges;
+    }
+
+    /** @return list<StorefrontShippingBadgeStruct> */
+    public function getShippingBadges(): array
+    {
+        return $this->shippingBadges;
+    }
+
+    /** @return list<StorefrontInternationalLinkStruct> */
+    public function getInternationalLinks(): array
+    {
+        return $this->internationalLinks;
     }
 
     public function getApiAlias(): string
