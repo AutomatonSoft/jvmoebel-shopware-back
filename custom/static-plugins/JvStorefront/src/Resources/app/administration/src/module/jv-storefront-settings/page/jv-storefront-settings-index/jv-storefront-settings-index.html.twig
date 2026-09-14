@@ -215,6 +215,96 @@
                     </template>
                 </sw-data-grid>
             </mt-card>
+
+            <mt-card
+                v-if="salesChannel"
+                position-identifier="jv-storefront-settings-shipping-badges"
+                :title="$t('jv-storefront-settings.shipping.title')"
+            >
+                <template #toolbar>
+                    <mt-button
+                        size="small"
+                        variant="secondary"
+                        :disabled="!salesChannelId"
+                        @click="openShippingBadgeCreate"
+                    >
+                        {{ $t('jv-storefront-settings.actions.add') }}
+                    </mt-button>
+                </template>
+
+                <sw-data-grid
+                    v-if="salesChannelId"
+                    identifier="jv-storefront-settings-shipping-badges"
+                    :data-source="shippingBadges"
+                    :columns="shippingBadgeGridColumns"
+                    :is-loading="isShippingBadgesLoading"
+                    :show-selection="false"
+                    :show-settings="false"
+                >
+                    <template #column-active="{ item }">
+                        <span class="sw-data-grid__cell-value">{{ formatActive(item.active) }}</span>
+                    </template>
+
+                    <template #actions="{ item }">
+                        <sw-context-menu-item @click="openShippingBadgeEdit(item)">
+                            {{ $t('global.default.edit') }}
+                        </sw-context-menu-item>
+                        <sw-context-menu-item
+                            variant="danger"
+                            @click="deleteShippingBadge(item)"
+                        >
+                            {{ $t('global.default.delete') }}
+                        </sw-context-menu-item>
+                    </template>
+                </sw-data-grid>
+            </mt-card>
+
+            <mt-card
+                v-if="salesChannel"
+                position-identifier="jv-storefront-settings-international-links"
+                :title="$t('jv-storefront-settings.international.title')"
+            >
+                <template #toolbar>
+                    <mt-button
+                        size="small"
+                        variant="secondary"
+                        :disabled="!salesChannelId"
+                        @click="openInternationalLinkCreate"
+                    >
+                        {{ $t('jv-storefront-settings.actions.add') }}
+                    </mt-button>
+                </template>
+
+                <sw-data-grid
+                    v-if="salesChannelId"
+                    identifier="jv-storefront-settings-international-links"
+                    :data-source="internationalLinks"
+                    :columns="internationalLinkGridColumns"
+                    :is-loading="isInternationalLinksLoading"
+                    :show-selection="false"
+                    :show-settings="false"
+                >
+                    <template #column-targetSalesChannel="{ item }">
+                        <span class="sw-data-grid__cell-value">{{ formatTargetSalesChannelName(item) }}</span>
+                    </template>
+
+                    <template #column-active="{ item }">
+                        <span class="sw-data-grid__cell-value">{{ formatActive(item.active) }}</span>
+                    </template>
+
+                    <template #actions="{ item }">
+                        <sw-context-menu-item @click="openInternationalLinkEdit(item)">
+                            {{ $t('global.default.edit') }}
+                        </sw-context-menu-item>
+                        <sw-context-menu-item
+                            variant="danger"
+                            @click="deleteInternationalLink(item)"
+                        >
+                            {{ $t('global.default.delete') }}
+                        </sw-context-menu-item>
+                    </template>
+                </sw-data-grid>
+            </mt-card>
         </sw-card-view>
 
         <sw-media-modal-v2
@@ -375,6 +465,153 @@
                         variant="primary"
                         :is-loading="isPaymentBadgeSaving"
                         @click="savePaymentBadgeDraft"
+                    >
+                        {{ $t('global.default.save') }}
+                    </mt-modal-action>
+                </template>
+            </mt-modal>
+        </mt-modal-root>
+
+        <mt-modal-root
+            :is-open="shippingBadgeModalOpen"
+            @change="onShippingBadgeModalChange"
+        >
+            <mt-modal
+                v-if="shippingBadgeDraft"
+                class="jv-storefront-settings-modal"
+                width="s"
+                :title="isShippingBadgeCreate ? $t('jv-storefront-settings.modal.shippingCreate') : $t('jv-storefront-settings.modal.shippingEdit')"
+            >
+                <sw-text-field
+                    v-model:value="shippingBadgeDraft.label"
+                    :label="$t('jv-storefront-settings.list.label')"
+                    :help-text="$t('jv-storefront-settings.shipping.labelHelp')"
+                />
+                <div class="jv-storefront-settings-index__icon-field">
+                    <label class="jv-storefront-settings-index__logo-label">
+                        {{ $t('jv-storefront-settings.list.icon') }}
+                    </label>
+
+                    <sw-media-upload-v2
+                        variant="regular"
+                        :upload-tag="shippingBadgeIconUploadTag"
+                        :source="shippingBadgeIconPreviewSource"
+                        :allow-multi-select="false"
+                        :caption="$t('jv-storefront-settings.list.iconCaption')"
+                        :on-media-upload-sidebar-open="openShippingBadgeIconMediaModal"
+                        @media-upload-sidebar-open="openShippingBadgeIconMediaModal"
+                        @media-upload-remove-image="onShippingBadgeIconRemove"
+                    />
+
+                    <sw-upload-listener
+                        :upload-tag="shippingBadgeIconUploadTag"
+                        auto-upload
+                        @media-upload-finish="onShippingBadgeIconUpload"
+                    />
+                </div>
+                <mt-number-field
+                    v-model="shippingBadgeDraft.position"
+                    number-type="int"
+                    :label="$t('jv-storefront-settings.list.position')"
+                />
+                <sw-switch-field
+                    v-model:value="shippingBadgeDraft.active"
+                    :label="$t('jv-storefront-settings.list.active')"
+                />
+
+                <template #footer>
+                    <mt-modal-close
+                        as="mt-button"
+                        size="small"
+                        variant="secondary"
+                    >
+                        {{ $t('global.default.cancel') }}
+                    </mt-modal-close>
+                    <mt-modal-action
+                        as="mt-button"
+                        size="small"
+                        variant="primary"
+                        :is-loading="isShippingBadgeSaving"
+                        @click="saveShippingBadgeDraft"
+                    >
+                        {{ $t('global.default.save') }}
+                    </mt-modal-action>
+                </template>
+            </mt-modal>
+        </mt-modal-root>
+
+        <mt-modal-root
+            :is-open="internationalLinkModalOpen"
+            @change="onInternationalLinkModalChange"
+        >
+            <mt-modal
+                v-if="internationalLinkDraft"
+                class="jv-storefront-settings-modal"
+                width="s"
+                :title="isInternationalLinkCreate ? $t('jv-storefront-settings.modal.internationalCreate') : $t('jv-storefront-settings.modal.internationalEdit')"
+            >
+                <sw-entity-single-select
+                    v-model:value="internationalLinkDraft.targetSalesChannelId"
+                    entity="sales_channel"
+                    :criteria="targetSalesChannelCriteria"
+                    :label="$t('jv-storefront-settings.international.targetSalesChannel')"
+                    required
+                />
+                <sw-text-field
+                    v-model:value="internationalLinkDraft.label"
+                    :label="$t('jv-storefront-settings.list.label')"
+                    :help-text="$t('jv-storefront-settings.international.labelHelp')"
+                />
+                <div class="jv-storefront-settings-index__icon-field">
+                    <label class="jv-storefront-settings-index__logo-label">
+                        {{ $t('jv-storefront-settings.international.flagIcon') }}
+                    </label>
+
+                    <sw-media-upload-v2
+                        variant="regular"
+                        :upload-tag="internationalLinkIconUploadTag"
+                        :source="internationalLinkIconPreviewSource"
+                        :allow-multi-select="false"
+                        :caption="$t('jv-storefront-settings.international.flagIconCaption')"
+                        :on-media-upload-sidebar-open="openInternationalLinkIconMediaModal"
+                        @media-upload-sidebar-open="openInternationalLinkIconMediaModal"
+                        @media-upload-remove-image="onInternationalLinkIconRemove"
+                    />
+
+                    <sw-upload-listener
+                        :upload-tag="internationalLinkIconUploadTag"
+                        auto-upload
+                        @media-upload-finish="onInternationalLinkIconUpload"
+                    />
+                </div>
+                <mt-number-field
+                    v-model="internationalLinkDraft.position"
+                    number-type="int"
+                    :label="$t('jv-storefront-settings.list.position')"
+                />
+                <sw-switch-field
+                    v-model:value="internationalLinkDraft.active"
+                    :label="$t('jv-storefront-settings.list.active')"
+                />
+                <sw-switch-field
+                    v-model:value="internationalLinkDraft.openInNewTab"
+                    :label="$t('jv-storefront-settings.list.openInNewTab')"
+                />
+
+                <template #footer>
+                    <mt-modal-close
+                        as="mt-button"
+                        size="small"
+                        variant="secondary"
+                    >
+                        {{ $t('global.default.cancel') }}
+                    </mt-modal-close>
+                    <mt-modal-action
+                        as="mt-button"
+                        size="small"
+                        variant="primary"
+                        :is-loading="isInternationalLinkSaving"
+                        @click="saveInternationalLinkDraft"
                     >
                         {{ $t('global.default.save') }}
                     </mt-modal-action>

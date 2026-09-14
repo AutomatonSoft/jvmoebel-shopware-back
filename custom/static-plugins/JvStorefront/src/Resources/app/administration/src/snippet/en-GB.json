@@ -35,6 +35,17 @@
         "payment": {
             "title": "Payment badges"
         },
+        "shipping": {
+            "title": "Shipping",
+            "labelHelp": "Leave empty to show icon only."
+        },
+        "international": {
+            "title": "International",
+            "targetSalesChannel": "Target sales channel",
+            "flagIcon": "Flag icon",
+            "flagIconCaption": "Select flag icon",
+            "labelHelp": "Leave empty to show flag only."
+        },
         "list": {
             "label": "Label",
             "url": "URL",
@@ -49,7 +60,11 @@
             "socialCreate": "Add social link",
             "socialEdit": "Edit social link",
             "paymentCreate": "Add payment badge",
-            "paymentEdit": "Edit payment badge"
+            "paymentEdit": "Edit payment badge",
+            "shippingCreate": "Add shipping badge",
+            "shippingEdit": "Edit shipping badge",
+            "internationalCreate": "Add international link",
+            "internationalEdit": "Edit international link"
         },
         "actions": {
             "add": "Add"
@@ -66,7 +81,19 @@
             "paymentSaveFailed": "Could not save payment badge.",
             "paymentValidationFailed": "Please fill in label and icon.",
             "paymentDeleted": "Payment badge deleted.",
-            "paymentDeleteFailed": "Could not delete payment badge."
+            "paymentDeleteFailed": "Could not delete payment badge.",
+            "shippingSaved": "Shipping badge saved.",
+            "shippingSaveFailed": "Could not save shipping badge.",
+            "shippingValidationFailed": "Please select an icon.",
+            "shippingDeleted": "Shipping badge deleted.",
+            "shippingDeleteFailed": "Could not delete shipping badge.",
+            "internationalSaved": "International link saved.",
+            "internationalSaveFailed": "Could not save international link.",
+            "internationalValidationFailed": "Please select target sales channel and flag icon.",
+            "internationalSelfTargetFailed": "Target sales channel must differ from the current sales channel.",
+            "internationalDuplicateTargetFailed": "This target sales channel is already linked.",
+            "internationalDeleted": "International link deleted.",
+            "internationalDeleteFailed": "Could not delete international link."
         }
     }
 }

@@ -9,11 +9,14 @@ use Jv\Storefront\StoreApi\Struct\StorefrontFooterAboutStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontFooterRevocationStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontFooterStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontHeaderStruct;
+use Jv\Storefront\StoreApi\Struct\StorefrontInternationalLinkStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontMediaStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontPaymentBadgeStruct;
+use Jv\Storefront\StoreApi\Struct\StorefrontShippingBadgeStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontSocialLinkStruct;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Category\CategoryCollection;
+use Shopware\Core\Content\Media\MediaCollection;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Api\Context\SystemSource;
 use Shopware\Core\Framework\Context;
@@ -24,6 +27,7 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\Api\ResponseFields;
 use Shopware\Core\System\SalesChannel\Api\StructEncoder;
 use Shopware\Core\System\SalesChannel\SalesChannelCollection;
+use Shopware\Core\Test\TestDefaults;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 
 final class StorefrontConfigStoreApiTest extends TestCase
@@ -61,6 +65,8 @@ final class StorefrontConfigStoreApiTest extends TestCase
         self::assertIsArray($payload['header']['navigation'] ?? null);
         self::assertIsArray($payload['footer']['socialLinks'] ?? null);
         self::assertIsArray($payload['footer']['paymentBadges'] ?? null);
+        self::assertIsArray($payload['footer']['shippingBadges'] ?? null);
+        self::assertIsArray($payload['footer']['internationalLinks'] ?? null);
         self::assertIsArray($payload['footer']['categoryNavigation'] ?? null);
         self::assertIsArray($payload['footer']['serviceNavigation'] ?? null);
     }
@@ -120,6 +126,25 @@ final class StorefrontConfigStoreApiTest extends TestCase
                         icon: $icon,
                     ),
                 ],
+                shippingBadges: [
+                    new StorefrontShippingBadgeStruct(
+                        id: Uuid::randomHex(),
+                        label: null,
+                        position: 1,
+                        icon: $icon,
+                    ),
+                ],
+                internationalLinks: [
+                    new StorefrontInternationalLinkStruct(
+                        id: Uuid::randomHex(),
+                        label: null,
+                        url: 'https://www.jvmoebel.at',
+                        targetSalesChannelId: Uuid::randomHex(),
+                        openInNewTab: true,
+                        position: 1,
+                        icon: $icon,
+                    ),
+                ],
             ),
         );
 
@@ -135,6 +160,245 @@ final class StorefrontConfigStoreApiTest extends TestCase
         self::assertSame('jv_storefront_footer_payment_badge', $payload['footer']['paymentBadges'][0]['apiAlias'] ?? null);
         self::assertSame('PayPal', $payload['footer']['paymentBadges'][0]['label'] ?? null);
         self::assertIsArray($payload['footer']['paymentBadges'][0]['icon'] ?? null);
+
+        self::assertCount(1, $payload['footer']['shippingBadges']);
+        self::assertSame('jv_storefront_footer_shipping_badge', $payload['footer']['shippingBadges'][0]['apiAlias'] ?? null);
+        self::assertArrayHasKey('label', $payload['footer']['shippingBadges'][0]);
+        self::assertNull($payload['footer']['shippingBadges'][0]['label']);
+        self::assertIsArray($payload['footer']['shippingBadges'][0]['icon'] ?? null);
+
+        self::assertCount(1, $payload['footer']['internationalLinks']);
+        self::assertSame('jv_storefront_footer_international_link', $payload['footer']['internationalLinks'][0]['apiAlias'] ?? null);
+        self::assertArrayHasKey('label', $payload['footer']['internationalLinks'][0]);
+        self::assertNull($payload['footer']['internationalLinks'][0]['label']);
+        self::assertSame('https://www.jvmoebel.at', $payload['footer']['internationalLinks'][0]['url'] ?? null);
+        self::assertIsArray($payload['footer']['internationalLinks'][0]['icon'] ?? null);
+    }
+
+    public function testInternationalLinksReturnsActiveLinksWithResolvedTargetUrl(): void
+    {
+        $targetSalesChannelId = Uuid::randomHex();
+        $mediaId = Uuid::randomHex();
+        $linkId = Uuid::randomHex();
+
+        /** @var EntityRepository<SalesChannelCollection> $salesChannelRepository */
+        $salesChannelRepository = static::getContainer()->get('sales_channel.repository');
+        $paymentMethod = $this->getAvailablePaymentMethod();
+        $shippingMethod = $this->getAvailableShippingMethod();
+
+        $salesChannelRepository->create([
+            [
+                'id' => $targetSalesChannelId,
+                'typeId' => Defaults::SALES_CHANNEL_TYPE_STOREFRONT,
+                'name' => 'International target channel',
+                'accessKey' => 'target-access-key',
+                'languageId' => Defaults::LANGUAGE_SYSTEM,
+                'snippetSetId' => $this->getSnippetSetIdForLocale('en-GB'),
+                'currencyId' => Defaults::CURRENCY,
+                'paymentMethodId' => $paymentMethod->getId(),
+                'paymentMethods' => [['id' => $paymentMethod->getId()]],
+                'shippingMethodId' => $shippingMethod->getId(),
+                'shippingMethods' => [['id' => $shippingMethod->getId()]],
+                'navigationCategoryId' => $this->getValidCategoryId(),
+                'countryId' => $this->getValidCountryId(null),
+                'currencies' => [['id' => Defaults::CURRENCY]],
+                'languages' => [['id' => Defaults::LANGUAGE_SYSTEM]],
+                'customerGroupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
+                'domains' => [
+                    [
+                        'languageId' => Defaults::LANGUAGE_SYSTEM,
+                        'currencyId' => Defaults::CURRENCY,
+                        'snippetSetId' => $this->getSnippetSetIdForLocale('en-GB'),
+                        'url' => 'https://www.jvmoebel.at',
+                    ],
+                ],
+                'countries' => [['id' => $this->getValidCountryId(null)]],
+            ],
+        ], Context::createDefaultContext());
+
+        /** @var EntityRepository<MediaCollection> $mediaRepository */
+        $mediaRepository = static::getContainer()->get('media.repository');
+        Context::createDefaultContext()->scope(Context::SYSTEM_SCOPE, static function (Context $systemContext) use ($mediaRepository, $mediaId): void {
+            $mediaRepository->create([
+                [
+                    'id' => $mediaId,
+                    'fileName' => 'flag-at',
+                    'fileExtension' => 'png',
+                    'mimeType' => 'image/png',
+                    'fileSize' => 100,
+                    'private' => false,
+                    'path' => 'media/flag-at.png',
+                ],
+            ], $systemContext);
+        });
+
+        $browser = $this->createCustomSalesChannelBrowser();
+        $sourceSalesChannelId = $this->getSalesChannelApiSalesChannelId();
+
+        static::getContainer()->get('jv_storefront_international_link.repository')->create([
+            [
+                'id' => $linkId,
+                'salesChannelId' => $sourceSalesChannelId,
+                'targetSalesChannelId' => $targetSalesChannelId,
+                'label' => 'Austria',
+                'iconMediaId' => $mediaId,
+                'position' => 1,
+                'active' => true,
+                'openInNewTab' => true,
+            ],
+        ], Context::createDefaultContext());
+
+        $browser->request('GET', '/store-api/storefront-config');
+
+        self::assertSame(200, $browser->getResponse()->getStatusCode());
+
+        /** @var array<string, mixed> $payload */
+        $payload = json_decode((string) $browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertCount(1, $payload['footer']['internationalLinks'] ?? []);
+        self::assertSame($linkId, $payload['footer']['internationalLinks'][0]['id'] ?? null);
+        self::assertSame('Austria', $payload['footer']['internationalLinks'][0]['label'] ?? null);
+        self::assertSame('https://www.jvmoebel.at', $payload['footer']['internationalLinks'][0]['url'] ?? null);
+        self::assertSame($targetSalesChannelId, $payload['footer']['internationalLinks'][0]['targetSalesChannelId'] ?? null);
+        self::assertTrue($payload['footer']['internationalLinks'][0]['openInNewTab'] ?? false);
+        self::assertSame('jv_storefront_footer_international_link', $payload['footer']['internationalLinks'][0]['apiAlias'] ?? null);
+        self::assertIsArray($payload['footer']['internationalLinks'][0]['icon'] ?? null);
+    }
+
+    public function testInternationalLinksAllowNullLabel(): void
+    {
+        $targetSalesChannelId = Uuid::randomHex();
+        $mediaId = Uuid::randomHex();
+        $linkId = Uuid::randomHex();
+
+        /** @var EntityRepository<SalesChannelCollection> $salesChannelRepository */
+        $salesChannelRepository = static::getContainer()->get('sales_channel.repository');
+        $paymentMethod = $this->getAvailablePaymentMethod();
+        $shippingMethod = $this->getAvailableShippingMethod();
+
+        $salesChannelRepository->create([
+            [
+                'id' => $targetSalesChannelId,
+                'typeId' => Defaults::SALES_CHANNEL_TYPE_STOREFRONT,
+                'name' => 'International null label target',
+                'accessKey' => 'target-null-label-key',
+                'languageId' => Defaults::LANGUAGE_SYSTEM,
+                'snippetSetId' => $this->getSnippetSetIdForLocale('en-GB'),
+                'currencyId' => Defaults::CURRENCY,
+                'paymentMethodId' => $paymentMethod->getId(),
+                'paymentMethods' => [['id' => $paymentMethod->getId()]],
+                'shippingMethodId' => $shippingMethod->getId(),
+                'shippingMethods' => [['id' => $shippingMethod->getId()]],
+                'navigationCategoryId' => $this->getValidCategoryId(),
+                'countryId' => $this->getValidCountryId(null),
+                'currencies' => [['id' => Defaults::CURRENCY]],
+                'languages' => [['id' => Defaults::LANGUAGE_SYSTEM]],
+                'customerGroupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
+                'domains' => [
+                    [
+                        'languageId' => Defaults::LANGUAGE_SYSTEM,
+                        'currencyId' => Defaults::CURRENCY,
+                        'snippetSetId' => $this->getSnippetSetIdForLocale('en-GB'),
+                        'url' => 'https://www.jvmoebel.ch',
+                    ],
+                ],
+                'countries' => [['id' => $this->getValidCountryId(null)]],
+            ],
+        ], Context::createDefaultContext());
+
+        /** @var EntityRepository<MediaCollection> $mediaRepository */
+        $mediaRepository = static::getContainer()->get('media.repository');
+        Context::createDefaultContext()->scope(Context::SYSTEM_SCOPE, static function (Context $systemContext) use ($mediaRepository, $mediaId): void {
+            $mediaRepository->create([
+                [
+                    'id' => $mediaId,
+                    'fileName' => 'flag-ch',
+                    'fileExtension' => 'png',
+                    'mimeType' => 'image/png',
+                    'fileSize' => 100,
+                    'private' => false,
+                    'path' => 'media/flag-ch.png',
+                ],
+            ], $systemContext);
+        });
+
+        $browser = $this->createCustomSalesChannelBrowser();
+        $sourceSalesChannelId = $this->getSalesChannelApiSalesChannelId();
+
+        static::getContainer()->get('jv_storefront_international_link.repository')->create([
+            [
+                'id' => $linkId,
+                'salesChannelId' => $sourceSalesChannelId,
+                'targetSalesChannelId' => $targetSalesChannelId,
+                'label' => null,
+                'iconMediaId' => $mediaId,
+                'position' => 1,
+                'active' => true,
+                'openInNewTab' => true,
+            ],
+        ], Context::createDefaultContext());
+
+        $browser->request('GET', '/store-api/storefront-config');
+
+        self::assertSame(200, $browser->getResponse()->getStatusCode());
+
+        /** @var array<string, mixed> $payload */
+        $payload = json_decode((string) $browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertCount(1, $payload['footer']['internationalLinks'] ?? []);
+        self::assertArrayHasKey('label', $payload['footer']['internationalLinks'][0]);
+        self::assertNull($payload['footer']['internationalLinks'][0]['label']);
+        self::assertSame('https://www.jvmoebel.ch', $payload['footer']['internationalLinks'][0]['url'] ?? null);
+    }
+
+    public function testShippingBadgesReturnsActiveBadgesWithOptionalLabel(): void
+    {
+        $mediaId = Uuid::randomHex();
+        $badgeId = Uuid::randomHex();
+
+        /** @var EntityRepository<MediaCollection> $mediaRepository */
+        $mediaRepository = static::getContainer()->get('media.repository');
+        Context::createDefaultContext()->scope(Context::SYSTEM_SCOPE, static function (Context $systemContext) use ($mediaRepository, $mediaId): void {
+            $mediaRepository->create([
+                [
+                    'id' => $mediaId,
+                    'fileName' => 'hermes-logo',
+                    'fileExtension' => 'png',
+                    'mimeType' => 'image/png',
+                    'fileSize' => 100,
+                    'private' => false,
+                    'path' => 'media/hermes-logo.png',
+                ],
+            ], $systemContext);
+        });
+
+        $browser = $this->createCustomSalesChannelBrowser();
+        $sourceSalesChannelId = $this->getSalesChannelApiSalesChannelId();
+
+        static::getContainer()->get('jv_storefront_shipping_badge.repository')->create([
+            [
+                'id' => $badgeId,
+                'salesChannelId' => $sourceSalesChannelId,
+                'label' => null,
+                'iconMediaId' => $mediaId,
+                'position' => 1,
+                'active' => true,
+            ],
+        ], Context::createDefaultContext());
+
+        $browser->request('GET', '/store-api/storefront-config');
+
+        self::assertSame(200, $browser->getResponse()->getStatusCode());
+
+        /** @var array<string, mixed> $payload */
+        $payload = json_decode((string) $browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertCount(1, $payload['footer']['shippingBadges'] ?? []);
+        self::assertSame($badgeId, $payload['footer']['shippingBadges'][0]['id'] ?? null);
+        self::assertArrayHasKey('label', $payload['footer']['shippingBadges'][0]);
+        self::assertNull($payload['footer']['shippingBadges'][0]['label']);
+        self::assertSame('jv_storefront_footer_shipping_badge', $payload['footer']['shippingBadges'][0]['apiAlias'] ?? null);
+        self::assertIsArray($payload['footer']['shippingBadges'][0]['icon'] ?? null);
     }
 
     public function testHeaderNavigationUsesOrderedWhitelist(): void
