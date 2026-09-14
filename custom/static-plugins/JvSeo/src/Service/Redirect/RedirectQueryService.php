@@ -64,9 +64,14 @@ final readonly class RedirectQueryService
         }
 
         $result = $this->redirectRepository->search($criteria, $context);
+        $redirects = array_values($result->getElements());
+        $salesChannelNames = $this->salesChannelNames($redirects, $context);
 
         return [
-            'data' => array_values(array_map(fn (RedirectEntity $redirect): array => $this->serialize($redirect), $result->getElements())),
+            'data' => array_map(
+                fn (RedirectEntity $redirect): array => $this->serialize($redirect, $salesChannelNames),
+                $redirects,
+            ),
             'total' => $result->getTotal(),
             'page' => $page,
             'limit' => $limit,
@@ -82,7 +87,9 @@ final readonly class RedirectQueryService
             ->addAssociation('channels.sources');
         $redirect = $this->redirectRepository->search($criteria, $context)->first();
 
-        return $redirect instanceof RedirectEntity ? $this->serialize($redirect) : null;
+        return $redirect instanceof RedirectEntity
+            ? $this->serialize($redirect, $this->salesChannelNames([$redirect], $context))
+            : null;
     }
 
     /** @return list<array{id: string, name: string, domains: list<string>}> */
@@ -90,6 +97,7 @@ final readonly class RedirectQueryService
     {
         $criteria = (new Criteria())
             ->addAssociation('domains')
+            ->addAssociation('translations')
             ->addFilter(new EqualsFilter('typeId', Defaults::SALES_CHANNEL_TYPE_STOREFRONT))
             ->addSorting(new FieldSorting('name'));
 
@@ -100,7 +108,14 @@ final readonly class RedirectQueryService
             );
             sort($domains);
 
-            return ['id' => $salesChannel->getId(), 'name' => $salesChannel->getName(), 'domains' => $domains];
+            $name = $salesChannel->getTranslations()
+                ?->filterByLanguageId(Defaults::LANGUAGE_SYSTEM)
+                ->first()
+                ?->getName()
+                ?? $salesChannel->getName()
+                ?? $salesChannel->getId();
+
+            return ['id' => $salesChannel->getId(), 'name' => $name, 'domains' => $domains];
         }, $this->salesChannelRepository->search($criteria, $context)->getElements()));
     }
 
@@ -114,8 +129,39 @@ final readonly class RedirectQueryService
         ], $this->salesChannels($context));
     }
 
-    /** @return array<string, mixed> */
-    private function serialize(RedirectEntity $redirect): array
+    /**
+     * @param list<RedirectEntity> $redirects
+     *
+     * @return array<string, string>
+     */
+    private function salesChannelNames(array $redirects, Context $context): array
+    {
+        $salesChannelIds = [];
+        foreach ($redirects as $redirect) {
+            foreach ($redirect->getChannels() ?? [] as $channel) {
+                $salesChannelIds[$channel->getSalesChannelId()] = true;
+            }
+        }
+        if ([] === $salesChannelIds) {
+            return [];
+        }
+
+        $names = [];
+        foreach ($this->salesChannels($context) as $salesChannel) {
+            if (isset($salesChannelIds[$salesChannel['id']])) {
+                $names[$salesChannel['id']] = $salesChannel['name'];
+            }
+        }
+
+        return $names;
+    }
+
+    /**
+     * @param array<string, string> $salesChannelNames
+     *
+     * @return array<string, mixed>
+     */
+    private function serialize(RedirectEntity $redirect, array $salesChannelNames): array
     {
         $product = $redirect->getProduct();
         $channels = [];
@@ -133,7 +179,7 @@ final readonly class RedirectQueryService
             $channels[] = [
                 'id' => $channel->getId(),
                 'salesChannelId' => $channel->getSalesChannelId(),
-                'salesChannelName' => $channel->getSalesChannel()?->getName() ?? $channel->getSalesChannelId(),
+                'salesChannelName' => $salesChannelNames[$channel->getSalesChannelId()] ?? $channel->getSalesChannelId(),
                 'targetUrl' => RedirectType::Product->value === $redirect->getType() && null !== $redirect->getProductId()
                     ? $this->targetResolver->resolve($redirect->getProductId(), $channel->getSalesChannelId(), is_string($sourceUrl) ? $sourceUrl : null)
                     : $channel->getTargetUrl(),

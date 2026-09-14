@@ -10,9 +10,9 @@
             v-if="acl.can('product.editor')"
             size="small"
             variant="secondary"
-            :router-link="redirectId
+            @click="$router.push(redirectId
                 ? { name: 'jv.seo.detail', params: { id: redirectId } }
-                : { name: 'jv.seo.create', query: { productId } }"
+                : { name: 'jv.seo.create', query: { productId } })"
         >
             {{ redirectId ? $t('global.default.edit') : $t('jv-seo.actions.create') }}
         </mt-button>

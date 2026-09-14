@@ -8,6 +8,13 @@ export default {
 
     inject: ['jvSeoRedirectApiService', 'acl'],
 
+    props: {
+        searchTerm: {
+            type: String,
+            default: '',
+        },
+    },
+
     mixins: [Mixin.getByName('notification')],
 
     data() {
@@ -46,6 +53,14 @@ export default {
         this.load();
     },
 
+    watch: {
+        searchTerm(term) {
+            this.term = term;
+            this.page = 1;
+            this.load();
+        },
+    },
+
     methods: {
         async load() {
             this.isLoading = true;
@@ -63,12 +78,6 @@ export default {
             } finally {
                 this.isLoading = false;
             }
-        },
-
-        onSearch(term) {
-            this.term = term;
-            this.page = 1;
-            this.load();
         },
 
         onTypeChange() {

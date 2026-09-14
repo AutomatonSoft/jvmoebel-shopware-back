@@ -5,7 +5,7 @@
     </template>
 
     <template #smart-bar-actions>
-        <mt-button variant="secondary" :router-link="{ name: 'jv.seo.index' }">
+        <mt-button variant="secondary" @click="$router.push({ name: 'jv.seo.index.redirects' })">
             {{ $t('global.default.cancel') }}
         </mt-button>
         <mt-button
@@ -54,8 +54,11 @@
                 v-for="channel in draft.channels"
                 :key="channel.salesChannelId"
                 :position-identifier="`jv-seo-channel-${channel.salesChannelId}`"
-                :title="channel.salesChannelName"
             >
+                <h3 class="jv-seo-redirect-detail__channel-title">
+                    {{ channel.salesChannelName }}
+                </h3>
+
                 <sw-switch-field
                     v-model:value="channel.enabled"
                     :label="$t('jv-seo.detail.enableChannel')"

@@ -1,0 +1,37 @@
+{% block jv_seo_index %}
+<sw-page class="jv-seo-index">
+    <template #search-bar>
+        <sw-search-bar
+            :initial-search="searchTerm"
+            :placeholder="$t('jv-seo.list.searchPlaceholder')"
+            @search="onSearch"
+        />
+    </template>
+
+    <template #smart-bar-header>
+        <h2>{{ $t('jv-seo.general.title') }}</h2>
+    </template>
+
+    <template #smart-bar-actions>
+        <mt-button
+            v-if="acl.can('product.editor')"
+            variant="primary"
+            @click="$router.push({ name: 'jv.seo.create' })"
+        >
+            {{ $t('jv-seo.actions.create') }}
+        </mt-button>
+    </template>
+
+    <template #content>
+        <sw-card-view>
+            <sw-tabs position-identifier="jv-seo-tabs">
+                <sw-tabs-item :route="{ name: 'jv.seo.index.redirects' }">
+                    {{ $t('jv-seo.redirects.title') }}
+                </sw-tabs-item>
+            </sw-tabs>
+
+            <router-view :search-term="searchTerm" />
+        </sw-card-view>
+    </template>
+</sw-page>
+{% endblock %}

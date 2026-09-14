@@ -13,6 +13,7 @@ use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
 use Shopware\Core\Content\Test\Product\ProductBuilder;
 use Shopware\Core\Defaults;
+use Shopware\Core\Framework\Api\Context\SystemSource;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -254,6 +255,10 @@ final class RedirectWorkflowTest extends TestCase
 
     public function testGeneralRedirectSupportsMultipleSourcesAndRejectsInvalidUrls(): void
     {
+        static::getContainer()->get('sales_channel.repository')->update([[
+            'id' => $this->salesChannelId,
+            'name' => 'JVMöbel Deutschland',
+        ]], Context::createDefaultContext());
         $redirectId = $this->save()->create([
             'type' => 'general',
             'channels' => [[
@@ -267,9 +272,13 @@ final class RedirectWorkflowTest extends TestCase
             ]],
         ], Context::createDefaultContext());
 
-        $detail = $this->query()->detail($redirectId, Context::createDefaultContext());
+        $detail = $this->query()->detail($redirectId, new Context(
+            new SystemSource(),
+            languageIdChain: [Uuid::randomHex()],
+        ));
         self::assertNotNull($detail);
         self::assertCount(2, $detail['channels'][0]['sources']);
+        self::assertSame('JVMöbel Deutschland', $detail['channels'][0]['salesChannelName']);
         self::assertSame(
             'https://www.jvmoebel.de/new-page',
             $this->lookup()->lookup(
