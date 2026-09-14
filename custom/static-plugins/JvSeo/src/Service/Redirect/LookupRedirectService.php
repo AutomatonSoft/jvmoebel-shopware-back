@@ -1,0 +1,60 @@
+<?php declare(strict_types=1);
+
+namespace Jv\Seo\Service\Redirect;
+
+use Jv\Seo\Core\Content\Redirect\RedirectEntity;
+use Jv\Seo\Core\Content\RedirectChannel\RedirectChannelEntity;
+use Jv\Seo\Core\Content\RedirectSource\RedirectSourceCollection;
+use Jv\Seo\Core\Content\RedirectSource\RedirectSourceEntity;
+use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+
+final readonly class LookupRedirectService
+{
+    /** @param EntityRepository<RedirectSourceCollection> $sourceRepository */
+    public function __construct(
+        private EntityRepository $sourceRepository,
+        private UrlNormalizer $urlNormalizer,
+        private ProductTargetUrlResolver $targetResolver,
+    ) {
+    }
+
+    /** @return array{statusCode: 301, type: string, targetUrl: string, productId: ?string}|null */
+    public function lookup(string $sourceUrl, string $salesChannelId, Context $context): ?array
+    {
+        $sourceUrl = $this->urlNormalizer->validate($sourceUrl);
+        $criteria = (new Criteria())
+            ->addAssociation('channel.redirect')
+            ->addFilter(new EqualsFilter('activeSourceUrlHash', $this->urlNormalizer->hash($sourceUrl)))
+            ->addFilter(new EqualsFilter('active', true))
+            ->addFilter(new EqualsFilter('channel.active', true))
+            ->addFilter(new EqualsFilter('channel.salesChannelId', $salesChannelId))
+            ->setLimit(1);
+        $source = $this->sourceRepository->search($criteria, $context)->first();
+        if (!$source instanceof RedirectSourceEntity) {
+            return null;
+        }
+
+        $channel = $source->getChannel();
+        if (!$channel instanceof RedirectChannelEntity || !$channel->getRedirect() instanceof RedirectEntity) {
+            return null;
+        }
+        $redirect = $channel->getRedirect();
+
+        $targetUrl = RedirectType::Product->value === $redirect->getType() && null !== $redirect->getProductId()
+            ? $this->targetResolver->resolve($redirect->getProductId(), $salesChannelId, $sourceUrl)
+            : $channel->getTargetUrl();
+        if (null === $targetUrl) {
+            return null;
+        }
+
+        return [
+            'statusCode' => 301,
+            'type' => $redirect->getType(),
+            'targetUrl' => $targetUrl,
+            'productId' => $redirect->getProductId(),
+        ];
+    }
+}

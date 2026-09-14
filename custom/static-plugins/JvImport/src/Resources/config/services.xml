@@ -15,7 +15,9 @@
             <argument type="service" id="Jv\Import\Service\ProductMediaImport\UniqueCosmoShopMediaFileSaver.inner"/>
         </service>
         <service id="Jv\Import\Subscriber\QueueCosmoShopCatalogEnrichmentSubscriber"/>
+        <service id="Jv\Import\Subscriber\QueueCosmoShopProductRedirectImportSubscriber"/>
         <service id="Jv\Import\MessageHandler\CosmoShopCatalogEnrichmentMessageHandler"/>
+        <service id="Jv\Import\MessageHandler\CosmoShopProductRedirectImportMessageHandler"/>
         <service id="Jv\Import\Subscriber\CatalogProductImportSubscriber"/>
         <service id="Jv\Import\Subscriber\ProductDeliveryTimeCacheInvalidationSubscriber"/>
         <service id="Jv\Import\Subscriber\CmsPageProductDeliveryTimeSubscriber"/>
@@ -272,6 +274,15 @@
         <service id="Jv\Import\Command\BackfillCatalogPropertyTranslationsCommand"/>
 
         <service id="Jv\Import\Integration\Csv\SemicolonCsvReader"/>
+        <service id="Jv\Import\Service\ProductImport\Seo\ImportCosmoShopProductRedirectsService">
+            <argument type="service" id="Shopware\Core\Content\ImportExport\Service\ImportExportService"/>
+            <argument type="service" id="shopware.filesystem.private"/>
+            <argument type="service" id="Jv\Import\Integration\Csv\SemicolonCsvReader"/>
+            <argument type="service" id="product.repository"/>
+            <argument type="service" id="Jv\Seo\Contract\ImportProductRedirectsInterface" on-invalid="null"/>
+            <argument type="service" id="lock.factory"/>
+            <argument key="$projectDir">%kernel.project_dir%</argument>
+        </service>
         <service id="Jv\Import\Service\Catalog\CatalogAttributeMappingSynchronizer"/>
         <service id="Jv\Import\Service\Catalog\BackfillCatalogAttributeCategoryRelationsService">
             <argument type="service" id="Doctrine\DBAL\Connection"/>

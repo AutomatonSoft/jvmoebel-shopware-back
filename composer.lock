@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3257b68158fd29be6f7d9d62b26eafb9",
+    "content-hash": "65bc67d6c5536054512def36d4571547",
     "packages": [
         {
             "name": "async-aws/core",
@@ -2730,10 +2730,11 @@
             "dist": {
                 "type": "path",
                 "url": "custom/static-plugins/JvImport",
-                "reference": "2513fb29866f61296ae7ab2874e38ac3b235c15b"
+                "reference": "d9429247cedfeb74deb5420a160491febb1c98c8"
             },
             "require": {
                 "jvmoebel/market-configuration": "^0.1",
+                "jvmoebel/seo": "^0.1",
                 "php": "^8.5",
                 "shopware/core": "~6.7.0"
             },
@@ -2798,6 +2799,45 @@
                 "proprietary"
             ],
             "description": "JVMöbel market and sales channel configuration",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "jvmoebel/seo",
+            "version": "0.1.0",
+            "dist": {
+                "type": "path",
+                "url": "custom/static-plugins/JvSeo",
+                "reference": "efa1028c5d83c2565771ef829d4a81bb3893ca2d"
+            },
+            "require": {
+                "php": "^8.5",
+                "shopware/core": "~6.7.0"
+            },
+            "type": "shopware-platform-plugin",
+            "extra": {
+                "shopware-plugin-class": "Jv\\Seo\\JvSeo",
+                "label": {
+                    "de-DE": "JVMöbel SEO",
+                    "en-GB": "JVMöbel SEO"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Jv\\Seo\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Jv\\Seo\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "description": "JVMöbel SEO and legacy redirect management",
             "transport-options": {
                 "symlink": true,
                 "relative": true

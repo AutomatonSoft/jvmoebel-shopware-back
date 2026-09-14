@@ -1,0 +1,7 @@
+{% block sw_product_detail_seo_urls %}
+    {% parent %}
+    <jv-seo-product-redirects
+        v-if="product && product.id"
+        :product-id="product.id"
+    />
+{% endblock %}

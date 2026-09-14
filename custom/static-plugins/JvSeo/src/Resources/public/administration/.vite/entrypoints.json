@@ -1,0 +1,25 @@
+{
+  "base": "/bundles/jvseo/administration/",
+  "entryPoints": {
+    "jv-seo": {
+      "css": [
+        "/bundles/jvseo/administration/assets/jv-seo-DspMcoTs.css"
+      ],
+      "dynamic": [],
+      "js": [
+        "/bundles/jvseo/administration/assets/jv-seo-ntC3P7F3.js"
+      ],
+      "legacy": false,
+      "preload": []
+    }
+  },
+  "legacy": false,
+  "metadatas": {},
+  "version": [
+    "7.1.0",
+    7,
+    1,
+    0
+  ],
+  "viteServer": null
+}

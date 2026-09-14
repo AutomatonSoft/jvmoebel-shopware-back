@@ -1,0 +1,46 @@
+{% block jv_seo_product_redirects %}
+<mt-card
+    v-if="acl.can('product.viewer')"
+    position-identifier="jv-seo-product-redirects"
+    :title="$t('jv-seo.productCard.title')"
+    :is-loading="isLoading"
+>
+    <template #toolbar>
+        <mt-button
+            v-if="acl.can('product.editor')"
+            size="small"
+            variant="secondary"
+            :router-link="redirectId
+                ? { name: 'jv.seo.detail', params: { id: redirectId } }
+                : { name: 'jv.seo.create', query: { productId } }"
+        >
+            {{ redirectId ? $t('global.default.edit') : $t('jv-seo.actions.create') }}
+        </mt-button>
+    </template>
+
+    <sw-data-grid
+        v-if="rows.length"
+        :data-source="rows"
+        :columns="columns"
+        :show-selection="false"
+        :show-settings="false"
+        :show-actions="false"
+    >
+        <template #column-targetUrl="{ item }">
+            <span v-if="item.targetUrl">{{ item.targetUrl }}</span>
+            <span v-else>{{ $t('jv-seo.detail.targetUnavailable') }}</span>
+        </template>
+        <template #column-sources="{ item }">
+            <ul class="jv-seo-product-redirects__sources">
+                <li v-for="sourceUrl in item.sourceUrls" :key="sourceUrl">{{ sourceUrl }}</li>
+            </ul>
+        </template>
+    </sw-data-grid>
+
+    <mt-empty-state
+        v-else-if="!isLoading"
+        icon="regular-link"
+        :headline="$t('jv-seo.productCard.empty')"
+    />
+</mt-card>
+{% endblock %}

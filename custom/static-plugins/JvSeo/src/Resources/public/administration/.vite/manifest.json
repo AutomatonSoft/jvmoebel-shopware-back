@@ -1,0 +1,11 @@
+{
+  "main.js": {
+    "file": "assets/jv-seo-ntC3P7F3.js",
+    "name": "jv-seo",
+    "src": "main.js",
+    "isEntry": true,
+    "css": [
+      "assets/jv-seo-DspMcoTs.css"
+    ]
+  }
+}

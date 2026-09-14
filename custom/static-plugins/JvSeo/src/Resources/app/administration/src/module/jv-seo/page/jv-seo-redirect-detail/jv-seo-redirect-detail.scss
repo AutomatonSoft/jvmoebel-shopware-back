@@ -1,0 +1,17 @@
+.jv-seo-redirect-detail {
+    &__sources-heading,
+    &__source-row {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    &__sources-heading {
+        justify-content: space-between;
+        margin: 20px 0 8px;
+    }
+
+    &__source-row .sw-field {
+        flex: 1;
+    }
+}

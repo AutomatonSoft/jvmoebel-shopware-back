@@ -1,0 +1,58 @@
+{
+    "jv-seo": {
+        "general": {
+            "title": "SEO",
+            "description": "Manage SEO and redirects"
+        },
+        "redirects": {
+            "title": "Redirects"
+        },
+        "actions": {
+            "create": "Create redirect",
+            "addSource": "Add 301 URL"
+        },
+        "filters": {
+            "title": "Type",
+            "all": "All redirects",
+            "general": "General",
+            "product": "Products"
+        },
+        "list": {
+            "type": "Type",
+            "target": "Target URL",
+            "salesChannels": "Sales Channel",
+            "sources": "301 URLs",
+            "updatedAt": "Updated",
+            "searchPlaceholder": "Search URLs, products or Sales Channels"
+        },
+        "detail": {
+            "createTitle": "Create redirect",
+            "editTitle": "Edit redirect",
+            "base": "Target",
+            "type": "Redirect type",
+            "product": "Product",
+            "productPlaceholder": "Search for a product",
+            "enableChannel": "Configure for this Sales Channel",
+            "targetUrl": "Target URL",
+            "targetPreview": "Current canonical target URL example",
+            "targetUnavailable": "Canonical URL is not available yet",
+            "sourceUrls": "301 URLs",
+            "sourceUrl": "301 URL {number}",
+            "absoluteUrlPlaceholder": "https://www.example.com/path"
+        },
+        "validation": {
+            "productRequired": "Select a product.",
+            "channelRequired": "Enable at least one Sales Channel.",
+            "sourceRequired": "Add at least one 301 URL for {channel}.",
+            "invalidSource": "A 301 URL for {channel} is not a complete HTTP(S) URL.",
+            "invalidTarget": "The target URL for {channel} is not a complete HTTP(S) URL."
+        },
+        "notifications": {
+            "saved": "The redirect was saved."
+        },
+        "productCard": {
+            "title": "Legacy redirects by Sales Channel",
+            "empty": "No legacy redirects are configured for this product."
+        }
+    }
+}
