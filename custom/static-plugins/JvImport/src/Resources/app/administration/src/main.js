@@ -10,6 +10,19 @@ import AfterCoolImportApiService from './service/aftercool-import.api.service';
 Shopware.Locale.extend('de-DE', deDE);
 Shopware.Locale.extend('en-GB', enGB);
 
+const importExportRequestPaths = [
+    '/_action/import-export/prepare',
+    '/_action/import-export/process',
+];
+
+Shopware.Application.getContainer('init').httpClient.interceptors.request.use((config) => {
+    if (importExportRequestPaths.includes(config.url)) {
+        config.timeout = 600_000;
+    }
+
+    return config;
+});
+
 const { Module } = Shopware;
 
 const importExportModule = Module.getModuleRegistry().get('sw-import-export');
