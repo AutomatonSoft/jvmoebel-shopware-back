@@ -2,8 +2,12 @@
 
 namespace Jv\Storefront\Service;
 
+use Jv\Storefront\Core\Content\StorefrontInternationalLink\StorefrontInternationalLinkCollection;
+use Jv\Storefront\Core\Content\StorefrontInternationalLink\StorefrontInternationalLinkEntity;
 use Jv\Storefront\Core\Content\StorefrontPaymentBadge\StorefrontPaymentBadgeCollection;
 use Jv\Storefront\Core\Content\StorefrontPaymentBadge\StorefrontPaymentBadgeEntity;
+use Jv\Storefront\Core\Content\StorefrontShippingBadge\StorefrontShippingBadgeCollection;
+use Jv\Storefront\Core\Content\StorefrontShippingBadge\StorefrontShippingBadgeEntity;
 use Jv\Storefront\Core\Content\StorefrontSocialLink\StorefrontSocialLinkCollection;
 use Jv\Storefront\Core\Content\StorefrontSocialLink\StorefrontSocialLinkEntity;
 use Jv\Storefront\StoreApi\Struct\StorefrontBrandingStruct;
@@ -12,10 +16,12 @@ use Jv\Storefront\StoreApi\Struct\StorefrontFooterAboutStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontFooterRevocationStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontFooterStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontHeaderStruct;
+use Jv\Storefront\StoreApi\Struct\StorefrontInternationalLinkStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontLogoStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontMediaStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontNavigationItemStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontPaymentBadgeStruct;
+use Jv\Storefront\StoreApi\Struct\StorefrontShippingBadgeStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontSocialLinkStruct;
 use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\Category\CategoryEntity;
@@ -41,18 +47,23 @@ final class StorefrontConfigLoader
     private const int FOOTER_SERVICE_NAVIGATION_DEPTH = 1;
 
     /**
-     * @param EntityRepository<StorefrontSocialLinkCollection>   $socialLinkRepository
-     * @param EntityRepository<StorefrontPaymentBadgeCollection> $paymentBadgeRepository
-     * @param EntityRepository<MediaCollection>                  $mediaRepository
-     * @param EntityRepository<SalesChannelCollection>           $salesChannelRepository
+     * @param EntityRepository<StorefrontSocialLinkCollection>        $socialLinkRepository
+     * @param EntityRepository<StorefrontPaymentBadgeCollection>      $paymentBadgeRepository
+     * @param EntityRepository<StorefrontShippingBadgeCollection>     $shippingBadgeRepository
+     * @param EntityRepository<StorefrontInternationalLinkCollection> $internationalLinkRepository
+     * @param EntityRepository<MediaCollection>                       $mediaRepository
+     * @param EntityRepository<SalesChannelCollection>                $salesChannelRepository
      */
     public function __construct(
         private readonly EntityRepository $socialLinkRepository,
         private readonly EntityRepository $paymentBadgeRepository,
+        private readonly EntityRepository $shippingBadgeRepository,
+        private readonly EntityRepository $internationalLinkRepository,
         private readonly EntityRepository $mediaRepository,
         private readonly EntityRepository $salesChannelRepository,
         private readonly NavigationLoaderInterface $navigationLoader,
         private readonly StorefrontInputNormalizer $normalizer,
+        private readonly StorefrontSalesChannelUrlResolver $salesChannelUrlResolver,
     ) {
     }
 
@@ -74,6 +85,8 @@ final class StorefrontConfigLoader
                 serviceNavigation: $this->loadNavigation($salesChannel->getServiceCategoryId(), self::FOOTER_SERVICE_NAVIGATION_DEPTH, $context),
                 socialLinks: $this->loadSocialLinks($salesChannel->getId(), $context),
                 paymentBadges: $this->loadPaymentBadges($salesChannel->getId(), $context),
+                shippingBadges: $this->loadShippingBadges($salesChannel->getId(), $context),
+                internationalLinks: $this->loadInternationalLinks($salesChannel->getId(), $context),
             ),
         );
     }
@@ -394,7 +407,108 @@ final class StorefrontConfigLoader
         );
     }
 
-    private function resolveMedia(?MediaEntity $media, string $fallbackAlt): ?StorefrontMediaStruct
+    /**
+     * @return list<StorefrontShippingBadgeStruct>
+     */
+    private function loadShippingBadges(string $salesChannelId, SalesChannelContext $context): array
+    {
+        $criteria = (new Criteria())
+            ->addFilter(new EqualsFilter('salesChannelId', $salesChannelId))
+            ->addFilter(new EqualsFilter('active', true))
+            ->addSorting(new FieldSorting('position', FieldSorting::ASCENDING))
+            ->addSorting(new FieldSorting('createdAt', FieldSorting::ASCENDING))
+            ->addAssociation('iconMedia');
+
+        $entities = $this->shippingBadgeRepository->search($criteria, $context->getContext())->getEntities();
+        $normalized = [];
+
+        foreach ($entities as $entity) {
+            $item = $this->normalizeShippingBadge($entity);
+            if (null !== $item) {
+                $normalized[] = $item;
+            }
+        }
+
+        return $normalized;
+    }
+
+    private function normalizeShippingBadge(StorefrontShippingBadgeEntity $entity): ?StorefrontShippingBadgeStruct
+    {
+        $label = $this->normalizer->optionalString($entity->getLabel());
+        $icon = $this->resolveMedia($entity->getIconMedia(), $label);
+        if (null === $icon) {
+            return null;
+        }
+
+        return new StorefrontShippingBadgeStruct(
+            id: $entity->getId(),
+            label: $label,
+            position: $entity->getPosition(),
+            icon: $icon,
+        );
+    }
+
+    /**
+     * @return list<StorefrontInternationalLinkStruct>
+     */
+    private function loadInternationalLinks(string $salesChannelId, SalesChannelContext $context): array
+    {
+        $criteria = (new Criteria())
+            ->addFilter(new EqualsFilter('salesChannelId', $salesChannelId))
+            ->addFilter(new EqualsFilter('active', true))
+            ->addSorting(new FieldSorting('position', FieldSorting::ASCENDING))
+            ->addSorting(new FieldSorting('createdAt', FieldSorting::ASCENDING))
+            ->addAssociation('iconMedia')
+            ->addAssociation('targetSalesChannel.domains');
+
+        $entities = $this->internationalLinkRepository->search($criteria, $context->getContext())->getEntities();
+        $normalized = [];
+        $seenTargets = [];
+
+        foreach ($entities as $entity) {
+            if (isset($seenTargets[$entity->getTargetSalesChannelId()])) {
+                continue;
+            }
+
+            $item = $this->normalizeInternationalLink($entity, $salesChannelId);
+            if (null === $item) {
+                continue;
+            }
+
+            $seenTargets[$item->getTargetSalesChannelId()] = true;
+            $normalized[] = $item;
+        }
+
+        return $normalized;
+    }
+
+    private function normalizeInternationalLink(
+        StorefrontInternationalLinkEntity $entity,
+        string $currentSalesChannelId,
+    ): ?StorefrontInternationalLinkStruct {
+        if ($entity->getTargetSalesChannelId() === $currentSalesChannelId) {
+            return null;
+        }
+
+        $label = $this->normalizer->optionalString($entity->getLabel());
+        $url = $this->salesChannelUrlResolver->resolveStorefrontRootUrl($entity->getTargetSalesChannel());
+        $icon = $this->resolveMedia($entity->getIconMedia(), $label);
+        if (null === $url || null === $icon) {
+            return null;
+        }
+
+        return new StorefrontInternationalLinkStruct(
+            id: $entity->getId(),
+            label: $label,
+            url: $url,
+            targetSalesChannelId: $entity->getTargetSalesChannelId(),
+            openInNewTab: $entity->isOpenInNewTab(),
+            position: $entity->getPosition(),
+            icon: $icon,
+        );
+    }
+
+    private function resolveMedia(?MediaEntity $media, ?string $fallbackAlt): ?StorefrontMediaStruct
     {
         if (null === $media) {
             return null;
@@ -406,7 +520,7 @@ final class StorefrontConfigLoader
         }
 
         $alt = $this->normalizer->nonEmptyString($media->getTranslated()['alt'] ?? $media->getFileName());
-        if ('' === $alt) {
+        if ('' === $alt && null !== $fallbackAlt) {
             $alt = $fallbackAlt;
         }
 

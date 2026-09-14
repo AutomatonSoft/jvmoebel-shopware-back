@@ -35,6 +35,17 @@
         "payment": {
             "title": "Zahlungs-Badges"
         },
+        "shipping": {
+            "title": "Versandarten",
+            "labelHelp": "Leer lassen, um nur das Icon anzuzeigen."
+        },
+        "international": {
+            "title": "International",
+            "targetSalesChannel": "Ziel-Verkaufskanal",
+            "flagIcon": "Flaggen-Icon",
+            "flagIconCaption": "Flaggen-Icon auswählen",
+            "labelHelp": "Leer lassen, um nur die Flagge anzuzeigen."
+        },
         "list": {
             "label": "Label",
             "url": "URL",
@@ -49,7 +60,11 @@
             "socialCreate": "Social Link hinzufügen",
             "socialEdit": "Social Link bearbeiten",
             "paymentCreate": "Zahlungs-Badge hinzufügen",
-            "paymentEdit": "Zahlungs-Badge bearbeiten"
+            "paymentEdit": "Zahlungs-Badge bearbeiten",
+            "shippingCreate": "Versand-Badge hinzufügen",
+            "shippingEdit": "Versand-Badge bearbeiten",
+            "internationalCreate": "International-Link hinzufügen",
+            "internationalEdit": "International-Link bearbeiten"
         },
         "actions": {
             "add": "Hinzufügen"
@@ -66,7 +81,19 @@
             "paymentSaveFailed": "Zahlungs-Badge konnte nicht gespeichert werden.",
             "paymentValidationFailed": "Bitte Label und Icon ausfüllen.",
             "paymentDeleted": "Zahlungs-Badge gelöscht.",
-            "paymentDeleteFailed": "Zahlungs-Badge konnte nicht gelöscht werden."
+            "paymentDeleteFailed": "Zahlungs-Badge konnte nicht gelöscht werden.",
+            "shippingSaved": "Versand-Badge gespeichert.",
+            "shippingSaveFailed": "Versand-Badge konnte nicht gespeichert werden.",
+            "shippingValidationFailed": "Bitte ein Icon auswählen.",
+            "shippingDeleted": "Versand-Badge gelöscht.",
+            "shippingDeleteFailed": "Versand-Badge konnte nicht gelöscht werden.",
+            "internationalSaved": "International-Link gespeichert.",
+            "internationalSaveFailed": "International-Link konnte nicht gespeichert werden.",
+            "internationalValidationFailed": "Bitte Ziel-Verkaufskanal und Flaggen-Icon auswählen.",
+            "internationalSelfTargetFailed": "Der Ziel-Verkaufskanal muss vom aktuellen Verkaufskanal abweichen.",
+            "internationalDuplicateTargetFailed": "Dieser Ziel-Verkaufskanal ist bereits verknüpft.",
+            "internationalDeleted": "International-Link gelöscht.",
+            "internationalDeleteFailed": "International-Link konnte nicht gelöscht werden."
         }
     }
 }

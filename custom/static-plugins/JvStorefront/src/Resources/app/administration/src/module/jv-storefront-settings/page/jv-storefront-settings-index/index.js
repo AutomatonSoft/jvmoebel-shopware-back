@@ -35,14 +35,24 @@ export default {
             iconMediaTarget: null,
             socialLinks: [],
             paymentBadges: [],
+            shippingBadges: [],
+            internationalLinks: [],
             isSocialLinksLoading: false,
             isPaymentBadgesLoading: false,
+            isShippingBadgesLoading: false,
+            isInternationalLinksLoading: false,
             socialLinkModalOpen: false,
             paymentBadgeModalOpen: false,
+            shippingBadgeModalOpen: false,
+            internationalLinkModalOpen: false,
             socialLinkDraft: null,
             paymentBadgeDraft: null,
+            shippingBadgeDraft: null,
+            internationalLinkDraft: null,
             isSocialLinkSaving: false,
             isPaymentBadgeSaving: false,
+            isShippingBadgeSaving: false,
+            isInternationalLinkSaving: false,
             navigationRootCategoryId: null,
             headerNavigationLinks: [],
             isHeaderNavigationLoading: false,
@@ -72,6 +82,14 @@ export default {
             return this.repositoryFactory.create('jv_storefront_payment_badge');
         },
 
+        shippingBadgeRepository() {
+            return this.repositoryFactory.create('jv_storefront_shipping_badge');
+        },
+
+        internationalLinkRepository() {
+            return this.repositoryFactory.create('jv_storefront_international_link');
+        },
+
         socialLinkGridColumns() {
             return [
                 { property: 'label', label: this.$t('jv-storefront-settings.list.label'), primary: true },
@@ -89,12 +107,48 @@ export default {
             ];
         },
 
+        shippingBadgeGridColumns() {
+            return [
+                { property: 'label', label: this.$t('jv-storefront-settings.list.label'), primary: true },
+                { property: 'position', label: this.$t('jv-storefront-settings.list.position'), align: 'right' },
+                { property: 'active', label: this.$t('jv-storefront-settings.list.active'), align: 'center' },
+            ];
+        },
+
+        internationalLinkGridColumns() {
+            return [
+                { property: 'label', label: this.$t('jv-storefront-settings.list.label'), primary: true },
+                { property: 'targetSalesChannel', label: this.$t('jv-storefront-settings.international.targetSalesChannel'), multiLine: true },
+                { property: 'position', label: this.$t('jv-storefront-settings.list.position'), align: 'right' },
+                { property: 'active', label: this.$t('jv-storefront-settings.list.active'), align: 'center' },
+            ];
+        },
+
+        targetSalesChannelCriteria() {
+            const criteria = new Criteria(1, 100);
+            criteria.addSorting(Criteria.sort('name', 'ASC'));
+
+            if (this.salesChannelId) {
+                criteria.addFilter(Criteria.not('AND', [Criteria.equals('id', this.salesChannelId)]));
+            }
+
+            return criteria;
+        },
+
         isSocialLinkCreate() {
             return !this.socialLinks.some((item) => item.id === this.socialLinkDraft?.id);
         },
 
         isPaymentBadgeCreate() {
             return !this.paymentBadges.some((item) => item.id === this.paymentBadgeDraft?.id);
+        },
+
+        isShippingBadgeCreate() {
+            return !this.shippingBadges.some((item) => item.id === this.shippingBadgeDraft?.id);
+        },
+
+        isInternationalLinkCreate() {
+            return !this.internationalLinks.some((item) => item.id === this.internationalLinkDraft?.id);
         },
 
         logoUploadTag() {
@@ -119,6 +173,22 @@ export default {
 
         paymentBadgeIconPreviewSource() {
             return this.paymentBadgeDraft?.iconMedia ?? this.paymentBadgeDraft?.iconMediaId ?? null;
+        },
+
+        shippingBadgeIconUploadTag() {
+            return `jv-storefront-shipping-icon-${this.shippingBadgeDraft?.id ?? 'new'}`;
+        },
+
+        shippingBadgeIconPreviewSource() {
+            return this.shippingBadgeDraft?.iconMedia ?? this.shippingBadgeDraft?.iconMediaId ?? null;
+        },
+
+        internationalLinkIconUploadTag() {
+            return `jv-storefront-international-icon-${this.internationalLinkDraft?.id ?? 'new'}`;
+        },
+
+        internationalLinkIconPreviewSource() {
+            return this.internationalLinkDraft?.iconMedia ?? this.internationalLinkDraft?.iconMediaId ?? null;
         },
     },
 
@@ -170,6 +240,8 @@ export default {
                     this.loadHeaderNavigationLinks(),
                     this.loadSocialLinks(),
                     this.loadPaymentBadges(),
+                    this.loadShippingBadges(),
+                    this.loadInternationalLinks(),
                 ]);
             } finally {
                 this.isLoading = false;
@@ -474,6 +546,16 @@ export default {
             this.iconMediaModalOpen = true;
         },
 
+        openShippingBadgeIconMediaModal() {
+            this.iconMediaTarget = 'shipping-badge';
+            this.iconMediaModalOpen = true;
+        },
+
+        openInternationalLinkIconMediaModal() {
+            this.iconMediaTarget = 'international-link';
+            this.iconMediaModalOpen = true;
+        },
+
         onCloseIconMediaModal() {
             this.iconMediaModalOpen = false;
             this.iconMediaTarget = null;
@@ -493,6 +575,16 @@ export default {
             if (this.iconMediaTarget === 'payment-badge' && this.paymentBadgeDraft) {
                 this.paymentBadgeDraft.iconMediaId = media.id;
                 this.paymentBadgeDraft.iconMedia = media;
+            }
+
+            if (this.iconMediaTarget === 'shipping-badge' && this.shippingBadgeDraft) {
+                this.shippingBadgeDraft.iconMediaId = media.id;
+                this.shippingBadgeDraft.iconMedia = media;
+            }
+
+            if (this.iconMediaTarget === 'international-link' && this.internationalLinkDraft) {
+                this.internationalLinkDraft.iconMediaId = media.id;
+                this.internationalLinkDraft.iconMedia = media;
             }
 
             this.onCloseIconMediaModal();
@@ -532,6 +624,42 @@ export default {
 
             this.paymentBadgeDraft.iconMediaId = null;
             this.paymentBadgeDraft.iconMedia = null;
+        },
+
+        async onShippingBadgeIconUpload({ targetId }) {
+            if (!this.shippingBadgeDraft) {
+                return;
+            }
+
+            this.shippingBadgeDraft.iconMediaId = targetId;
+            this.shippingBadgeDraft.iconMedia = await this.mediaRepository.get(targetId);
+        },
+
+        onShippingBadgeIconRemove() {
+            if (!this.shippingBadgeDraft) {
+                return;
+            }
+
+            this.shippingBadgeDraft.iconMediaId = null;
+            this.shippingBadgeDraft.iconMedia = null;
+        },
+
+        async onInternationalLinkIconUpload({ targetId }) {
+            if (!this.internationalLinkDraft) {
+                return;
+            }
+
+            this.internationalLinkDraft.iconMediaId = targetId;
+            this.internationalLinkDraft.iconMedia = await this.mediaRepository.get(targetId);
+        },
+
+        onInternationalLinkIconRemove() {
+            if (!this.internationalLinkDraft) {
+                return;
+            }
+
+            this.internationalLinkDraft.iconMediaId = null;
+            this.internationalLinkDraft.iconMedia = null;
         },
 
         buildSocialLinkCriteria() {
@@ -588,6 +716,78 @@ export default {
             }
         },
 
+        buildShippingBadgeCriteria() {
+            const criteria = new Criteria(1, 100);
+            criteria.addFilter(Criteria.equals('salesChannelId', this.salesChannelId));
+            criteria.addSorting(Criteria.sort('position', 'ASC'));
+            criteria.addSorting(Criteria.sort('createdAt', 'ASC'));
+            criteria.addAssociation('iconMedia');
+
+            return criteria;
+        },
+
+        async loadShippingBadges() {
+            if (!this.salesChannelId) {
+                this.shippingBadges = [];
+
+                return;
+            }
+
+            this.isShippingBadgesLoading = true;
+
+            try {
+                const result = await this.shippingBadgeRepository.search(this.buildShippingBadgeCriteria());
+                this.shippingBadges = result;
+            } finally {
+                this.isShippingBadgesLoading = false;
+            }
+        },
+
+        buildInternationalLinkCriteria() {
+            const criteria = new Criteria(1, 100);
+            criteria.addFilter(Criteria.equals('salesChannelId', this.salesChannelId));
+            criteria.addSorting(Criteria.sort('position', 'ASC'));
+            criteria.addSorting(Criteria.sort('createdAt', 'ASC'));
+            criteria.addAssociation('iconMedia');
+            criteria.addAssociation('targetSalesChannel');
+
+            return criteria;
+        },
+
+        async loadInternationalLinks() {
+            if (!this.salesChannelId) {
+                this.internationalLinks = [];
+
+                return;
+            }
+
+            this.isInternationalLinksLoading = true;
+
+            try {
+                const result = await this.internationalLinkRepository.search(this.buildInternationalLinkCriteria());
+                this.internationalLinks = result;
+            } finally {
+                this.isInternationalLinksLoading = false;
+            }
+        },
+
+        formatTargetSalesChannelName(item) {
+            return item.targetSalesChannel?.translated?.name
+                ?? item.targetSalesChannel?.name
+                ?? item.targetSalesChannelId
+                ?? '';
+        },
+
+        hasDuplicateInternationalTarget(targetSalesChannelId, excludeId = null) {
+            return this.internationalLinks.some((item) => {
+                if (excludeId && item.id === excludeId) {
+                    return false;
+                }
+
+                return item.targetSalesChannelId === targetSalesChannelId;
+            });
+        },
+
         createSocialLinkDraft() {
             return {
                 id: Utils.createId(),
@@ -611,6 +811,32 @@ export default {
                 iconMedia: null,
                 position: this.paymentBadges.length,
                 active: true,
+            };
+        },
+
+        createShippingBadgeDraft() {
+            return {
+                id: Utils.createId(),
+                salesChannelId: this.salesChannelId,
+                label: '',
+                iconMediaId: null,
+                iconMedia: null,
+                position: this.shippingBadges.length,
+                active: true,
+            };
+        },
+
+        createInternationalLinkDraft() {
+            return {
+                id: Utils.createId(),
+                salesChannelId: this.salesChannelId,
+                targetSalesChannelId: null,
+                label: '',
+                iconMediaId: null,
+                iconMedia: null,
+                position: this.internationalLinks.length,
+                active: true,
+                openInNewTab: true,
             };
         },
 
@@ -675,6 +901,70 @@ export default {
 
             if (!isOpen) {
                 this.paymentBadgeDraft = null;
+            }
+        },
+
+        openShippingBadgeCreate() {
+            this.shippingBadgeDraft = this.createShippingBadgeDraft();
+            this.shippingBadgeModalOpen = true;
+        },
+
+        openShippingBadgeEdit(item) {
+            this.shippingBadgeDraft = {
+                id: item.id,
+                salesChannelId: item.salesChannelId,
+                label: item.label ?? '',
+                iconMediaId: item.iconMediaId,
+                iconMedia: item.iconMedia ?? null,
+                position: item.position,
+                active: item.active,
+            };
+            this.shippingBadgeModalOpen = true;
+        },
+
+        closeShippingBadgeModal() {
+            this.shippingBadgeModalOpen = false;
+            this.shippingBadgeDraft = null;
+        },
+
+        onShippingBadgeModalChange(isOpen) {
+            this.shippingBadgeModalOpen = isOpen;
+
+            if (!isOpen) {
+                this.shippingBadgeDraft = null;
+            }
+        },
+
+        openInternationalLinkCreate() {
+            this.internationalLinkDraft = this.createInternationalLinkDraft();
+            this.internationalLinkModalOpen = true;
+        },
+
+        openInternationalLinkEdit(item) {
+            this.internationalLinkDraft = {
+                id: item.id,
+                salesChannelId: item.salesChannelId,
+                targetSalesChannelId: item.targetSalesChannelId,
+                label: item.label ?? '',
+                iconMediaId: item.iconMediaId,
+                iconMedia: item.iconMedia ?? null,
+                position: item.position,
+                active: item.active,
+                openInNewTab: item.openInNewTab,
+            };
+            this.internationalLinkModalOpen = true;
+        },
+
+        closeInternationalLinkModal() {
+            this.internationalLinkModalOpen = false;
+            this.internationalLinkDraft = null;
+        },
+
+        onInternationalLinkModalChange(isOpen) {
+            this.internationalLinkModalOpen = isOpen;
+
+            if (!isOpen) {
+                this.internationalLinkDraft = null;
             }
         },
 
@@ -792,6 +1082,146 @@ export default {
             } catch (error) {
                 this.createNotificationError({
                     message: this.$t('jv-storefront-settings.notifications.paymentDeleteFailed'),
+                });
+            }
+        },
+
+        async saveShippingBadgeDraft() {
+            if (!this.shippingBadgeDraft || !this.salesChannelId) {
+                return;
+            }
+
+            if (!this.shippingBadgeDraft.iconMediaId) {
+                this.createNotificationError({
+                    message: this.$t('jv-storefront-settings.notifications.shippingValidationFailed'),
+                });
+
+                return;
+            }
+
+            this.isShippingBadgeSaving = true;
+
+            try {
+                const entity = this.isShippingBadgeCreate
+                    ? this.shippingBadgeRepository.create()
+                    : await this.shippingBadgeRepository.get(this.shippingBadgeDraft.id);
+
+                Object.assign(entity, {
+                    id: this.shippingBadgeDraft.id,
+                    salesChannelId: this.salesChannelId,
+                    label: this.shippingBadgeDraft.label?.trim() || null,
+                    iconMediaId: this.shippingBadgeDraft.iconMediaId,
+                    position: Number(this.shippingBadgeDraft.position) || 0,
+                    active: !!this.shippingBadgeDraft.active,
+                });
+
+                await this.shippingBadgeRepository.save(entity);
+                await this.loadShippingBadges();
+                this.closeShippingBadgeModal();
+                this.createNotificationSuccess({
+                    message: this.$t('jv-storefront-settings.notifications.shippingSaved'),
+                });
+            } catch (error) {
+                this.createNotificationError({
+                    message: this.$t('jv-storefront-settings.notifications.shippingSaveFailed'),
+                });
+            } finally {
+                this.isShippingBadgeSaving = false;
+            }
+        },
+
+        async deleteShippingBadge(item) {
+            try {
+                await this.shippingBadgeRepository.delete(item.id);
+                await this.loadShippingBadges();
+                this.createNotificationSuccess({
+                    message: this.$t('jv-storefront-settings.notifications.shippingDeleted'),
+                });
+            } catch (error) {
+                this.createNotificationError({
+                    message: this.$t('jv-storefront-settings.notifications.shippingDeleteFailed'),
+                });
+            }
+        },
+
+        async saveInternationalLinkDraft() {
+            if (!this.internationalLinkDraft || !this.salesChannelId) {
+                return;
+            }
+
+            if (
+                !this.internationalLinkDraft.targetSalesChannelId
+                || !this.internationalLinkDraft.iconMediaId
+            ) {
+                this.createNotificationError({
+                    message: this.$t('jv-storefront-settings.notifications.internationalValidationFailed'),
+                });
+
+                return;
+            }
+
+            if (this.internationalLinkDraft.targetSalesChannelId === this.salesChannelId) {
+                this.createNotificationError({
+                    message: this.$t('jv-storefront-settings.notifications.internationalSelfTargetFailed'),
+                });
+
+                return;
+            }
+
+            if (this.hasDuplicateInternationalTarget(
+                this.internationalLinkDraft.targetSalesChannelId,
+                this.isInternationalLinkCreate ? null : this.internationalLinkDraft.id,
+            )) {
+                this.createNotificationError({
+                    message: this.$t('jv-storefront-settings.notifications.internationalDuplicateTargetFailed'),
+                });
+
+                return;
+            }
+
+            this.isInternationalLinkSaving = true;
+
+            try {
+                const entity = this.isInternationalLinkCreate
+                    ? this.internationalLinkRepository.create()
+                    : await this.internationalLinkRepository.get(this.internationalLinkDraft.id);
+
+                Object.assign(entity, {
+                    id: this.internationalLinkDraft.id,
+                    salesChannelId: this.salesChannelId,
+                    targetSalesChannelId: this.internationalLinkDraft.targetSalesChannelId,
+                    label: this.internationalLinkDraft.label?.trim() || null,
+                    iconMediaId: this.internationalLinkDraft.iconMediaId,
+                    position: Number(this.internationalLinkDraft.position) || 0,
+                    active: !!this.internationalLinkDraft.active,
+                    openInNewTab: !!this.internationalLinkDraft.openInNewTab,
+                });
+
+                await this.internationalLinkRepository.save(entity);
+                await this.loadInternationalLinks();
+                this.closeInternationalLinkModal();
+                this.createNotificationSuccess({
+                    message: this.$t('jv-storefront-settings.notifications.internationalSaved'),
+                });
+            } catch (error) {
+                this.createNotificationError({
+                    message: this.$t('jv-storefront-settings.notifications.internationalSaveFailed'),
+                });
+            } finally {
+                this.isInternationalLinkSaving = false;
+            }
+        },
+
+        async deleteInternationalLink(item) {
+            try {
+                await this.internationalLinkRepository.delete(item.id);
+                await this.loadInternationalLinks();
+                this.createNotificationSuccess({
+                    message: this.$t('jv-storefront-settings.notifications.internationalDeleted'),
+                });
+            } catch (error) {
+                this.createNotificationError({
+                    message: this.$t('jv-storefront-settings.notifications.internationalDeleteFailed'),
                 });
             }
         },
