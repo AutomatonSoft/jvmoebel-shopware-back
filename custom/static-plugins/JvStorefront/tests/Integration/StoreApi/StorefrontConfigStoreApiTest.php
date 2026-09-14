@@ -137,6 +137,125 @@ final class StorefrontConfigStoreApiTest extends TestCase
         self::assertIsArray($payload['footer']['paymentBadges'][0]['icon'] ?? null);
     }
 
+    public function testHeaderNavigationUsesOrderedWhitelist(): void
+    {
+        $navigationRootId = Uuid::randomHex();
+        $firstChildId = Uuid::randomHex();
+        $secondChildId = Uuid::randomHex();
+        $thirdChildId = Uuid::randomHex();
+
+        /** @var EntityRepository<CategoryCollection> $categoryRepository */
+        $categoryRepository = static::getContainer()->get('category.repository');
+        $categoryRepository->create([
+            [
+                'id' => $navigationRootId,
+                'parentId' => $this->getValidCategoryId(),
+                'active' => true,
+                'visible' => true,
+                'type' => 'folder',
+                'name' => 'Header navigation root',
+            ],
+            [
+                'id' => $firstChildId,
+                'parentId' => $navigationRootId,
+                'active' => true,
+                'visible' => true,
+                'type' => 'link',
+                'name' => 'First header link',
+                'linkType' => 'external',
+                'externalLink' => 'https://example.com/first',
+            ],
+            [
+                'id' => $secondChildId,
+                'parentId' => $navigationRootId,
+                'active' => true,
+                'visible' => true,
+                'type' => 'link',
+                'name' => 'Second header link',
+                'linkType' => 'external',
+                'externalLink' => 'https://example.com/second',
+            ],
+            [
+                'id' => $thirdChildId,
+                'parentId' => $navigationRootId,
+                'active' => true,
+                'visible' => true,
+                'type' => 'link',
+                'name' => 'Third header link',
+                'linkType' => 'external',
+                'externalLink' => 'https://example.com/third',
+            ],
+        ], Context::createDefaultContext());
+
+        $browser = $this->createCustomSalesChannelBrowser([
+            'navigationCategoryId' => $navigationRootId,
+            'customFields' => [
+                'jv_header_navigation_visible_category_ids' => [
+                    $thirdChildId,
+                    $firstChildId,
+                ],
+            ],
+        ]);
+
+        $browser->request('GET', '/store-api/storefront-config');
+
+        self::assertSame(200, $browser->getResponse()->getStatusCode());
+
+        /** @var array<string, mixed> $payload */
+        $payload = json_decode((string) $browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertCount(2, $payload['header']['navigation'] ?? []);
+        self::assertSame($thirdChildId, $payload['header']['navigation'][0]['id'] ?? null);
+        self::assertSame('Third header link', $payload['header']['navigation'][0]['label'] ?? null);
+        self::assertSame($firstChildId, $payload['header']['navigation'][1]['id'] ?? null);
+        self::assertSame('First header link', $payload['header']['navigation'][1]['label'] ?? null);
+    }
+
+    public function testHeaderNavigationReturnsEmptyArrayForExplicitEmptyWhitelist(): void
+    {
+        $navigationRootId = Uuid::randomHex();
+        $childId = Uuid::randomHex();
+
+        /** @var EntityRepository<CategoryCollection> $categoryRepository */
+        $categoryRepository = static::getContainer()->get('category.repository');
+        $categoryRepository->create([
+            [
+                'id' => $navigationRootId,
+                'parentId' => $this->getValidCategoryId(),
+                'active' => true,
+                'visible' => true,
+                'type' => 'folder',
+                'name' => 'Header navigation root empty whitelist',
+            ],
+            [
+                'id' => $childId,
+                'parentId' => $navigationRootId,
+                'active' => true,
+                'visible' => true,
+                'type' => 'link',
+                'name' => 'Hidden header link',
+                'linkType' => 'external',
+                'externalLink' => 'https://example.com/hidden',
+            ],
+        ], Context::createDefaultContext());
+
+        $browser = $this->createCustomSalesChannelBrowser([
+            'navigationCategoryId' => $navigationRootId,
+            'customFields' => [
+                'jv_header_navigation_visible_category_ids' => [],
+            ],
+        ]);
+
+        $browser->request('GET', '/store-api/storefront-config');
+
+        self::assertSame(200, $browser->getResponse()->getStatusCode());
+
+        /** @var array<string, mixed> $payload */
+        $payload = json_decode((string) $browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertSame([], $payload['header']['navigation'] ?? null);
+    }
+
     public function testServiceNavigationReturnsChildrenOfServiceCategory(): void
     {
         $serviceRootId = Uuid::randomHex();

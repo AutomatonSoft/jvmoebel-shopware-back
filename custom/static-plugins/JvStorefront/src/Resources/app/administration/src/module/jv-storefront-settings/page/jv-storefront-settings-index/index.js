@@ -43,12 +43,21 @@ export default {
             paymentBadgeDraft: null,
             isSocialLinkSaving: false,
             isPaymentBadgeSaving: false,
+            navigationRootCategoryId: null,
+            headerNavigationLinks: [],
+            isHeaderNavigationLoading: false,
+            headerNavigationLoadToken: 0,
+            headerNavigationSortableKey: 0,
         };
     },
 
     computed: {
         salesChannelRepository() {
             return this.repositoryFactory.create('sales_channel');
+        },
+
+        categoryRepository() {
+            return this.repositoryFactory.create('category');
         },
 
         mediaRepository() {
@@ -156,7 +165,9 @@ export default {
                     criteria,
                 );
                 await this.reloadSalesChannelCustomFields();
+                this.navigationRootCategoryId = this.salesChannel.navigationCategoryId ?? null;
                 await Promise.all([
+                    this.loadHeaderNavigationLinks(),
                     this.loadSocialLinks(),
                     this.loadPaymentBadges(),
                 ]);
@@ -231,7 +242,174 @@ export default {
                 jv_footer_revocation_enabled: !!this.customFields.jv_footer_revocation_enabled,
                 jv_footer_revocation_button_label: this.customFields.jv_footer_revocation_button_label ?? '',
                 jv_footer_revocation_recipient_email: this.customFields.jv_footer_revocation_recipient_email ?? '',
+                jv_header_navigation_visible_category_ids: this.serializeHeaderNavigationWhitelist(),
             };
+        },
+
+        normalizeStoredWhitelist(value) {
+            if (value === null || value === undefined) {
+                return null;
+            }
+
+            if (typeof value === 'string') {
+                const trimmed = value.trim();
+                if (trimmed === '') {
+                    return null;
+                }
+
+                try {
+                    value = JSON.parse(trimmed);
+                } catch {
+                    return null;
+                }
+            }
+
+            if (!Array.isArray(value)) {
+                return null;
+            }
+
+            const normalized = [];
+            const seen = new Set();
+
+            value.forEach((entry) => {
+                if (typeof entry !== 'string') {
+                    return;
+                }
+
+                const id = entry.trim().toLowerCase();
+                if (!id || seen.has(id)) {
+                    return;
+                }
+
+                seen.add(id);
+                normalized.push(id);
+            });
+
+            return normalized;
+        },
+
+        getStoredHeaderNavigationWhitelist() {
+            const fields = this.salesChannel?.customFields ?? {};
+
+            return this.normalizeStoredWhitelist(fields.jv_header_navigation_visible_category_ids);
+        },
+
+        buildHeaderNavigationLinks(categories, storedWhitelist) {
+            const categoryList = categories.map((category) => ({
+                id: category.id,
+                label: category.translated?.name ?? category.name ?? category.id,
+            }));
+
+            if (storedWhitelist === null) {
+                return categoryList.map((item) => ({
+                    ...item,
+                    visible: true,
+                }));
+            }
+
+            const remainingById = Object.fromEntries(categoryList.map((item) => [item.id, item]));
+            const ordered = [];
+
+            storedWhitelist.forEach((id) => {
+                const item = remainingById[id];
+                if (!item) {
+                    return;
+                }
+
+                ordered.push({
+                    ...item,
+                    visible: true,
+                });
+                delete remainingById[id];
+            });
+
+            categoryList.forEach((item) => {
+                if (!remainingById[item.id]) {
+                    return;
+                }
+
+                ordered.push({
+                    ...item,
+                    visible: false,
+                });
+            });
+
+            return ordered;
+        },
+
+        serializeHeaderNavigationWhitelist() {
+            return this.headerNavigationLinks
+                .filter((item) => item.visible)
+                .map((item) => item.id);
+        },
+
+        buildHeaderNavigationCriteria(rootCategoryId) {
+            const criteria = new Criteria(1, 500);
+            criteria.addFilter(Criteria.equals('parentId', rootCategoryId));
+            criteria.addSorting(Criteria.sort('autoIncrement', 'ASC'));
+
+            return criteria;
+        },
+
+        async loadHeaderNavigationLinks() {
+            const token = this.headerNavigationLoadToken + 1;
+            this.headerNavigationLoadToken = token;
+            const rootCategoryId = this.navigationRootCategoryId;
+
+            if (!rootCategoryId) {
+                this.headerNavigationLinks = [];
+                this.isHeaderNavigationLoading = false;
+
+                return;
+            }
+
+            this.isHeaderNavigationLoading = true;
+
+            try {
+                const result = await this.categoryRepository.search(
+                    this.buildHeaderNavigationCriteria(rootCategoryId),
+                    this.salesChannelLanguageContext(),
+                );
+
+                if (token !== this.headerNavigationLoadToken) {
+                    return;
+                }
+
+                const categories = [];
+                result.forEach((category) => {
+                    categories.push(category);
+                });
+
+                this.headerNavigationLinks = this.buildHeaderNavigationLinks(
+                    categories,
+                    this.getStoredHeaderNavigationWhitelist(),
+                );
+                this.headerNavigationSortableKey += 1;
+            } catch {
+                if (token !== this.headerNavigationLoadToken) {
+                    return;
+                }
+
+                this.headerNavigationLinks = [];
+            } finally {
+                if (token !== this.headerNavigationLoadToken) {
+                    return;
+                }
+
+                this.isHeaderNavigationLoading = false;
+            }
+        },
+
+        async onNavigationRootChange() {
+            await this.loadHeaderNavigationLinks();
+        },
+
+        onHeaderNavigationSorted(sortedItems) {
+            this.headerNavigationLinks = [...sortedItems];
+        },
+
+        onHeaderNavigationVisibilityChange(item, visible) {
+            item.visible = !!visible;
         },
 
         getSalesChannelLanguageIds() {
@@ -644,11 +822,14 @@ export default {
                         ...(entity.customFields ?? {}),
                         ...payload,
                     };
+                    entity.navigationCategoryId = this.navigationRootCategoryId;
 
                     await this.salesChannelRepository.save(entity, context);
                 }
 
+                this.salesChannel.navigationCategoryId = this.navigationRootCategoryId;
                 await this.reloadSalesChannelCustomFields();
+                await this.loadHeaderNavigationLinks();
                 this.createNotificationSuccess({
                     message: this.$t('jv-storefront-settings.notifications.saved'),
                 });

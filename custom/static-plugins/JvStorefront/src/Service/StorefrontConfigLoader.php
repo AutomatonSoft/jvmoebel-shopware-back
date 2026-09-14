@@ -64,7 +64,7 @@ final class StorefrontConfigLoader
         return new StorefrontConfigStruct(
             header: new StorefrontHeaderStruct(
                 branding: $this->loadBranding($salesChannel, $customFields, $context),
-                navigation: $this->loadNavigation($salesChannel->getNavigationCategoryId(), self::HEADER_NAVIGATION_DEPTH, $context),
+                navigation: $this->loadHeaderNavigation($salesChannel, $customFields, $context),
             ),
             footer: new StorefrontFooterStruct(
                 about: $this->loadAbout($customFields),
@@ -174,6 +174,39 @@ final class StorefrontConfigLoader
             buttonLabel: $this->normalizer->optionalString($customFields['jv_footer_revocation_button_label'] ?? null),
             recipientEmail: $this->normalizer->safeEmail(isset($customFields['jv_footer_revocation_recipient_email']) ? (string) $customFields['jv_footer_revocation_recipient_email'] : null),
         );
+    }
+
+    /**
+     * @param array<string, mixed> $customFields
+     *
+     * @return list<StorefrontNavigationItemStruct>
+     */
+    private function loadHeaderNavigation(SalesChannelEntity $salesChannel, array $customFields, SalesChannelContext $context): array
+    {
+        $items = $this->loadNavigation($salesChannel->getNavigationCategoryId(), self::HEADER_NAVIGATION_DEPTH, $context);
+        $whitelist = $this->normalizer->normalizeOrderedUuidList($customFields['jv_header_navigation_visible_category_ids'] ?? null);
+
+        if (null === $whitelist) {
+            return $items;
+        }
+
+        if ([] === $whitelist) {
+            return [];
+        }
+
+        $itemsById = [];
+        foreach ($items as $item) {
+            $itemsById[$item->getId()] = $item;
+        }
+
+        $ordered = [];
+        foreach ($whitelist as $categoryId) {
+            if (isset($itemsById[$categoryId])) {
+                $ordered[] = $itemsById[$categoryId];
+            }
+        }
+
+        return $ordered;
     }
 
     /**

@@ -8,6 +8,12 @@
             "title": "Sales channel",
             "label": "Sales channel"
         },
+        "navigation": {
+            "title": "Navigation",
+            "rootCategory": "Root category",
+            "helpText": "Category names and URLs are edited in Catalog → Categories.",
+            "empty": "No direct child categories found for the selected root."
+        },
         "branding": {
             "title": "Branding",
             "logo": "Storefront logo",

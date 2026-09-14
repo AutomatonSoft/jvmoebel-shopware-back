@@ -29,6 +29,51 @@
                 />
             </sw-card>
 
+            <sw-card v-if="salesChannel" :title="$t('jv-storefront-settings.navigation.title')">
+                <sw-entity-single-select
+                    v-model:value="navigationRootCategoryId"
+                    entity="category"
+                    :label="$t('jv-storefront-settings.navigation.rootCategory')"
+                    show-clearable-button
+                    @update:value="onNavigationRootChange"
+                />
+
+                <p class="jv-storefront-settings-index__navigation-help">
+                    {{ $t('jv-storefront-settings.navigation.helpText') }}
+                </p>
+
+                <sw-loader v-if="isHeaderNavigationLoading" />
+
+                <sw-sortable-list
+                    v-else-if="navigationRootCategoryId && headerNavigationLinks.length"
+                    :key="headerNavigationSortableKey"
+                    class="jv-storefront-settings-index__navigation-list"
+                    :items="headerNavigationLinks"
+                    @items-sorted="onHeaderNavigationSorted"
+                >
+                    <template #item="{ item }">
+                        <div class="jv-storefront-settings-index__navigation-item">
+                            <mt-icon
+                                class="jv-storefront-settings-index__navigation-item-grip"
+                                name="regular-grip-vertical"
+                            />
+                            <sw-checkbox-field
+                                :label="item.label"
+                                :value="item.visible"
+                                @update:value="onHeaderNavigationVisibilityChange(item, $event)"
+                            />
+                        </div>
+                    </template>
+                </sw-sortable-list>
+
+                <p
+                    v-else-if="navigationRootCategoryId && !isHeaderNavigationLoading"
+                    class="jv-storefront-settings-index__navigation-empty"
+                >
+                    {{ $t('jv-storefront-settings.navigation.empty') }}
+                </p>
+            </sw-card>
+
             <sw-card v-if="salesChannel" :title="$t('jv-storefront-settings.branding.title')">
                 <div class="jv-storefront-settings-index__logo">
                     <label class="jv-storefront-settings-index__logo-label">
