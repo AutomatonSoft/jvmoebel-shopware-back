@@ -8,6 +8,12 @@
             "title": "Verkaufskanal",
             "label": "Verkaufskanal"
         },
+        "navigation": {
+            "title": "Navigation",
+            "rootCategory": "Root-Kategorie",
+            "helpText": "Kategorienamen und URLs werden unter Katalog → Kategorien bearbeitet.",
+            "empty": "Für die gewählte Root-Kategorie wurden keine direkten Unterkategorien gefunden."
+        },
         "branding": {
             "title": "Branding",
             "logo": "Storefront-Logo",

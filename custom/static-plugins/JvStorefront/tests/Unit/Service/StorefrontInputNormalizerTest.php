@@ -67,4 +67,28 @@ final class StorefrontInputNormalizerTest extends TestCase
         self::assertNull($this->normalizer->optionalString('   '));
         self::assertSame('About', $this->normalizer->optionalString(' About '));
     }
+
+    public function testNormalizeOrderedUuidListReturnsNullForMissingValue(): void
+    {
+        self::assertNull($this->normalizer->normalizeOrderedUuidList(null));
+        self::assertNull($this->normalizer->normalizeOrderedUuidList(''));
+    }
+
+    public function testNormalizeOrderedUuidListReturnsEmptyArrayForExplicitEmptyList(): void
+    {
+        self::assertSame([], $this->normalizer->normalizeOrderedUuidList([]));
+        self::assertSame([], $this->normalizer->normalizeOrderedUuidList('[]'));
+    }
+
+    public function testNormalizeOrderedUuidListDedupesAndPreservesFirstOccurrence(): void
+    {
+        $first = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+        $second = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+        $third = 'cccccccccccccccccccccccccccccccc';
+
+        self::assertSame(
+            [$first, $second, $third],
+            $this->normalizer->normalizeOrderedUuidList([$first, $second, $first, 'not-a-uuid', $third]),
+        );
+    }
 }

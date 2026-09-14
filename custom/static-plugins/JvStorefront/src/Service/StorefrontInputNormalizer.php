@@ -58,6 +58,49 @@ final class StorefrontInputNormalizer
         return $id;
     }
 
+    /**
+     * @return list<string>|null null = not configured; [] = explicitly empty whitelist
+     */
+    public function normalizeOrderedUuidList(mixed $value): ?array
+    {
+        if (null === $value) {
+            return null;
+        }
+
+        if (\is_string($value)) {
+            $value = trim($value);
+            if ('' === $value) {
+                return null;
+            }
+
+            $decoded = json_decode($value, true);
+            if (\JSON_ERROR_NONE !== json_last_error() || !\is_array($decoded)) {
+                return null;
+            }
+
+            $value = $decoded;
+        }
+
+        if (!\is_array($value)) {
+            return null;
+        }
+
+        $normalized = [];
+        $seen = [];
+
+        foreach ($value as $entry) {
+            $id = $this->normalizeUuid($entry);
+            if (null === $id || isset($seen[$id])) {
+                continue;
+            }
+
+            $seen[$id] = true;
+            $normalized[] = $id;
+        }
+
+        return $normalized;
+    }
+
     public function safeSocialUrl(?string $url): ?string
     {
         $url = trim((string) $url);
