@@ -19,7 +19,7 @@ final class Migration1771000003CreateInternationalLinkSchema extends MigrationSt
                 `id` BINARY(16) NOT NULL,
                 `sales_channel_id` BINARY(16) NOT NULL,
                 `target_sales_channel_id` BINARY(16) NOT NULL,
-                `label` VARCHAR(255) NOT NULL,
+                `label` VARCHAR(255) NULL,
                 `icon_media_id` BINARY(16) NOT NULL,
                 `position` INT NOT NULL DEFAULT 0,
                 `active` TINYINT(1) NOT NULL DEFAULT 1,

@@ -15,6 +15,7 @@ deployment:
       - JvMarketConfiguration
       - JvCms
       - JvImport
+      - JvStorefront
   hooks:
     post:
       - title: Configure JVMöbel sales channels
@@ -23,3 +24,5 @@ deployment:
         script: bin/console jv:catalog:bootstrap-import-profiles --no-interaction
       - title: Register project scheduled tasks
         script: bin/console scheduled-task:register --no-interaction
+      - title: Sync Administration bundle assets
+        script: bin/console assets:install --force --no-interaction
