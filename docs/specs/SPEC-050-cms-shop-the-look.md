@@ -16,7 +16,7 @@
 - плагин `custom/static-plugins/JvCms`;
 - element + block `jv-shop-the-look`, палитра `commerce`;
 - `ShopTheLookCmsElementResolver` и typed structs;
-- `collect()` для main media и product UUID;
+- `collect()` для main media и product UUID, включая association `seoUrls`;
 - визуальное перемещение hotspot-точек в Administration canvas с обновлением координат;
 - unit/integration-тесты;
 - Administration source, snippets и production assets.
@@ -72,7 +72,7 @@ Root всегда содержит `apiAlias`, `title`, `eyebrow`, `description`
 - Persisted CMS config считается недоверенным input.
 - `getType()` возвращает `jv-shop-the-look`.
 - `collect()` валидирует UUID через `Uuid::isValid()`, дедуплицирует product ids и не отправляет invalid значения в DAL.
-- Main image загружается через `MediaDefinition`; товары — через `ProductDefinition`.
+- Main image загружается через `MediaDefinition`; товары — через `ProductDefinition` с association `seoUrls`.
 - Нет valid UUID → соответствующий Criteria не добавляется; пустая collection → `null`.
 - `image`: отсутствующий entity или пустой URL → null; alt берётся из translated media alt, затем file name.
 - `items`: list/keyed object; non-array entries skip; сортировка по finite `position`, tie-break original index.
@@ -80,7 +80,8 @@ Root всегда содержит `apiAlias`, `title`, `eyebrow`, `description`
 - Administration canvas поддерживает перемещение hotspot мышью, touch и pen; вычисленные координаты ограничиваются диапазоном 0..100 и округляются до одного знака после запятой.
 - Перемещение hotspot обновляет `hotspot.x/y` того же item, поэтому числовые поля конфигурации показывают новые координаты.
 - Непустой `productId` задаёт product mode. Invalid/missing/not-in-channel product или пустое translated name → item skip.
-- В product mode `id` = product UUID, `name` берётся из resolved product, а `url` всегда равен `/produkt/{productId}`; CMS `description` override имеет приоритет над translated product description.
+- В product mode `id` = product UUID, `name` берётся из resolved product, а `url` — root-relative canonical, non-deleted SEO path маршрута `frontend.detail.page` для текущих `salesChannelId` и `languageId`; CMS `description` override имеет приоритет над translated product description.
+- Product без подходящего canonical SEO URL исключается из `items`; технический route `/produkt/{productId}` и SEO URL другого sales channel/language не используются как fallback.
 - Пустой `productId` задаёт manual mode: требуются trim `name` и safe `url`; `id` = trim config id либо `${name}-${originalIndex}`.
 - Duplicate resolved `id`: first valid item wins.
 - `viewAll`: оба поля + safe URL; иначе null.
@@ -98,6 +99,7 @@ Root всегда содержит `apiAlias`, `title`, `eyebrow`, `description`
 | valid UUID, media missing | `image: null` |
 | invalid/non-empty `productId` | item omit, без manual fallback |
 | product отсутствует в sales channel | item omit |
+| product без active canonical PDP SEO URL текущего sales channel/language | item omit |
 | manual item без `name`/safe `url` | item omit |
 | hotspot вне 0..100 / NaN | item omit |
 | duplicate resolved id | first wins |
@@ -139,7 +141,7 @@ module/sw-cms/blocks/jv-shop-the-look/jv-shop-the-look/
 - sort/tie-break/dedupe/keyed object;
 - hotspot boundaries и invalid numbers;
 - safe/unsafe manual и viewAll URLs;
-- missing media/product и frontend product route;
+- missing media/product/SEO URL и выбор canonical PDP URL текущего sales channel/language;
 - DI registration + `CmsSlotsDataResolver`;
 - `StructEncoder` empty и non-empty, включая nested aliases и hotspot shape.
 

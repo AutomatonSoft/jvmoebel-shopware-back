@@ -15,11 +15,13 @@ use Shopware\Core\Content\Media\MediaEntity;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
+use Shopware\Core\Content\Seo\SeoUrl\SeoUrlCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 /**
  * Resolves `jv-shop-the-look` for Store API (platform SPEC-040 / backend SPEC-050).
@@ -59,6 +61,7 @@ final class ShopTheLookCmsElementResolver extends AbstractCmsElementResolver
 
         if ([] !== $productIds) {
             $criteria = new Criteria(array_values($productIds));
+            $criteria->addAssociation('seoUrls');
             $criteriaCollection->add(
                 $this->productResultKey($slot),
                 ProductDefinition::class,
@@ -80,6 +83,7 @@ final class ShopTheLookCmsElementResolver extends AbstractCmsElementResolver
             items: $this->normalizeItems(
                 $config->get('items')?->getValue(),
                 $this->productMap($result->get($this->productResultKey($slot))),
+                $resolverContext->getSalesChannelContext(),
             ),
             viewAll: $this->normalizeViewAll($config->get('viewAll')?->getValue()),
         ));
@@ -90,7 +94,7 @@ final class ShopTheLookCmsElementResolver extends AbstractCmsElementResolver
      *
      * @return list<ShopTheLookItemStruct>
      */
-    private function normalizeItems(mixed $value, array $products): array
+    private function normalizeItems(mixed $value, array $products, SalesChannelContext $context): array
     {
         $entries = $this->itemConfigEntries($value);
 
@@ -116,7 +120,7 @@ final class ShopTheLookCmsElementResolver extends AbstractCmsElementResolver
                 continue;
             }
 
-            $resolved = $this->resolveItem($item, $originalIndex, $products);
+            $resolved = $this->resolveItem($item, $originalIndex, $products, $context);
             if (null === $resolved || isset($seenIds[$resolved['id']])) {
                 continue;
             }
@@ -145,6 +149,7 @@ final class ShopTheLookCmsElementResolver extends AbstractCmsElementResolver
         array $item,
         int $originalIndex,
         array $products,
+        SalesChannelContext $context,
     ): ?array {
         $productIdValue = $item['productId'] ?? null;
         if ($this->hasProductReference($productIdValue)) {
@@ -159,6 +164,11 @@ final class ShopTheLookCmsElementResolver extends AbstractCmsElementResolver
                 return null;
             }
 
+            $url = $this->resolveProductUrl($product, $context);
+            if (null === $url) {
+                return null;
+            }
+
             $description = $this->optionalString($item['description'] ?? null)
                 ?? $this->optionalString($product->getTranslation('description') ?? $product->getDescription());
 
@@ -166,7 +176,7 @@ final class ShopTheLookCmsElementResolver extends AbstractCmsElementResolver
                 'id' => $productId,
                 'name' => $name,
                 'description' => $description,
-                'url' => '/produkt/'.$productId,
+                'url' => $url,
             ];
         }
 
@@ -184,6 +194,34 @@ final class ShopTheLookCmsElementResolver extends AbstractCmsElementResolver
             'description' => $this->optionalString($item['description'] ?? null),
             'url' => $url,
         ];
+    }
+
+    private function resolveProductUrl(SalesChannelProductEntity $product, SalesChannelContext $context): ?string
+    {
+        $seoUrls = $product->getSeoUrls();
+        if (!$seoUrls instanceof SeoUrlCollection) {
+            return null;
+        }
+
+        foreach ($seoUrls as $seoUrl) {
+            if ($seoUrl->getSalesChannelId() !== $context->getSalesChannelId()
+                || $seoUrl->getLanguageId() !== $context->getLanguageId()
+                || 'frontend.detail.page' !== $seoUrl->getRouteName()
+                || true !== $seoUrl->getIsCanonical()
+                || $seoUrl->getIsDeleted()
+            ) {
+                continue;
+            }
+
+            $path = trim($seoUrl->getSeoPathInfo());
+            if ('' === $path || str_contains($path, '://') || str_starts_with($path, '//')) {
+                continue;
+            }
+
+            return '/'.ltrim($path, '/');
+        }
+
+        return null;
     }
 
     private function normalizeViewAll(mixed $value): ?ShopTheLookLinkStruct

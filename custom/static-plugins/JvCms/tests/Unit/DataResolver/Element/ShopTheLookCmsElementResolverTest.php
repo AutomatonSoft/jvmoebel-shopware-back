@@ -19,9 +19,12 @@ use Shopware\Core\Content\Media\MediaEntity;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
+use Shopware\Core\Content\Seo\SeoUrl\SeoUrlCollection;
+use Shopware\Core\Content\Seo\SeoUrl\SeoUrlEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -30,6 +33,9 @@ final class ShopTheLookCmsElementResolverTest extends TestCase
     private const string MEDIA_ID = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
     private const string PRODUCT_ID = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
     private const string PRODUCT_ID_2 = 'cccccccccccccccccccccccccccccccc';
+    private const string SALES_CHANNEL_ID = 'dddddddddddddddddddddddddddddddd';
+    private const string LANGUAGE_ID = 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+    private const string PRODUCT_SEO_PATH = '4-Sitzer-Chesterfield-Sofa-OXFORD-Ledersofa/39688120-1';
 
     public function testItExposesTypeAndEmptyCollectIsNull(): void
     {
@@ -59,9 +65,11 @@ final class ShopTheLookCmsElementResolverTest extends TestCase
             [self::MEDIA_ID],
             $all[MediaDefinition::class]['jv_shop_the_look_media_'.$slot->getUniqueIdentifier()]->getIds(),
         );
-        $productIds = $all[ProductDefinition::class]['jv_shop_the_look_products_'.$slot->getUniqueIdentifier()]->getIds();
+        $criteria = $all[ProductDefinition::class]['jv_shop_the_look_products_'.$slot->getUniqueIdentifier()];
+        $productIds = $criteria->getIds();
         sort($productIds);
         self::assertSame([self::PRODUCT_ID, self::PRODUCT_ID_2], $productIds);
+        self::assertTrue($criteria->hasAssociation('seoUrls'));
     }
 
     public function testCollectIgnoresInvalidUuids(): void
@@ -147,7 +155,7 @@ final class ShopTheLookCmsElementResolverTest extends TestCase
         self::assertSame(self::PRODUCT_ID, $resolvedProduct->getId());
         self::assertSame('Alba Modular Sofa', $resolvedProduct->getName());
         self::assertSame('Editorial override', $resolvedProduct->getDescription());
-        self::assertSame('/produkt/'.self::PRODUCT_ID, $resolvedProduct->getUrl());
+        self::assertSame('/'.self::PRODUCT_SEO_PATH, $resolvedProduct->getUrl());
         self::assertSame(['x' => 69.0, 'y' => 66.5], $resolvedProduct->getHotspot());
         $viewAll = $data->getViewAll();
         self::assertNotNull($viewAll);
@@ -325,7 +333,7 @@ final class ShopTheLookCmsElementResolverTest extends TestCase
         yield 'relative without slash' => ['product/sofa'];
     }
 
-    public function testProductUsesFrontendIdRoute(): void
+    public function testProductUsesCanonicalSeoUrlForCurrentSalesChannelAndLanguage(): void
     {
         $slot = $this->slot([
             'items' => [[
@@ -334,6 +342,14 @@ final class ShopTheLookCmsElementResolverTest extends TestCase
             ]],
         ]);
         $product = $this->product(self::PRODUCT_ID, 'Sofa');
+        $product->setSeoUrls(new SeoUrlCollection([
+            $this->seoUrl(self::SALES_CHANNEL_ID, 'ffffffffffffffffffffffffffffffff', self::PRODUCT_SEO_PATH),
+            $this->seoUrl('ffffffffffffffffffffffffffffffff', self::LANGUAGE_ID, self::PRODUCT_SEO_PATH),
+            $this->seoUrl(self::SALES_CHANNEL_ID, self::LANGUAGE_ID, 'not-canonical', canonical: false),
+            $this->seoUrl(self::SALES_CHANNEL_ID, self::LANGUAGE_ID, 'deleted', deleted: true),
+            $this->seoUrl(self::SALES_CHANNEL_ID, self::LANGUAGE_ID, 'wrong-route', routeName: 'frontend.navigation.page'),
+            $this->seoUrl(self::SALES_CHANNEL_ID, self::LANGUAGE_ID, self::PRODUCT_SEO_PATH),
+        ]));
         $result = $this->resultForSlot($slot, null, [$product]);
 
         (new ShopTheLookCmsElementResolver())->enrich($slot, $this->resolverContext(), $result);
@@ -341,7 +357,31 @@ final class ShopTheLookCmsElementResolverTest extends TestCase
         $data = $slot->getData();
         self::assertInstanceOf(ShopTheLookStruct::class, $data);
         self::assertCount(1, $data->getItems());
-        self::assertSame('/produkt/'.self::PRODUCT_ID, $data->getItems()[0]->getUrl());
+        self::assertSame('/'.self::PRODUCT_SEO_PATH, $data->getItems()[0]->getUrl());
+    }
+
+    public function testProductWithoutCanonicalSeoUrlForCurrentContextIsSkipped(): void
+    {
+        $slot = $this->slot([
+            'items' => [[
+                'productId' => self::PRODUCT_ID,
+                'hotspot' => ['x' => 50, 'y' => 50],
+            ]],
+        ]);
+        $product = $this->product(self::PRODUCT_ID, 'Sofa');
+        $product->setSeoUrls(new SeoUrlCollection([
+            $this->seoUrl('ffffffffffffffffffffffffffffffff', self::LANGUAGE_ID, self::PRODUCT_SEO_PATH),
+        ]));
+
+        (new ShopTheLookCmsElementResolver())->enrich(
+            $slot,
+            $this->resolverContext(),
+            $this->resultForSlot($slot, null, [$product]),
+        );
+
+        $data = $slot->getData();
+        self::assertInstanceOf(ShopTheLookStruct::class, $data);
+        self::assertSame([], $data->getItems());
     }
 
     /**
@@ -407,8 +447,31 @@ final class ShopTheLookCmsElementResolverTest extends TestCase
         $product->setUniqueIdentifier($id);
         $product->setId($id);
         $product->setTranslated(['name' => $name, 'description' => $description]);
+        $product->setSeoUrls(new SeoUrlCollection([
+            $this->seoUrl(self::SALES_CHANNEL_ID, self::LANGUAGE_ID, self::PRODUCT_SEO_PATH),
+        ]));
 
         return $product;
+    }
+
+    private function seoUrl(
+        string $salesChannelId,
+        string $languageId,
+        string $seoPath,
+        bool $canonical = true,
+        bool $deleted = false,
+        string $routeName = 'frontend.detail.page',
+    ): SeoUrlEntity {
+        $seoUrl = new SeoUrlEntity();
+        $seoUrl->setUniqueIdentifier(Uuid::randomHex());
+        $seoUrl->setSalesChannelId($salesChannelId);
+        $seoUrl->setLanguageId($languageId);
+        $seoUrl->setRouteName($routeName);
+        $seoUrl->setSeoPathInfo($seoPath);
+        $seoUrl->setIsCanonical($canonical);
+        $seoUrl->setIsDeleted($deleted);
+
+        return $seoUrl;
     }
 
     /**
@@ -445,6 +508,8 @@ final class ShopTheLookCmsElementResolverTest extends TestCase
     private function resolverContext(): ResolverContext
     {
         $context = $this->createMock(SalesChannelContext::class);
+        $context->method('getSalesChannelId')->willReturn(self::SALES_CHANNEL_ID);
+        $context->method('getLanguageId')->willReturn(self::LANGUAGE_ID);
 
         return new ResolverContext($context, new Request());
     }
