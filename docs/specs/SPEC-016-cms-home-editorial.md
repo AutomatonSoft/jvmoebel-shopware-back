@@ -4,7 +4,10 @@
 
 Реализовать в плагине `JvCms` CMS element/block `jv-home-editorial`: редактор задаёт вводный текст и упорядоченные разделы с rich text, а Store API отдаёт канонический `data` для существующего Next.js renderer.
 
-Межрепозиторный контракт на момент задачи: `frontend/docs/components/jv-home-editorial.md` и parser `frontend/src/features/cms/contracts/home-editorial.ts`.
+Межрепозиторный контракт: `jvmoebel-shopware-docs` /
+`docs/specs/SPEC-042-cms-home-editorial.md`. Реализация parser описана также в
+`frontend/docs/components/jv-home-editorial.md` и
+`frontend/src/features/cms/contracts/home-editorial.ts`.
 
 Только backend: Administration, resolver, typed structs и тесты. Публичная разметка остаётся в Next.js (`CmsHomeEditorial`).
 

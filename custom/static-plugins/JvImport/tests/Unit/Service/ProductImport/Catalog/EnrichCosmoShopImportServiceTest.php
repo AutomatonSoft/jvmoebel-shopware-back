@@ -30,6 +30,20 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
 
 final class EnrichCosmoShopImportServiceTest extends TestCase
 {
+    private const string SOURCE_IMPORT_LOG_ID = '019fe6386ca771b29f5a8412a8cc3d95';
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->cleanupEnrichmentDirectories(self::SOURCE_IMPORT_LOG_ID);
+    }
+
+    protected function tearDown(): void
+    {
+        $this->cleanupEnrichmentDirectories(self::SOURCE_IMPORT_LOG_ID);
+        parent::tearDown();
+    }
+
     public function testItBuildsAndQueuesAStandardCatalogImportForTheFinishedSourceImport(): void
     {
         $context = Context::createDefaultContext();
@@ -74,7 +88,7 @@ final class EnrichCosmoShopImportServiceTest extends TestCase
         );
         $service->execute($source->getId(), $context);
 
-        self::assertSame([], glob((string) getcwd().'/var/import/okb-enrichment/'.$source->getId().'-*'));
+        self::assertSame([], $this->enrichmentDirectories($source->getId()));
     }
 
     public function testItExcludesSourceRowsAlreadyReportedAsInvalid(): void
@@ -298,7 +312,7 @@ final class EnrichCosmoShopImportServiceTest extends TestCase
         $file = new ImportExportFileEntity();
         $file->setPath('source/import.csv');
         $log = new ImportExportLogEntity();
-        $log->setId('019fe6386ca771b29f5a8412a8cc3d95');
+        $log->setId(self::SOURCE_IMPORT_LOG_ID);
         $log->setActivity(ImportExportLogEntity::ACTIVITY_IMPORT);
         $log->setProfile($profile);
         $log->setFile($file);
@@ -324,5 +338,52 @@ final class EnrichCosmoShopImportServiceTest extends TestCase
         rewind($stream);
 
         return $stream;
+    }
+
+    /** @return list<string> */
+    private function enrichmentDirectories(string $sourceImportLogId): array
+    {
+        $matches = glob($this->enrichmentDirectoryPattern($sourceImportLogId));
+
+        return false === $matches ? [] : $matches;
+    }
+
+    private function enrichmentDirectoryPattern(string $sourceImportLogId): string
+    {
+        return (string) getcwd().'/var/import/okb-enrichment/'.$sourceImportLogId.'-*';
+    }
+
+    private function cleanupEnrichmentDirectories(string $sourceImportLogId): void
+    {
+        foreach ($this->enrichmentDirectories($sourceImportLogId) as $directory) {
+            $this->removeDirectory($directory);
+        }
+    }
+
+    private function removeDirectory(string $directory): void
+    {
+        if (!is_dir($directory)) {
+            return;
+        }
+
+        $items = scandir($directory);
+        if (false === $items) {
+            return;
+        }
+
+        foreach ($items as $item) {
+            if ('.' === $item || '..' === $item) {
+                continue;
+            }
+
+            $path = $directory.'/'.$item;
+            if (is_dir($path)) {
+                $this->removeDirectory($path);
+            } elseif (is_file($path)) {
+                unlink($path);
+            }
+        }
+
+        rmdir($directory);
     }
 }

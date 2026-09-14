@@ -1,0 +1,82 @@
+{% block sw_cms_el_config_jv_promo_banner %}
+	<div class="sw-cms-el-config-jv-promo-banner">
+		<mt-text-field
+			v-model:model-value="element.config.title.value"
+			:label="$t('cms.elements.jv-promo-banner.config.title.label')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-text-field
+			v-model:model-value="element.config.eyebrow.value"
+			:label="$t('cms.elements.jv-promo-banner.config.eyebrow.label')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-textarea
+			v-model:model-value="element.config.description.value"
+			:label="$t('cms.elements.jv-promo-banner.config.description.label')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-select
+			v-model:model-value="element.config.contentPosition.value"
+			:label="$t('cms.elements.jv-promo-banner.config.contentPosition.label')"
+			:options="contentPositionOptions"
+			@update:model-value="onUpdate"
+		/>
+
+		<div class="sw-cms-el-config-jv-promo-banner__media">
+			<label class="sw-cms-el-config-jv-promo-banner__media-label">
+				{{ $t('cms.elements.jv-promo-banner.config.imageMedia.label') }}
+			</label>
+
+			<sw-media-upload-v2
+				variant="regular"
+				:upload-tag="uploadTag()"
+				:source="imagePreviewSource"
+				:allow-multi-select="false"
+				:default-folder="cmsPageState.pageEntityName"
+				:caption="$t('cms.elements.jv-promo-banner.config.imageMedia.caption')"
+				@media-upload-sidebar-open="onOpenMediaModal"
+				@media-upload-remove-image="onImageRemove"
+			/>
+
+			<sw-upload-listener
+				:upload-tag="uploadTag()"
+				auto-upload
+				@media-upload-finish="onImageUpload"
+			/>
+		</div>
+
+		<div class="sw-cms-el-config-jv-promo-banner__section">
+			<h4>{{ $t('cms.elements.jv-promo-banner.config.link.title') }}</h4>
+
+			<mt-text-field
+				v-model:model-value="element.config.link.value.label"
+				:label="$t('cms.elements.jv-promo-banner.config.link.label.label')"
+				@update:model-value="onUpdate"
+			/>
+
+			<mt-text-field
+				v-model:model-value="element.config.link.value.url"
+				:label="$t('cms.elements.jv-promo-banner.config.link.url.label')"
+				@update:model-value="onUpdate"
+			/>
+
+			<mt-select
+				v-model:model-value="element.config.link.value.size"
+				:label="$t('cms.elements.jv-promo-banner.config.link.size.label')"
+				:options="sizeOptions"
+				@update:model-value="onUpdate"
+			/>
+		</div>
+
+		<sw-media-modal-v2
+			v-if="mediaModalOpen"
+			:allow-multi-select="false"
+			:entity-context="cmsPageState.pageEntityName"
+			@media-modal-selection-change="onMediaSelectionChanges"
+			@modal-close="onCloseMediaModal"
+		/>
+	</div>
+{% endblock %}

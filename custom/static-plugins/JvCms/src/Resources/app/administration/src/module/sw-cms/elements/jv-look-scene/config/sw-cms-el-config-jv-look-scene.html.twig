@@ -1,0 +1,121 @@
+{% block sw_cms_el_config_jv_look_scene %}
+	<div class="sw-cms-el-config-jv-look-scene">
+		<mt-text-field
+			v-model:model-value="element.config.title.value"
+			:label="$t('cms.elements.jv-look-scene.config.title.label')"
+			:placeholder="$t('cms.elements.jv-look-scene.config.title.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-textarea
+			v-model:model-value="element.config.description.value"
+			:label="$t('cms.elements.jv-look-scene.config.description.label')"
+			:placeholder="$t('cms.elements.jv-look-scene.config.description.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<div class="sw-cms-el-config-jv-look-scene__section">
+			<label class="sw-cms-el-config-jv-look-scene__media-label">
+				{{ $t('cms.elements.jv-look-scene.config.imageMedia.label') }}
+			</label>
+
+			<sw-media-upload-v2
+				variant="regular"
+				:upload-tag="imageUploadTag"
+				:source="imagePreviewSource"
+				:allow-multi-select="false"
+				:default-folder="cmsPageState.pageEntityName"
+				:caption="$t('cms.elements.jv-look-scene.config.imageMedia.caption')"
+				@media-upload-sidebar-open="onOpenImageMediaModal"
+				@media-upload-remove-image="onImageRemove"
+			/>
+
+			<sw-upload-listener
+				:upload-tag="imageUploadTag"
+				auto-upload
+				@media-upload-finish="onImageUpload"
+			/>
+		</div>
+
+		<div class="sw-cms-el-config-jv-look-scene__section">
+			<div class="sw-cms-el-config-jv-look-scene__section-header">
+				<h4>{{ $t('cms.elements.jv-look-scene.config.products.title') }}</h4>
+				<mt-button size="small" variant="secondary" @click="addProduct">
+					{{ $t('cms.elements.jv-look-scene.config.products.add') }}
+				</mt-button>
+			</div>
+
+			<div
+				v-for="(product, productIndex) in products"
+				:key="product.id || productIndex"
+				class="sw-cms-el-config-jv-look-scene__card"
+			>
+				<div class="sw-cms-el-config-jv-look-scene__card-header">
+					<strong>{{ $t('cms.elements.jv-look-scene.config.products.cardTitle', { index: productIndex + 1 }) }}</strong>
+					<div class="sw-cms-el-config-jv-look-scene__card-actions">
+						<mt-button size="small" variant="secondary" :disabled="productIndex === 0" @click="moveProduct(productIndex, -1)">
+							{{ $t('cms.elements.jv-look-scene.config.products.moveUp') }}
+						</mt-button>
+						<mt-button size="small" variant="secondary" :disabled="productIndex === products.length - 1" @click="moveProduct(productIndex, 1)">
+							{{ $t('cms.elements.jv-look-scene.config.products.moveDown') }}
+						</mt-button>
+						<mt-button size="small" variant="critical" @click="removeProduct(productIndex)">
+							{{ $t('cms.elements.jv-look-scene.config.products.remove') }}
+						</mt-button>
+					</div>
+				</div>
+
+				<sw-entity-single-select
+					v-model:value="product.productId"
+					entity="product"
+					:label="$t('cms.elements.jv-look-scene.config.products.productId.label')"
+					:placeholder="$t('cms.elements.jv-look-scene.config.products.productId.placeholder')"
+					:help-text="$t('cms.elements.jv-look-scene.config.products.productId.helpText')"
+					@update:value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="product.name"
+					:label="$t('cms.elements.jv-look-scene.config.products.name.label')"
+					:placeholder="$t('cms.elements.jv-look-scene.config.products.name.placeholder')"
+					:help-text="$t('cms.elements.jv-look-scene.config.products.name.helpText')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="product.url"
+					:label="$t('cms.elements.jv-look-scene.config.products.url.label')"
+					:placeholder="$t('cms.elements.jv-look-scene.config.products.url.placeholder')"
+					:help-text="$t('cms.elements.jv-look-scene.config.products.url.helpText')"
+					@update:model-value="onUpdate"
+				/>
+			</div>
+		</div>
+
+		<div class="sw-cms-el-config-jv-look-scene__section">
+			<h4>{{ $t('cms.elements.jv-look-scene.config.viewAll.title') }}</h4>
+
+			<mt-text-field
+				v-model:model-value="element.config.viewAll.value.label"
+				:label="$t('cms.elements.jv-look-scene.config.viewAll.label.label')"
+				:placeholder="$t('cms.elements.jv-look-scene.config.viewAll.label.placeholder')"
+				@update:model-value="onUpdate"
+			/>
+
+			<mt-text-field
+				v-model:model-value="element.config.viewAll.value.url"
+				:label="$t('cms.elements.jv-look-scene.config.viewAll.url.label')"
+				:placeholder="$t('cms.elements.jv-look-scene.config.viewAll.url.placeholder')"
+				@update:model-value="onUpdate"
+			/>
+		</div>
+
+		<sw-media-modal-v2
+			v-if="mediaModalIsOpen"
+			:allow-multi-select="false"
+			:entity-context="cmsPageState.pageEntityName"
+			@media-modal-selection-change="onImageSelectionChanges"
+			@media-modal-close="onCloseImageMediaModal"
+		/>
+	</div>
+{% endblock %}

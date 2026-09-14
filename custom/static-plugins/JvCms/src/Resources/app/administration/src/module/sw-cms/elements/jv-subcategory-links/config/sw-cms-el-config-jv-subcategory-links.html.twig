@@ -1,0 +1,49 @@
+{% block sw_cms_el_config_jv_subcategory_links %}
+	<div class="sw-cms-el-config-jv-subcategory-links">
+		<mt-text-field
+			v-model:model-value="element.config.title.value"
+			:label="$t('cms.elements.jv-subcategory-links.config.title.label')"
+			@update:model-value="onUpdate"
+		/>
+
+		<div class="sw-cms-el-config-jv-subcategory-links__section">
+			<div class="sw-cms-el-config-jv-subcategory-links__section-header">
+				<h4>{{ $t('cms.elements.jv-subcategory-links.config.links.title') }}</h4>
+				<mt-button size="small" variant="secondary" @click="addLink">
+					{{ $t('cms.elements.jv-subcategory-links.config.links.add') }}
+				</mt-button>
+			</div>
+
+			<div
+				v-for="(link, linkIndex) in links"
+				:key="link.id || linkIndex"
+				class="sw-cms-el-config-jv-subcategory-links__card"
+			>
+				<div class="sw-cms-el-config-jv-subcategory-links__card-header">
+					<strong>{{ $t('cms.elements.jv-subcategory-links.config.links.cardTitle', { index: linkIndex + 1 }) }}</strong>
+					<mt-button size="small" variant="critical" @click="removeLink(linkIndex)">
+						{{ $t('cms.elements.jv-subcategory-links.config.links.remove') }}
+					</mt-button>
+				</div>
+
+				<mt-text-field
+					v-model:model-value="link.id"
+					:label="$t('cms.elements.jv-subcategory-links.config.links.id.label')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="link.label"
+					:label="$t('cms.elements.jv-subcategory-links.config.links.label.label')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="link.url"
+					:label="$t('cms.elements.jv-subcategory-links.config.links.url.label')"
+					@update:model-value="onUpdate"
+				/>
+			</div>
+		</div>
+	</div>
+{% endblock %}

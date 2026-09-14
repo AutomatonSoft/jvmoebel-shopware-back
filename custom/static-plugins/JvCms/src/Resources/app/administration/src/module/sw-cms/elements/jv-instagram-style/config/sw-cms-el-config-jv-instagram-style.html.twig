@@ -1,0 +1,67 @@
+{% block sw_cms_el_config_jv_instagram_style %}
+	<div class="sw-cms-el-config-jv-instagram-style">
+		<mt-text-field
+			v-model:model-value="element.config.handle.value"
+			:label="$t('cms.elements.jv-instagram-style.config.handle.label')"
+			:placeholder="$t('cms.elements.jv-instagram-style.config.handle.placeholder')"
+			:help-text="$t('cms.elements.jv-instagram-style.config.handle.helpText')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-textarea
+			v-model:model-value="element.config.caption.value"
+			:label="$t('cms.elements.jv-instagram-style.config.caption.label')"
+			@update:model-value="onUpdate"
+		/>
+
+		<div class="sw-cms-el-config-jv-instagram-style__media">
+			<label class="sw-cms-el-config-jv-instagram-style__media-label">
+				{{ $t('cms.elements.jv-instagram-style.config.imageMedia.label') }}
+			</label>
+
+			<sw-media-upload-v2
+				variant="regular"
+				:upload-tag="uploadTag()"
+				:source="imagePreviewSource"
+				:allow-multi-select="false"
+				:default-folder="cmsPageState.pageEntityName"
+				:caption="$t('cms.elements.jv-instagram-style.config.imageMedia.caption')"
+				@media-upload-sidebar-open="onOpenMediaModal"
+				@media-upload-remove-image="onImageRemove"
+			/>
+
+			<sw-upload-listener
+				:upload-tag="uploadTag()"
+				auto-upload
+				@media-upload-finish="onImageUpload"
+			/>
+		</div>
+
+		<div class="sw-cms-el-config-jv-instagram-style__section">
+			<h4>{{ $t('cms.elements.jv-instagram-style.config.link.title') }}</h4>
+
+			<mt-text-field
+				v-model:model-value="element.config.link.value.label"
+				:label="$t('cms.elements.jv-instagram-style.config.link.label.label')"
+				@update:model-value="onUpdate"
+			/>
+
+			<mt-text-field
+				v-model:model-value="element.config.link.value.url"
+				:label="$t('cms.elements.jv-instagram-style.config.link.url.label')"
+				@update:model-value="onUpdate"
+			/>
+		</div>
+
+		<sw-media-modal-v2
+			v-if="mediaModalOpen"
+			variant="full"
+			:caption="$t('cms.elements.jv-instagram-style.config.imageMedia.caption')"
+			:entity-context="cmsPageState.entityName"
+			:allow-multi-select="false"
+			:initial-folder-id="cmsPageState.defaultMediaFolderId"
+			@media-modal-selection-change="onMediaSelectionChanges"
+			@modal-close="onCloseMediaModal"
+		/>
+	</div>
+{% endblock %}

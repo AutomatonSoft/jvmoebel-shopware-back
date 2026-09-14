@@ -1,0 +1,2 @@
+const t='{% block sw_cms_block_editorial_team_grid %} <div class="sw-cms-block-jv-editorial-team-grid"> <slot name="content"></slot> </div> {% endblock %}',e={template:t};export{e as default};
+//# sourceMappingURL=index-BJEibcDw.js.map

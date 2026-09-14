@@ -1,0 +1,19 @@
+.sw-cms-el-jv-table-of-contents {
+    padding: 16px;
+
+    &__title {
+        font-weight: 600;
+        margin-bottom: 12px;
+    }
+
+    &__items {
+        margin: 0;
+        padding-left: 20px;
+        color: #52667a;
+    }
+
+    &__empty {
+        color: #94a6b8;
+        font-size: 12px;
+    }
+}

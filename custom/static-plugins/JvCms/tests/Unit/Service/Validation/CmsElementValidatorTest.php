@@ -5,6 +5,7 @@ namespace Jv\Cms\Tests\Unit\Service\Validation;
 use Jv\Cms\Service\Validation\CmsElementValidator;
 use Jv\Cms\Service\Validation\FaqCmsElementValidationRule;
 use Jv\Cms\Service\Validation\HomeEditorialCmsElementValidationRule;
+use Jv\Cms\Service\Validation\SocialBlockCmsElementValidationRule;
 use PHPUnit\Framework\TestCase;
 
 final class CmsElementValidatorTest extends TestCase
@@ -67,11 +68,40 @@ final class CmsElementValidatorTest extends TestCase
         self::assertSame([], $validParagraphs);
     }
 
+    public function testSocialBlockRuleTargetsAnEmptyListAndMissingItemUrlsWithoutBlockingSave(): void
+    {
+        $validator = $this->validator();
+
+        $emptyItems = $validator->validate('jv-social-block', [
+            'items' => ['value' => []],
+        ]);
+        self::assertCount(1, $emptyItems);
+        self::assertSame('/config/items/value', $emptyItems[0]->fieldPath);
+        self::assertSame('JV_CMS_SOCIAL_BLOCK_ITEM_REQUIRED', $emptyItems[0]->code);
+        self::assertFalse($emptyItems[0]->blockSave);
+
+        $missingUrls = $validator->validate('jv-social-block', [
+            'items' => [
+                'value' => [
+                    ['name' => 'Facebook', 'url' => ''],
+                    ['name' => 'Instagram', 'url' => '  '],
+                    ['name' => 'YouTube', 'url' => 'https://www.youtube.com/@jvmoebel'],
+                ],
+            ],
+        ]);
+        self::assertSame(
+            ['/config/items/value/0/url', '/config/items/value/1/url'],
+            array_column($missingUrls, 'fieldPath'),
+        );
+        self::assertSame([false, false], array_column($missingUrls, 'blockSave'));
+    }
+
     private function validator(): CmsElementValidator
     {
         return new CmsElementValidator([
             new FaqCmsElementValidationRule(),
             new HomeEditorialCmsElementValidationRule(),
+            new SocialBlockCmsElementValidationRule(),
         ]);
     }
 }

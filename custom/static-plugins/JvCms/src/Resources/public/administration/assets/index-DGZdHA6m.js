@@ -1,0 +1,2 @@
+const s=`{% block sw_cms_block_jv_chip_rail_preview %} <div class="sw-cms-preview-jv-chip-rail"> <span class="sw-cms-preview-jv-chip-rail__title">{{ $t('cms.blocks.jv-chip-rail.label') }}</span> <div class="sw-cms-preview-jv-chip-rail__list"> <span class="sw-cms-preview-jv-chip-rail__chip"></span> <span class="sw-cms-preview-jv-chip-rail__chip"></span> <span class="sw-cms-preview-jv-chip-rail__chip"></span> </div> </div> {% endblock %}`,i={template:s};export{i as default};
+//# sourceMappingURL=index-DGZdHA6m.js.map

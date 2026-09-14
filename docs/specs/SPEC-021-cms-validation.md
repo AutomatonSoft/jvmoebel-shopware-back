@@ -102,6 +102,7 @@ UI dot path и серверный DAL path имеют разный синтак�
 |---|---|---|---|
 | `jv-faq` | Каждый существующий item должен иметь непустые string `question` и `answer` | Ошибка каждого конкретного поля + выделение item | Нет |
 | `jv-home-editorial` | Каждая существующая section должна иметь хотя бы один непустой string paragraph | Ошибки существующих пустых editors; при отсутствии editors — сообщение секции | Нет |
+| `jv-social-block` | Список social items не должен быть пустым; каждый существующий item должен иметь непустую string ссылку | Сообщение списка либо ошибка URL + выделение item | Нет |
 
 Проверки root-полей и полная проверка контрактов этих elements в текущий этап не входят.
 
@@ -362,7 +363,7 @@ Production assets из `Resources/public/administration` входят в изм�
 - `CmsElementValidator` маршрутизирует tagged rules по element type;
 - `CmsElementValidationError` переносит path, message, code и флаг блокировки;
 - `CmsSlotWriteValidator` является DAL entry point и создаёт violations только для `blockSave: true`;
-- `FaqCmsElementValidationRule` и `HomeEditorialCmsElementValidationRule` переносят существующие неблокирующие проверки.
+- `FaqCmsElementValidationRule`, `HomeEditorialCmsElementValidationRule` и `SocialBlockCmsElementValidationRule` переносят специфичные неблокирующие проверки.
 
 `CmsSlotWriteValidator` получает type slot из команд текущей write operation. Для update, где type не входит в payload, используется параметризованный read-only SQL к `cms_slot`: в `PreWriteValidationEvent` связанная запись может ещё не быть доступна через результат текущей DAL-записи, а validator должен определить правило до выполнения write commands. SQL не читает CMS config и не изменяет данные.
 

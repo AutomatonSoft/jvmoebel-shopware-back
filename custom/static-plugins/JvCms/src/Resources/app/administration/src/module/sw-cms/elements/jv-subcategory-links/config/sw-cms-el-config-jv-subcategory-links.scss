@@ -1,0 +1,22 @@
+.sw-cms-el-config-jv-subcategory-links {
+    &__section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+
+    &__card {
+        margin-bottom: 16px;
+        padding: 12px;
+        border: 1px solid var(--color-border-primary-default);
+        border-radius: 4px;
+    }
+
+    &__card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+}

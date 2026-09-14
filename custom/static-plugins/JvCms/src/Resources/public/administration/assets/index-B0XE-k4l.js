@@ -1,0 +1,2 @@
+const e=`{% block sw_cms_element_expert_profile %} <div class="sw-cms-el-jv-expert-profile"> <div class="sw-cms-el-jv-expert-profile__label">{{ $t('cms.elements.jv-expert-profile.label') }}</div> </div> {% endblock %}`,{Mixin:l}=Shopware,t={template:e,mixins:[l.getByName("cms-element")],created(){this.initElementConfig("jv-expert-profile")}};export{t as default};
+//# sourceMappingURL=index-B0XE-k4l.js.map

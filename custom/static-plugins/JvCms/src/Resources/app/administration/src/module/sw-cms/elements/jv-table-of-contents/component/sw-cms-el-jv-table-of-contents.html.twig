@@ -1,0 +1,15 @@
+{% block sw_cms_element_jv_table_of_contents %}
+	<div class="sw-cms-el-jv-table-of-contents">
+		<div class="sw-cms-el-jv-table-of-contents__title">
+			{{ title || $t('cms.elements.jv-table-of-contents.component.titlePlaceholder') }}
+		</div>
+		<ul v-if="items.length" class="sw-cms-el-jv-table-of-contents__items">
+			<li v-for="(item, itemIndex) in items.slice(0, 6)" :key="item.id || itemIndex">
+				{{ item.label || $t('cms.elements.jv-table-of-contents.component.itemPlaceholder') }}
+			</li>
+		</ul>
+		<div v-else class="sw-cms-el-jv-table-of-contents__empty">
+			{{ $t('cms.elements.jv-table-of-contents.component.noItems') }}
+		</div>
+	</div>
+{% endblock %}

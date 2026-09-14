@@ -1,0 +1,24 @@
+{% block sw_cms_el_config_jv_expert_quote %}
+	<div class="sw-cms-el-config-jv-expert-quote">
+		<mt-textarea
+			v-model:model-value="element.config.quote.value"
+			:label="$t('cms.elements.jv-expert-quote.config.quote.label')"
+			:placeholder="$t('cms.elements.jv-expert-quote.config.quote.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-text-field
+			v-model:model-value="element.config.authorName.value"
+			:label="$t('cms.elements.jv-expert-quote.config.authorName.label')"
+			:placeholder="$t('cms.elements.jv-expert-quote.config.authorName.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-text-field
+			v-model:model-value="element.config.authorRole.value"
+			:label="$t('cms.elements.jv-expert-quote.config.authorRole.label')"
+			:placeholder="$t('cms.elements.jv-expert-quote.config.authorRole.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+	</div>
+{% endblock %}

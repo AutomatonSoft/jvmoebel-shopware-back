@@ -1,0 +1,58 @@
+.sw-cms-el-config-jv-text-custom-tables {
+    &__rich-text {
+        margin-bottom: 20px;
+
+        label {
+            color: #52667a;
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+    }
+
+    &__section {
+        border-top: 1px solid #d1d9e0;
+        margin: 20px 0;
+        padding-top: 16px;
+    }
+
+    &__section-header,
+    &__card-header,
+    &__table-header {
+        align-items: center;
+        display: flex;
+        gap: 12px;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+
+    &__card {
+        border: 1px solid #d1d9e0;
+        border-radius: 6px;
+        margin-top: 12px;
+        padding: 12px;
+    }
+
+    &__table-header {
+        border-top: 1px solid #e3e8ed;
+        margin-top: 20px;
+        padding-top: 16px;
+    }
+
+    &__row {
+        align-items: end;
+        border-top: 1px solid #e3e8ed;
+        display: grid;
+        gap: 12px;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+        padding: 12px 0;
+    }
+
+    &__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: flex-end;
+    }
+}

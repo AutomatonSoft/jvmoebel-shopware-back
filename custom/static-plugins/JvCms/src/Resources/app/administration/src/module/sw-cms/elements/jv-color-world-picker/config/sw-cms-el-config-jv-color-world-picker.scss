@@ -1,0 +1,35 @@
+.sw-cms-el-config-jv-color-world-picker {
+    &__section {
+        margin-top: 24px;
+    }
+
+    &__section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+
+    &__card {
+        border: 1px solid #d1d9e0;
+        border-radius: 4px;
+        padding: 16px;
+        margin-bottom: 12px;
+    }
+
+    &__card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+
+    &__card-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    &__media {
+        margin-top: 12px;
+    }
+}

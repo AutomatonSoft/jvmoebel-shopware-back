@@ -53,6 +53,7 @@
             "symfony/runtime": true
         },
         "optimize-autoloader": true,
+        "process-timeout": 900,
         "sort-packages": true
     },
     "scripts": {

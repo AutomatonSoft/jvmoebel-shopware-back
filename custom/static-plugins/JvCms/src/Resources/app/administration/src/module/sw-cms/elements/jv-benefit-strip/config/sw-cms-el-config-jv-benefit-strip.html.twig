@@ -1,0 +1,68 @@
+{% block sw_cms_el_config_jv_benefit_strip %}
+	<div class="sw-cms-el-config-jv-benefit-strip">
+		<div class="sw-cms-el-config-jv-benefit-strip__section">
+			<div class="sw-cms-el-config-jv-benefit-strip__section-header">
+				<h4>{{ $t('cms.elements.jv-benefit-strip.config.items.title') }}</h4>
+				<mt-button size="small" variant="secondary" @click="addItem">
+					{{ $t('cms.elements.jv-benefit-strip.config.items.add') }}
+				</mt-button>
+			</div>
+
+			<div
+				v-for="(item, itemIndex) in items"
+				:key="item.id || itemIndex"
+				class="sw-cms-el-config-jv-benefit-strip__card"
+			>
+				<div class="sw-cms-el-config-jv-benefit-strip__card-header">
+					<strong>{{ $t('cms.elements.jv-benefit-strip.config.items.cardTitle', { index: itemIndex + 1 }) }}</strong>
+					<mt-button size="small" variant="critical" @click="removeItem(itemIndex)">
+						{{ $t('cms.elements.jv-benefit-strip.config.items.remove') }}
+					</mt-button>
+				</div>
+
+				<div class="sw-cms-el-config-jv-benefit-strip__media">
+					<label class="sw-cms-el-config-jv-benefit-strip__media-label">
+						{{ $t('cms.elements.jv-benefit-strip.config.items.iconMedia.label') }}
+					</label>
+
+					<sw-media-upload-v2
+						variant="regular"
+						:upload-tag="itemUploadTag(itemIndex)"
+						:source="itemPreviewSource(item)"
+						:allow-multi-select="false"
+						:default-folder="cmsPageState.pageEntityName"
+						:caption="$t('cms.elements.jv-benefit-strip.config.items.iconMedia.caption')"
+						@media-upload-sidebar-open="onOpenItemMediaModal(itemIndex)"
+						@media-upload-remove-image="onItemRemove(itemIndex)"
+					/>
+
+					<sw-upload-listener
+						:upload-tag="itemUploadTag(itemIndex)"
+						auto-upload
+						@media-upload-finish="onItemUpload(itemIndex, $event)"
+					/>
+				</div>
+
+				<mt-text-field
+					v-model:model-value="item.title"
+					:label="$t('cms.elements.jv-benefit-strip.config.items.title.label')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-textarea
+					v-model:model-value="item.description"
+					:label="$t('cms.elements.jv-benefit-strip.config.items.description.label')"
+					@update:model-value="onUpdate"
+				/>
+			</div>
+		</div>
+
+		<sw-media-modal-v2
+			v-if="mediaModalIndex !== null"
+			:allow-multi-select="false"
+			:entity-context="cmsPageState.pageEntityName"
+			@media-modal-selection-change="onItemSelectionChanges"
+			@modal-close="onCloseItemMediaModal"
+		/>
+	</div>
+{% endblock %}

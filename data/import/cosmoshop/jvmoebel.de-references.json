@@ -1,0 +1,31 @@
+{
+  "deliveryTimes": [
+    {"sourceId": 0, "labels": {"de": "Lieferzeit: 2-5 Tage", "en": "available"}},
+    {"sourceId": 1, "labels": {"de": "Lieferzeit: 2 Wochen", "en": "Delivery Time: 1 Week"}},
+    {"sourceId": 2, "labels": {"de": "Lieferzeit: 4-8 Wochen", "en": "Delivery Time: 2 Week"}},
+    {"sourceId": 3, "labels": {"de": "Lieferzeit: 8-12 Wochen", "en": "Delivery Time: 3 Weeks"}},
+    {"sourceId": 4, "labels": {"de": "Lieferzeit: 8-14 Tage", "en": "Delivery Time: 2 Days"}},
+    {"sourceId": 6, "labels": {"de": "Lieferzeit: 2-6 Wochen"}},
+    {"sourceId": 7, "labels": {"de": "Lieferzeit: 4-8 Wochen"}},
+    {"sourceId": 8, "labels": {"de": "Lieferzeit: 8-12 Wochen"}},
+    {"sourceId": 9, "labels": {"de": "Lieferzeit: 6-8 Wochen"}},
+    {"sourceId": 10, "labels": {"de": "Lieferzeit: 2-4 Wochen"}},
+    {"sourceId": 11, "labels": {"de": "Lieferzeit: 3-6 Wochen"}},
+    {"sourceId": 12, "labels": {"de": "Lieferzeit: 6-10 Wochen"}},
+    {"sourceId": 13, "labels": {"de": "Lieferzeit: 10-14 Wochen"}},
+    {"sourceId": 14, "labels": {"de": "Lieferzeit: 12-16 Wochen"}},
+    {"sourceId": 15, "labels": {"de": "Lieferzeit: 10-12 Wochen"}}
+  ],
+  "units": [
+    {"sourceId": 1, "labels": {"de": "Liter", "en": "Liter", "fr": "litre", "it": "litro"}},
+    {"sourceId": 2, "labels": {"de": "dl", "en": "dl"}},
+    {"sourceId": 3, "labels": {"de": "m", "en": "m", "fr": "m", "it": "m"}},
+    {"sourceId": 4, "labels": {"de": "ml", "en": "ml"}},
+    {"sourceId": 5, "labels": {"de": "cm", "en": "cm", "fr": "cm", "it": "cm"}},
+    {"sourceId": 6, "labels": {"de": "Stück", "en": "item"}},
+    {"sourceId": 8, "labels": {"de": "kg", "en": "kg"}},
+    {"sourceId": 9, "labels": {"de": "g", "en": "g"}},
+    {"sourceId": 10, "labels": {"de": "100 g", "en": "100 g"}},
+    {"sourceId": 12, "labels": {"de": "m²", "en": "m²"}}
+  ]
+}

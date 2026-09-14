@@ -1,0 +1,2 @@
+const e='{% block sw_cms_block_jv_table_of_contents_preview %} <div class="sw-cms-preview-jv-table-of-contents"> <span class="sw-cms-preview-jv-table-of-contents__label">Table of Contents</span> </div> {% endblock %}',s={template:e};export{s as default};
+//# sourceMappingURL=index-Dj6bZylM.js.map

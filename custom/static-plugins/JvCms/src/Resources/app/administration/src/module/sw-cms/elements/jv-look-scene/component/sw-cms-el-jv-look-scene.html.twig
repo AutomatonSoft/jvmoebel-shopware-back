@@ -1,0 +1,13 @@
+{% block sw_cms_element_jv_look_scene %}
+	<div class="sw-cms-el-jv-look-scene">
+		<div class="sw-cms-el-jv-look-scene__title">
+			{{ title || $t('cms.elements.jv-look-scene.component.titlePlaceholder') }}
+		</div>
+		<p v-if="description" class="sw-cms-el-jv-look-scene__description">{{ description }}</p>
+		<div v-if="products.length" class="sw-cms-el-jv-look-scene__products">
+			<span v-for="(product, index) in products.slice(0, 4)" :key="index">
+				{{ product.name || $t('cms.elements.jv-look-scene.component.productPlaceholder') }}
+			</span>
+		</div>
+	</div>
+{% endblock %}

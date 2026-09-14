@@ -1,0 +1,101 @@
+{% block sw_cms_el_config_jv_cross_room_section %}
+	<div class="sw-cms-el-config-jv-cross-room-section">
+		<mt-text-field
+			v-model:model-value="element.config.title.value"
+			:label="$t('cms.elements.jv-cross-room-section.config.title.label')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-text-field
+			v-model:model-value="element.config.eyebrow.value"
+			:label="$t('cms.elements.jv-cross-room-section.config.eyebrow.label')"
+			@update:model-value="onUpdate"
+		/>
+
+		<div class="sw-cms-el-config-jv-cross-room-section__section">
+			<div class="sw-cms-el-config-jv-cross-room-section__section-header">
+				<h4>{{ $t('cms.elements.jv-cross-room-section.config.rooms.title') }}</h4>
+				<mt-button size="small" variant="secondary" @click="addRoom">
+					{{ $t('cms.elements.jv-cross-room-section.config.rooms.add') }}
+				</mt-button>
+			</div>
+
+			<div
+				v-for="(room, roomIndex) in rooms"
+				:key="room.id || roomIndex"
+				class="sw-cms-el-config-jv-cross-room-section__card"
+			>
+				<div class="sw-cms-el-config-jv-cross-room-section__card-header">
+					<strong>{{ $t('cms.elements.jv-cross-room-section.config.rooms.cardTitle', { index: roomIndex + 1 }) }}</strong>
+					<mt-button size="small" variant="critical" @click="removeRoom(roomIndex)">
+						{{ $t('cms.elements.jv-cross-room-section.config.rooms.remove') }}
+					</mt-button>
+				</div>
+
+				<div class="sw-cms-el-config-jv-cross-room-section__media">
+					<label class="sw-cms-el-config-jv-cross-room-section__media-label">
+						{{ $t('cms.elements.jv-cross-room-section.config.rooms.imageMedia.label') }}
+					</label>
+
+					<sw-media-upload-v2
+						variant="regular"
+						:upload-tag="roomUploadTag(roomIndex)"
+						:source="roomPreviewSource(room)"
+						:allow-multi-select="false"
+						:default-folder="cmsPageState.pageEntityName"
+						:caption="$t('cms.elements.jv-cross-room-section.config.rooms.imageMedia.caption')"
+						@media-upload-sidebar-open="onOpenRoomMediaModal(roomIndex)"
+						@media-upload-remove-image="onRoomRemove(roomIndex)"
+					/>
+
+					<sw-upload-listener
+						:upload-tag="roomUploadTag(roomIndex)"
+						auto-upload
+						@media-upload-finish="onRoomUpload(roomIndex, $event)"
+					/>
+				</div>
+
+				<mt-text-field
+					v-model:model-value="room.id"
+					:label="$t('cms.elements.jv-cross-room-section.config.rooms.id.label')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="room.label"
+					:label="$t('cms.elements.jv-cross-room-section.config.rooms.label.label')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="room.title"
+					:label="$t('cms.elements.jv-cross-room-section.config.rooms.titleField.label')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-textarea
+					v-model:model-value="room.description"
+					:label="$t('cms.elements.jv-cross-room-section.config.rooms.description.label')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="room.url"
+					:label="$t('cms.elements.jv-cross-room-section.config.rooms.url.label')"
+					@update:model-value="onUpdate"
+				/>
+			</div>
+		</div>
+
+		<sw-media-modal-v2
+			v-if="mediaModalIndex !== null"
+			variant="full"
+			:caption="$t('cms.elements.jv-cross-room-section.config.rooms.imageMedia.caption')"
+			:entity-context="cmsPageState.entityName"
+			:allow-multi-select="false"
+			:initial-folder-id="cmsPageState.defaultMediaFolderId"
+			@media-modal-selection-change="onRoomSelectionChanges"
+			@modal-close="onCloseRoomMediaModal"
+		/>
+	</div>
+{% endblock %}

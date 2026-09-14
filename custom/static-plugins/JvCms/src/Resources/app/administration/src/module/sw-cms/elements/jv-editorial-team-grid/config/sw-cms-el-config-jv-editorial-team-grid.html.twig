@@ -1,0 +1,92 @@
+{% block sw_cms_el_config_jv_editorial_team_grid %}
+	<div class="sw-cms-el-config-jv-editorial-team-grid">
+		<mt-text-field
+			v-model:model-value="element.config.title.value"
+			:label="$t('cms.elements.jv-editorial-team-grid.config.title.label')"
+			:placeholder="$t('cms.elements.jv-editorial-team-grid.config.title.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<div class="sw-cms-el-config-jv-editorial-team-grid__section">
+			<div class="sw-cms-el-config-jv-editorial-team-grid__section-header">
+				<h4>{{ $t('cms.elements.jv-editorial-team-grid.config.members.title') }}</h4>
+				<mt-button size="small" variant="secondary" @click="addMember">
+					{{ $t('cms.elements.jv-editorial-team-grid.config.members.add') }}
+				</mt-button>
+			</div>
+
+			<div
+				v-for="(member, memberIndex) in members"
+				:key="member.id || memberIndex"
+				class="sw-cms-el-config-jv-editorial-team-grid__card"
+			>
+				<div class="sw-cms-el-config-jv-editorial-team-grid__card-header">
+					<strong>{{ $t('cms.elements.jv-editorial-team-grid.config.members.cardTitle', { index: memberIndex + 1 }) }}</strong>
+					<mt-button size="small" variant="critical" @click="removeMember(memberIndex)">
+						{{ $t('cms.elements.jv-editorial-team-grid.config.members.remove') }}
+					</mt-button>
+				</div>
+
+				<div class="sw-cms-el-config-jv-editorial-team-grid__media">
+					<label class="sw-cms-el-config-jv-editorial-team-grid__media-label">
+						{{ $t('cms.elements.jv-editorial-team-grid.config.members.imageMedia.label') }}
+					</label>
+
+					<sw-media-upload-v2
+						variant="regular"
+						:upload-tag="memberUploadTag(memberIndex)"
+						:source="memberPreviewSource(member)"
+						:allow-multi-select="false"
+						:default-folder="cmsPageState.pageEntityName"
+						:caption="$t('cms.elements.jv-editorial-team-grid.config.members.imageMedia.caption')"
+						@media-upload-sidebar-open="onOpenMemberMediaModal(memberIndex)"
+						@media-upload-remove-image="onMemberRemove(memberIndex)"
+					/>
+
+					<sw-upload-listener
+						:upload-tag="memberUploadTag(memberIndex)"
+						auto-upload
+						@media-upload-finish="onMemberUpload(memberIndex, $event)"
+					/>
+				</div>
+
+				<mt-text-field
+					v-model:model-value="member.id"
+					:label="$t('cms.elements.jv-editorial-team-grid.config.members.id.label')"
+					:help-text="$t('cms.elements.jv-editorial-team-grid.config.members.id.helpText')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="member.name"
+					:label="$t('cms.elements.jv-editorial-team-grid.config.members.name.label')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="member.role"
+					:label="$t('cms.elements.jv-editorial-team-grid.config.members.role.label')"
+					@update:model-value="onUpdate"
+				/>
+
+				<mt-text-field
+					v-model:model-value="member.url"
+					:label="$t('cms.elements.jv-editorial-team-grid.config.members.url.label')"
+					:placeholder="$t('cms.elements.jv-editorial-team-grid.config.members.url.placeholder')"
+					@update:model-value="onUpdate"
+				/>
+			</div>
+		</div>
+
+		<sw-media-modal-v2
+			v-if="mediaModalIndex !== null"
+			variant="full"
+			:caption="$t('cms.elements.jv-editorial-team-grid.config.members.imageMedia.caption')"
+			:entity-context="cmsPageState.entityName"
+			:allow-multi-select="false"
+			:initial-folder-id="cmsPageState.defaultMediaFolderId"
+			@media-modal-selection-change="onMemberSelectionChanges"
+			@modal-close="onCloseMemberMediaModal"
+		/>
+	</div>
+{% endblock %}

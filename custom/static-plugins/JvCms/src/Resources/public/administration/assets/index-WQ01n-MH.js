@@ -1,0 +1,2 @@
+const e='{% block sw_cms_element_jv_article_hero_preview %} <div class="sw-cms-el-preview-jv-article-hero"> <span class="sw-cms-el-preview-jv-article-hero__label">Article Hero</span> </div> {% endblock %}',l={template:e};export{l as default};
+//# sourceMappingURL=index-WQ01n-MH.js.map

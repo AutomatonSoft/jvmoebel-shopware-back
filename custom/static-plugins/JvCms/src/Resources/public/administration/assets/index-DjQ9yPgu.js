@@ -1,0 +1,2 @@
+const e=`{% block sw_cms_element_guide_hub_cards %} <div class="sw-cms-el-jv-guide-hub-cards"> <div class="sw-cms-el-jv-guide-hub-cards__label">{{ $t('cms.elements.jv-guide-hub-cards.label') }}</div> </div> {% endblock %}`,{Mixin:s}=Shopware,c={template:e,mixins:[s.getByName("cms-element")],created(){this.initElementConfig("jv-guide-hub-cards")}};export{c as default};
+//# sourceMappingURL=index-DjQ9yPgu.js.map

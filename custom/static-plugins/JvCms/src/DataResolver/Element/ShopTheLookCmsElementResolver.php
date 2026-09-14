@@ -22,7 +22,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopware\Core\Framework\Uuid\Uuid;
 
 /**
- * Resolves `jv-shop-the-look` for Store API (platform SPEC-011 / backend SPEC-014).
+ * Resolves `jv-shop-the-look` for Store API (platform SPEC-040 / backend SPEC-050).
  *
  * Persisted config is untrusted. Invalid UUIDs never reach DAL, and incomplete
  * media, product or manual entries are omitted without breaking the CMS page.
@@ -224,10 +224,10 @@ final class ShopTheLookCmsElementResolver extends AbstractCmsElementResolver
         return $entries;
     }
 
-    private function resolvePosition(mixed $value, int $originalIndex): int
+    private function resolvePosition(mixed $value, int $originalIndex): int|float
     {
         if ((\is_int($value) || \is_float($value)) && is_finite((float) $value)) {
-            return (int) $value;
+            return $value;
         }
 
         return $originalIndex;

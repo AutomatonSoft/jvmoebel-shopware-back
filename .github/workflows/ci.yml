@@ -78,6 +78,10 @@ jobs:
           INSTALL_ADMIN_PASSWORD: ci-not-a-production-secret
           INSTALL_ADMIN_EMAIL: ci@example.invalid
           SALES_CHANNEL_URL: http://localhost:8000
+          AFTERCOOL_BASE_URI: https://aftercool.example
+          AFTERCOOL_USERNAME: ci-user
+          AFTERCOOL_PASSWORD: ci-not-a-production-secret
+          AFTERCOOL_TIMEOUT: "20"
         run: docker compose -f compose.deploy.yml config --quiet
 
       - name: Validate setup script syntax

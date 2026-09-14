@@ -1,0 +1,36 @@
+.sw-cms-el-config-jv-promo-deal-tiles {
+    &__section {
+        margin-top: 24px;
+    }
+
+    &__section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+    }
+
+    &__card {
+        margin-bottom: 16px;
+        padding: 16px;
+        border: 1px solid var(--color-border-primary-default);
+        border-radius: 4px;
+    }
+
+    &__card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+    }
+
+    &__media {
+        margin: 16px 0;
+    }
+
+    &__media-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+}

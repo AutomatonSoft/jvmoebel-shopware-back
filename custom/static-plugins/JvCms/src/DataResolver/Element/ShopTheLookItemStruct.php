@@ -14,7 +14,7 @@ final class ShopTheLookItemStruct extends Struct
      */
     public function __construct(
         protected string $id,
-        protected int $position,
+        protected int|float $position,
         protected string $name,
         protected ?string $description,
         protected string $url,
@@ -27,7 +27,7 @@ final class ShopTheLookItemStruct extends Struct
         return $this->id;
     }
 
-    public function getPosition(): int
+    public function getPosition(): int|float
     {
         return $this->position;
     }

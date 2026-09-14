@@ -1,0 +1,76 @@
+{% block sw_cms_el_config_jv_author_footer %}
+	<div class="sw-cms-el-config-jv-author-footer">
+		<mt-text-field
+			v-model:model-value="element.config.authorName.value"
+			:label="$t('cms.elements.jv-author-footer.config.authorName.label')"
+			:placeholder="$t('cms.elements.jv-author-footer.config.authorName.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-text-field
+			v-model:model-value="element.config.expertise.value"
+			:label="$t('cms.elements.jv-author-footer.config.expertise.label')"
+			:placeholder="$t('cms.elements.jv-author-footer.config.expertise.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-textarea
+			v-model:model-value="element.config.bio.value"
+			:label="$t('cms.elements.jv-author-footer.config.bio.label')"
+			:placeholder="$t('cms.elements.jv-author-footer.config.bio.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<div class="sw-cms-el-config-jv-author-footer__section">
+			<label class="sw-cms-el-config-jv-author-footer__media-label">
+				{{ $t('cms.elements.jv-author-footer.config.imageMedia.label') }}
+			</label>
+
+			<sw-media-upload-v2
+				variant="regular"
+				:upload-tag="imageUploadTag"
+				:source="imagePreviewSource"
+				:allow-multi-select="false"
+				:default-folder="cmsPageState.pageEntityName"
+				:caption="$t('cms.elements.jv-author-footer.config.imageMedia.caption')"
+				@media-upload-sidebar-open="onOpenImageMediaModal"
+				@media-upload-remove-image="onImageRemove"
+			/>
+
+			<sw-upload-listener
+				:upload-tag="imageUploadTag"
+				auto-upload
+				@media-upload-finish="onImageUpload"
+			/>
+		</div>
+
+		<div class="sw-cms-el-config-jv-author-footer__section">
+			<h4>{{ $t('cms.elements.jv-author-footer.config.link.title') }}</h4>
+
+			<mt-text-field
+				v-model:model-value="element.config.link.value.label"
+				:label="$t('cms.elements.jv-author-footer.config.link.label.label')"
+				:placeholder="$t('cms.elements.jv-author-footer.config.link.label.placeholder')"
+				@update:model-value="onUpdate"
+			/>
+
+			<mt-text-field
+				v-model:model-value="element.config.link.value.url"
+				:label="$t('cms.elements.jv-author-footer.config.link.url.label')"
+				:placeholder="$t('cms.elements.jv-author-footer.config.link.url.placeholder')"
+				@update:model-value="onUpdate"
+			/>
+		</div>
+
+		<sw-media-modal-v2
+			v-if="mediaModalIsOpen"
+			variant="full"
+			:caption="$t('cms.elements.jv-author-footer.config.imageMedia.caption')"
+			:entity-context="cmsPageState.entityName"
+			:allow-multi-select="false"
+			:initial-folder-id="cmsPageState.defaultMediaFolderId"
+			@media-modal-selection-change="onImageSelectionChanges"
+			@modal-close="onCloseImageMediaModal"
+		/>
+	</div>
+{% endblock %}

@@ -1,0 +1,2 @@
+const s=`{% block sw_cms_block_jv_room_grid_preview %} <div class="sw-cms-preview-jv-offer-rail"> <span class="sw-cms-preview-jv-offer-rail__title">{{ $t('cms.blocks.jv-offer-rail.label') }}</span> <div class="sw-cms-preview-jv-offer-rail__grid"> <span class="sw-cms-preview-jv-offer-rail__card sw-cms-preview-jv-offer-rail__card--featured"></span> <span class="sw-cms-preview-jv-offer-rail__card"></span> <span class="sw-cms-preview-jv-offer-rail__card"></span> </div> </div> {% endblock %}`,e={template:s};export{e as default};
+//# sourceMappingURL=index-BMq4bliL.js.map

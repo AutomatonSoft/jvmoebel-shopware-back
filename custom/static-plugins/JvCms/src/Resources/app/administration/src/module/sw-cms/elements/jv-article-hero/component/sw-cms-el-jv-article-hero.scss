@@ -1,0 +1,19 @@
+.sw-cms-el-jv-article-hero {
+    padding: 16px;
+
+    &__eyebrow {
+        font-size: 12px;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+        color: #52667a;
+    }
+
+    &__title {
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    &__description {
+        color: #52667a;
+    }
+}

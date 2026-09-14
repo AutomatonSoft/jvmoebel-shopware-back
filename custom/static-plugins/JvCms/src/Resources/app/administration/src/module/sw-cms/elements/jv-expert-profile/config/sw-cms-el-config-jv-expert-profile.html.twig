@@ -1,0 +1,76 @@
+{% block sw_cms_el_config_jv_expert_profile %}
+	<div class="sw-cms-el-config-jv-expert-profile">
+		<mt-text-field
+			v-model:model-value="element.config.name.value"
+			:label="$t('cms.elements.jv-expert-profile.config.name.label')"
+			:placeholder="$t('cms.elements.jv-expert-profile.config.name.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-text-field
+			v-model:model-value="element.config.role.value"
+			:label="$t('cms.elements.jv-expert-profile.config.role.label')"
+			:placeholder="$t('cms.elements.jv-expert-profile.config.role.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-textarea
+			v-model:model-value="element.config.bio.value"
+			:label="$t('cms.elements.jv-expert-profile.config.bio.label')"
+			:placeholder="$t('cms.elements.jv-expert-profile.config.bio.placeholder')"
+			@update:model-value="onUpdate"
+		/>
+
+		<div class="sw-cms-el-config-jv-expert-profile__section">
+			<label class="sw-cms-el-config-jv-expert-profile__media-label">
+				{{ $t('cms.elements.jv-expert-profile.config.imageMedia.label') }}
+			</label>
+
+			<sw-media-upload-v2
+				variant="regular"
+				:upload-tag="imageUploadTag"
+				:source="imagePreviewSource"
+				:allow-multi-select="false"
+				:default-folder="cmsPageState.pageEntityName"
+				:caption="$t('cms.elements.jv-expert-profile.config.imageMedia.caption')"
+				@media-upload-sidebar-open="onOpenImageMediaModal"
+				@media-upload-remove-image="onImageRemove"
+			/>
+
+			<sw-upload-listener
+				:upload-tag="imageUploadTag"
+				auto-upload
+				@media-upload-finish="onImageUpload"
+			/>
+		</div>
+
+		<div class="sw-cms-el-config-jv-expert-profile__section">
+			<h4>{{ $t('cms.elements.jv-expert-profile.config.link.title') }}</h4>
+
+			<mt-text-field
+				v-model:model-value="element.config.link.value.label"
+				:label="$t('cms.elements.jv-expert-profile.config.link.label.label')"
+				:placeholder="$t('cms.elements.jv-expert-profile.config.link.label.placeholder')"
+				@update:model-value="onUpdate"
+			/>
+
+			<mt-text-field
+				v-model:model-value="element.config.link.value.url"
+				:label="$t('cms.elements.jv-expert-profile.config.link.url.label')"
+				:placeholder="$t('cms.elements.jv-expert-profile.config.link.url.placeholder')"
+				@update:model-value="onUpdate"
+			/>
+		</div>
+
+		<sw-media-modal-v2
+			v-if="mediaModalIsOpen"
+			variant="full"
+			:caption="$t('cms.elements.jv-expert-profile.config.imageMedia.caption')"
+			:entity-context="cmsPageState.entityName"
+			:allow-multi-select="false"
+			:initial-folder-id="cmsPageState.defaultMediaFolderId"
+			@media-modal-selection-change="onImageSelectionChanges"
+			@modal-close="onCloseImageMediaModal"
+		/>
+	</div>
+{% endblock %}

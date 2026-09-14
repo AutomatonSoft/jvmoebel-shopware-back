@@ -1,0 +1,2 @@
+const o='{% block sw_cms_element_jv_countdown_promo_preview %} <div class="sw-cms-el-preview-jv-countdown-promo"> <span class="sw-cms-el-preview-jv-countdown-promo__label">Countdown Promo</span> </div> {% endblock %}',e={template:o};export{e as default};
+//# sourceMappingURL=index-DTGJr_tP.js.map

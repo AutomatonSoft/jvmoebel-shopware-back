@@ -1,0 +1,2 @@
+const e=`{% block sw_cms_element_author_footer %} <div class="sw-cms-el-jv-author-footer"> <div class="sw-cms-el-jv-author-footer__label">{{ $t('cms.elements.jv-author-footer.label') }}</div> </div> {% endblock %}`,{Mixin:t}=Shopware,o={template:e,mixins:[t.getByName("cms-element")],created(){this.initElementConfig("jv-author-footer")}};export{o as default};
+//# sourceMappingURL=index-P9SMA18O.js.map

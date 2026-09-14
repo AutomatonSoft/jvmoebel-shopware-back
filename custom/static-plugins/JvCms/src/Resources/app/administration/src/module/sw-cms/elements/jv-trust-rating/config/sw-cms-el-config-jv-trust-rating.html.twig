@@ -1,0 +1,43 @@
+{% block sw_cms_el_config_jv_trust_rating %}
+	<div class="sw-cms-el-config-jv-trust-rating">
+		<mt-number-field
+			v-model:model-value="element.config.rating.value"
+			:label="$t('cms.elements.jv-trust-rating.config.rating.label')"
+			:help-text="$t('cms.elements.jv-trust-rating.config.rating.helpText')"
+			:min="0.1"
+			:max="5"
+			:step="0.1"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-number-field
+			v-model:model-value="element.config.reviewCount.value"
+			:label="$t('cms.elements.jv-trust-rating.config.reviewCount.label')"
+			:min="0"
+			:step="1"
+			@update:model-value="onUpdate"
+		/>
+
+		<mt-text-field
+			v-model:model-value="element.config.providerLabel.value"
+			:label="$t('cms.elements.jv-trust-rating.config.providerLabel.label')"
+			@update:model-value="onUpdate"
+		/>
+
+		<div class="sw-cms-el-config-jv-trust-rating__section">
+			<h4>{{ $t('cms.elements.jv-trust-rating.config.link.title') }}</h4>
+
+			<mt-text-field
+				v-model:model-value="element.config.link.value.label"
+				:label="$t('cms.elements.jv-trust-rating.config.link.label.label')"
+				@update:model-value="onUpdate"
+			/>
+
+			<mt-text-field
+				v-model:model-value="element.config.link.value.url"
+				:label="$t('cms.elements.jv-trust-rating.config.link.url.label')"
+				@update:model-value="onUpdate"
+			/>
+		</div>
+	</div>
+{% endblock %}
