@@ -24,6 +24,7 @@ final class CatalogVariantFamilyPlannerTest extends TestCase
             self::AXES,
         );
 
+        /* @phpstan-ignore staticMethod.impossibleType */
         self::assertSame(
             ['4260000000001' => 1, '4260000000002' => 2, '4260000000003' => 3],
             $this->positionsByEan($plan),
@@ -55,6 +56,7 @@ final class CatalogVariantFamilyPlannerTest extends TestCase
             self::AXES,
         );
 
+        /* @phpstan-ignore staticMethod.impossibleType */
         self::assertSame(['4260000000001' => 1, '4260000000003' => 2], $this->positionsByEan($plan));
     }
 
@@ -69,6 +71,7 @@ final class CatalogVariantFamilyPlannerTest extends TestCase
             self::AXES,
         );
 
+        /* @phpstan-ignore staticMethod.impossibleType */
         self::assertSame(['4260000000002' => 1], $this->positionsByEan($plan));
     }
 
@@ -122,6 +125,7 @@ final class CatalogVariantFamilyPlannerTest extends TestCase
             self::AXES,
         );
 
+        /* @phpstan-ignore staticMethod.impossibleType */
         self::assertSame(['4260000000001' => 1], $this->positionsByEan($plan));
     }
 

@@ -21,6 +21,38 @@ final class OkbProductResponseNormalizer
         if ($requestedEan !== $sku || $requestedEan !== $ean) {
             throw new \InvalidArgumentException(sprintf('OKB productVariation for EAN "%s" returned a different SKU or EAN.', $requestedEan));
         }
+
+        return $this->variation($variation, $requestedEan);
+    }
+
+    /** @param array<string, mixed> $response
+     * @return list<OkbProductVariation>
+     */
+    public function normalizeFamily(array $response): array
+    {
+        $variations = $response['productVariations'] ?? null;
+        if (!is_array($variations)) {
+            throw new \InvalidArgumentException('OKB family response has no productVariations.');
+        }
+
+        $family = [];
+        foreach ($variations as $variation) {
+            if (!is_array($variation)) {
+                throw new \InvalidArgumentException('OKB family response has an invalid productVariation.');
+            }
+            $ean = $this->requiredString($variation, 'ean', 'family');
+            $family[] = $this->variation($variation, $ean);
+        }
+
+        return $family;
+    }
+
+    /** @param array<string, mixed> $variation */
+    private function variation(array $variation, string $requestedEan): OkbProductVariation
+    {
+        $sku = $this->requiredString($variation, 'sku', $requestedEan);
+        $ean = $this->requiredString($variation, 'ean', $requestedEan);
+        $productReference = $this->requiredString($variation, 'productReference', $requestedEan);
         $description = $variation['productDescription'] ?? null;
         if (!is_array($description)) {
             throw new \InvalidArgumentException(sprintf('OKB productVariation for EAN "%s" has no productDescription.', $requestedEan));
@@ -34,6 +66,7 @@ final class OkbProductResponseNormalizer
         return new OkbProductVariation(
             $sku,
             $ean,
+            $productReference,
             $this->requiredString($description, 'category', $requestedEan),
             $this->nullableAmount($standardPrice, $requestedEan),
             $this->nullableCurrency($standardPrice, $requestedEan),

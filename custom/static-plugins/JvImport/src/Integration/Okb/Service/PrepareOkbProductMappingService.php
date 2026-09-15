@@ -6,12 +6,14 @@ use Jv\Import\Integration\Csv\SemicolonCsvReader;
 use Jv\Import\Integration\Okb\Dto\OkbProductMappingPreparationResult;
 use Jv\Import\Integration\Okb\Dto\OkbProductVariation;
 use Jv\Import\Integration\Okb\OkbProductApiClient;
+use Jv\Import\Service\ProductImport\Catalog\CatalogVariantFamilyPlanner;
 
 final readonly class PrepareOkbProductMappingService
 {
     public function __construct(
         private SemicolonCsvReader $csvReader,
         private OkbProductApiClient $apiClient,
+        private CatalogVariantFamilyPlanner $familyPlanner = new CatalogVariantFamilyPlanner(),
     ) {
     }
 
@@ -26,6 +28,7 @@ final readonly class PrepareOkbProductMappingService
 
         $categories = $this->categoryLookup($snapshotDirectory);
         $attributeNames = $this->attributeNamesByCategoryGroup($snapshotDirectory);
+        $axisAttributeNames = $this->axisAttributeNamesByCategoryGroup($snapshotDirectory);
         $outputs = [
             'products' => $outputDirectory.'/okb-product-mapping.csv',
             'attributes' => $outputDirectory.'/okb-product-attributes.csv',
@@ -50,8 +53,7 @@ final readonly class PrepareOkbProductMappingService
                     $ean = $row['ean'];
                     ++$processedCount;
                     $onProcessed?->__invoke();
-                    $variation = null;
-                    $category = null;
+                    $prepared = null;
                     try {
                         if (!preg_match('/^\d{13}$/D', $ean)) {
                             throw new \InvalidArgumentException('EAN must contain exactly 13 digits.');
@@ -61,20 +63,27 @@ final readonly class PrepareOkbProductMappingService
                         if (null === $category) {
                             throw new \InvalidArgumentException(sprintf('OKB category "%s" is missing from the supplied snapshot.', $variation->categoryName));
                         }
+                        $family = $this->apiClient->findFamily($variation->productReference);
+                        $axisNames = array_keys($axisAttributeNames[$category['categoryGroupId']] ?? []);
+                        $plan = $this->familyPlanner->plan([] === $family ? [$variation] : $family, $ean, $axisNames);
+                        $prepared = ['category' => $category, 'plan' => $plan];
                     } catch (\Throwable $exception) {
                         $this->write($failures, [$productNumber, $ean, $exception->getMessage()]);
                         ++$failureCount;
                     }
-                    if (null !== $variation && null !== $category) {
-                        $this->writeVariation($products, $productNumber, $variation, $category);
-                        foreach ($variation->attributes as $attribute) {
-                            if (!isset($attributeNames[$category['categoryGroupId']][$attribute->name])) {
-                                continue;
+                    if (null !== $prepared) {
+                        $category = $prepared['category'];
+                        foreach ($prepared['plan'] as $plannedVariant) {
+                            $this->writeVariation($products, $productNumber, $plannedVariant->variation, $category);
+                            foreach ($plannedVariant->variation->attributes as $attribute) {
+                                if (!isset($attributeNames[$category['categoryGroupId']][$attribute->name])) {
+                                    continue;
+                                }
+                                $this->write($attributes, [$productNumber, $plannedVariant->variation->ean, $attribute->name, json_encode($attribute->values, \JSON_THROW_ON_ERROR)]);
+                                ++$attributeCount;
                             }
-                            $this->write($attributes, [$productNumber, $ean, $attribute->name, json_encode($attribute->values, \JSON_THROW_ON_ERROR)]);
-                            ++$attributeCount;
+                            ++$productCount;
                         }
-                        ++$productCount;
                     }
                     if (null !== $limit && $limit <= $processedCount) {
                         break;
@@ -122,6 +131,19 @@ final readonly class PrepareOkbProductMappingService
         }
 
         return $attributes;
+    }
+
+    /** @return array<string, array<string, true>> */
+    private function axisAttributeNamesByCategoryGroup(string $snapshotDirectory): array
+    {
+        $axes = [];
+        foreach ($this->csvReader->rows(rtrim($snapshotDirectory, '/').'/okb-attributes.csv', ['category_group_id', 'attribute_id', 'attribute_name']) as $row) {
+            if (str_contains($row['feature_relevance'] ?? '', 'VARIATION_THEME')) {
+                $axes[$row['category_group_id']][$row['attribute_name']] = true;
+            }
+        }
+
+        return $axes;
     }
 
     /**

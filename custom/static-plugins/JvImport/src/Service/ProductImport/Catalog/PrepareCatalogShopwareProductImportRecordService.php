@@ -31,6 +31,9 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
     /** @var array<string, array<string, true>> */
     private array $existingOptionIdsByPropertyGroup = [];
 
+    /** @var array<string, int> */
+    private array $childPositions = [];
+
     /** @param EntityRepository<ProductCollection> $productRepository
      * @param EntityRepository<CurrencyCollection> $currencyRepository
      */
@@ -62,9 +65,9 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
         $this->validateLongValues($attributes, $schemas);
         $this->validatePair($productNumber, $row, $attributes, $schemas, $parent, $context);
         $this->validateBrandInformation($productNumber, $attributes, $parent);
-        $childId = $this->childId($parent, $ean, $context);
 
         if ('parent' === $type) {
+            $this->childPositions[$parent->getId()] = 0;
             $record = [
                 'id' => $parent->getId(),
                 'parentId' => null,
@@ -91,6 +94,8 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
             throw new \LogicException('Validated catalog product pair has no price or tax.');
         }
         $gross = max($existingPrice->getGross(), (float) $this->required($row, 'standard_price_amount'));
+        $position = $this->nextChildPosition($parent->getId());
+        $childId = $this->childId($parent, $ean, $position, $context);
         $optionRecords = [];
         $variantOptionIds = [];
         foreach ($attributes as $name => $values) {
@@ -124,7 +129,7 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
         return [
             'id' => $childId,
             'parentId' => $parent->getId(),
-            'productNumber' => $parent->getProductNumber().'-1',
+            'productNumber' => $parent->getProductNumber().'-'.$position,
             'ean' => $ean,
             'name' => $parent->getName() ?? $parent->getProductNumber(),
             'stock' => $parent->getStock(),
@@ -310,15 +315,24 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
         $this->languageIds = null;
         $this->manufacturerDescriptions = [];
         $this->existingOptionIdsByPropertyGroup = [];
+        $this->childPositions = [];
     }
 
-    private function childId(\Shopware\Core\Content\Product\ProductEntity $parent, string $ean, Context $context): string
+    private function nextChildPosition(string $parentId): int
     {
-        $cached = $this->lookupCache->childId($parent->getId());
+        $position = ($this->childPositions[$parentId] ?? 0) + 1;
+        $this->childPositions[$parentId] = $position;
+
+        return $position;
+    }
+
+    private function childId(\Shopware\Core\Content\Product\ProductEntity $parent, string $ean, int $position, Context $context): string
+    {
+        $cached = $this->lookupCache->childId($parent->getId(), $ean);
         if (null !== $cached) {
             return $cached;
         }
-        $productNumber = $parent->getProductNumber().'-1';
+        $productNumber = $parent->getProductNumber().'-'.$position;
         $existing = $this->productRepository->search((new Criteria())
             ->addFilter(new EqualsFilter('productNumber', $productNumber))
             ->setLimit(1), $context)->first();
@@ -327,10 +341,10 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
                 throw new \InvalidArgumentException(sprintf('Catalog child product number "%s" belongs to another product.', $productNumber));
             }
 
-            return $this->lookupCache->rememberChildId($parent->getId(), $existing->getId());
+            return $this->lookupCache->rememberChildId($parent->getId(), $ean, $existing->getId());
         }
 
-        return $this->lookupCache->rememberChildId($parent->getId(), CatalogIdentity::childProductId('okb', $parent->getId(), $ean));
+        return $this->lookupCache->rememberChildId($parent->getId(), $ean, CatalogIdentity::childProductId('okb', $parent->getId(), $ean));
     }
 
     private function currencyId(string $currency, Context $context): string
