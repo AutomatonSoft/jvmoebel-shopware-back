@@ -46,6 +46,7 @@ export default {
                 { value: 'general', label: this.$t('jv-seo.filters.general') },
                 { value: 'product', label: this.$t('jv-seo.filters.product') },
                 { value: 'category', label: this.$t('jv-seo.filters.category') },
+                { value: 'image', label: this.$t('jv-seo.filters.image') },
             ];
         },
     },
@@ -104,6 +105,9 @@ export default {
             }
             if (item.type === 'category') {
                 return item.categoryName ?? item.categoryId;
+            }
+            if (item.type === 'image') {
+                return item.imageName ?? item.mediaId;
             }
             return item.channels.map((channel) => channel.targetUrl).filter(Boolean).join('\n');
         },

@@ -3,6 +3,7 @@ import redirectDetail from './page/jv-seo-redirect-detail';
 import seoIndex from './page/jv-seo-index';
 import '../../component/jv-seo-product-redirects';
 import '../../component/jv-seo-category-redirects';
+import '../../component/jv-seo-image-redirects';
 
 Shopware.Component.register('jv-seo-redirect-list', redirectList);
 Shopware.Component.register('jv-seo-redirect-detail', redirectDetail);

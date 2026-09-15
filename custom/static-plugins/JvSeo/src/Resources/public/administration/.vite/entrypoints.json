@@ -3,11 +3,11 @@
   "entryPoints": {
     "jv-seo": {
       "css": [
-        "/bundles/jvseo/administration/assets/jv-seo-BjeTQZPh.css"
+        "/bundles/jvseo/administration/assets/jv-seo-CF6yPxul.css"
       ],
       "dynamic": [],
       "js": [
-        "/bundles/jvseo/administration/assets/jv-seo-C6melfnK.js"
+        "/bundles/jvseo/administration/assets/jv-seo-B2Zx0n-v.js"
       ],
       "legacy": false,
       "preload": []

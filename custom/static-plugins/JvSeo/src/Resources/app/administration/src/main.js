@@ -3,6 +3,7 @@ import enGB from './snippet/en-GB.json';
 import './module/jv-seo';
 import './extension/sw-product-detail-seo';
 import './extension/sw-category-detail-seo';
+import './extension/sw-media-quickinfo';
 import JvSeoRedirectApiService from './service/jv-seo-redirect.api.service';
 
 Shopware.Locale.extend('de-DE', deDE);

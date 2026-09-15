@@ -16,7 +16,8 @@
             "all": "All redirects",
             "general": "General",
             "product": "Products",
-            "category": "Categories"
+            "category": "Categories",
+            "image": "Images"
         },
         "list": {
             "type": "Type",
@@ -24,7 +25,7 @@
             "salesChannels": "Sales Channel",
             "sources": "301 URLs",
             "updatedAt": "Updated",
-            "searchPlaceholder": "Search URLs, products, categories or Sales Channels"
+            "searchPlaceholder": "Search URLs, products, categories, images or Sales Channels"
         },
         "detail": {
             "createTitle": "Create redirect",
@@ -35,6 +36,8 @@
             "productPlaceholder": "Search for a product",
             "category": "Category",
             "categoryPlaceholder": "Search for a category",
+            "image": "Image",
+            "imagePlaceholder": "Search for an image",
             "enableChannel": "Configure for this Sales Channel",
             "targetUrl": "Target URL",
             "targetPreview": "Current canonical target URL example",
@@ -46,6 +49,7 @@
         "validation": {
             "productRequired": "Select a product.",
             "categoryRequired": "Select a category.",
+            "imageRequired": "Select an image.",
             "channelRequired": "Enable at least one Sales Channel.",
             "sourceRequired": "Add at least one 301 URL for {channel}.",
             "invalidSource": "A 301 URL for {channel} is not a complete HTTP(S) URL.",
@@ -61,6 +65,10 @@
         "categoryCard": {
             "title": "Legacy redirects by Sales Channel",
             "empty": "No legacy redirects are configured for this category."
+        },
+        "imageCard": {
+            "title": "Legacy redirects by Sales Channel",
+            "empty": "No legacy redirects are configured for this image."
         }
     }
 }

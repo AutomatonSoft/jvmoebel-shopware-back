@@ -28,12 +28,14 @@ final class RedirectController extends AbstractController
         $type = $request->query->getString('type');
         $productId = $request->query->getString('productId');
         $categoryId = $request->query->getString('categoryId');
+        $mediaId = $request->query->getString('mediaId');
 
         return new JsonResponse($this->query->list(
             '' === $type || 'all' === $type ? null : $type,
             $request->query->getString('term'),
             '' === $productId ? null : $productId,
             '' === $categoryId ? null : $categoryId,
+            '' === $mediaId ? null : $mediaId,
             max(1, $request->query->getInt('page', 1)),
             min(100, max(1, $request->query->getInt('limit', 25))),
             $context,
@@ -94,6 +96,12 @@ final class RedirectController extends AbstractController
     public function categoryTargets(string $categoryId, Context $context): JsonResponse
     {
         return new JsonResponse(['data' => $this->query->categoryTargets($categoryId, $context)]);
+    }
+
+    #[Route(path: '/api/_action/jv-seo/images/{mediaId}/targets', name: 'api.action.jv_seo.image.targets', methods: ['GET'], defaults: ['_acl' => ['media.viewer']])]
+    public function imageTargets(string $mediaId, Context $context): JsonResponse
+    {
+        return new JsonResponse(['data' => $this->query->imageTargets($mediaId, $context)]);
     }
 
     /** @return array<string, mixed> */

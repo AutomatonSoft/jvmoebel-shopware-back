@@ -11,6 +11,8 @@ use Jv\Seo\Core\Content\RedirectSource\RedirectSourceCollection;
 use Jv\Seo\Core\Content\RedirectSource\RedirectSourceEntity;
 use Jv\Seo\Service\Redirect\Exception\RedirectValidationException;
 use Shopware\Core\Content\Category\CategoryCollection;
+use Shopware\Core\Content\Media\MediaCollection;
+use Shopware\Core\Content\Media\MediaEntity;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
@@ -29,6 +31,7 @@ final readonly class SaveRedirectService
      * @param EntityRepository<RedirectSourceCollection>  $sourceRepository
      * @param EntityRepository<ProductCollection>         $productRepository
      * @param EntityRepository<CategoryCollection>        $categoryRepository
+     * @param EntityRepository<MediaCollection>           $mediaRepository
      * @param EntityRepository<SalesChannelCollection>    $salesChannelRepository
      */
     public function __construct(
@@ -37,10 +40,12 @@ final readonly class SaveRedirectService
         private EntityRepository $sourceRepository,
         private EntityRepository $productRepository,
         private EntityRepository $categoryRepository,
+        private EntityRepository $mediaRepository,
         private EntityRepository $salesChannelRepository,
         private UrlNormalizer $urlNormalizer,
         private ProductTargetUrlResolver $productTargetResolver,
         private CategoryTargetUrlResolver $categoryTargetResolver,
+        private ImageTargetUrlResolver $imageTargetResolver,
         private Connection $connection,
     ) {
     }
@@ -72,30 +77,38 @@ final readonly class SaveRedirectService
         $type = RedirectType::tryFrom(is_string($payload['type'] ?? null) ? $payload['type'] : '');
         $violations = [];
         if (!$type instanceof RedirectType) {
-            $violations[] = ['field' => 'type', 'message' => 'Redirect type must be general, product, or category.'];
+            $violations[] = ['field' => 'type', 'message' => 'Redirect type must be general, product, category, or image.'];
         }
 
         $productId = is_string($payload['productId'] ?? null) && '' !== trim($payload['productId']) ? trim($payload['productId']) : null;
         $categoryId = is_string($payload['categoryId'] ?? null) && '' !== trim($payload['categoryId']) ? trim($payload['categoryId']) : null;
+        $mediaId = is_string($payload['mediaId'] ?? null) && '' !== trim($payload['mediaId']) ? trim($payload['mediaId']) : null;
         if (RedirectType::Product === $type && (null === $productId || !Uuid::isValid($productId))) {
             $violations[] = ['field' => 'productId', 'message' => 'Product redirect requires a valid product.'];
         }
         if (RedirectType::Category === $type && (null === $categoryId || !Uuid::isValid($categoryId))) {
             $violations[] = ['field' => 'categoryId', 'message' => 'Category redirect requires a valid category.'];
         }
-        if (RedirectType::Product === $type && null !== $categoryId) {
-            $violations[] = ['field' => 'categoryId', 'message' => 'Product redirect must not reference a category.'];
+        if (RedirectType::Image === $type && (null === $mediaId || !Uuid::isValid($mediaId))) {
+            $violations[] = ['field' => 'mediaId', 'message' => 'Image redirect requires a valid image.'];
         }
-        if (RedirectType::Category === $type && null !== $productId) {
-            $violations[] = ['field' => 'productId', 'message' => 'Category redirect must not reference a product.'];
+        if (RedirectType::Product === $type && (null !== $categoryId || null !== $mediaId)) {
+            $violations[] = ['field' => 'productId', 'message' => 'Product redirect must not reference a category or image.'];
         }
-        if (RedirectType::General === $type && (null !== $productId || null !== $categoryId)) {
-            $violations[] = ['field' => 'type', 'message' => 'General redirect must not reference a product or category.'];
+        if (RedirectType::Category === $type && (null !== $productId || null !== $mediaId)) {
+            $violations[] = ['field' => 'categoryId', 'message' => 'Category redirect must not reference a product or image.'];
+        }
+        if (RedirectType::Image === $type && (null !== $productId || null !== $categoryId)) {
+            $violations[] = ['field' => 'mediaId', 'message' => 'Image redirect must not reference a product or category.'];
+        }
+        if (RedirectType::General === $type && (null !== $productId || null !== $categoryId || null !== $mediaId)) {
+            $violations[] = ['field' => 'type', 'message' => 'General redirect must not reference a product, category, or image.'];
         }
         if ($existing instanceof RedirectEntity && (
             $existing->getType() !== $type?->value
             || $existing->getProductId() !== $productId
             || $existing->getCategoryId() !== $categoryId
+            || $existing->getMediaId() !== $mediaId
         )) {
             $violations[] = ['field' => 'type', 'message' => 'Redirect type and target entity cannot be changed.'];
         }
@@ -124,6 +137,16 @@ final readonly class SaveRedirectService
             && null === $this->categoryRepository->searchIds(new Criteria([$categoryId]), $context)->firstId()) {
             $violations[] = ['field' => 'categoryId', 'message' => 'Selected category does not exist.'];
         }
+        if (RedirectType::Image === $type && null !== $mediaId) {
+            $media = $this->mediaRepository->search(new Criteria([$mediaId]), $context)->first();
+            if (!$media instanceof MediaEntity) {
+                $violations[] = ['field' => 'mediaId', 'message' => 'Selected image does not exist.'];
+            } elseif (!str_starts_with(strtolower((string) $media->getMimeType()), 'image/') || !$media->hasFile() || $media->isPrivate()) {
+                $violations[] = ['field' => 'mediaId', 'message' => 'Selected media must be a public image with a file.'];
+            } elseif (null === $this->imageTargetResolver->resolve($mediaId, $context)) {
+                $violations[] = ['field' => 'mediaId', 'message' => 'Selected image has no public HTTP(S) URL.'];
+            }
+        }
         if (null === $id && RedirectType::Product === $type && null !== $productId) {
             $duplicate = $this->redirectRepository->searchIds(
                 (new Criteria())->addFilter(new EqualsFilter('type', $type->value))->addFilter(new EqualsFilter('productId', $productId))->setLimit(1),
@@ -142,8 +165,17 @@ final readonly class SaveRedirectService
                 $violations[] = ['field' => 'categoryId', 'message' => 'This category already has a redirect aggregate.'];
             }
         }
+        if (null === $id && RedirectType::Image === $type && null !== $mediaId) {
+            $duplicate = $this->redirectRepository->searchIds(
+                (new Criteria())->addFilter(new EqualsFilter('type', $type->value))->addFilter(new EqualsFilter('mediaId', $mediaId))->setLimit(1),
+                $context,
+            )->firstId();
+            if (null !== $duplicate) {
+                $violations[] = ['field' => 'mediaId', 'message' => 'This image already has a redirect aggregate.'];
+            }
+        }
 
-        $preparedChannels = $this->prepareChannels($enabledChannels, $type, $productId, $categoryId, $existing, $context, $violations);
+        $preparedChannels = $this->prepareChannels($enabledChannels, $type, $productId, $categoryId, $mediaId, $existing, $context, $violations);
         if ([] !== $violations) {
             throw new RedirectValidationException($violations);
         }
@@ -151,10 +183,11 @@ final readonly class SaveRedirectService
         $redirectId = $existing?->getId() ?? match ($type) {
             RedirectType::Product => Uuid::fromStringToHex('jv-seo.redirect.product.'.$productId),
             RedirectType::Category => Uuid::fromStringToHex('jv-seo.redirect.category.'.$categoryId),
+            RedirectType::Image => Uuid::fromStringToHex('jv-seo.redirect.image.'.$mediaId),
             RedirectType::General => Uuid::randomHex(),
         };
 
-        $this->connection->transactional(function () use ($redirectId, $type, $productId, $categoryId, $preparedChannels, $existing, $context): void {
+        $this->connection->transactional(function () use ($redirectId, $type, $productId, $categoryId, $mediaId, $preparedChannels, $existing, $context): void {
             $rootPayload = [[
                 'id' => $redirectId,
                 'type' => $type->value,
@@ -162,6 +195,7 @@ final readonly class SaveRedirectService
                 'productVersionId' => null === $productId ? null : Defaults::LIVE_VERSION,
                 'categoryId' => $categoryId,
                 'categoryVersionId' => null === $categoryId ? null : Defaults::LIVE_VERSION,
+                'mediaId' => $mediaId,
             ]];
             if ($existing instanceof RedirectEntity) {
                 $this->redirectRepository->update($rootPayload, $context);
@@ -249,7 +283,7 @@ final readonly class SaveRedirectService
      *
      * @return list<array{salesChannelId: string, targetUrl: ?string, existing: ?RedirectChannelEntity, sources: list<array{id: ?string, url: string, hash: string, existing: ?RedirectSourceEntity}>}>
      */
-    private function prepareChannels(array $channels, RedirectType $type, ?string $productId, ?string $categoryId, ?RedirectEntity $existing, Context $context, array &$violations): array
+    private function prepareChannels(array $channels, RedirectType $type, ?string $productId, ?string $categoryId, ?string $mediaId, ?RedirectEntity $existing, Context $context, array &$violations): array
     {
         $salesChannelIds = [];
         foreach ($channels as $index => $channel) {
@@ -346,6 +380,7 @@ final readonly class SaveRedirectService
                     RedirectType::General => $targetUrl,
                     RedirectType::Product => null === $productId ? null : $this->productTargetResolver->resolve($productId, $salesChannelId, $sourceUrl),
                     RedirectType::Category => null === $categoryId ? null : $this->categoryTargetResolver->resolve($categoryId, $salesChannelId, $sourceUrl),
+                    RedirectType::Image => null === $mediaId ? null : $this->imageTargetResolver->resolve($mediaId, $context),
                 };
 
                 if (null !== $resolvedTarget && $this->urlNormalizer->hash($resolvedTarget) === $sourceHash) {

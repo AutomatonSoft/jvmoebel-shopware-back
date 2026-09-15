@@ -4,6 +4,7 @@ namespace Jv\Seo\Core\Content\Redirect;
 
 use Jv\Seo\Core\Content\RedirectChannel\RedirectChannelCollection;
 use Shopware\Core\Content\Category\CategoryEntity;
+use Shopware\Core\Content\Media\MediaEntity;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
@@ -19,6 +20,8 @@ final class RedirectEntity extends Entity
     protected ?string $categoryId = null;
     protected ?string $categoryVersionId = null;
     protected ?CategoryEntity $category = null;
+    protected ?string $mediaId = null;
+    protected ?MediaEntity $media = null;
     protected ?RedirectChannelCollection $channels = null;
 
     public function getType(): string
@@ -54,6 +57,16 @@ final class RedirectEntity extends Entity
     public function getCategory(): ?CategoryEntity
     {
         return $this->category;
+    }
+
+    public function getMediaId(): ?string
+    {
+        return $this->mediaId;
+    }
+
+    public function getMedia(): ?MediaEntity
+    {
+        return $this->media;
     }
 
     public function getChannels(): ?RedirectChannelCollection

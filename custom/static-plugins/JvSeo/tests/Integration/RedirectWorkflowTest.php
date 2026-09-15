@@ -6,6 +6,7 @@ use Jv\Seo\Contract\ImportProductRedirectData;
 use Jv\Seo\Contract\ImportProductRedirectsInterface;
 use Jv\Seo\Service\Redirect\CategoryTargetUrlResolver;
 use Jv\Seo\Service\Redirect\Exception\RedirectValidationException;
+use Jv\Seo\Service\Redirect\ImageTargetUrlResolver;
 use Jv\Seo\Service\Redirect\LookupRedirectService;
 use Jv\Seo\Service\Redirect\ProductTargetUrlResolver;
 use Jv\Seo\Service\Redirect\RedirectQueryService;
@@ -53,13 +54,14 @@ final class RedirectWorkflowTest extends TestCase
         self::assertSame(1, $first->created);
         self::assertSame(0, $first->conflicts);
         self::assertSame(1, $second->unchanged);
-        self::assertCount(1, $this->query()->list('product', 'Chestefield+Sofa', null, null, 1, 25, Context::createDefaultContext())['data']);
+        self::assertCount(1, $this->query()->list('product', 'Chestefield+Sofa', null, null, null, 1, 25, Context::createDefaultContext())['data']);
 
         $decision = $this->lookup()->lookup($sourceUrl, $this->salesChannelId, Context::createDefaultContext());
         self::assertNotNull($decision);
         self::assertSame('product', $decision['type']);
         self::assertSame($productId, $decision['productId']);
         self::assertNull($decision['categoryId']);
+        self::assertNull($decision['mediaId']);
         self::assertSame(
             $this->targetResolver()->resolve($productId, $this->salesChannelId, $sourceUrl),
             $decision['targetUrl'],
@@ -138,7 +140,7 @@ final class RedirectWorkflowTest extends TestCase
         );
         self::assertSame(1, $this->importer()->import([$original], Context::createDefaultContext())->created);
 
-        $list = $this->query()->list('product', '', $productId, null, 1, 25, Context::createDefaultContext());
+        $list = $this->query()->list('product', '', $productId, null, null, 1, 25, Context::createDefaultContext());
         self::assertCount(1, $list['data']);
         $redirect = $list['data'][0];
         $channel = $redirect['channels'][0];
@@ -215,7 +217,7 @@ final class RedirectWorkflowTest extends TestCase
         ], Context::createDefaultContext());
         self::assertSame(2, $result->created);
 
-        $redirect = $this->query()->list('product', '', $productId, null, 1, 25, Context::createDefaultContext())['data'][0];
+        $redirect = $this->query()->list('product', '', $productId, null, null, 1, 25, Context::createDefaultContext())['data'][0];
         $channel = $redirect['channels'][0];
         $firstSource = null;
         foreach ($channel['sources'] as $source) {
@@ -322,7 +324,7 @@ final class RedirectWorkflowTest extends TestCase
             ]],
         ], Context::createDefaultContext());
 
-        $list = $this->query()->list('category', 'living-room', null, $categoryId, 1, 25, Context::createDefaultContext());
+        $list = $this->query()->list('category', 'living-room', null, $categoryId, null, 1, 25, Context::createDefaultContext());
         self::assertCount(1, $list['data']);
         self::assertSame($redirectId, $list['data'][0]['id']);
         self::assertSame($categoryId, $list['data'][0]['categoryId']);
@@ -334,6 +336,7 @@ final class RedirectWorkflowTest extends TestCase
         self::assertSame('category', $decision['type']);
         self::assertSame($categoryId, $decision['categoryId']);
         self::assertNull($decision['productId']);
+        self::assertNull($decision['mediaId']);
         self::assertSame(
             $this->categoryTargetResolver()->resolve($categoryId, $this->salesChannelId, $sourceUrl),
             $decision['targetUrl'],
@@ -357,6 +360,58 @@ final class RedirectWorkflowTest extends TestCase
         self::assertNull($response['data']['productId']);
     }
 
+    public function testManualImageRedirectResolvesToCurrentPublicMediaUrl(): void
+    {
+        $mediaId = $this->createImage('legacy-redirect-image');
+        $sourceUrl = 'https://www.jvmoebel.de/legacy/images/old-sofa.jpg';
+        $context = Context::createDefaultContext();
+        $targetUrl = $this->imageTargetResolver()->resolve($mediaId, $context);
+        self::assertNotNull($targetUrl);
+
+        $redirectId = $this->save()->create([
+            'type' => 'image',
+            'mediaId' => $mediaId,
+            'channels' => [[
+                'salesChannelId' => $this->salesChannelId,
+                'enabled' => true,
+                'sources' => [['url' => $sourceUrl]],
+            ]],
+        ], $context);
+
+        $list = $this->query()->list('image', 'legacy-redirect-image', null, null, $mediaId, 1, 25, $context);
+        self::assertCount(1, $list['data']);
+        self::assertSame($redirectId, $list['data'][0]['id']);
+        self::assertSame($mediaId, $list['data'][0]['mediaId']);
+        self::assertSame('legacy-redirect-image.jpg', $list['data'][0]['imageName']);
+        self::assertNull($list['data'][0]['productId']);
+        self::assertNull($list['data'][0]['categoryId']);
+        self::assertSame($targetUrl, $list['data'][0]['channels'][0]['targetUrl']);
+
+        $decision = $this->lookup()->lookup($sourceUrl, $this->salesChannelId, $context);
+        self::assertNotNull($decision);
+        self::assertSame('image', $decision['type']);
+        self::assertSame($mediaId, $decision['mediaId']);
+        self::assertNull($decision['productId']);
+        self::assertNull($decision['categoryId']);
+        self::assertSame($targetUrl, $decision['targetUrl']);
+
+        $this->browser->request(
+            'POST',
+            '/store-api/jv-seo/redirect',
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/json'],
+            json_encode(['url' => $sourceUrl], \JSON_THROW_ON_ERROR),
+        );
+        self::assertSame(200, $this->browser->getResponse()->getStatusCode());
+        /** @var array{data: array{statusCode: int, type: string, targetUrl: string, productId: ?string, categoryId: ?string, mediaId: ?string}} $response */
+        $response = json_decode((string) $this->browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        self::assertSame(301, $response['data']['statusCode']);
+        self::assertSame('image', $response['data']['type']);
+        self::assertSame($targetUrl, $response['data']['targetUrl']);
+        self::assertSame($mediaId, $response['data']['mediaId']);
+    }
+
     private function createProduct(string $key, string $salesChannelId): string
     {
         $builder = (new ProductBuilder($this->ids, $key))
@@ -376,6 +431,25 @@ final class RedirectWorkflowTest extends TestCase
             'name' => $name,
             'active' => true,
         ]], Context::createDefaultContext());
+
+        return $id;
+    }
+
+    private function createImage(string $fileName): string
+    {
+        $id = Uuid::randomHex();
+        $context = Context::createDefaultContext();
+        $context->scope(Context::SYSTEM_SCOPE, static function (Context $systemContext) use ($id, $fileName): void {
+            static::getContainer()->get('media.repository')->create([[
+                'id' => $id,
+                'fileName' => $fileName,
+                'fileExtension' => 'jpg',
+                'mimeType' => 'image/jpeg',
+                'fileSize' => 100,
+                'private' => false,
+                'path' => 'media/'.$fileName.'.jpg',
+            ]], $systemContext);
+        });
 
         return $id;
     }
@@ -448,5 +522,10 @@ final class RedirectWorkflowTest extends TestCase
     private function categoryTargetResolver(): CategoryTargetUrlResolver
     {
         return static::getContainer()->get(CategoryTargetUrlResolver::class);
+    }
+
+    private function imageTargetResolver(): ImageTargetUrlResolver
+    {
+        return static::getContainer()->get(ImageTargetUrlResolver::class);
     }
 }

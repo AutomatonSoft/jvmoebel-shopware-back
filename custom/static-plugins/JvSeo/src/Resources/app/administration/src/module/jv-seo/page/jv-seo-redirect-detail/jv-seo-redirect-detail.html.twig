@@ -58,6 +58,18 @@
                     :disabled="isEditing || !canEdit"
                     @update:value="onCategoryChange"
                 />
+
+                <sw-entity-single-select
+                    v-if="draft.type === 'image'"
+                    v-model:value="draft.mediaId"
+                    entity="media"
+                    label-property="fileName"
+                    :criteria="imageCriteria"
+                    :label="$t('jv-seo.detail.image')"
+                    :placeholder="$t('jv-seo.detail.imagePlaceholder')"
+                    :disabled="isEditing || !canEdit"
+                    @update:value="onImageChange"
+                />
             </mt-card>
 
             <mt-card

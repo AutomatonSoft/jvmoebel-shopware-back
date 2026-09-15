@@ -19,10 +19,11 @@ final readonly class LookupRedirectService
         private UrlNormalizer $urlNormalizer,
         private ProductTargetUrlResolver $productTargetResolver,
         private CategoryTargetUrlResolver $categoryTargetResolver,
+        private ImageTargetUrlResolver $imageTargetResolver,
     ) {
     }
 
-    /** @return array{statusCode: 301, type: string, targetUrl: string, productId: ?string, categoryId: ?string}|null */
+    /** @return array{statusCode: 301, type: string, targetUrl: string, productId: ?string, categoryId: ?string, mediaId: ?string}|null */
     public function lookup(string $sourceUrl, string $salesChannelId, Context $context): ?array
     {
         $sourceUrl = $this->urlNormalizer->validate($sourceUrl);
@@ -51,6 +52,9 @@ final readonly class LookupRedirectService
             RedirectType::Category->value => null === $redirect->getCategoryId()
                 ? null
                 : $this->categoryTargetResolver->resolve($redirect->getCategoryId(), $salesChannelId, $sourceUrl),
+            RedirectType::Image->value => null === $redirect->getMediaId()
+                ? null
+                : $this->imageTargetResolver->resolve($redirect->getMediaId(), $context),
             default => $channel->getTargetUrl(),
         };
         if (null === $targetUrl) {
@@ -63,6 +67,7 @@ final readonly class LookupRedirectService
             'targetUrl' => $targetUrl,
             'productId' => $redirect->getProductId(),
             'categoryId' => $redirect->getCategoryId(),
+            'mediaId' => $redirect->getMediaId(),
         ];
     }
 }

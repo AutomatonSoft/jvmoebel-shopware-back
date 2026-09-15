@@ -2,6 +2,7 @@ import template from './jv-seo-redirect-detail.html.twig';
 import './jv-seo-redirect-detail.scss';
 
 const { Mixin, Utils } = Shopware;
+const { Criteria } = Shopware.Data;
 
 export default {
     template,
@@ -20,6 +21,7 @@ export default {
                 type: 'general',
                 productId: null,
                 categoryId: null,
+                mediaId: null,
                 channels: [],
             },
         };
@@ -43,7 +45,14 @@ export default {
                 { value: 'general', label: this.$t('jv-seo.filters.general') },
                 { value: 'product', label: this.$t('jv-seo.filters.product') },
                 { value: 'category', label: this.$t('jv-seo.filters.category') },
+                { value: 'image', label: this.$t('jv-seo.filters.image') },
             ];
+        },
+
+        imageCriteria() {
+            return new Criteria(1, 25)
+                .addFilter(Criteria.prefix('mimeType', 'image/'))
+                .addFilter(Criteria.equals('private', false));
         },
     },
 
@@ -64,12 +73,15 @@ export default {
                 } else {
                     const productId = this.$route.query.productId ?? null;
                     const categoryId = productId ? null : this.$route.query.categoryId ?? null;
-                    this.draft.type = productId ? 'product' : categoryId ? 'category' : 'general';
+                    const mediaId = productId || categoryId ? null : this.$route.query.mediaId ?? null;
+                    this.draft.type = productId ? 'product' : categoryId ? 'category' : mediaId ? 'image' : 'general';
                     this.draft.productId = productId;
                     this.draft.categoryId = categoryId;
+                    this.draft.mediaId = mediaId;
                     this.draft.channels = this.salesChannels.map((channel, index) => this.emptyChannel(channel, index === 0));
                     if (productId) await this.loadProductTargets();
                     if (categoryId) await this.loadCategoryTargets();
+                    if (mediaId) await this.loadImageTargets();
                 }
             } catch (error) {
                 this.createNotificationError({ message: error.message });
@@ -84,6 +96,7 @@ export default {
                 type: redirect.type,
                 productId: redirect.productId,
                 categoryId: redirect.categoryId,
+                mediaId: redirect.mediaId,
                 channels: this.salesChannels.map((salesChannel) => {
                     const channel = existing.get(salesChannel.id);
                     if (!channel) return this.emptyChannel(salesChannel, false);
@@ -120,18 +133,29 @@ export default {
             await this.loadCategoryTargets();
         },
 
+        async onImageChange() {
+            await this.loadImageTargets();
+        },
+
         async onTypeChange() {
             this.validationMessages = [];
             if (this.draft.type === 'general') {
                 this.draft.productId = null;
                 this.draft.categoryId = null;
+                this.draft.mediaId = null;
                 this.draft.channels.forEach((channel) => { channel.targetPreview = null; });
             } else if (this.draft.type === 'product') {
                 this.draft.categoryId = null;
+                this.draft.mediaId = null;
                 if (this.draft.productId) await this.loadProductTargets();
+            } else if (this.draft.type === 'category') {
+                this.draft.productId = null;
+                this.draft.mediaId = null;
+                if (this.draft.categoryId) await this.loadCategoryTargets();
             } else {
                 this.draft.productId = null;
-                if (this.draft.categoryId) await this.loadCategoryTargets();
+                this.draft.categoryId = null;
+                if (this.draft.mediaId) await this.loadImageTargets();
             }
         },
 
@@ -152,6 +176,18 @@ export default {
             if (!this.draft.categoryId) return;
             try {
                 const response = await this.jvSeoRedirectApiService.categoryTargets(this.draft.categoryId);
+                const targets = new Map((response.data.data ?? []).map((target) => [target.salesChannelId, target.targetUrl]));
+                this.draft.channels.forEach((channel) => { channel.targetPreview = targets.get(channel.salesChannelId) ?? null; });
+            } catch (error) {
+                this.createNotificationError({ message: error.message });
+            }
+        },
+
+        async loadImageTargets() {
+            this.draft.channels.forEach((channel) => { channel.targetPreview = null; });
+            if (!this.draft.mediaId) return;
+            try {
+                const response = await this.jvSeoRedirectApiService.imageTargets(this.draft.mediaId);
                 const targets = new Map((response.data.data ?? []).map((target) => [target.salesChannelId, target.targetUrl]));
                 this.draft.channels.forEach((channel) => { channel.targetPreview = targets.get(channel.salesChannelId) ?? null; });
             } catch (error) {
@@ -186,6 +222,9 @@ export default {
             if (this.draft.type === 'category' && !this.draft.categoryId) {
                 messages.push(this.$t('jv-seo.validation.categoryRequired'));
             }
+            if (this.draft.type === 'image' && !this.draft.mediaId) {
+                messages.push(this.$t('jv-seo.validation.imageRequired'));
+            }
             if (enabled.length === 0) messages.push(this.$t('jv-seo.validation.channelRequired'));
             enabled.forEach((channel) => {
                 if (this.draft.type === 'general' && !this.validUrl(channel.targetUrl)) {
@@ -209,6 +248,7 @@ export default {
                 type: this.draft.type,
                 productId: this.draft.type === 'product' ? this.draft.productId : null,
                 categoryId: this.draft.type === 'category' ? this.draft.categoryId : null,
+                mediaId: this.draft.type === 'image' ? this.draft.mediaId : null,
                 channels: this.draft.channels.map((channel) => ({
                     id: channel.id,
                     salesChannelId: channel.salesChannelId,
