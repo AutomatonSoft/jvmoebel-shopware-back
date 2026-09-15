@@ -20,6 +20,9 @@
         <service id="Jv\Seo\Service\Redirect\ProductTargetUrlResolver">
             <argument type="service" id="Doctrine\DBAL\Connection"/>
         </service>
+        <service id="Jv\Seo\Service\Redirect\CategoryTargetUrlResolver">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+        </service>
         <service id="Jv\Seo\Service\Redirect\ImportProductRedirectsService">
             <argument type="service" id="jv_seo_redirect.repository"/>
             <argument type="service" id="jv_seo_redirect_channel.repository"/>
@@ -32,20 +35,24 @@
             <argument type="service" id="jv_seo_redirect_channel.repository"/>
             <argument type="service" id="jv_seo_redirect_source.repository"/>
             <argument type="service" id="product.repository"/>
+            <argument type="service" id="category.repository"/>
             <argument type="service" id="sales_channel.repository"/>
             <argument type="service" id="Jv\Seo\Service\Redirect\UrlNormalizer"/>
             <argument type="service" id="Jv\Seo\Service\Redirect\ProductTargetUrlResolver"/>
+            <argument type="service" id="Jv\Seo\Service\Redirect\CategoryTargetUrlResolver"/>
             <argument type="service" id="Doctrine\DBAL\Connection"/>
         </service>
         <service id="Jv\Seo\Service\Redirect\RedirectQueryService">
             <argument type="service" id="jv_seo_redirect.repository"/>
             <argument type="service" id="sales_channel.repository"/>
             <argument type="service" id="Jv\Seo\Service\Redirect\ProductTargetUrlResolver"/>
+            <argument type="service" id="Jv\Seo\Service\Redirect\CategoryTargetUrlResolver"/>
         </service>
         <service id="Jv\Seo\Service\Redirect\LookupRedirectService">
             <argument type="service" id="jv_seo_redirect_source.repository"/>
             <argument type="service" id="Jv\Seo\Service\Redirect\UrlNormalizer"/>
             <argument type="service" id="Jv\Seo\Service\Redirect\ProductTargetUrlResolver"/>
+            <argument type="service" id="Jv\Seo\Service\Redirect\CategoryTargetUrlResolver"/>
         </service>
 
         <service id="Jv\Seo\Controller\RedirectController" public="true">

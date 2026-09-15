@@ -10,6 +10,7 @@ use Jv\Seo\Core\Content\RedirectChannel\RedirectChannelEntity;
 use Jv\Seo\Core\Content\RedirectSource\RedirectSourceCollection;
 use Jv\Seo\Core\Content\RedirectSource\RedirectSourceEntity;
 use Jv\Seo\Service\Redirect\Exception\RedirectValidationException;
+use Shopware\Core\Content\Category\CategoryCollection;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
@@ -27,6 +28,7 @@ final readonly class SaveRedirectService
      * @param EntityRepository<RedirectChannelCollection> $channelRepository
      * @param EntityRepository<RedirectSourceCollection>  $sourceRepository
      * @param EntityRepository<ProductCollection>         $productRepository
+     * @param EntityRepository<CategoryCollection>        $categoryRepository
      * @param EntityRepository<SalesChannelCollection>    $salesChannelRepository
      */
     public function __construct(
@@ -34,9 +36,11 @@ final readonly class SaveRedirectService
         private EntityRepository $channelRepository,
         private EntityRepository $sourceRepository,
         private EntityRepository $productRepository,
+        private EntityRepository $categoryRepository,
         private EntityRepository $salesChannelRepository,
         private UrlNormalizer $urlNormalizer,
-        private ProductTargetUrlResolver $targetResolver,
+        private ProductTargetUrlResolver $productTargetResolver,
+        private CategoryTargetUrlResolver $categoryTargetResolver,
         private Connection $connection,
     ) {
     }
@@ -68,18 +72,32 @@ final readonly class SaveRedirectService
         $type = RedirectType::tryFrom(is_string($payload['type'] ?? null) ? $payload['type'] : '');
         $violations = [];
         if (!$type instanceof RedirectType) {
-            $violations[] = ['field' => 'type', 'message' => 'Redirect type must be general or product.'];
+            $violations[] = ['field' => 'type', 'message' => 'Redirect type must be general, product, or category.'];
         }
 
         $productId = is_string($payload['productId'] ?? null) && '' !== trim($payload['productId']) ? trim($payload['productId']) : null;
+        $categoryId = is_string($payload['categoryId'] ?? null) && '' !== trim($payload['categoryId']) ? trim($payload['categoryId']) : null;
         if (RedirectType::Product === $type && (null === $productId || !Uuid::isValid($productId))) {
             $violations[] = ['field' => 'productId', 'message' => 'Product redirect requires a valid product.'];
         }
-        if (RedirectType::General === $type && null !== $productId) {
-            $violations[] = ['field' => 'productId', 'message' => 'General redirect must not reference a product.'];
+        if (RedirectType::Category === $type && (null === $categoryId || !Uuid::isValid($categoryId))) {
+            $violations[] = ['field' => 'categoryId', 'message' => 'Category redirect requires a valid category.'];
         }
-        if ($existing instanceof RedirectEntity && ($existing->getType() !== $type?->value || $existing->getProductId() !== $productId)) {
-            $violations[] = ['field' => 'type', 'message' => 'Redirect type and product cannot be changed.'];
+        if (RedirectType::Product === $type && null !== $categoryId) {
+            $violations[] = ['field' => 'categoryId', 'message' => 'Product redirect must not reference a category.'];
+        }
+        if (RedirectType::Category === $type && null !== $productId) {
+            $violations[] = ['field' => 'productId', 'message' => 'Category redirect must not reference a product.'];
+        }
+        if (RedirectType::General === $type && (null !== $productId || null !== $categoryId)) {
+            $violations[] = ['field' => 'type', 'message' => 'General redirect must not reference a product or category.'];
+        }
+        if ($existing instanceof RedirectEntity && (
+            $existing->getType() !== $type?->value
+            || $existing->getProductId() !== $productId
+            || $existing->getCategoryId() !== $categoryId
+        )) {
+            $violations[] = ['field' => 'type', 'message' => 'Redirect type and target entity cannot be changed.'];
         }
 
         $channels = $payload['channels'] ?? null;
@@ -102,6 +120,10 @@ final readonly class SaveRedirectService
             && null === $this->productRepository->searchIds(new Criteria([$productId]), $context)->firstId()) {
             $violations[] = ['field' => 'productId', 'message' => 'Selected product does not exist.'];
         }
+        if (RedirectType::Category === $type && null !== $categoryId
+            && null === $this->categoryRepository->searchIds(new Criteria([$categoryId]), $context)->firstId()) {
+            $violations[] = ['field' => 'categoryId', 'message' => 'Selected category does not exist.'];
+        }
         if (null === $id && RedirectType::Product === $type && null !== $productId) {
             $duplicate = $this->redirectRepository->searchIds(
                 (new Criteria())->addFilter(new EqualsFilter('type', $type->value))->addFilter(new EqualsFilter('productId', $productId))->setLimit(1),
@@ -111,22 +133,35 @@ final readonly class SaveRedirectService
                 $violations[] = ['field' => 'productId', 'message' => 'This product already has a redirect aggregate.'];
             }
         }
+        if (null === $id && RedirectType::Category === $type && null !== $categoryId) {
+            $duplicate = $this->redirectRepository->searchIds(
+                (new Criteria())->addFilter(new EqualsFilter('type', $type->value))->addFilter(new EqualsFilter('categoryId', $categoryId))->setLimit(1),
+                $context,
+            )->firstId();
+            if (null !== $duplicate) {
+                $violations[] = ['field' => 'categoryId', 'message' => 'This category already has a redirect aggregate.'];
+            }
+        }
 
-        $preparedChannels = $this->prepareChannels($enabledChannels, $type, $productId, $existing, $context, $violations);
+        $preparedChannels = $this->prepareChannels($enabledChannels, $type, $productId, $categoryId, $existing, $context, $violations);
         if ([] !== $violations) {
             throw new RedirectValidationException($violations);
         }
 
-        $redirectId = $existing?->getId() ?? (RedirectType::Product === $type && null !== $productId
-            ? Uuid::fromStringToHex('jv-seo.redirect.product.'.$productId)
-            : Uuid::randomHex());
+        $redirectId = $existing?->getId() ?? match ($type) {
+            RedirectType::Product => Uuid::fromStringToHex('jv-seo.redirect.product.'.$productId),
+            RedirectType::Category => Uuid::fromStringToHex('jv-seo.redirect.category.'.$categoryId),
+            RedirectType::General => Uuid::randomHex(),
+        };
 
-        $this->connection->transactional(function () use ($redirectId, $type, $productId, $preparedChannels, $existing, $context): void {
+        $this->connection->transactional(function () use ($redirectId, $type, $productId, $categoryId, $preparedChannels, $existing, $context): void {
             $rootPayload = [[
                 'id' => $redirectId,
                 'type' => $type->value,
                 'productId' => $productId,
                 'productVersionId' => null === $productId ? null : Defaults::LIVE_VERSION,
+                'categoryId' => $categoryId,
+                'categoryVersionId' => null === $categoryId ? null : Defaults::LIVE_VERSION,
             ]];
             if ($existing instanceof RedirectEntity) {
                 $this->redirectRepository->update($rootPayload, $context);
@@ -214,7 +249,7 @@ final readonly class SaveRedirectService
      *
      * @return list<array{salesChannelId: string, targetUrl: ?string, existing: ?RedirectChannelEntity, sources: list<array{id: ?string, url: string, hash: string, existing: ?RedirectSourceEntity}>}>
      */
-    private function prepareChannels(array $channels, RedirectType $type, ?string $productId, ?RedirectEntity $existing, Context $context, array &$violations): array
+    private function prepareChannels(array $channels, RedirectType $type, ?string $productId, ?string $categoryId, ?RedirectEntity $existing, Context $context, array &$violations): array
     {
         $salesChannelIds = [];
         foreach ($channels as $index => $channel) {
@@ -260,7 +295,7 @@ final readonly class SaveRedirectService
                     $violations[] = ['field' => sprintf('channels.%d.targetUrl', $index), 'message' => $exception->getMessage()];
                 }
             } elseif (is_string($channel['targetUrl'] ?? null) && '' !== trim($channel['targetUrl'])) {
-                $violations[] = ['field' => sprintf('channels.%d.targetUrl', $index), 'message' => 'Product target URL is derived from Shopware and must not be stored.'];
+                $violations[] = ['field' => sprintf('channels.%d.targetUrl', $index), 'message' => 'Entity target URL is derived from Shopware and must not be stored.'];
             }
 
             $sourceRows = is_array($channel['sources'] ?? null) ? $channel['sources'] : [];
@@ -299,6 +334,7 @@ final readonly class SaveRedirectService
                     $violations[] = ['field' => sprintf('channels.%d.sources.%d.url', $index, $sourceIndex), 'message' => 'Source URL must not be repeated.'];
                     continue;
                 }
+
                 $requestedHashes[$sourceHash] = true;
 
                 $collision = $this->findActiveSource($sourceHash, $context);
@@ -306,9 +342,12 @@ final readonly class SaveRedirectService
                     $violations[] = ['field' => sprintf('channels.%d.sources.%d.url', $index, $sourceIndex), 'message' => 'Source URL already belongs to another redirect.'];
                 }
 
-                $resolvedTarget = RedirectType::General === $type
-                    ? $targetUrl
-                    : (null === $productId ? null : $this->targetResolver->resolve($productId, $salesChannelId, $sourceUrl));
+                $resolvedTarget = match ($type) {
+                    RedirectType::General => $targetUrl,
+                    RedirectType::Product => null === $productId ? null : $this->productTargetResolver->resolve($productId, $salesChannelId, $sourceUrl),
+                    RedirectType::Category => null === $categoryId ? null : $this->categoryTargetResolver->resolve($categoryId, $salesChannelId, $sourceUrl),
+                };
+
                 if (null !== $resolvedTarget && $this->urlNormalizer->hash($resolvedTarget) === $sourceHash) {
                     $violations[] = ['field' => sprintf('channels.%d.sources.%d.url', $index, $sourceIndex), 'message' => 'Source and target URL must be different.'];
                 }

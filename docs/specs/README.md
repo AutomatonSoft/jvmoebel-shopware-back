@@ -123,4 +123,4 @@ SPEC-NNN-short-name.md
 | [SPEC-048-cms-social-block](SPEC-048-cms-social-block.md) | Backend CMS element/block `jv-social-block` (заголовок и social items с media/name/url); контракт — platform SPEC-048 |
 | [SPEC-049-cms-text-custom-tables](SPEC-049-cms-text-custom-tables.md) | Backend CMS element/block `jv-text-custom-tables` (rich text и секции с двухколоночными таблицами); frontend contract отсутствует |
 | [SPEC-050-cms-shop-the-look](SPEC-050-cms-shop-the-look.md) | Backend CMS element/block `jv-shop-the-look` (интерьерное изображение, товары и hotspot-точки); контракт — platform SPEC-040 |
-| [SPEC-053-product-legacy-redirects](SPEC-053-product-legacy-redirects.md) | Реестр общих и товарных legacy redirects, импорт CosmoShop URL и Store API lookup для Next.js |
+| [SPEC-053-product-legacy-redirects](SPEC-053-product-legacy-redirects.md) | Реестр общих, товарных и категорийных legacy redirects, импорт CosmoShop product URL и Store API lookup для Next.js; доставка HTTP `301` — platform SPEC-049 |

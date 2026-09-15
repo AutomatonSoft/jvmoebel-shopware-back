@@ -22,23 +22,25 @@ final class RedirectController extends AbstractController
     ) {
     }
 
-    #[Route(path: '/api/_action/jv-seo/redirects', name: 'api.action.jv_seo.redirect.list', methods: ['GET'], defaults: ['_acl' => ['product.viewer']])]
+    #[Route(path: '/api/_action/jv-seo/redirects', name: 'api.action.jv_seo.redirect.list', methods: ['GET'], defaults: ['_acl' => ['jv_seo_redirect:read']])]
     public function list(Request $request, Context $context): JsonResponse
     {
         $type = $request->query->getString('type');
         $productId = $request->query->getString('productId');
+        $categoryId = $request->query->getString('categoryId');
 
         return new JsonResponse($this->query->list(
             '' === $type || 'all' === $type ? null : $type,
             $request->query->getString('term'),
             '' === $productId ? null : $productId,
+            '' === $categoryId ? null : $categoryId,
             max(1, $request->query->getInt('page', 1)),
             min(100, max(1, $request->query->getInt('limit', 25))),
             $context,
         ));
     }
 
-    #[Route(path: '/api/_action/jv-seo/redirects/{id}', name: 'api.action.jv_seo.redirect.detail', methods: ['GET'], defaults: ['_acl' => ['product.viewer']])]
+    #[Route(path: '/api/_action/jv-seo/redirects/{id}', name: 'api.action.jv_seo.redirect.detail', methods: ['GET'], defaults: ['_acl' => ['jv_seo_redirect:read']])]
     public function detail(string $id, Context $context): JsonResponse
     {
         $data = $this->query->detail($id, $context);
@@ -48,7 +50,7 @@ final class RedirectController extends AbstractController
             : new JsonResponse(['data' => $data]);
     }
 
-    #[Route(path: '/api/_action/jv-seo/redirects', name: 'api.action.jv_seo.redirect.create', methods: ['POST'], defaults: ['_acl' => ['product.editor']])]
+    #[Route(path: '/api/_action/jv-seo/redirects', name: 'api.action.jv_seo.redirect.create', methods: ['POST'], defaults: ['_acl' => ['jv_seo_redirect:create']])]
     public function create(Request $request, Context $context): JsonResponse
     {
         try {
@@ -62,7 +64,7 @@ final class RedirectController extends AbstractController
         }
     }
 
-    #[Route(path: '/api/_action/jv-seo/redirects/{id}', name: 'api.action.jv_seo.redirect.update', methods: ['PUT'], defaults: ['_acl' => ['product.editor']])]
+    #[Route(path: '/api/_action/jv-seo/redirects/{id}', name: 'api.action.jv_seo.redirect.update', methods: ['PUT'], defaults: ['_acl' => ['jv_seo_redirect:update']])]
     public function update(string $id, Request $request, Context $context): JsonResponse
     {
         try {
@@ -76,7 +78,7 @@ final class RedirectController extends AbstractController
         }
     }
 
-    #[Route(path: '/api/_action/jv-seo/sales-channels', name: 'api.action.jv_seo.sales_channel.list', methods: ['GET'], defaults: ['_acl' => ['product.viewer']])]
+    #[Route(path: '/api/_action/jv-seo/sales-channels', name: 'api.action.jv_seo.sales_channel.list', methods: ['GET'], defaults: ['_acl' => ['jv_seo_redirect:read']])]
     public function salesChannels(Context $context): JsonResponse
     {
         return new JsonResponse(['data' => $this->query->salesChannels($context)]);
@@ -86,6 +88,12 @@ final class RedirectController extends AbstractController
     public function productTargets(string $productId, Context $context): JsonResponse
     {
         return new JsonResponse(['data' => $this->query->productTargets($productId, $context)]);
+    }
+
+    #[Route(path: '/api/_action/jv-seo/categories/{categoryId}/targets', name: 'api.action.jv_seo.category.targets', methods: ['GET'], defaults: ['_acl' => ['category.viewer']])]
+    public function categoryTargets(string $categoryId, Context $context): JsonResponse
+    {
+        return new JsonResponse(['data' => $this->query->categoryTargets($categoryId, $context)]);
     }
 
     /** @return array<string, mixed> */
@@ -117,7 +125,7 @@ final class RedirectController extends AbstractController
     {
         return new JsonResponse(['errors' => [[
             'code' => 'redirect_conflict',
-            'detail' => 'The redirect conflicts with an existing source URL or product redirect.',
+            'detail' => 'The redirect conflicts with an existing source URL or entity redirect.',
         ]]], Response::HTTP_CONFLICT);
     }
 }

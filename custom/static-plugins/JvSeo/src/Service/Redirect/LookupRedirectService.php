@@ -17,11 +17,12 @@ final readonly class LookupRedirectService
     public function __construct(
         private EntityRepository $sourceRepository,
         private UrlNormalizer $urlNormalizer,
-        private ProductTargetUrlResolver $targetResolver,
+        private ProductTargetUrlResolver $productTargetResolver,
+        private CategoryTargetUrlResolver $categoryTargetResolver,
     ) {
     }
 
-    /** @return array{statusCode: 301, type: string, targetUrl: string, productId: ?string}|null */
+    /** @return array{statusCode: 301, type: string, targetUrl: string, productId: ?string, categoryId: ?string}|null */
     public function lookup(string $sourceUrl, string $salesChannelId, Context $context): ?array
     {
         $sourceUrl = $this->urlNormalizer->validate($sourceUrl);
@@ -43,9 +44,15 @@ final readonly class LookupRedirectService
         }
         $redirect = $channel->getRedirect();
 
-        $targetUrl = RedirectType::Product->value === $redirect->getType() && null !== $redirect->getProductId()
-            ? $this->targetResolver->resolve($redirect->getProductId(), $salesChannelId, $sourceUrl)
-            : $channel->getTargetUrl();
+        $targetUrl = match ($redirect->getType()) {
+            RedirectType::Product->value => null === $redirect->getProductId()
+                ? null
+                : $this->productTargetResolver->resolve($redirect->getProductId(), $salesChannelId, $sourceUrl),
+            RedirectType::Category->value => null === $redirect->getCategoryId()
+                ? null
+                : $this->categoryTargetResolver->resolve($redirect->getCategoryId(), $salesChannelId, $sourceUrl),
+            default => $channel->getTargetUrl(),
+        };
         if (null === $targetUrl) {
             return null;
         }
@@ -55,6 +62,7 @@ final readonly class LookupRedirectService
             'type' => $redirect->getType(),
             'targetUrl' => $targetUrl,
             'productId' => $redirect->getProductId(),
+            'categoryId' => $redirect->getCategoryId(),
         ];
     }
 }

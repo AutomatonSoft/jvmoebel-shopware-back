@@ -28,6 +28,10 @@ export default class JvSeoRedirectApiService {
         return this.withAuthentication((headers) => this.httpClient.get(`/_action/jv-seo/products/${productId}/targets`, { headers }));
     }
 
+    categoryTargets(categoryId) {
+        return this.withAuthentication((headers) => this.httpClient.get(`/_action/jv-seo/categories/${categoryId}/targets`, { headers }));
+    }
+
     async withAuthentication(request) {
         try {
             return await request(this.headers());

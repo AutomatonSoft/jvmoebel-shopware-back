@@ -48,6 +48,16 @@
                     display-variants
                     @update:value="onProductChange"
                 />
+
+                <sw-entity-single-select
+                    v-if="draft.type === 'category'"
+                    v-model:value="draft.categoryId"
+                    entity="category"
+                    :label="$t('jv-seo.detail.category')"
+                    :placeholder="$t('jv-seo.detail.categoryPlaceholder')"
+                    :disabled="isEditing || !canEdit"
+                    @update:value="onCategoryChange"
+                />
             </mt-card>
 
             <mt-card

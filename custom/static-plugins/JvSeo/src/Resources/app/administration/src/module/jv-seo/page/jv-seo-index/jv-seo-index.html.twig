@@ -14,7 +14,7 @@
 
     <template #smart-bar-actions>
         <mt-button
-            v-if="acl.can('product.editor')"
+            v-if="acl.can('jv_seo_redirect:create')"
             variant="primary"
             @click="$router.push({ name: 'jv.seo.create' })"
         >

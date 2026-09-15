@@ -1,8 +1,8 @@
-{% block jv_seo_product_redirects %}
+{% block jv_seo_category_redirects %}
 <mt-card
     v-if="acl.can('jv_seo_redirect:read')"
-    position-identifier="jv-seo-product-redirects"
-    :title="$t('jv-seo.productCard.title')"
+    position-identifier="jv-seo-category-redirects"
+    :title="$t('jv-seo.categoryCard.title')"
     :is-loading="isLoading"
 >
     <template #toolbar>
@@ -12,7 +12,7 @@
             variant="secondary"
             @click="$router.push(redirectId
                 ? { name: 'jv.seo.detail', params: { id: redirectId } }
-                : { name: 'jv.seo.create', query: { productId } })"
+                : { name: 'jv.seo.create', query: { categoryId } })"
         >
             {{ redirectId ? $t('global.default.edit') : $t('jv-seo.actions.create') }}
         </mt-button>
@@ -31,7 +31,7 @@
             <span v-else>{{ $t('jv-seo.detail.targetUnavailable') }}</span>
         </template>
         <template #column-sources="{ item }">
-            <ul class="jv-seo-product-redirects__sources">
+            <ul class="jv-seo-category-redirects__sources">
                 <li v-for="sourceUrl in item.sourceUrls" :key="sourceUrl">{{ sourceUrl }}</li>
             </ul>
         </template>
@@ -40,7 +40,7 @@
     <mt-empty-state
         v-else-if="!isLoading"
         icon="regular-link"
-        :headline="$t('jv-seo.productCard.empty')"
+        :headline="$t('jv-seo.categoryCard.empty')"
     />
 </mt-card>
 {% endblock %}

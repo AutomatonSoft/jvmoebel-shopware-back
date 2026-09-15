@@ -4,7 +4,9 @@ namespace Jv\Seo\Service\Redirect;
 
 use Jv\Seo\Core\Content\Redirect\RedirectCollection;
 use Jv\Seo\Core\Content\Redirect\RedirectEntity;
+use Jv\Seo\Core\Content\RedirectChannel\RedirectChannelEntity;
 use Jv\Seo\Core\Content\RedirectSource\RedirectSourceEntity;
+use Shopware\Core\Content\Category\CategoryEntity;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
@@ -27,18 +29,20 @@ final readonly class RedirectQueryService
     public function __construct(
         private EntityRepository $redirectRepository,
         private EntityRepository $salesChannelRepository,
-        private ProductTargetUrlResolver $targetResolver,
+        private ProductTargetUrlResolver $productTargetResolver,
+        private CategoryTargetUrlResolver $categoryTargetResolver,
     ) {
     }
 
     /** @return array{data: list<array<string, mixed>>, total: int, page: int, limit: int} */
-    public function list(?string $type, string $term, ?string $productId, int $page, int $limit, Context $context): array
+    public function list(?string $type, string $term, ?string $productId, ?string $categoryId, int $page, int $limit, Context $context): array
     {
         $criteria = (new Criteria())
             ->setOffset(($page - 1) * $limit)
             ->setLimit($limit)
             ->setTotalCountMode(Criteria::TOTAL_COUNT_MODE_EXACT)
             ->addAssociation('product')
+            ->addAssociation('category')
             ->addAssociation('channels.salesChannel.domains')
             ->addAssociation('channels.sources')
             ->addFilter(new EqualsFilter('channels.active', true))
@@ -46,11 +50,14 @@ final readonly class RedirectQueryService
             ->addSorting(new FieldSorting('updatedAt', FieldSorting::DESCENDING))
             ->addSorting(new FieldSorting('createdAt', FieldSorting::DESCENDING));
 
-        if (in_array($type, [RedirectType::General->value, RedirectType::Product->value], true)) {
+        if (in_array($type, array_column(RedirectType::cases(), 'value'), true)) {
             $criteria->addFilter(new EqualsFilter('type', $type));
         }
         if (null !== $productId && '' !== $productId) {
             $criteria->addFilter(new EqualsFilter('productId', $productId));
+        }
+        if (null !== $categoryId && '' !== $categoryId) {
+            $criteria->addFilter(new EqualsFilter('categoryId', $categoryId));
         }
         if ('' !== trim($term)) {
             $term = trim($term);
@@ -60,6 +67,7 @@ final readonly class RedirectQueryService
                 new ContainsFilter('channels.salesChannel.name', $term),
                 new ContainsFilter('product.productNumber', $term),
                 new ContainsFilter('product.name', $term),
+                new ContainsFilter('category.name', $term),
             ]));
         }
 
@@ -83,6 +91,7 @@ final readonly class RedirectQueryService
     {
         $criteria = (new Criteria([$id]))
             ->addAssociation('product')
+            ->addAssociation('category')
             ->addAssociation('channels.salesChannel.domains')
             ->addAssociation('channels.sources');
         $redirect = $this->redirectRepository->search($criteria, $context)->first();
@@ -125,7 +134,17 @@ final readonly class RedirectQueryService
         return array_map(fn (array $channel): array => [
             'salesChannelId' => $channel['id'],
             'salesChannelName' => $channel['name'],
-            'targetUrl' => $this->targetResolver->resolve($productId, $channel['id']),
+            'targetUrl' => $this->productTargetResolver->resolve($productId, $channel['id']),
+        ], $this->salesChannels($context));
+    }
+
+    /** @return list<array{salesChannelId: string, salesChannelName: string, targetUrl: ?string}> */
+    public function categoryTargets(string $categoryId, Context $context): array
+    {
+        return array_map(fn (array $channel): array => [
+            'salesChannelId' => $channel['id'],
+            'salesChannelName' => $channel['name'],
+            'targetUrl' => $this->categoryTargetResolver->resolve($categoryId, $channel['id']),
         ], $this->salesChannels($context));
     }
 
@@ -164,6 +183,7 @@ final readonly class RedirectQueryService
     private function serialize(RedirectEntity $redirect, array $salesChannelNames): array
     {
         $product = $redirect->getProduct();
+        $category = $redirect->getCategory();
         $channels = [];
         foreach ($redirect->getChannels() ?? [] as $channel) {
             if (!$channel->isActive()) {
@@ -180,9 +200,7 @@ final readonly class RedirectQueryService
                 'id' => $channel->getId(),
                 'salesChannelId' => $channel->getSalesChannelId(),
                 'salesChannelName' => $salesChannelNames[$channel->getSalesChannelId()] ?? $channel->getSalesChannelId(),
-                'targetUrl' => RedirectType::Product->value === $redirect->getType() && null !== $redirect->getProductId()
-                    ? $this->targetResolver->resolve($redirect->getProductId(), $channel->getSalesChannelId(), is_string($sourceUrl) ? $sourceUrl : null)
-                    : $channel->getTargetUrl(),
+                'targetUrl' => $this->resolveTarget($redirect, $channel, is_string($sourceUrl) ? $sourceUrl : null),
                 'sources' => $sources,
             ];
         }
@@ -193,10 +211,24 @@ final readonly class RedirectQueryService
             'productId' => $redirect->getProductId(),
             'productNumber' => $product instanceof ProductEntity ? $product->getProductNumber() : null,
             'productName' => $product instanceof ProductEntity ? $product->getTranslation('name') : null,
+            'categoryId' => $redirect->getCategoryId(),
+            'categoryName' => $category instanceof CategoryEntity ? $category->getTranslation('name') : null,
             'channels' => $channels,
             'createdAt' => $redirect->getCreatedAt()?->format(DATE_ATOM),
             'updatedAt' => $redirect->getUpdatedAt()?->format(DATE_ATOM),
         ];
+    }
+
+    private function resolveTarget(RedirectEntity $redirect, RedirectChannelEntity $channel, ?string $sourceUrl): ?string
+    {
+        if (RedirectType::Product->value === $redirect->getType() && null !== $redirect->getProductId()) {
+            return $this->productTargetResolver->resolve($redirect->getProductId(), $channel->getSalesChannelId(), $sourceUrl);
+        }
+        if (RedirectType::Category->value === $redirect->getType() && null !== $redirect->getCategoryId()) {
+            return $this->categoryTargetResolver->resolve($redirect->getCategoryId(), $channel->getSalesChannelId(), $sourceUrl);
+        }
+
+        return $channel->getTargetUrl();
     }
 
     /** @return array{id: string, url: string, origin: string, manuallyModified: bool} */

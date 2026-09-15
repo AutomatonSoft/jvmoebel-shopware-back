@@ -3,6 +3,7 @@
 namespace Jv\Seo\Core\Content\Redirect;
 
 use Jv\Seo\Core\Content\RedirectChannel\RedirectChannelDefinition;
+use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\CreatedAtField;
@@ -44,9 +45,12 @@ final class RedirectDefinition extends EntityDefinition
             (new StringField('type', 'type', 32))->addFlags(new Required()),
             new FkField('product_id', 'productId', ProductDefinition::class),
             new ReferenceVersionField(ProductDefinition::class),
+            new FkField('category_id', 'categoryId', CategoryDefinition::class),
+            new ReferenceVersionField(CategoryDefinition::class),
             new CreatedAtField(),
             new UpdatedAtField(),
             new ManyToOneAssociationField('product', 'product_id', ProductDefinition::class, 'id', false),
+            new ManyToOneAssociationField('category', 'category_id', CategoryDefinition::class, 'id', false),
             (new OneToManyAssociationField('channels', RedirectChannelDefinition::class, 'redirect_id'))->addFlags(new CascadeDelete()),
         ]);
     }

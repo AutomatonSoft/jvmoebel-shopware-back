@@ -15,7 +15,8 @@
             "title": "Typ",
             "all": "Alle Weiterleitungen",
             "general": "Allgemein",
-            "product": "Produkte"
+            "product": "Produkte",
+            "category": "Kategorien"
         },
         "list": {
             "type": "Typ",
@@ -23,7 +24,7 @@
             "salesChannels": "Verkaufskanal",
             "sources": "301-URLs",
             "updatedAt": "Geändert",
-            "searchPlaceholder": "URLs, Produkt oder Verkaufskanal durchsuchen"
+            "searchPlaceholder": "URLs, Produkte, Kategorien oder Verkaufskanäle durchsuchen"
         },
         "detail": {
             "createTitle": "Weiterleitung erstellen",
@@ -32,6 +33,8 @@
             "type": "Weiterleitungstyp",
             "product": "Produkt",
             "productPlaceholder": "Produkt suchen",
+            "category": "Kategorie",
+            "categoryPlaceholder": "Kategorie suchen",
             "enableChannel": "Für diesen Verkaufskanal konfigurieren",
             "targetUrl": "Ziel-URL",
             "targetPreview": "Beispiel der aktuellen kanonischen Ziel-URL",
@@ -42,6 +45,7 @@
         },
         "validation": {
             "productRequired": "Wählen Sie ein Produkt aus.",
+            "categoryRequired": "Wählen Sie eine Kategorie aus.",
             "channelRequired": "Aktivieren Sie mindestens einen Verkaufskanal.",
             "sourceRequired": "Fügen Sie mindestens eine 301-URL für {channel} hinzu.",
             "invalidSource": "Eine 301-URL für {channel} ist keine vollständige HTTP(S)-URL.",
@@ -53,6 +57,10 @@
         "productCard": {
             "title": "Legacy-Weiterleitungen nach Verkaufskanal",
             "empty": "Für dieses Produkt sind keine Legacy-Weiterleitungen konfiguriert."
+        },
+        "categoryCard": {
+            "title": "Legacy-Weiterleitungen nach Verkaufskanal",
+            "empty": "Für diese Kategorie sind keine Legacy-Weiterleitungen konfiguriert."
         }
     }
 }

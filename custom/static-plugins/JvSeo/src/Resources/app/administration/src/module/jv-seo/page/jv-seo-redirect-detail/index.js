@@ -19,6 +19,7 @@ export default {
             draft: {
                 type: 'general',
                 productId: null,
+                categoryId: null,
                 channels: [],
             },
         };
@@ -34,13 +35,14 @@ export default {
         },
 
         canEdit() {
-            return this.acl.can('product.editor');
+            return this.acl.can(this.isEditing ? 'jv_seo_redirect:update' : 'jv_seo_redirect:create');
         },
 
         typeOptions() {
             return [
                 { value: 'general', label: this.$t('jv-seo.filters.general') },
                 { value: 'product', label: this.$t('jv-seo.filters.product') },
+                { value: 'category', label: this.$t('jv-seo.filters.category') },
             ];
         },
     },
@@ -61,10 +63,13 @@ export default {
                     this.hydrate(response.data.data);
                 } else {
                     const productId = this.$route.query.productId ?? null;
-                    this.draft.type = productId ? 'product' : 'general';
+                    const categoryId = productId ? null : this.$route.query.categoryId ?? null;
+                    this.draft.type = productId ? 'product' : categoryId ? 'category' : 'general';
                     this.draft.productId = productId;
+                    this.draft.categoryId = categoryId;
                     this.draft.channels = this.salesChannels.map((channel, index) => this.emptyChannel(channel, index === 0));
                     if (productId) await this.loadProductTargets();
+                    if (categoryId) await this.loadCategoryTargets();
                 }
             } catch (error) {
                 this.createNotificationError({ message: error.message });
@@ -78,6 +83,7 @@ export default {
             this.draft = {
                 type: redirect.type,
                 productId: redirect.productId,
+                categoryId: redirect.categoryId,
                 channels: this.salesChannels.map((salesChannel) => {
                     const channel = existing.get(salesChannel.id);
                     if (!channel) return this.emptyChannel(salesChannel, false);
@@ -87,7 +93,7 @@ export default {
                         salesChannelName: salesChannel.name,
                         enabled: true,
                         targetUrl: channel.targetUrl ?? '',
-                        targetPreview: redirect.type === 'product' ? channel.targetUrl : null,
+                        targetPreview: redirect.type === 'general' ? null : channel.targetUrl,
                         sources: channel.sources.map((source) => ({ ...source, localKey: source.id })),
                     };
                 }),
@@ -110,13 +116,22 @@ export default {
             await this.loadProductTargets();
         },
 
+        async onCategoryChange() {
+            await this.loadCategoryTargets();
+        },
+
         async onTypeChange() {
             this.validationMessages = [];
             if (this.draft.type === 'general') {
                 this.draft.productId = null;
+                this.draft.categoryId = null;
                 this.draft.channels.forEach((channel) => { channel.targetPreview = null; });
-            } else if (this.draft.productId) {
-                await this.loadProductTargets();
+            } else if (this.draft.type === 'product') {
+                this.draft.categoryId = null;
+                if (this.draft.productId) await this.loadProductTargets();
+            } else {
+                this.draft.productId = null;
+                if (this.draft.categoryId) await this.loadCategoryTargets();
             }
         },
 
@@ -125,6 +140,18 @@ export default {
             if (!this.draft.productId) return;
             try {
                 const response = await this.jvSeoRedirectApiService.productTargets(this.draft.productId);
+                const targets = new Map((response.data.data ?? []).map((target) => [target.salesChannelId, target.targetUrl]));
+                this.draft.channels.forEach((channel) => { channel.targetPreview = targets.get(channel.salesChannelId) ?? null; });
+            } catch (error) {
+                this.createNotificationError({ message: error.message });
+            }
+        },
+
+        async loadCategoryTargets() {
+            this.draft.channels.forEach((channel) => { channel.targetPreview = null; });
+            if (!this.draft.categoryId) return;
+            try {
+                const response = await this.jvSeoRedirectApiService.categoryTargets(this.draft.categoryId);
                 const targets = new Map((response.data.data ?? []).map((target) => [target.salesChannelId, target.targetUrl]));
                 this.draft.channels.forEach((channel) => { channel.targetPreview = targets.get(channel.salesChannelId) ?? null; });
             } catch (error) {
@@ -156,6 +183,9 @@ export default {
             if (this.draft.type === 'product' && !this.draft.productId) {
                 messages.push(this.$t('jv-seo.validation.productRequired'));
             }
+            if (this.draft.type === 'category' && !this.draft.categoryId) {
+                messages.push(this.$t('jv-seo.validation.categoryRequired'));
+            }
             if (enabled.length === 0) messages.push(this.$t('jv-seo.validation.channelRequired'));
             enabled.forEach((channel) => {
                 if (this.draft.type === 'general' && !this.validUrl(channel.targetUrl)) {
@@ -178,6 +208,7 @@ export default {
             return {
                 type: this.draft.type,
                 productId: this.draft.type === 'product' ? this.draft.productId : null,
+                categoryId: this.draft.type === 'category' ? this.draft.categoryId : null,
                 channels: this.draft.channels.map((channel) => ({
                     id: channel.id,
                     salesChannelId: channel.salesChannelId,

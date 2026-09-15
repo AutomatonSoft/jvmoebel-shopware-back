@@ -45,6 +45,7 @@ export default {
                 { value: 'all', label: this.$t('jv-seo.filters.all') },
                 { value: 'general', label: this.$t('jv-seo.filters.general') },
                 { value: 'product', label: this.$t('jv-seo.filters.product') },
+                { value: 'category', label: this.$t('jv-seo.filters.category') },
             ];
         },
     },
@@ -100,6 +101,9 @@ export default {
                 return item.productName
                     ? `${item.productName} (${item.productNumber})`
                     : item.productNumber ?? item.productId;
+            }
+            if (item.type === 'category') {
+                return item.categoryName ?? item.categoryId;
             }
             return item.channels.map((channel) => channel.targetUrl).filter(Boolean).join('\n');
         },

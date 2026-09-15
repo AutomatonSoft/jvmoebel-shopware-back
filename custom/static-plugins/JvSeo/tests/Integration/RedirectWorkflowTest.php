@@ -4,6 +4,7 @@ namespace Jv\Seo\Tests\Integration;
 
 use Jv\Seo\Contract\ImportProductRedirectData;
 use Jv\Seo\Contract\ImportProductRedirectsInterface;
+use Jv\Seo\Service\Redirect\CategoryTargetUrlResolver;
 use Jv\Seo\Service\Redirect\Exception\RedirectValidationException;
 use Jv\Seo\Service\Redirect\LookupRedirectService;
 use Jv\Seo\Service\Redirect\ProductTargetUrlResolver;
@@ -52,12 +53,13 @@ final class RedirectWorkflowTest extends TestCase
         self::assertSame(1, $first->created);
         self::assertSame(0, $first->conflicts);
         self::assertSame(1, $second->unchanged);
-        self::assertCount(1, $this->query()->list('product', 'Chestefield+Sofa', null, 1, 25, Context::createDefaultContext())['data']);
+        self::assertCount(1, $this->query()->list('product', 'Chestefield+Sofa', null, null, 1, 25, Context::createDefaultContext())['data']);
 
         $decision = $this->lookup()->lookup($sourceUrl, $this->salesChannelId, Context::createDefaultContext());
         self::assertNotNull($decision);
         self::assertSame('product', $decision['type']);
         self::assertSame($productId, $decision['productId']);
+        self::assertNull($decision['categoryId']);
         self::assertSame(
             $this->targetResolver()->resolve($productId, $this->salesChannelId, $sourceUrl),
             $decision['targetUrl'],
@@ -136,7 +138,7 @@ final class RedirectWorkflowTest extends TestCase
         );
         self::assertSame(1, $this->importer()->import([$original], Context::createDefaultContext())->created);
 
-        $list = $this->query()->list('product', '', $productId, 1, 25, Context::createDefaultContext());
+        $list = $this->query()->list('product', '', $productId, null, 1, 25, Context::createDefaultContext());
         self::assertCount(1, $list['data']);
         $redirect = $list['data'][0];
         $channel = $redirect['channels'][0];
@@ -213,7 +215,7 @@ final class RedirectWorkflowTest extends TestCase
         ], Context::createDefaultContext());
         self::assertSame(2, $result->created);
 
-        $redirect = $this->query()->list('product', '', $productId, 1, 25, Context::createDefaultContext())['data'][0];
+        $redirect = $this->query()->list('product', '', $productId, null, 1, 25, Context::createDefaultContext())['data'][0];
         $channel = $redirect['channels'][0];
         $firstSource = null;
         foreach ($channel['sources'] as $source) {
@@ -304,6 +306,57 @@ final class RedirectWorkflowTest extends TestCase
         }
     }
 
+    public function testManualCategoryRedirectResolvesToCanonicalCategoryUrl(): void
+    {
+        $categoryId = $this->createCategory('living-room');
+        $this->writeCanonicalCategorySeoUrl($categoryId, $this->salesChannelId, 'sofas/chesterfield');
+        $sourceUrl = 'https://www.jvmoebel.de/Sofas+-+Couches/Chesterfield/';
+
+        $redirectId = $this->save()->create([
+            'type' => 'category',
+            'categoryId' => $categoryId,
+            'channels' => [[
+                'salesChannelId' => $this->salesChannelId,
+                'enabled' => true,
+                'sources' => [['url' => $sourceUrl]],
+            ]],
+        ], Context::createDefaultContext());
+
+        $list = $this->query()->list('category', 'living-room', null, $categoryId, 1, 25, Context::createDefaultContext());
+        self::assertCount(1, $list['data']);
+        self::assertSame($redirectId, $list['data'][0]['id']);
+        self::assertSame($categoryId, $list['data'][0]['categoryId']);
+        self::assertSame('living-room', $list['data'][0]['categoryName']);
+        self::assertNull($list['data'][0]['productId']);
+
+        $decision = $this->lookup()->lookup($sourceUrl, $this->salesChannelId, Context::createDefaultContext());
+        self::assertNotNull($decision);
+        self::assertSame('category', $decision['type']);
+        self::assertSame($categoryId, $decision['categoryId']);
+        self::assertNull($decision['productId']);
+        self::assertSame(
+            $this->categoryTargetResolver()->resolve($categoryId, $this->salesChannelId, $sourceUrl),
+            $decision['targetUrl'],
+        );
+
+        $this->browser->request(
+            'POST',
+            '/store-api/jv-seo/redirect',
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/json'],
+            json_encode(['url' => $sourceUrl], \JSON_THROW_ON_ERROR),
+        );
+        self::assertSame(200, $this->browser->getResponse()->getStatusCode());
+        /** @var array{data: array{statusCode: int, type: string, targetUrl: string, productId: ?string, categoryId: ?string}} $response */
+        $response = json_decode((string) $this->browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        self::assertSame(301, $response['data']['statusCode']);
+        self::assertSame('category', $response['data']['type']);
+        self::assertSame($decision['targetUrl'], $response['data']['targetUrl']);
+        self::assertSame($categoryId, $response['data']['categoryId']);
+        self::assertNull($response['data']['productId']);
+    }
+
     private function createProduct(string $key, string $salesChannelId): string
     {
         $builder = (new ProductBuilder($this->ids, $key))
@@ -313,6 +366,18 @@ final class RedirectWorkflowTest extends TestCase
         $builder->write(static::getContainer());
 
         return $this->ids->get($key);
+    }
+
+    private function createCategory(string $name): string
+    {
+        $id = Uuid::randomHex();
+        static::getContainer()->get('category.repository')->create([[
+            'id' => $id,
+            'name' => $name,
+            'active' => true,
+        ]], Context::createDefaultContext());
+
+        return $id;
     }
 
     private function writeCanonicalSeoUrl(string $productId, string $salesChannelId, string $seoPathInfo): void
@@ -340,6 +405,21 @@ final class RedirectWorkflowTest extends TestCase
         ]], $context);
     }
 
+    private function writeCanonicalCategorySeoUrl(string $categoryId, string $salesChannelId, string $seoPathInfo): void
+    {
+        static::getContainer()->get('seo_url.repository')->create([[
+            'id' => Uuid::randomHex(),
+            'languageId' => Defaults::LANGUAGE_SYSTEM,
+            'salesChannelId' => $salesChannelId,
+            'foreignKey' => $categoryId,
+            'routeName' => 'frontend.navigation.page',
+            'pathInfo' => '/navigation/'.$categoryId,
+            'seoPathInfo' => $seoPathInfo,
+            'isCanonical' => true,
+            'isDeleted' => false,
+        ]], Context::createDefaultContext());
+    }
+
     private function importer(): ImportProductRedirectsInterface
     {
         return static::getContainer()->get(ImportProductRedirectsInterface::class);
@@ -363,5 +443,10 @@ final class RedirectWorkflowTest extends TestCase
     private function targetResolver(): ProductTargetUrlResolver
     {
         return static::getContainer()->get(ProductTargetUrlResolver::class);
+    }
+
+    private function categoryTargetResolver(): CategoryTargetUrlResolver
+    {
+        return static::getContainer()->get(CategoryTargetUrlResolver::class);
     }
 }
