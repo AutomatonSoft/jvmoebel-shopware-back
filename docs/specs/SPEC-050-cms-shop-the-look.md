@@ -5,7 +5,7 @@
 Реализовать в плагине `JvCms` CMS element/block `jv-shop-the-look`: редактор задаёт заголовок, интерьерное изображение, товары или ручные ссылки и координаты hotspot; Store API отдаёт нормализованный `data` для Next.js.
 
 Межрепозиторный контракт:
-`jvmoebel-shopware-docs` / `docs/specs/SPEC-040-cms-shop-the-look.md`.
+`jvmoebel-shopware-docs` / `docs/specs/SPEC-045-cms-shop-the-look.md`.
 
 Только backend: Administration, resolver, structs, тесты. Публичная разметка — Next.js (`CmsShopTheLook`).
 
@@ -37,7 +37,7 @@
 3. Задаёт `title`, опциональные `eyebrow` / `description`, выбирает main image.
 4. Добавляет items: выбирает Shopware product либо вводит ручные `name` / `url`, задаёт описание и координаты `hotspot.x/y` вручную или перемещением hotspot-точки на CMS canvas.
 5. Опционально задаёт `viewAll`.
-6. Store API отдаёт `type: jv-shop-the-look` и нормализованный `data` по platform SPEC-040.
+6. Store API отдаёт `type: jv-shop-the-look` и нормализованный `data` по platform SPEC-045.
 7. Next.js читает только `slot.data`.
 
 ## Данные

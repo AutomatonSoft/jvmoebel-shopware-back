@@ -24,7 +24,7 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 /**
- * Resolves `jv-shop-the-look` for Store API (platform SPEC-040 / backend SPEC-050).
+ * Resolves `jv-shop-the-look` for Store API (platform SPEC-045 / backend SPEC-050).
  *
  * Persisted config is untrusted. Invalid UUIDs never reach DAL, and incomplete
  * media, product or manual entries are omitted without breaking the CMS page.
