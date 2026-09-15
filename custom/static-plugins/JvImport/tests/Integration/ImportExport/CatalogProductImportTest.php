@@ -10,6 +10,7 @@ use Jv\Import\Integration\Okb\Profile\CatalogProductImportProfile;
 use Jv\Import\Service\Catalog\CatalogIdentity;
 use Shopware\Core\Content\Category\CategoryCollection;
 use Shopware\Core\Content\ImportExport\ImportExportProfileEntity;
+use Shopware\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufacturerCollection;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Property\PropertyGroupCollection;
 use Shopware\Core\Defaults;
@@ -198,6 +199,44 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
         }
     }
 
+    public function testItIgnoresMarkeninformationenAndLeavesTheManufacturerDescriptionUnchanged(): void
+    {
+        $context = Context::createDefaultContext();
+        $suffix = bin2hex(random_bytes(5));
+        $productNumber = 'CATALOG-BRAND-'.$suffix;
+        $parentId = Uuid::randomHex();
+        $categoryGroupId = 'group-'.$suffix;
+        $categoryId = 'category-'.$suffix;
+        $propertyGroupId = CatalogIdentity::propertyGroupId('Color '.$suffix);
+        $manualGroupId = Uuid::randomHex();
+        $manualOptionId = Uuid::randomHex();
+        $manufacturerId = Uuid::randomHex();
+        $this->manufacturerRepository()->create([[
+            'id' => $manufacturerId,
+            'name' => 'JVMOEBEL '.$suffix,
+            'description' => 'Handwritten manufacturer text',
+        ]], $context);
+        $this->createFixture($parentId, $productNumber, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $manualOptionId, $context, $manufacturerId);
+        $profileId = CatalogProductImportProfile::definition()['id'];
+        $this->profileRepository()->upsert([CatalogProductImportProfile::definition()], $context);
+
+        try {
+            $csv = $this->catalogCsv($productNumber, '4260174423463', $categoryId, $categoryGroupId, 1200, 'Brown', 'Marketing copy about our own brand');
+            $progress = $this->import($profileId, $csv);
+            self::assertSame('succeeded', $progress->getState(), $this->importResult($progress));
+
+            $child = $this->product($productNumber.'-1', $context);
+            self::assertSame($parentId, $child->getParentId());
+
+            $manufacturer = $this->manufacturerRepository()->search(new Criteria([$manufacturerId]), $context)->first();
+            self::assertInstanceOf(\Shopware\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufacturerEntity::class, $manufacturer);
+            self::assertSame('Handwritten manufacturer text', $manufacturer->getDescription());
+        } finally {
+            $this->deleteFixture($parentId, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $context);
+            $this->manufacturerRepository()->delete([['id' => $manufacturerId]], $context);
+        }
+    }
+
     private function deleteFixture(string $parentId, string $categoryGroupId, string $categoryId, string $propertyGroupId, string $manualGroupId, Context $context): void
     {
         $this->productRepository()->delete([['id' => $parentId]], $context);
@@ -207,7 +246,7 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
         $this->propertyGroupRepository()->delete([['id' => $propertyGroupId], ['id' => $manualGroupId]], $context);
     }
 
-    private function createFixture(string $parentId, string $productNumber, string $categoryGroupId, string $categoryId, string $propertyGroupId, string $manualGroupId, string $manualOptionId, Context $context): void
+    private function createFixture(string $parentId, string $productNumber, string $categoryGroupId, string $categoryId, string $propertyGroupId, string $manualGroupId, string $manualOptionId, Context $context, ?string $manufacturerId = null): void
     {
         $taxId = $this->taxRepository()->searchIds((new Criteria())->setLimit(1), $context)->firstId();
         self::assertNotNull($taxId);
@@ -241,6 +280,7 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
             'name' => 'Catalog parent',
             'stock' => 4,
             'taxId' => $taxId,
+            'manufacturerId' => $manufacturerId,
             'price' => [['currencyId' => Defaults::CURRENCY, 'net' => 1000.0, 'gross' => 1190.0, 'linked' => false]],
             'categories' => [['id' => CatalogIdentity::categoryId('okb', $categoryId)]],
             'properties' => [['id' => $manualOptionId]],
@@ -261,9 +301,13 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
         ]], $context);
     }
 
-    private function catalogCsv(string $productNumber, string $ean, string $categoryId, string $categoryGroupId, int $price, string $value): string
+    private function catalogCsv(string $productNumber, string $ean, string $categoryId, string $categoryGroupId, int $price, string $value, ?string $brandInformation = null): string
     {
-        $attributes = json_encode([['Color '.$categoryGroupId, [$value]]], JSON_THROW_ON_ERROR);
+        $attributeList = [['Color '.$categoryGroupId, [$value]]];
+        if (null !== $brandInformation) {
+            $attributeList[] = ['Markeninformationen', [$brandInformation]];
+        }
+        $attributes = json_encode($attributeList, JSON_THROW_ON_ERROR);
         $rows = [['record_type', 'product_number', 'ean', 'category_id', 'category_group_id', 'standard_price_amount', 'currency', 'attributes_json']];
         foreach (['parent', 'child'] as $recordType) {
             $rows[] = [$recordType, $productNumber, $ean, $categoryId, $categoryGroupId, (string) $price, 'EUR', $attributes];
@@ -312,6 +356,12 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
     private function propertyGroupRepository(): EntityRepository
     {
         return static::getContainer()->get('property_group.repository');
+    }
+
+    /** @return EntityRepository<ProductManufacturerCollection> */
+    private function manufacturerRepository(): EntityRepository
+    {
+        return static::getContainer()->get('product_manufacturer.repository');
     }
 
     /** @return EntityRepository<CatalogCategoryAttributeCollection> */

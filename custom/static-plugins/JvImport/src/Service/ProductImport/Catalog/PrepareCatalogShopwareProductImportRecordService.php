@@ -25,9 +25,6 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
     /** @var list<string>|null */
     private ?array $languageIds = null;
 
-    /** @var array<string, string|null> */
-    private array $manufacturerDescriptions = [];
-
     /** @var array<string, array<string, true>> */
     private array $existingOptionIdsByPropertyGroup = [];
 
@@ -64,24 +61,16 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
         $schemas = $this->schemas($groupId, $context);
         $this->validateLongValues($attributes, $schemas);
         $this->validatePair($productNumber, $row, $attributes, $schemas, $parent, $context);
-        $this->validateBrandInformation($productNumber, $attributes, $parent);
 
         if ('parent' === $type) {
             $this->childPositions[$parent->getId()] = 0;
-            $record = [
+
+            return [
                 'id' => $parent->getId(),
                 'parentId' => null,
                 'ean' => null,
                 'categories' => [['id' => CatalogIdentity::categoryId('okb', $categoryId)]],
             ];
-            $brandInformation = $attributes['Markeninformationen'][0] ?? null;
-            if (is_string($brandInformation) && '' !== $brandInformation && null !== $parent->getManufacturerId()) {
-                if (null === $parent->getManufacturer()?->getDescription()) {
-                    $record['manufacturer'] = ['id' => $parent->getManufacturerId(), 'description' => $brandInformation];
-                }
-            }
-
-            return $record;
         }
         if ('child' !== $type) {
             throw new \InvalidArgumentException(sprintf('Catalog import row has unknown record type "%s".', $type));
@@ -210,31 +199,13 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
         }
     }
 
-    /** @param array<string, list<string>> $attributes */
-    private function validateBrandInformation(string $productNumber, array $attributes, \Shopware\Core\Content\Product\ProductEntity $parent): void
-    {
-        $brandInformation = $attributes['Markeninformationen'][0] ?? null;
-        $manufacturerId = $parent->getManufacturerId();
-        if (!is_string($brandInformation) || '' === $brandInformation || null === $manufacturerId) {
-            return;
-        }
-        if (!array_key_exists($manufacturerId, $this->manufacturerDescriptions)) {
-            $this->manufacturerDescriptions[$manufacturerId] = $parent->getManufacturer()?->getDescription();
-        }
-        $description = $this->manufacturerDescriptions[$manufacturerId];
-        if (null !== $description && $brandInformation !== $description) {
-            throw new \InvalidArgumentException(sprintf('Catalog brand information conflicts with existing manufacturer description for product "%s".', $productNumber));
-        }
-        $this->manufacturerDescriptions[$manufacturerId] = $brandInformation;
-    }
-
     private function parent(string $productNumber, Context $context): \Shopware\Core\Content\Product\ProductEntity
     {
         $cached = $this->lookupCache->parent($productNumber);
         if ($cached instanceof \Shopware\Core\Content\Product\ProductEntity) {
             return $cached;
         }
-        $product = $this->productRepository->search((new Criteria())->addFilter(new EqualsFilter('productNumber', $productNumber))->addAssociation('price')->addAssociation('tax')->addAssociation('manufacturer')->setLimit(1), $context)->first();
+        $product = $this->productRepository->search((new Criteria())->addFilter(new EqualsFilter('productNumber', $productNumber))->addAssociation('price')->addAssociation('tax')->setLimit(1), $context)->first();
         if (!$product instanceof \Shopware\Core\Content\Product\ProductEntity) {
             throw new \InvalidArgumentException(sprintf('Shopware product number "%s" does not exist.', $productNumber));
         }
@@ -313,7 +284,6 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
     {
         $this->schemas = [];
         $this->languageIds = null;
-        $this->manufacturerDescriptions = [];
         $this->existingOptionIdsByPropertyGroup = [];
         $this->childPositions = [];
     }
