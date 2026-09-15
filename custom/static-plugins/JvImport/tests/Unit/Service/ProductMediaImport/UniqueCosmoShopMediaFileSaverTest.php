@@ -29,7 +29,7 @@ final class UniqueCosmoShopMediaFileSaverTest extends TestCase
                 self::assertSame($mediaId, $actualMediaId);
                 self::assertSame($context, $actualContext);
 
-                if ($attempt++ === 0) {
+                if (0 === $attempt++) {
                     self::assertSame('1', $destination);
 
                     throw MediaException::duplicatedMediaFileName('1', 'jpg');
@@ -57,5 +57,41 @@ final class UniqueCosmoShopMediaFileSaverTest extends TestCase
         $this->expectExceptionObject($exception);
 
         (new UniqueCosmoShopMediaFileSaver($inner))->persistFileToMedia($mediaFile, '1', $mediaId, $context);
+    }
+
+    public function testItRethrowsOtherMediaFailuresDuringACosmoShopImport(): void
+    {
+        $mediaId = Uuid::randomHex();
+        $context = Context::createDefaultContext();
+        $context->addExtension(UniqueCosmoShopMediaFileSaver::CONTEXT_EXTENSION, new ArrayStruct());
+        $mediaFile = $this->createMock(MediaFile::class);
+        $inner = $this->createMock(FileSaver::class);
+        $exception = MediaException::emptyMediaFilename();
+
+        $inner->expects(self::once())
+            ->method('persistFileToMedia')
+            ->with($mediaFile, '1', $mediaId, $context)
+            ->willThrowException($exception);
+
+        $this->expectExceptionObject($exception);
+
+        (new UniqueCosmoShopMediaFileSaver($inner))->persistFileToMedia($mediaFile, '1', $mediaId, $context);
+    }
+
+    public function testItOverridesEveryPublicMethodOfTheDecoratedFileSaver(): void
+    {
+        $decorator = new \ReflectionClass(UniqueCosmoShopMediaFileSaver::class);
+
+        foreach ((new \ReflectionClass(FileSaver::class))->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
+            if ($method->isConstructor()) {
+                continue;
+            }
+
+            self::assertSame(
+                UniqueCosmoShopMediaFileSaver::class,
+                $decorator->getMethod($method->getName())->getDeclaringClass()->getName(),
+                sprintf('%s() is inherited from FileSaver and would run on an uninitialised parent.', $method->getName()),
+            );
+        }
     }
 }
