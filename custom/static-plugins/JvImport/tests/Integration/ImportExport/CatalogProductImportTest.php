@@ -281,7 +281,13 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
             'stock' => 4,
             'taxId' => $taxId,
             'manufacturerId' => $manufacturerId,
-            'price' => [['currencyId' => Defaults::CURRENCY, 'net' => 1000.0, 'gross' => 1190.0, 'linked' => false]],
+            'price' => [[
+                'currencyId' => Defaults::CURRENCY,
+                'net' => 1000.0,
+                'gross' => 1190.0,
+                'linked' => false,
+                'listPrice' => ['currencyId' => Defaults::CURRENCY, 'net' => 1500.0, 'gross' => 1785.0, 'linked' => false],
+            ]],
             'categories' => [['id' => CatalogIdentity::categoryId('okb', $categoryId)]],
             'properties' => [['id' => $manualOptionId]],
         ]], $context);
@@ -330,6 +336,35 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
         $secondRows = explode("\n", trim($second));
 
         return implode("\n", [...$firstRows, ...array_slice($secondRows, 1)])."\n";
+    }
+
+    public function testTheChildKeepsTheListPriceOfItsParent(): void
+    {
+        $context = Context::createDefaultContext();
+        $suffix = bin2hex(random_bytes(5));
+        $productNumber = 'CATALOG-UVP-'.$suffix;
+        $parentId = Uuid::randomHex();
+        $categoryGroupId = 'group-'.$suffix;
+        $categoryId = 'category-'.$suffix;
+        $propertyGroupId = CatalogIdentity::propertyGroupId('Color '.$suffix);
+        $manualGroupId = Uuid::randomHex();
+        $manualOptionId = Uuid::randomHex();
+        $this->createFixture($parentId, $productNumber, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $manualOptionId, $context);
+        $profileId = CatalogProductImportProfile::definition()['id'];
+        $this->profileRepository()->upsert([CatalogProductImportProfile::definition()], $context);
+
+        try {
+            $progress = $this->import($profileId, $this->catalogCsv($productNumber, '4260174423463', $categoryId, $categoryGroupId, 1200, 'Brown'));
+            self::assertSame('succeeded', $progress->getState(), $this->importResult($progress));
+
+            $price = $this->product($productNumber.'-1', $context)->getPrice()?->getCurrencyPrice(Defaults::CURRENCY);
+            self::assertNotNull($price);
+            self::assertSame(1200.0, $price->getGross());
+            self::assertNotNull($price->getListPrice());
+            self::assertSame(1785.0, $price->getListPrice()->getGross());
+        } finally {
+            $this->deleteFixture($parentId, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $context);
+        }
     }
 
     private function product(string $productNumber, Context $context): \Shopware\Core\Content\Product\ProductEntity
