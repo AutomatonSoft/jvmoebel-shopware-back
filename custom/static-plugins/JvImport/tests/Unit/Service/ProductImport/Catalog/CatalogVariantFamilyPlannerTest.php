@@ -125,7 +125,6 @@ final class CatalogVariantFamilyPlannerTest extends TestCase
         self::assertSame(['4260000000001=1'], $this->positionsByEan($plan));
     }
 
-
     public function testAFamilyWithoutTheSourceVariationFallsBackToAscendingEan(): void
     {
         $plan = (new CatalogVariantFamilyPlanner())->plan(
