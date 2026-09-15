@@ -12,7 +12,7 @@ final class CatalogVariantFamilyPlannerTest extends TestCase
 {
     private const AXES = ['Farbe', 'Bezug'];
 
-    public function testItNumbersTheFamilyByAscendingEan(): void
+    public function testTheSourceVariationIsNumberedFirstAndTheRestFollowByAscendingEan(): void
     {
         $plan = (new CatalogVariantFamilyPlanner())->plan(
             [
@@ -24,9 +24,8 @@ final class CatalogVariantFamilyPlannerTest extends TestCase
             self::AXES,
         );
 
-        /* @phpstan-ignore staticMethod.impossibleType */
         self::assertSame(
-            ['4260000000001' => 1, '4260000000002' => 2, '4260000000003' => 3],
+            ['4260000000002=1', '4260000000001=2', '4260000000003=3'],
             $this->positionsByEan($plan),
         );
     }
@@ -56,8 +55,7 @@ final class CatalogVariantFamilyPlannerTest extends TestCase
             self::AXES,
         );
 
-        /* @phpstan-ignore staticMethod.impossibleType */
-        self::assertSame(['4260000000001' => 1, '4260000000003' => 2], $this->positionsByEan($plan));
+        self::assertSame(['4260000000003=1', '4260000000001=2'], $this->positionsByEan($plan));
     }
 
     public function testTheSourceVariationWinsWhenAnAxisCombinationRepeats(): void
@@ -71,8 +69,7 @@ final class CatalogVariantFamilyPlannerTest extends TestCase
             self::AXES,
         );
 
-        /* @phpstan-ignore staticMethod.impossibleType */
-        self::assertSame(['4260000000002' => 1], $this->positionsByEan($plan));
+        self::assertSame(['4260000000002=1'], $this->positionsByEan($plan));
     }
 
     public function testPositionsStayContiguousAfterCollapsing(): void
@@ -89,7 +86,7 @@ final class CatalogVariantFamilyPlannerTest extends TestCase
             self::AXES,
         );
 
-        self::assertSame([1, 2, 3], array_values($this->positionsByEan($plan)));
+        self::assertSame(['4260000000005=1', '4260000000001=2', '4260000000003=3'], $this->positionsByEan($plan));
     }
 
     public function testAttributesOutsideTheAxesDoNotSeparateVariations(): void
@@ -125,23 +122,35 @@ final class CatalogVariantFamilyPlannerTest extends TestCase
             self::AXES,
         );
 
-        /* @phpstan-ignore staticMethod.impossibleType */
-        self::assertSame(['4260000000001' => 1], $this->positionsByEan($plan));
+        self::assertSame(['4260000000001=1'], $this->positionsByEan($plan));
+    }
+
+
+    public function testAFamilyWithoutTheSourceVariationFallsBackToAscendingEan(): void
+    {
+        $plan = (new CatalogVariantFamilyPlanner())->plan(
+            [
+                $this->variation('4260000000003', ['Farbe' => 'Braun', 'Bezug' => 'Leder']),
+                $this->variation('4260000000001', ['Farbe' => 'Beige', 'Bezug' => 'Stoff']),
+            ],
+            '4260000000009',
+            self::AXES,
+        );
+
+        self::assertSame(['4260000000001=1', '4260000000003=2'], $this->positionsByEan($plan));
     }
 
     /**
      * @param list<PlannedCatalogVariant> $plan
      *
-     * @return array<string, int>
+     * @return list<string>
      */
     private function positionsByEan(array $plan): array
     {
-        $positions = [];
-        foreach ($plan as $variant) {
-            $positions[$variant->variation->ean] = $variant->position;
-        }
-
-        return $positions;
+        return array_map(
+            static fn (PlannedCatalogVariant $variant): string => $variant->variation->ean.'='.$variant->position,
+            $plan,
+        );
     }
 
     /** @param array<string, string> $attributes */
