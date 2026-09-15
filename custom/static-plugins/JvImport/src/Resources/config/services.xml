@@ -11,6 +11,9 @@
             <argument type="service" id="Jv\Import\Service\ProductMediaImport\ValidateCosmoShopProductMediaCoverService"/>
             <argument type="service" id="Jv\Import\Service\ProductMediaImport\PrepareCosmoShopProductMediaRecordService"/>
         </service>
+        <service id="Jv\Import\Service\ProductMediaImport\UniqueCosmoShopMediaFileSaver" decorates="Shopware\Core\Content\Media\File\FileSaver">
+            <argument type="service" id="Jv\Import\Service\ProductMediaImport\UniqueCosmoShopMediaFileSaver.inner"/>
+        </service>
         <service id="Jv\Import\Subscriber\QueueCosmoShopCatalogEnrichmentSubscriber"/>
         <service id="Jv\Import\MessageHandler\CosmoShopCatalogEnrichmentMessageHandler"/>
         <service id="Jv\Import\Subscriber\CatalogProductImportSubscriber"/>
