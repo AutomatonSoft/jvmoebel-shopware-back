@@ -24,10 +24,22 @@ final class CatalogVariantFamilyPlanner
         foreach ($groups as $variations) {
             $retained[] = $this->representative($variations, $sourceEan);
         }
-        usort($retained, static fn (OkbProductVariation $a, OkbProductVariation $b): int => $a->ean <=> $b->ean);
+
+        $source = null;
+        $rest = [];
+        foreach ($retained as $variation) {
+            if (null === $source && $sourceEan === $variation->ean) {
+                $source = $variation;
+                continue;
+            }
+            $rest[] = $variation;
+        }
+        usort($rest, static fn (OkbProductVariation $a, OkbProductVariation $b): int => $a->ean <=> $b->ean);
+
+        $ordered = null !== $source ? [$source, ...$rest] : $rest;
 
         $plan = [];
-        foreach ($retained as $index => $variation) {
+        foreach ($ordered as $index => $variation) {
             $plan[] = new PlannedCatalogVariant($variation, $index + 1, $this->axisValues($variation, $axisAttributeNames));
         }
 
