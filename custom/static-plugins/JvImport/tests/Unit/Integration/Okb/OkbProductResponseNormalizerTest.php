@@ -2,6 +2,7 @@
 
 namespace Jv\Import\Tests\Unit\Integration\Okb;
 
+use Jv\Import\Integration\Okb\Dto\OkbProductVariation;
 use Jv\Import\Integration\Okb\OkbProductResponseNormalizer;
 use PHPUnit\Framework\TestCase;
 
@@ -49,5 +50,53 @@ final class OkbProductResponseNormalizerTest extends TestCase
                 'productDescription' => ['category' => 'Kunstlederbett'],
             ]],
         ]);
+    }
+
+    public function testItNormalisesEveryVariationOfAFamily(): void
+    {
+        $family = (new OkbProductResponseNormalizer())->normalizeFamily([
+            'productVariations' => [
+                $this->familyPayload('4260454043503'),
+                $this->familyPayload('4260454043504'),
+                $this->familyPayload('4260454043505'),
+            ],
+        ]);
+
+        self::assertSame(
+            ['4260454043503', '4260454043504', '4260454043505'],
+            array_map(static fn (OkbProductVariation $variation): string => $variation->ean, $family),
+        );
+    }
+
+    public function testEveryFamilyVariationCarriesItsProductReference(): void
+    {
+        $family = (new OkbProductResponseNormalizer())->normalizeFamily([
+            'productVariations' => [$this->familyPayload('4260454043503')],
+        ]);
+
+        self::assertSame('4260454043500', $family[0]->productReference);
+    }
+
+    public function testAMalformedVariationRejectsTheWholeFamily(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        (new OkbProductResponseNormalizer())->normalizeFamily([
+            'productVariations' => [
+                $this->familyPayload('4260454043503'),
+                ['productReference' => '4260454043500', 'sku' => '4260454043504', 'ean' => '4260454043504'],
+            ],
+        ]);
+    }
+
+    /** @return array<string, mixed> */
+    private function familyPayload(string $ean): array
+    {
+        return [
+            'productReference' => '4260454043500',
+            'sku' => $ean,
+            'ean' => $ean,
+            'productDescription' => ['category' => 'Kunstlederbett', 'attributes' => []],
+        ];
     }
 }
