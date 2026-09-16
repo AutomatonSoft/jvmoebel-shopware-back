@@ -70,7 +70,7 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
             return [
                 'id' => $parent->getId(),
                 'parentId' => null,
-                'ean' => null,
+                'ean' => $ean,
                 'categories' => [['id' => CatalogIdentity::categoryId('okb', $categoryId)]],
             ];
         }
