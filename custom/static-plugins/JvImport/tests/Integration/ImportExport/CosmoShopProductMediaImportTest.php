@@ -5,7 +5,9 @@ namespace Jv\Import\Tests\Integration\ImportExport;
 require_once __DIR__.'/AbstractCosmoShopImportExportTestCase.php';
 
 use Jv\Import\Service\ProductImport\ProductImportIdentity;
+use League\Flysystem\FilesystemOperator;
 use Shopware\Core\Content\ImportExport\Struct\Progress;
+use Shopware\Core\Content\Media\MediaEntity;
 use Shopware\Core\Content\Product\Aggregate\ProductMedia\ProductMediaEntity;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
@@ -142,6 +144,95 @@ final class CosmoShopProductMediaImportTest extends AbstractCosmoShopImportExpor
                 unlink($coverPath);
             }
             $this->deleteProduct($productId, $context);
+        }
+    }
+
+    public function testProductsSharingAMediaBaseNameKeepSeparateFiles(): void
+    {
+        $context = Context::createDefaultContext();
+        $firstNumber = 'MEDIA-COLLIDING-001';
+        $secondNumber = 'MEDIA-COLLIDING-002';
+        $firstId = ProductImportIdentity::fromProductNumber($firstNumber);
+        $secondId = ProductImportIdentity::fromProductNumber($secondNumber);
+        [$firstPath, $firstUrl] = $this->createCollidingPublicImage('1.png');
+        [$secondPath, $secondUrl] = $this->createCollidingPublicImage('1.png');
+
+        try {
+            [$header, $firstRow] = explode("\n", $this->csv(
+                productNumber: $firstNumber,
+                media: $firstUrl,
+                cover: $firstUrl,
+            ));
+            [, $secondRow] = explode("\n", $this->csv(
+                productNumber: $secondNumber,
+                ean: '4260174423465',
+                media: $secondUrl,
+                cover: $secondUrl,
+            ));
+
+            $progress = $this->import(
+                $this->configureGermanyProfile($context),
+                $header."\n".$firstRow."\n".$secondRow,
+            );
+
+            self::assertSame(Progress::STATE_SUCCEEDED, $progress->getState(), $this->importResult($progress));
+
+            $firstMedia = $this->singleMedia($firstId, $context);
+            $secondMedia = $this->singleMedia($secondId, $context);
+
+            self::assertNotSame($firstMedia->getId(), $secondMedia->getId());
+            self::assertNotSame($firstMedia->getFileName(), $secondMedia->getFileName());
+            self::assertSame('1', $firstMedia->getFileName());
+            self::assertSame('1--'.substr($secondMedia->getId(), 0, 12), $secondMedia->getFileName());
+
+            $filesystem = static::getContainer()->get('shopware.filesystem.public');
+            self::assertInstanceOf(FilesystemOperator::class, $filesystem);
+            self::assertTrue($filesystem->fileExists($firstMedia->getPath()));
+            self::assertTrue($filesystem->fileExists($secondMedia->getPath()));
+        } finally {
+            $this->removeFixtureImage($firstPath);
+            $this->removeFixtureImage($secondPath);
+            $this->deleteProduct($firstId, $context);
+            $this->deleteProduct($secondId, $context);
+        }
+    }
+
+    private function singleMedia(string $productId, Context $context): MediaEntity
+    {
+        $media = $this->productWithMedia($productId, $context)->getMedia();
+        self::assertNotNull($media);
+        self::assertCount(1, $media);
+        $productMedia = $media->first();
+        self::assertInstanceOf(ProductMediaEntity::class, $productMedia);
+        $mediaEntity = $productMedia->getMedia();
+        self::assertInstanceOf(MediaEntity::class, $mediaEntity);
+
+        return $mediaEntity;
+    }
+
+    /** @return array{string, string} */
+    private function createCollidingPublicImage(string $fileName): array
+    {
+        $projectDirectory = static::getContainer()->getParameter('kernel.project_dir');
+        self::assertIsString($projectDirectory);
+        $directory = 'jv-import-media-'.bin2hex(random_bytes(6));
+        self::assertTrue(mkdir($projectDirectory.'/public/'.$directory, 0775));
+        $path = $projectDirectory.'/public/'.$directory.'/'.$fileName;
+        $image = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLq7wAAAABJRU5ErkJggg==', true);
+        self::assertIsString($image);
+        file_put_contents($path, $image.random_bytes(8));
+
+        return [$path, $this->publicImageUrl($directory.'/'.$fileName)];
+    }
+
+    private function removeFixtureImage(string $path): void
+    {
+        if (is_file($path)) {
+            unlink($path);
+        }
+        $directory = dirname($path);
+        if (is_dir($directory)) {
+            rmdir($directory);
         }
     }
 
