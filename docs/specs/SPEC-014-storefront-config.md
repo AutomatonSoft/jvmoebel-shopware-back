@@ -307,6 +307,14 @@ Helper: `StorefrontSalesChannelUrlResolver` (или private method в loader) �
 - `bin/setup-local`: install + activate `JvStorefront` (после добавления плагина).
 - `tests/TestBootstrap.php`: `addActivePlugins(..., 'JvStorefront')`.
 
+### Deploy (stage / prod)
+
+`JvStorefront` **обязан** быть в `.shopware-project.yml` → `deployment.extension-management.force-update` (как `JvCms`, `JvImport`). Иначе при фиксированной версии `0.1.0` bootstrap **не** вызывает `plugin:update` → pending migrations не применяются, а PHP-код уже читает новые таблицы → `storefront-config` 500 и падение front layout.
+
+Post-deploy hook `assets:install --force` синхронизирует `Resources/public/administration` из release-образа в persistent `public/bundles/`. Без этого после деплоя или ручного toggle plugin Admin-assets отстают / пропадают (Settings cards, sidebar entries у JVMöbel-плагинов).
+
+Ручной toggle plugin в Admin **не** заменяет deploy: deactivate удаляет bundle из `public/bundles/`, activate копирует assets из текущего контейнера — временный workaround, не контракт релиза.
+
 ## Проверка
 
 Автоматические:

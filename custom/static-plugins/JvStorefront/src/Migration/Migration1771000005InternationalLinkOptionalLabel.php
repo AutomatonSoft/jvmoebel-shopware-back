@@ -14,6 +14,29 @@ final class Migration1771000005InternationalLinkOptionalLabel extends MigrationS
 
     public function update(Connection $connection): void
     {
+        $tableExists = (bool) $connection->fetchOne(
+            "SELECT 1 FROM information_schema.TABLES
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = 'jv_storefront_international_link'
+             LIMIT 1"
+        );
+
+        if (!$tableExists) {
+            return;
+        }
+
+        $isNullable = $connection->fetchOne(
+            "SELECT IS_NULLABLE FROM information_schema.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = 'jv_storefront_international_link'
+               AND COLUMN_NAME = 'label'
+             LIMIT 1"
+        );
+
+        if ('YES' === $isNullable) {
+            return;
+        }
+
         $connection->executeStatement(<<<'SQL'
             ALTER TABLE `jv_storefront_international_link`
                 MODIFY `label` VARCHAR(255) NULL

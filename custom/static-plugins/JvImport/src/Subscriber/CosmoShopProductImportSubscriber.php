@@ -5,8 +5,10 @@ namespace Jv\Import\Subscriber;
 use Jv\Import\Integration\CosmoShop\Profile\MarketImportProfile;
 use Jv\Import\Service\ProductImport\Contract\ProductImportRecordPreparer;
 use Jv\Import\Service\ProductMediaImport\PrepareCosmoShopProductMediaRecordService;
+use Jv\Import\Service\ProductMediaImport\UniqueCosmoShopMediaFileSaver;
 use Jv\Import\Service\ProductMediaImport\ValidateCosmoShopProductMediaCoverService;
 use Shopware\Core\Content\ImportExport\Event\ImportExportBeforeImportRecordEvent;
+use Shopware\Core\Framework\Struct\ArrayStruct;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 final readonly class CosmoShopProductImportSubscriber implements EventSubscriberInterface
@@ -31,6 +33,12 @@ final readonly class CosmoShopProductImportSubscriber implements EventSubscriber
         if (null === $market) {
             return;
         }
+
+        $event->getContext()->addExtension(
+            UniqueCosmoShopMediaFileSaver::CONTEXT_EXTENSION,
+            new ArrayStruct(),
+        );
+
         $name = $event->getRow()['name'] ?? null;
         if (is_string($name) && str_starts_with($name, '__cosmoshop_csv_row_error__:')) {
             throw new \InvalidArgumentException(substr($name, strlen('__cosmoshop_csv_row_error__:')));
