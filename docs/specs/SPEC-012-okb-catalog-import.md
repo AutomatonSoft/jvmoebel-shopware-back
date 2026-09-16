@@ -62,7 +62,10 @@ OKB, её схему атрибутов и сопоставление товар
 EAN: повтор EAN сам по себе разрешён.
 
 После успешного CosmoShop product import фоновая задача выполняет по одному
-запросу `/extermal/get_products?sku=<EAN>` только для строк этого import. Она
+запросу `/extermal/get_products?sku=<EAN>` только для строк этого import. Тот же
+конвейер запускается после завершённого прогона Aftercool по SPEC-013; тогда
+строки берутся из товаров этого прогона, а защита от повтора ключуется его ID
+вместо ID Import/Export лога. Она
 создаёт product mapping, product attributes и failures в уникальной временной
 папке `var/import/okb-enrichment`, формирует единый CSV parent/child и сразу
 ставит его в штатный Shopware Import/Export. После постановки файла в core
