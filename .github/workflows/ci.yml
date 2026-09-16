@@ -84,6 +84,29 @@ jobs:
           AFTERCOOL_TIMEOUT: "20"
         run: docker compose -f compose.deploy.yml config --quiet
 
+      - name: Validate bootstrap network attachments
+        env:
+          DATA_NETWORK: jvmoebel_ci_data
+          APP_NETWORK: jvmoebel_ci_app
+          SHOPWARE_NETWORK_ALIAS: shopware-ci
+          SHOPWARE_STORAGE_PATH: /tmp/jvmoebel-ci-storage
+          INSTALL_LOCALE: de-DE
+          INSTALL_CURRENCY: EUR
+          INSTALL_ADMIN_USERNAME: ci-admin
+          INSTALL_ADMIN_PASSWORD: ci-not-a-production-secret
+          INSTALL_ADMIN_EMAIL: ci@example.invalid
+          SALES_CHANNEL_URL: http://localhost:8000
+          AFTERCOOL_BASE_URI: https://aftercool.example
+          AFTERCOOL_USERNAME: ci-user
+          AFTERCOOL_PASSWORD: ci-not-a-production-secret
+          AFTERCOOL_TIMEOUT: "20"
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          docker compose -f compose.deploy.yml config --format json |
+            jq -e '.services.bootstrap.networks | has("database") and has("application")' >/dev/null
+
       - name: Validate setup script syntax
         run: bash -n bin/setup-local
 

@@ -55,7 +55,7 @@ services:
       INSTALL_ADMIN_EMAIL: ${INSTALL_ADMIN_EMAIL:?INSTALL_ADMIN_EMAIL is required}
       SALES_CHANNEL_URL: ${SALES_CHANNEL_URL:?SALES_CHANNEL_URL is required}
     volumes: *shopware-storage
-    networks: [database]
+    networks: [database, application]
 
   web:
     build: { context: ., dockerfile: Dockerfile.deploy }
