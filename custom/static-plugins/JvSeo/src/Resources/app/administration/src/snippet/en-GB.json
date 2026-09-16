@@ -17,6 +17,7 @@
             "general": "General",
             "product": "Products",
             "category": "Categories",
+            "pages": "Landing Pages",
             "image": "Images"
         },
         "list": {
@@ -25,7 +26,7 @@
             "salesChannels": "Sales Channel",
             "sources": "301 URLs",
             "updatedAt": "Updated",
-            "searchPlaceholder": "Search URLs, products, categories, images or Sales Channels"
+            "searchPlaceholder": "Search URLs, products, categories, landing pages, images or Sales Channels"
         },
         "detail": {
             "createTitle": "Create redirect",
@@ -36,6 +37,8 @@
             "productPlaceholder": "Search for a product",
             "category": "Category",
             "categoryPlaceholder": "Search for a category",
+            "landingPage": "Landing Page",
+            "landingPagePlaceholder": "Search for a landing page",
             "image": "Image",
             "imagePlaceholder": "Search for an image",
             "enableChannel": "Configure for this Sales Channel",
@@ -49,6 +52,7 @@
         "validation": {
             "productRequired": "Select a product.",
             "categoryRequired": "Select a category.",
+            "landingPageRequired": "Select a landing page.",
             "imageRequired": "Select an image.",
             "channelRequired": "Enable at least one Sales Channel.",
             "sourceRequired": "Add at least one 301 URL for {channel}.",
@@ -66,9 +70,18 @@
             "title": "Legacy redirects by Sales Channel",
             "empty": "No legacy redirects are configured for this category."
         },
+        "landingPageCard": {
+            "title": "Legacy redirects by Sales Channel",
+            "empty": "No legacy redirects are configured for this landing page."
+        },
         "imageCard": {
             "title": "Legacy redirects by Sales Channel",
             "empty": "No legacy redirects are configured for this image."
+        }
+    },
+    "sw-settings": {
+        "index": {
+            "tabSeo": "SEO"
         }
     }
 }

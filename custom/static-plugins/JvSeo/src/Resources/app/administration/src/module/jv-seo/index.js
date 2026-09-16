@@ -3,6 +3,7 @@ import redirectDetail from './page/jv-seo-redirect-detail';
 import seoIndex from './page/jv-seo-index';
 import '../../component/jv-seo-product-redirects';
 import '../../component/jv-seo-category-redirects';
+import '../../component/jv-seo-landing-page-redirects';
 import '../../component/jv-seo-image-redirects';
 
 Shopware.Component.register('jv-seo-redirect-list', redirectList);
@@ -40,6 +41,14 @@ Shopware.Module.register('jv-seo', {
             path: 'redirects/:id',
             meta: { parentPath: 'jv.seo.index.redirects', privilege: 'jv_seo_redirect:read' },
         },
+    },
+
+    settingsItem: {
+        group: 'seo',
+        label: 'jv-seo.redirects.title',
+        to: 'jv.seo.index',
+        icon: 'regular-search',
+        privilege: 'jv_seo_redirect:read',
     },
 
     navigation: [

@@ -2,12 +2,12 @@
 
 ## Цель
 
-Сохранить старые публичные URL товаров, категорий и изображений отдельно для
+Сохранить старые публичные URL товаров, категорий, Landing Pages и изображений отдельно для
 каждого рынка и предоставить Next.js однозначное решение `301` на актуальный
 канонический URL Shopware. Редиректы управляются плагином `JvSeo`; `JvImport`
 только извлекает URL товаров из завершённого импорта и передаёт через публичный
-контракт владельца. Категорийные и image redirects создаются и редактируются
-вручную.
+контракт владельца. Категорийные, Landing Page и image redirects создаются и
+редактируются вручную.
 
 Первая проверяемая миграция — `jvmoebel.de`. Та же реализация применяется к
 остальным Sales Channels без смешивания доменов и исходных идентификаторов.
@@ -16,16 +16,18 @@
 
 В изменение входят:
 
-- реестр общих, товарных, категорийных и image `301`-редиректов;
+- реестр общих, товарных, категорийных, Landing Page и image `301`-редиректов;
 - импорт старых URL товаров из исходного CosmoShop product CSV;
 - Administration-раздел SEO с подпунктом «Редиректы», списком, фильтрами,
   поиском, созданием и редактированием;
-- таблицы legacy redirects в SEO-разделах карточек товара и категории, а также
-  в quick-info редактируемого изображения на
+- таблицы legacy redirects в SEO-разделах карточек товара, категории и Landing
+  Page на `/admin#/sw/category/landingPage/<landing-page-id>/base`, а также в
+  quick-info редактируемого изображения на
   `/admin#/sw/media/index/<media-id>`;
 - Store API lookup-контракт для Next.js.
 
-Импорт URL категорий и изображений, CMS/служебные страницы, `410`, sitemap и
+Импорт URL категорий, Landing Pages и изображений, другие CMS/служебные
+страницы, `410`, sitemap и
 реализация доставки редиректа во frontend или Nginx не входят в backend-
 изменение. Next.js остаётся владельцем публичного HTTP response согласно
 ADR-007. Общесистемный
@@ -61,9 +63,9 @@ ADR-007. Общесистемный
 Administration показывает один пункт `Settings → SEO`. Страница SEO содержит
 вкладку «Редиректы»; следующие SEO-области добавляются отдельными вкладками, а не
 новыми уровнями левого меню. Список фильтруется по `all`, `general`, `product`,
-`category`, `image`; поиск применяется внутри выбранного типа к source URL,
-target URL, имени/номеру товара, имени категории, имени файла изображения и
-Sales Channel.
+`category`, `pages`, `image`; поиск применяется внутри выбранного типа к source
+URL, target URL, имени/номеру товара, имени категории, имени Landing Page,
+имени файла изображения и Sales Channel.
 
 Форма сначала выбирает тип:
 
@@ -73,6 +75,9 @@ Sales Channel.
   Channel показывается вычисленный пример canonical target и задаётся один или
   несколько source URL;
 - `category`: выбирается одна Shopware category, для каждого включённого Sales
+  Channel показывается вычисленный пример canonical target и задаётся один или
+  несколько source URL;
+- `pages`: выбирается одна Shopware Landing Page, для каждого включённого Sales
   Channel показывается вычисленный пример canonical target и задаётся один или
   несколько source URL;
 - `image`: выбирается одно публичное Shopware media с MIME `image/*`, для
@@ -114,6 +119,7 @@ key для неизвестных доменов запрещён.
     "targetUrl": "https://www.jvmoebel.de/Produktname/SKU",
     "productId": "...",
     "categoryId": null,
+    "landingPageId": null,
     "mediaId": null
   }
 }
@@ -134,24 +140,25 @@ redirect cache/read model.
 
 `JvSeo` владеет тремя DAL entities:
 
-- `jv_seo_redirect`: тип `general|product|category|image`, nullable
-  version-aware product/category и nullable media;
+- `jv_seo_redirect`: тип `general|product|category|pages|image`, nullable
+  version-aware product/category/Landing Page и nullable media;
 - `jv_seo_redirect_channel`: агрегат + Sales Channel, nullable target URL,
   active/manual state;
 - `jv_seo_redirect_source`: точный source URL, lookup hash, active/manual state,
   origin `manual|import`, source system, market, source ID и import-key hash.
 
-Один product redirect aggregate относится к одному Shopware product, а один
-category aggregate — к одной Shopware category, а image aggregate — к одному
-Shopware media; все они могут содержать несколько Sales Channels. General
-aggregates не связаны с product, category или media.
+Один product redirect aggregate относится к одному Shopware product, один
+category aggregate — к одной Shopware category, один pages aggregate — к одной
+Shopware Landing Page, а image aggregate — к одному Shopware media; все они
+могут содержать несколько Sales Channels. General aggregates не связаны с
+product, category, Landing Page или media.
 В одном aggregate не может быть двух channel sections одного Sales Channel.
 Один абсолютный source URL может иметь только одну активную цель.
 
-General target хранится явно. Product, category и image targets не копируются.
-Product и category targets вычисляются из актуального canonical `seo_url`
-соответственно с route
-`frontend.detail.page` или `frontend.navigation.page`, ID сущности, language и
+General target хранится явно. Product, category, Landing Page и image targets не
+копируются. Product, category и Landing Page targets вычисляются из актуального
+canonical `seo_url` соответственно с route `frontend.detail.page`,
+`frontend.navigation.page` или `frontend.landing.page`, ID сущности, language и
 Sales Channel, затем объединяются с подходящим `sales_channel_domain.url`. Это
 исключает устаревший target после изменения Shopware SEO URL. Если canonical ещё
 не создан, запись сохраняется, но lookup не выдаёт непроверенный redirect, а
@@ -165,8 +172,8 @@ Image redirect используется для явно подтверждённ
 вариантом согласно общей стратегии SEO-миграции.
 
 При нескольких доменах Sales Channel сначала выбирается domain языка канала,
-затем стабильная сортировка по URL. Product/category source с совпадающим host
-выбирает domain того же host, если он существует.
+затем стабильная сортировка по URL. Product/category/Landing Page source с
+совпадающим host выбирает domain того же host, если он существует.
 
 ## Правила
 
@@ -180,9 +187,10 @@ Image redirect используется для явно подтверждённ
 - Source URL не может совпадать со своей target и не должен создавать явный
   redirect loop.
 - Product redirect требует только product, category redirect — только category,
-  image redirect — только публичное изображение; все три запрещают сохранённый
-  target. General redirect запрещает связи с product, category и media и требует
-  target для каждого активного channel.
+  pages redirect — только Landing Page, image redirect — только публичное
+  изображение; все четыре запрещают сохранённый target. General redirect
+  запрещает связи с product, category, Landing Page и media и требует target для
+  каждого активного channel.
 - Агрегат содержит минимум один активный channel, каждый активный channel —
   минимум один активный source.
 - Product identity разрешается только по импортированному SKU. EAN не
@@ -217,7 +225,7 @@ Message delivery безопасна для повтора. Для одного s
 Автоматические тесты проверяют:
 
 - URL validation и сохранение `+`, регистра path и trailing slash;
-- atomic create/update общих, товарных, категорийных и image aggregates;
+- atomic create/update общих, товарных, категорийных, Landing Page и image aggregates;
 - минимум один source для включённого Sales Channel;
 - dynamic canonical target нужного Sales Channel/language;
 - Store API lookup не смешивает Sales Channels;
@@ -231,12 +239,15 @@ Message delivery безопасна для повтора. Для одного s
 - ручной category redirect получает canonical category target и находится через
   Store API только в своём Sales Channel;
 - карточка категории получает только свой redirect aggregate;
+- ручной pages redirect получает canonical Landing Page target и находится через
+  Store API только в своём Sales Channel;
+- карточка Landing Page получает только свой redirect aggregate;
 - ручной image redirect получает актуальный публичный media URL, находится через
   Store API только в своём Sales Channel, а media quick-info получает только
   свой redirect aggregate.
 
 Обязательные project checks выполняются в контейнере `web`: `composer lint`,
 `composer analyse`, `composer test`, затем `bin/build-administration.sh`.
-Ручная проверка охватывает меню, фильтры/поиск, четыре типа формы, ошибки URL,
-product/category/image target preview, таблицы товара, категории и изображения,
-а также Store API lookup.
+Ручная проверка охватывает меню, фильтры/поиск, пять типов формы, ошибки URL,
+product/category/Landing Page/image target preview, таблицы товара, категории,
+Landing Pages и изображения, а также Store API lookup.

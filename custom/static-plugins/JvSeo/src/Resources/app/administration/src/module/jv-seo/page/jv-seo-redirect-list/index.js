@@ -46,6 +46,7 @@ export default {
                 { value: 'general', label: this.$t('jv-seo.filters.general') },
                 { value: 'product', label: this.$t('jv-seo.filters.product') },
                 { value: 'category', label: this.$t('jv-seo.filters.category') },
+                { value: 'pages', label: this.$t('jv-seo.filters.pages') },
                 { value: 'image', label: this.$t('jv-seo.filters.image') },
             ];
         },
@@ -105,6 +106,9 @@ export default {
             }
             if (item.type === 'category') {
                 return item.categoryName ?? item.categoryId;
+            }
+            if (item.type === 'pages') {
+                return item.landingPageName ?? item.landingPageId;
             }
             if (item.type === 'image') {
                 return item.imageName ?? item.mediaId;

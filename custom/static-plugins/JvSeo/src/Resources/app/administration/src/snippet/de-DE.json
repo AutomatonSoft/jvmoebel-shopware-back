@@ -17,6 +17,7 @@
             "general": "Allgemein",
             "product": "Produkte",
             "category": "Kategorien",
+            "pages": "Landingpages",
             "image": "Bilder"
         },
         "list": {
@@ -25,7 +26,7 @@
             "salesChannels": "Verkaufskanal",
             "sources": "301-URLs",
             "updatedAt": "Geändert",
-            "searchPlaceholder": "URLs, Produkte, Kategorien, Bilder oder Verkaufskanäle durchsuchen"
+            "searchPlaceholder": "URLs, Produkte, Kategorien, Landingpages, Bilder oder Verkaufskanäle durchsuchen"
         },
         "detail": {
             "createTitle": "Weiterleitung erstellen",
@@ -36,6 +37,8 @@
             "productPlaceholder": "Produkt suchen",
             "category": "Kategorie",
             "categoryPlaceholder": "Kategorie suchen",
+            "landingPage": "Landingpage",
+            "landingPagePlaceholder": "Landingpage suchen",
             "image": "Bild",
             "imagePlaceholder": "Bild suchen",
             "enableChannel": "Für diesen Verkaufskanal konfigurieren",
@@ -49,6 +52,7 @@
         "validation": {
             "productRequired": "Wählen Sie ein Produkt aus.",
             "categoryRequired": "Wählen Sie eine Kategorie aus.",
+            "landingPageRequired": "Wählen Sie eine Landingpage aus.",
             "imageRequired": "Wählen Sie ein Bild aus.",
             "channelRequired": "Aktivieren Sie mindestens einen Verkaufskanal.",
             "sourceRequired": "Fügen Sie mindestens eine 301-URL für {channel} hinzu.",
@@ -66,9 +70,18 @@
             "title": "Legacy-Weiterleitungen nach Verkaufskanal",
             "empty": "Für diese Kategorie sind keine Legacy-Weiterleitungen konfiguriert."
         },
+        "landingPageCard": {
+            "title": "Legacy-Weiterleitungen nach Verkaufskanal",
+            "empty": "Für diese Landingpage sind keine Legacy-Weiterleitungen konfiguriert."
+        },
         "imageCard": {
             "title": "Legacy-Weiterleitungen nach Verkaufskanal",
             "empty": "Für dieses Bild sind keine Legacy-Weiterleitungen konfiguriert."
+        }
+    },
+    "sw-settings": {
+        "index": {
+            "tabSeo": "SEO"
         }
     }
 }

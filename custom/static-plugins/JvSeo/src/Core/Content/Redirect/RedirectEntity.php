@@ -4,6 +4,7 @@ namespace Jv\Seo\Core\Content\Redirect;
 
 use Jv\Seo\Core\Content\RedirectChannel\RedirectChannelCollection;
 use Shopware\Core\Content\Category\CategoryEntity;
+use Shopware\Core\Content\LandingPage\LandingPageEntity;
 use Shopware\Core\Content\Media\MediaEntity;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
@@ -20,6 +21,9 @@ final class RedirectEntity extends Entity
     protected ?string $categoryId = null;
     protected ?string $categoryVersionId = null;
     protected ?CategoryEntity $category = null;
+    protected ?string $landingPageId = null;
+    protected ?string $landingPageVersionId = null;
+    protected ?LandingPageEntity $landingPage = null;
     protected ?string $mediaId = null;
     protected ?MediaEntity $media = null;
     protected ?RedirectChannelCollection $channels = null;
@@ -57,6 +61,21 @@ final class RedirectEntity extends Entity
     public function getCategory(): ?CategoryEntity
     {
         return $this->category;
+    }
+
+    public function getLandingPageId(): ?string
+    {
+        return $this->landingPageId;
+    }
+
+    public function getLandingPageVersionId(): ?string
+    {
+        return $this->landingPageVersionId;
+    }
+
+    public function getLandingPage(): ?LandingPageEntity
+    {
+        return $this->landingPage;
     }
 
     public function getMediaId(): ?string

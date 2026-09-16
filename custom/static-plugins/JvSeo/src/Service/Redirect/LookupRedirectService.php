@@ -19,11 +19,12 @@ final readonly class LookupRedirectService
         private UrlNormalizer $urlNormalizer,
         private ProductTargetUrlResolver $productTargetResolver,
         private CategoryTargetUrlResolver $categoryTargetResolver,
+        private LandingPageTargetUrlResolver $landingPageTargetResolver,
         private ImageTargetUrlResolver $imageTargetResolver,
     ) {
     }
 
-    /** @return array{statusCode: 301, type: string, targetUrl: string, productId: ?string, categoryId: ?string, mediaId: ?string}|null */
+    /** @return array{statusCode: 301, type: string, targetUrl: string, productId: ?string, categoryId: ?string, landingPageId: ?string, mediaId: ?string}|null */
     public function lookup(string $sourceUrl, string $salesChannelId, Context $context): ?array
     {
         $sourceUrl = $this->urlNormalizer->validate($sourceUrl);
@@ -52,6 +53,9 @@ final readonly class LookupRedirectService
             RedirectType::Category->value => null === $redirect->getCategoryId()
                 ? null
                 : $this->categoryTargetResolver->resolve($redirect->getCategoryId(), $salesChannelId, $sourceUrl),
+            RedirectType::Pages->value => null === $redirect->getLandingPageId()
+                ? null
+                : $this->landingPageTargetResolver->resolve($redirect->getLandingPageId(), $salesChannelId, $sourceUrl),
             RedirectType::Image->value => null === $redirect->getMediaId()
                 ? null
                 : $this->imageTargetResolver->resolve($redirect->getMediaId(), $context),
@@ -67,6 +71,7 @@ final readonly class LookupRedirectService
             'targetUrl' => $targetUrl,
             'productId' => $redirect->getProductId(),
             'categoryId' => $redirect->getCategoryId(),
+            'landingPageId' => $redirect->getLandingPageId(),
             'mediaId' => $redirect->getMediaId(),
         ];
     }

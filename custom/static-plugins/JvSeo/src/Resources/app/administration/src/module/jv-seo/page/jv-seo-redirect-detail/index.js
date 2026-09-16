@@ -21,6 +21,7 @@ export default {
                 type: 'general',
                 productId: null,
                 categoryId: null,
+                landingPageId: null,
                 mediaId: null,
                 channels: [],
             },
@@ -45,6 +46,7 @@ export default {
                 { value: 'general', label: this.$t('jv-seo.filters.general') },
                 { value: 'product', label: this.$t('jv-seo.filters.product') },
                 { value: 'category', label: this.$t('jv-seo.filters.category') },
+                { value: 'pages', label: this.$t('jv-seo.filters.pages') },
                 { value: 'image', label: this.$t('jv-seo.filters.image') },
             ];
         },
@@ -73,14 +75,17 @@ export default {
                 } else {
                     const productId = this.$route.query.productId ?? null;
                     const categoryId = productId ? null : this.$route.query.categoryId ?? null;
-                    const mediaId = productId || categoryId ? null : this.$route.query.mediaId ?? null;
-                    this.draft.type = productId ? 'product' : categoryId ? 'category' : mediaId ? 'image' : 'general';
+                    const landingPageId = productId || categoryId ? null : this.$route.query.landingPageId ?? null;
+                    const mediaId = productId || categoryId || landingPageId ? null : this.$route.query.mediaId ?? null;
+                    this.draft.type = productId ? 'product' : categoryId ? 'category' : landingPageId ? 'pages' : mediaId ? 'image' : 'general';
                     this.draft.productId = productId;
                     this.draft.categoryId = categoryId;
+                    this.draft.landingPageId = landingPageId;
                     this.draft.mediaId = mediaId;
                     this.draft.channels = this.salesChannels.map((channel, index) => this.emptyChannel(channel, index === 0));
                     if (productId) await this.loadProductTargets();
                     if (categoryId) await this.loadCategoryTargets();
+                    if (landingPageId) await this.loadLandingPageTargets();
                     if (mediaId) await this.loadImageTargets();
                 }
             } catch (error) {
@@ -96,6 +101,7 @@ export default {
                 type: redirect.type,
                 productId: redirect.productId,
                 categoryId: redirect.categoryId,
+                landingPageId: redirect.landingPageId,
                 mediaId: redirect.mediaId,
                 channels: this.salesChannels.map((salesChannel) => {
                     const channel = existing.get(salesChannel.id);
@@ -137,24 +143,37 @@ export default {
             await this.loadImageTargets();
         },
 
+        async onLandingPageChange() {
+            await this.loadLandingPageTargets();
+        },
+
         async onTypeChange() {
             this.validationMessages = [];
             if (this.draft.type === 'general') {
                 this.draft.productId = null;
                 this.draft.categoryId = null;
+                this.draft.landingPageId = null;
                 this.draft.mediaId = null;
                 this.draft.channels.forEach((channel) => { channel.targetPreview = null; });
             } else if (this.draft.type === 'product') {
                 this.draft.categoryId = null;
+                this.draft.landingPageId = null;
                 this.draft.mediaId = null;
                 if (this.draft.productId) await this.loadProductTargets();
             } else if (this.draft.type === 'category') {
                 this.draft.productId = null;
+                this.draft.landingPageId = null;
                 this.draft.mediaId = null;
                 if (this.draft.categoryId) await this.loadCategoryTargets();
+            } else if (this.draft.type === 'pages') {
+                this.draft.productId = null;
+                this.draft.categoryId = null;
+                this.draft.mediaId = null;
+                if (this.draft.landingPageId) await this.loadLandingPageTargets();
             } else {
                 this.draft.productId = null;
                 this.draft.categoryId = null;
+                this.draft.landingPageId = null;
                 if (this.draft.mediaId) await this.loadImageTargets();
             }
         },
@@ -195,6 +214,18 @@ export default {
             }
         },
 
+        async loadLandingPageTargets() {
+            this.draft.channels.forEach((channel) => { channel.targetPreview = null; });
+            if (!this.draft.landingPageId) return;
+            try {
+                const response = await this.jvSeoRedirectApiService.landingPageTargets(this.draft.landingPageId);
+                const targets = new Map((response.data.data ?? []).map((target) => [target.salesChannelId, target.targetUrl]));
+                this.draft.channels.forEach((channel) => { channel.targetPreview = targets.get(channel.salesChannelId) ?? null; });
+            } catch (error) {
+                this.createNotificationError({ message: error.message });
+            }
+        },
+
         addSource(channel) {
             channel.sources.push({ id: null, url: '', localKey: Utils.createId() });
         },
@@ -222,6 +253,9 @@ export default {
             if (this.draft.type === 'category' && !this.draft.categoryId) {
                 messages.push(this.$t('jv-seo.validation.categoryRequired'));
             }
+            if (this.draft.type === 'pages' && !this.draft.landingPageId) {
+                messages.push(this.$t('jv-seo.validation.landingPageRequired'));
+            }
             if (this.draft.type === 'image' && !this.draft.mediaId) {
                 messages.push(this.$t('jv-seo.validation.imageRequired'));
             }
@@ -248,6 +282,7 @@ export default {
                 type: this.draft.type,
                 productId: this.draft.type === 'product' ? this.draft.productId : null,
                 categoryId: this.draft.type === 'category' ? this.draft.categoryId : null,
+                landingPageId: this.draft.type === 'pages' ? this.draft.landingPageId : null,
                 mediaId: this.draft.type === 'image' ? this.draft.mediaId : null,
                 channels: this.draft.channels.map((channel) => ({
                     id: channel.id,

@@ -60,6 +60,16 @@
                 />
 
                 <sw-entity-single-select
+                    v-if="draft.type === 'pages'"
+                    v-model:value="draft.landingPageId"
+                    entity="landing_page"
+                    :label="$t('jv-seo.detail.landingPage')"
+                    :placeholder="$t('jv-seo.detail.landingPagePlaceholder')"
+                    :disabled="isEditing || !canEdit"
+                    @update:value="onLandingPageChange"
+                />
+
+                <sw-entity-single-select
                     v-if="draft.type === 'image'"
                     v-model:value="draft.mediaId"
                     entity="media"

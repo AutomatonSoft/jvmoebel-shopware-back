@@ -34,6 +34,8 @@ final class JvSeo extends Plugin
             'product.editor' => $write,
             'category.viewer' => $read,
             'category.editor' => $write,
+            'landing_page.viewer' => $read,
+            'landing_page.editor' => $write,
             'media.viewer' => $read,
             'media.editor' => $write,
         ];

@@ -7,6 +7,7 @@ use Jv\Seo\Contract\ImportProductRedirectsInterface;
 use Jv\Seo\Service\Redirect\CategoryTargetUrlResolver;
 use Jv\Seo\Service\Redirect\Exception\RedirectValidationException;
 use Jv\Seo\Service\Redirect\ImageTargetUrlResolver;
+use Jv\Seo\Service\Redirect\LandingPageTargetUrlResolver;
 use Jv\Seo\Service\Redirect\LookupRedirectService;
 use Jv\Seo\Service\Redirect\ProductTargetUrlResolver;
 use Jv\Seo\Service\Redirect\RedirectQueryService;
@@ -54,7 +55,7 @@ final class RedirectWorkflowTest extends TestCase
         self::assertSame(1, $first->created);
         self::assertSame(0, $first->conflicts);
         self::assertSame(1, $second->unchanged);
-        self::assertCount(1, $this->query()->list('product', 'Chestefield+Sofa', null, null, null, 1, 25, Context::createDefaultContext())['data']);
+        self::assertCount(1, $this->query()->list('product', 'Chestefield+Sofa', null, null, null, null, 1, 25, Context::createDefaultContext())['data']);
 
         $decision = $this->lookup()->lookup($sourceUrl, $this->salesChannelId, Context::createDefaultContext());
         self::assertNotNull($decision);
@@ -140,7 +141,7 @@ final class RedirectWorkflowTest extends TestCase
         );
         self::assertSame(1, $this->importer()->import([$original], Context::createDefaultContext())->created);
 
-        $list = $this->query()->list('product', '', $productId, null, null, 1, 25, Context::createDefaultContext());
+        $list = $this->query()->list('product', '', $productId, null, null, null, 1, 25, Context::createDefaultContext());
         self::assertCount(1, $list['data']);
         $redirect = $list['data'][0];
         $channel = $redirect['channels'][0];
@@ -217,7 +218,7 @@ final class RedirectWorkflowTest extends TestCase
         ], Context::createDefaultContext());
         self::assertSame(2, $result->created);
 
-        $redirect = $this->query()->list('product', '', $productId, null, null, 1, 25, Context::createDefaultContext())['data'][0];
+        $redirect = $this->query()->list('product', '', $productId, null, null, null, 1, 25, Context::createDefaultContext())['data'][0];
         $channel = $redirect['channels'][0];
         $firstSource = null;
         foreach ($channel['sources'] as $source) {
@@ -324,7 +325,7 @@ final class RedirectWorkflowTest extends TestCase
             ]],
         ], Context::createDefaultContext());
 
-        $list = $this->query()->list('category', 'living-room', null, $categoryId, null, 1, 25, Context::createDefaultContext());
+        $list = $this->query()->list('category', 'living-room', null, $categoryId, null, null, 1, 25, Context::createDefaultContext());
         self::assertCount(1, $list['data']);
         self::assertSame($redirectId, $list['data'][0]['id']);
         self::assertSame($categoryId, $list['data'][0]['categoryId']);
@@ -360,6 +361,60 @@ final class RedirectWorkflowTest extends TestCase
         self::assertNull($response['data']['productId']);
     }
 
+    public function testManualLandingPageRedirectResolvesToCanonicalLandingPageUrl(): void
+    {
+        $landingPageId = $this->createLandingPage('living-room-guide');
+        $this->writeCanonicalLandingPageSeoUrl($landingPageId, $this->salesChannelId, 'guides/living-room');
+        $sourceUrl = 'https://www.jvmoebel.de/Old-Living-Room-Guide.htm';
+
+        $redirectId = $this->save()->create([
+            'type' => 'pages',
+            'landingPageId' => $landingPageId,
+            'channels' => [[
+                'salesChannelId' => $this->salesChannelId,
+                'enabled' => true,
+                'sources' => [['url' => $sourceUrl]],
+            ]],
+        ], Context::createDefaultContext());
+
+        $list = $this->query()->list('pages', 'living-room-guide', null, null, $landingPageId, null, 1, 25, Context::createDefaultContext());
+        self::assertCount(1, $list['data']);
+        self::assertSame($redirectId, $list['data'][0]['id']);
+        self::assertSame($landingPageId, $list['data'][0]['landingPageId']);
+        self::assertSame('living-room-guide', $list['data'][0]['landingPageName']);
+        self::assertNull($list['data'][0]['productId']);
+        self::assertNull($list['data'][0]['categoryId']);
+        self::assertNull($list['data'][0]['mediaId']);
+
+        $decision = $this->lookup()->lookup($sourceUrl, $this->salesChannelId, Context::createDefaultContext());
+        self::assertNotNull($decision);
+        self::assertSame('pages', $decision['type']);
+        self::assertSame($landingPageId, $decision['landingPageId']);
+        self::assertNull($decision['productId']);
+        self::assertNull($decision['categoryId']);
+        self::assertNull($decision['mediaId']);
+        self::assertSame(
+            $this->landingPageTargetResolver()->resolve($landingPageId, $this->salesChannelId, $sourceUrl),
+            $decision['targetUrl'],
+        );
+
+        $this->browser->request(
+            'POST',
+            '/store-api/jv-seo/redirect',
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/json'],
+            json_encode(['url' => $sourceUrl], \JSON_THROW_ON_ERROR),
+        );
+        self::assertSame(200, $this->browser->getResponse()->getStatusCode());
+        /** @var array{data: array{statusCode: int, type: string, targetUrl: string, landingPageId: ?string}} $response */
+        $response = json_decode((string) $this->browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        self::assertSame(301, $response['data']['statusCode']);
+        self::assertSame('pages', $response['data']['type']);
+        self::assertSame($decision['targetUrl'], $response['data']['targetUrl']);
+        self::assertSame($landingPageId, $response['data']['landingPageId']);
+    }
+
     public function testManualImageRedirectResolvesToCurrentPublicMediaUrl(): void
     {
         $mediaId = $this->createImage('legacy-redirect-image');
@@ -378,7 +433,7 @@ final class RedirectWorkflowTest extends TestCase
             ]],
         ], $context);
 
-        $list = $this->query()->list('image', 'legacy-redirect-image', null, null, $mediaId, 1, 25, $context);
+        $list = $this->query()->list('image', 'legacy-redirect-image', null, null, null, $mediaId, 1, 25, $context);
         self::assertCount(1, $list['data']);
         self::assertSame($redirectId, $list['data'][0]['id']);
         self::assertSame($mediaId, $list['data'][0]['mediaId']);
@@ -427,6 +482,18 @@ final class RedirectWorkflowTest extends TestCase
     {
         $id = Uuid::randomHex();
         static::getContainer()->get('category.repository')->create([[
+            'id' => $id,
+            'name' => $name,
+            'active' => true,
+        ]], Context::createDefaultContext());
+
+        return $id;
+    }
+
+    private function createLandingPage(string $name): string
+    {
+        $id = Uuid::randomHex();
+        static::getContainer()->get('landing_page.repository')->create([[
             'id' => $id,
             'name' => $name,
             'active' => true,
@@ -494,6 +561,21 @@ final class RedirectWorkflowTest extends TestCase
         ]], Context::createDefaultContext());
     }
 
+    private function writeCanonicalLandingPageSeoUrl(string $landingPageId, string $salesChannelId, string $seoPathInfo): void
+    {
+        static::getContainer()->get('seo_url.repository')->create([[
+            'id' => Uuid::randomHex(),
+            'languageId' => Defaults::LANGUAGE_SYSTEM,
+            'salesChannelId' => $salesChannelId,
+            'foreignKey' => $landingPageId,
+            'routeName' => 'frontend.landing.page',
+            'pathInfo' => '/landing-page/'.$landingPageId,
+            'seoPathInfo' => $seoPathInfo,
+            'isCanonical' => true,
+            'isDeleted' => false,
+        ]], Context::createDefaultContext());
+    }
+
     private function importer(): ImportProductRedirectsInterface
     {
         return static::getContainer()->get(ImportProductRedirectsInterface::class);
@@ -527,5 +609,10 @@ final class RedirectWorkflowTest extends TestCase
     private function imageTargetResolver(): ImageTargetUrlResolver
     {
         return static::getContainer()->get(ImageTargetUrlResolver::class);
+    }
+
+    private function landingPageTargetResolver(): LandingPageTargetUrlResolver
+    {
+        return static::getContainer()->get(LandingPageTargetUrlResolver::class);
     }
 }

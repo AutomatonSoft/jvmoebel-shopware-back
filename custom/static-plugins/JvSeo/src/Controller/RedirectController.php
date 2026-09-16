@@ -28,6 +28,7 @@ final class RedirectController extends AbstractController
         $type = $request->query->getString('type');
         $productId = $request->query->getString('productId');
         $categoryId = $request->query->getString('categoryId');
+        $landingPageId = $request->query->getString('landingPageId');
         $mediaId = $request->query->getString('mediaId');
 
         return new JsonResponse($this->query->list(
@@ -35,6 +36,7 @@ final class RedirectController extends AbstractController
             $request->query->getString('term'),
             '' === $productId ? null : $productId,
             '' === $categoryId ? null : $categoryId,
+            '' === $landingPageId ? null : $landingPageId,
             '' === $mediaId ? null : $mediaId,
             max(1, $request->query->getInt('page', 1)),
             min(100, max(1, $request->query->getInt('limit', 25))),
@@ -96,6 +98,12 @@ final class RedirectController extends AbstractController
     public function categoryTargets(string $categoryId, Context $context): JsonResponse
     {
         return new JsonResponse(['data' => $this->query->categoryTargets($categoryId, $context)]);
+    }
+
+    #[Route(path: '/api/_action/jv-seo/pages/{landingPageId}/targets', name: 'api.action.jv_seo.landing_page.targets', methods: ['GET'], defaults: ['_acl' => ['landing_page.viewer']])]
+    public function landingPageTargets(string $landingPageId, Context $context): JsonResponse
+    {
+        return new JsonResponse(['data' => $this->query->landingPageTargets($landingPageId, $context)]);
     }
 
     #[Route(path: '/api/_action/jv-seo/images/{mediaId}/targets', name: 'api.action.jv_seo.image.targets', methods: ['GET'], defaults: ['_acl' => ['media.viewer']])]

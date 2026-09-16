@@ -7,5 +7,6 @@ enum RedirectType: string
     case General = 'general';
     case Product = 'product';
     case Category = 'category';
+    case Pages = 'pages';
     case Image = 'image';
 }

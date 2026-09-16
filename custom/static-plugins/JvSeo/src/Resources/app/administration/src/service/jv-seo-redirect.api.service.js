@@ -32,6 +32,10 @@ export default class JvSeoRedirectApiService {
         return this.withAuthentication((headers) => this.httpClient.get(`/_action/jv-seo/categories/${categoryId}/targets`, { headers }));
     }
 
+    landingPageTargets(landingPageId) {
+        return this.withAuthentication((headers) => this.httpClient.get(`/_action/jv-seo/pages/${landingPageId}/targets`, { headers }));
+    }
+
     imageTargets(mediaId) {
         return this.withAuthentication((headers) => this.httpClient.get(`/_action/jv-seo/images/${mediaId}/targets`, { headers }));
     }
