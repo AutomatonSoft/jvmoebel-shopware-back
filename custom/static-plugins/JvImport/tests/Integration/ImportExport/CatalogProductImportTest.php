@@ -367,6 +367,33 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
         }
     }
 
+    public function testTheEnrichedParentKeepsItsSourceEan(): void
+    {
+        $context = Context::createDefaultContext();
+        $suffix = bin2hex(random_bytes(5));
+        $productNumber = 'CATALOG-EAN-'.$suffix;
+        $parentId = Uuid::randomHex();
+        $categoryGroupId = 'group-'.$suffix;
+        $categoryId = 'category-'.$suffix;
+        $propertyGroupId = CatalogIdentity::propertyGroupId('Color '.$suffix);
+        $manualGroupId = Uuid::randomHex();
+        $manualOptionId = Uuid::randomHex();
+        $this->createFixture($parentId, $productNumber, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $manualOptionId, $context);
+        $this->productRepository()->update([['id' => $parentId, 'ean' => '4260174423463']], $context);
+        $profileId = CatalogProductImportProfile::definition()['id'];
+        $this->profileRepository()->upsert([CatalogProductImportProfile::definition()], $context);
+
+        try {
+            $progress = $this->import($profileId, $this->catalogCsv($productNumber, '4260174423463', $categoryId, $categoryGroupId, 1200, 'Brown'));
+            self::assertSame('succeeded', $progress->getState(), $this->importResult($progress));
+
+            self::assertSame('4260174423463', $this->product($productNumber, $context)->getEan());
+            self::assertSame('4260174423463', $this->product($productNumber.'-1', $context)->getEan());
+        } finally {
+            $this->deleteFixture($parentId, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $context);
+        }
+    }
+
     private function product(string $productNumber, Context $context): \Shopware\Core\Content\Product\ProductEntity
     {
         $product = $this->productRepository()->search((new Criteria())->addFilter(new EqualsFilter('productNumber', $productNumber))->addAssociation('price')->addAssociation('options')->addAssociation('properties')->addAssociation('categories'), $context)->first();
