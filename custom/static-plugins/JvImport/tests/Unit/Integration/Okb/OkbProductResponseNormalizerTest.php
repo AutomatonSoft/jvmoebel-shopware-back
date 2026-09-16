@@ -29,14 +29,6 @@ final class OkbProductResponseNormalizerTest extends TestCase
         self::assertSame(['Braun'], $variation->attributes[0]->values);
     }
 
-    public function testItRejectsMultipleVariationsForOneEanLookup(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('must return exactly one productVariation');
-
-        (new OkbProductResponseNormalizer())->normalize('4260454043503', ['productVariations' => []]);
-    }
-
     public function testItRejectsAReturnedVariationWithAnotherEan(): void
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -98,5 +90,24 @@ final class OkbProductResponseNormalizerTest extends TestCase
             'ean' => $ean,
             'productDescription' => ['category' => 'Kunstlederbett', 'attributes' => []],
         ];
+    }
+
+    public function testAnEmptyResponseIsReportedAsAMissingProduct(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('OKB has no product for EAN "4260454042872".');
+
+        (new OkbProductResponseNormalizer())->normalize('4260454042872', ['productVariations' => []]);
+    }
+
+    public function testSeveralVariationsForOneEanStillReportTheCountRule(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('must return exactly one productVariation');
+
+        (new OkbProductResponseNormalizer())->normalize('4260454043503', ['productVariations' => [
+            $this->familyPayload('4260454043503'),
+            $this->familyPayload('4260454043504'),
+        ]]);
     }
 }

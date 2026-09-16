@@ -11,7 +11,10 @@ final class OkbProductResponseNormalizer
     public function normalize(string $requestedEan, array $response): OkbProductVariation
     {
         $variations = $response['productVariations'] ?? null;
-        if (!is_array($variations) || 1 !== count($variations) || !is_array($variations[0])) {
+        if (!is_array($variations) || [] === $variations) {
+            throw new \InvalidArgumentException(sprintf('OKB has no product for EAN "%s".', $requestedEan));
+        }
+        if (1 !== count($variations) || !is_array($variations[0])) {
             throw new \InvalidArgumentException(sprintf('OKB must return exactly one productVariation for EAN "%s".', $requestedEan));
         }
         /** @var array<string, mixed> $variation */
