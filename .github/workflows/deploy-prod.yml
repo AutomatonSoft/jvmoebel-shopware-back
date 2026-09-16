@@ -30,7 +30,7 @@ jobs:
         run: |
           set -Eeuo pipefail
 
-          readonly EXPECTED_COMPOSE_SHA256="e6bdb79413900b7b2d46d6a7778610d04a3d18173a1116fc2e927c7cddf91c89"
+          readonly EXPECTED_COMPOSE_SHA256="d2951869c1186517241aa0931a90d954c456c91c37be2f9f1066a63f37622d18"
 
           actual_compose_sha="$(
             sha256sum compose.deploy.yml |
@@ -120,7 +120,7 @@ jobs:
       SIGNATURE_NAMESPACE: jvmoebel-prod-back@automatonsoft
 
       EXPECTED_DEPLOY_HOST: 85.215.147.19
-      EXPECTED_COMPOSE_SHA256: e6bdb79413900b7b2d46d6a7778610d04a3d18173a1116fc2e927c7cddf91c89
+      EXPECTED_COMPOSE_SHA256: d2951869c1186517241aa0931a90d954c456c91c37be2f9f1066a63f37622d18
       EXPECTED_HELPER_SHA256: ${{ vars.BACKEND_DEPLOY_HELPER_SHA256 }}
 
       EXPECTED_DEPLOY_KEY_FINGERPRINT: SHA256:Iy9p5Kpw1XUhtdjGZffqdK/yOcitH5p74lgO/oncICM
