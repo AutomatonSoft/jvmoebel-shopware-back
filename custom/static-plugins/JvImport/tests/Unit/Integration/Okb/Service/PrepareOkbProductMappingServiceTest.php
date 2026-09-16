@@ -32,7 +32,7 @@ final class PrepareOkbProductMappingServiceTest extends TestCase
             self::assertSame(0, $result->products);
             self::assertSame(1, $result->failures);
             self::assertSame("product_number;ean;reason\ninvalid;not-an-ean;\"EAN must contain exactly 13 digits.\"\n", file_get_contents($directory.'/output/okb-product-mapping-failures.csv'));
-            self::assertSame("product_number;ean;category_name;category_id;category_group_id;standard_price_amount;currency\n", file_get_contents($directory.'/output/okb-product-mapping.csv'));
+            self::assertSame("product_number;ean;category_name;category_id;category_group_id;standard_price_amount;suggested_retail_price_amount;currency\n", file_get_contents($directory.'/output/okb-product-mapping.csv'));
         } finally {
             $files = glob($directory.'/*/*');
             if (false !== $files) {

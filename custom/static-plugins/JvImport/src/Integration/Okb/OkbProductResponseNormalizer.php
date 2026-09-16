@@ -57,10 +57,15 @@ final class OkbProductResponseNormalizer
         if (!is_array($description)) {
             throw new \InvalidArgumentException(sprintf('OKB productVariation for EAN "%s" has no productDescription.', $requestedEan));
         }
-        $pricing = $variation['pricing'] ?? [];
-        $standardPrice = is_array($pricing) ? ($pricing['standardPrice'] ?? null) : null;
+        $rawPricing = $variation['pricing'] ?? [];
+        $pricing = is_array($rawPricing) ? $rawPricing : [];
+        $standardPrice = $pricing['standardPrice'] ?? null;
         if (null !== $standardPrice && !is_array($standardPrice)) {
             throw new \InvalidArgumentException(sprintf('OKB productVariation for EAN "%s" has invalid standardPrice.', $requestedEan));
+        }
+        $msrp = $pricing['msrp'] ?? null;
+        if (null !== $msrp && !is_array($msrp)) {
+            throw new \InvalidArgumentException(sprintf('OKB productVariation for EAN "%s" has invalid msrp.', $requestedEan));
         }
 
         return new OkbProductVariation(
@@ -71,6 +76,7 @@ final class OkbProductResponseNormalizer
             $this->nullableAmount($standardPrice, $requestedEan),
             $this->nullableCurrency($standardPrice, $requestedEan),
             $this->attributes($description, $requestedEan),
+            $this->nullableAmount($msrp, $requestedEan),
         );
     }
 
@@ -85,15 +91,15 @@ final class OkbProductResponseNormalizer
         return trim($value);
     }
 
-    /** @param array<string, mixed>|null $standardPrice */
-    private function nullableAmount(?array $standardPrice, string $requestedEan): ?float
+    /** @param array<string, mixed>|null $price */
+    private function nullableAmount(?array $price, string $requestedEan): ?float
     {
-        if (null === $standardPrice || !array_key_exists('amount', $standardPrice)) {
+        if (null === $price || !array_key_exists('amount', $price)) {
             return null;
         }
-        $amount = $standardPrice['amount'];
+        $amount = $price['amount'];
         if (!is_int($amount) && !is_float($amount)) {
-            throw new \InvalidArgumentException(sprintf('OKB standardPrice for EAN "%s" has an invalid amount.', $requestedEan));
+            throw new \InvalidArgumentException(sprintf('OKB price for EAN "%s" has an invalid amount.', $requestedEan));
         }
 
         return (float) $amount;

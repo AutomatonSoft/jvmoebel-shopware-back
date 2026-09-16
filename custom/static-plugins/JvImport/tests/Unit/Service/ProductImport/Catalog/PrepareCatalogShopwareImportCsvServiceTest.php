@@ -23,9 +23,9 @@ final class PrepareCatalogShopwareImportCsvServiceTest extends TestCase
 
             self::assertSame(2, $result);
             self::assertSame([
-                ['record_type', 'product_number', 'ean', 'category_id', 'category_group_id', 'standard_price_amount', 'currency', 'attributes_json', 'failure_reason'],
-                ['parent', 'SKU-1', '4260454043503', '25922', '3446', '1200', 'EUR', '[["Color",["Brown"]],["Width",["120"]]]', ''],
-                ['child', 'SKU-1', '4260454043503', '25922', '3446', '1200', 'EUR', '[["Color",["Brown"]],["Width",["120"]]]', ''],
+                ['record_type', 'product_number', 'ean', 'category_id', 'category_group_id', 'standard_price_amount', 'suggested_retail_price_amount', 'currency', 'attributes_json', 'failure_reason'],
+                ['parent', 'SKU-1', '4260454043503', '25922', '3446', '1200', '', 'EUR', '[["Color",["Brown"]],["Width",["120"]]]', ''],
+                ['child', 'SKU-1', '4260454043503', '25922', '3446', '1200', '', 'EUR', '[["Color",["Brown"]],["Width",["120"]]]', ''],
             ], $this->rows($output));
         } finally {
             unlink($products);
@@ -51,7 +51,7 @@ final class PrepareCatalogShopwareImportCsvServiceTest extends TestCase
             $result = (new PrepareCatalogShopwareImportCsvService(new SemicolonCsvReader()))->execute($products, $attributes, $output, $failures);
 
             self::assertSame(3, $result);
-            self::assertSame(['invalid', 'SKU-2', '4260454043504', '', '', '', '', '[]', 'OKB returned HTTP 500'], $this->rows($output)[3]);
+            self::assertSame(['invalid', 'SKU-2', '4260454043504', '', '', '', '', '', '[]', 'OKB returned HTTP 500'], $this->rows($output)[3]);
         } finally {
             unlink($products);
             unlink($attributes);

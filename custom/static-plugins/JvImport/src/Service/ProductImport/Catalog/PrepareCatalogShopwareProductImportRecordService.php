@@ -6,6 +6,7 @@ use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Jv\Import\Service\Catalog\CatalogIdentity;
 use Jv\Import\Service\ProductImport\Catalog\Dto\CatalogCategoryAttributeSchema;
+use Jv\Import\Service\ProductImport\ListPriceResolver;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
@@ -40,6 +41,7 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
         private CatalogCategoryAttributeSchemaProvider $schemaProvider,
         private Connection $connection,
         private CatalogProductImportLookupCache $lookupCache,
+        private ListPriceResolver $listPriceResolver = new ListPriceResolver(),
     ) {
     }
 
@@ -83,6 +85,7 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
             throw new \LogicException('Validated catalog product pair has no price or tax.');
         }
         $gross = max($existingPrice->getGross(), (float) $this->required($row, 'standard_price_amount'));
+        $suggestedRetailPrice = $this->optionalAmount($row, 'suggested_retail_price_amount');
         $position = $this->nextChildPosition($parent->getId());
         $childId = $this->childId($parent, $ean, $position, $context);
         $optionRecords = [];
@@ -123,7 +126,7 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
             'name' => $parent->getName() ?? $parent->getProductNumber(),
             'stock' => $parent->getStock(),
             'taxId' => $parent->getTaxId(),
-            'price' => $this->prices($parent->getPrice()->getElements(), $currencyId, $gross, $parent->getTax()->getTaxRate()),
+            'price' => $this->prices($parent->getPrice()->getElements(), $currencyId, $gross, $parent->getTax()->getTaxRate(), $suggestedRetailPrice),
             'properties' => array_values($optionRecords),
             'options' => array_values(array_intersect_key($optionRecords, $variantOptionIds)),
         ];
@@ -333,9 +336,10 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
     /** @param list<Price> $existingPrices
      * @return list<array<string, mixed>>
      */
-    private function prices(array $existingPrices, string $currencyId, float $gross, float $taxRate): array
+    private function prices(array $existingPrices, string $currencyId, float $gross, float $taxRate, ?float $suggestedRetailPrice): array
     {
         $prices = [];
+        $sourceListPrice = null;
         foreach ($existingPrices as $price) {
             $record = [
                 'currencyId' => $price->getCurrencyId(),
@@ -349,12 +353,34 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
                     'gross' => $price->getListPrice()->getGross(),
                     'linked' => $price->getListPrice()->getLinked(),
                 ];
+                if ($price->getCurrencyId() === $currencyId) {
+                    $sourceListPrice = $price->getListPrice()->getGross();
+                }
             }
             $prices[$price->getCurrencyId()] = $record;
         }
-        $prices[$currencyId] = ['currencyId' => $currencyId, 'net' => round($gross / (1 + $taxRate / 100), 2), 'gross' => $gross, 'linked' => false];
+        $listPrice = $this->listPriceResolver->resolve($gross, $suggestedRetailPrice, $sourceListPrice);
+        $prices[$currencyId] = [
+            'currencyId' => $currencyId,
+            'net' => round($gross / (1 + $taxRate / 100), 2),
+            'gross' => $gross,
+            'linked' => false,
+            'listPrice' => [
+                'net' => round($listPrice / (1 + $taxRate / 100), 2),
+                'gross' => $listPrice,
+                'linked' => false,
+            ],
+        ];
 
         return array_values($prices);
+    }
+
+    /** @param array<string, mixed> $row */
+    private function optionalAmount(array $row, string $key): ?float
+    {
+        $value = $row[$key] ?? null;
+
+        return is_string($value) && '' !== $value ? (float) $value : null;
     }
 
     /** @return array<string, array{name: string}> */

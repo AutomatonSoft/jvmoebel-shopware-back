@@ -13,6 +13,7 @@ final readonly class OkbProductVariation
         public ?float $standardPriceAmount,
         public ?string $currency,
         public array $attributes,
+        public ?float $suggestedRetailPriceAmount = null,
     ) {
     }
 }

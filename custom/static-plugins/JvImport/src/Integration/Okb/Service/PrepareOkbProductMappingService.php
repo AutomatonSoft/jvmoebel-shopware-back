@@ -37,7 +37,7 @@ final readonly class PrepareOkbProductMappingService
         $publishToken = bin2hex(random_bytes(8));
         $temporary = array_map(static fn (string $file): string => $file.'.tmp.'.$publishToken, $outputs);
         $products = $this->openOutput($temporary['products'], [
-            'product_number', 'ean', 'category_name', 'category_id', 'category_group_id', 'standard_price_amount', 'currency',
+            'product_number', 'ean', 'category_name', 'category_id', 'category_group_id', 'standard_price_amount', 'suggested_retail_price_amount', 'currency',
         ]);
         $attributes = $this->openOutput($temporary['attributes'], ['product_number', 'ean', 'attribute_name', 'values_json']);
         $failures = $this->openOutput($temporary['failures'], ['product_number', 'ean', 'reason']);
@@ -159,6 +159,7 @@ final readonly class PrepareOkbProductMappingService
             $category['categoryId'],
             $category['categoryGroupId'],
             null === $variation->standardPriceAmount ? '' : (string) $variation->standardPriceAmount,
+            null === $variation->suggestedRetailPriceAmount ? '' : (string) $variation->suggestedRetailPriceAmount,
             $variation->currency ?? '',
         ]);
     }

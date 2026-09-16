@@ -4,6 +4,7 @@ namespace Jv\Import\Service\AfterCool\Import;
 
 use Jv\Import\Service\AfterCool\Dto\AfterCoolMappedProduct;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolProductWriteValidationException;
+use Jv\Import\Service\ProductImport\ListPriceResolver;
 use Jv\Import\Service\ProductImport\ProductImportIdentity;
 use Jv\Import\Service\ProductImport\ProductManufacturerIdentity;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
@@ -12,6 +13,10 @@ use Shopware\Core\Framework\Uuid\Uuid;
 
 final class BuildAfterCoolShopwareProductRecordService
 {
+    public function __construct(private ListPriceResolver $listPriceResolver = new ListPriceResolver())
+    {
+    }
+
     /**
      * @param list<array<string, mixed>> $existingPrices
      *
@@ -43,14 +48,15 @@ final class BuildAfterCoolShopwareProductRecordService
                     $prices[$price['currencyId']] = $price;
                 }
             }
+            $listPrice = $this->listPriceResolver->resolve($product->grossPrice, null, null);
             $prices[$currencyId] = [
                 'currencyId' => $currencyId,
                 'gross' => $product->grossPrice,
                 'net' => round($product->grossPrice / (1 + $taxRate / 100), 2),
                 'linked' => true,
                 'listPrice' => [
-                    'gross' => $this->uvp($product->grossPrice),
-                    'net' => round($this->uvp($product->grossPrice) / (1 + $taxRate / 100), 2),
+                    'gross' => $listPrice,
+                    'net' => round($listPrice / (1 + $taxRate / 100), 2),
                     'linked' => true,
                 ],
             ];
@@ -70,12 +76,5 @@ final class BuildAfterCoolShopwareProductRecordService
         ]];
 
         return $record;
-    }
-
-    private function uvp(float $price): float
-    {
-        $factor = $price > 5000 ? 1.10 : ($price >= 2500 && $price <= 4999 ? 1.18 : ($price >= 1000 && $price <= 2499 ? 1.25 : 1.35));
-
-        return round($price * $factor, 2);
     }
 }
