@@ -363,7 +363,7 @@ final class RedirectWorkflowTest extends TestCase
 
     public function testManualLandingPageRedirectResolvesToCanonicalLandingPageUrl(): void
     {
-        $landingPageId = $this->createLandingPage('living-room-guide');
+        $landingPageId = $this->createLandingPage('living-room-guide', $this->salesChannelId);
         $this->writeCanonicalLandingPageSeoUrl($landingPageId, $this->salesChannelId, 'guides/living-room');
         $sourceUrl = 'https://www.jvmoebel.de/Old-Living-Room-Guide.htm';
 
@@ -490,13 +490,15 @@ final class RedirectWorkflowTest extends TestCase
         return $id;
     }
 
-    private function createLandingPage(string $name): string
+    private function createLandingPage(string $name, string $salesChannelId): string
     {
         $id = Uuid::randomHex();
         static::getContainer()->get('landing_page.repository')->create([[
             'id' => $id,
             'name' => $name,
+            'url' => $name,
             'active' => true,
+            'salesChannels' => [['id' => $salesChannelId]],
         ]], Context::createDefaultContext());
 
         return $id;
@@ -563,7 +565,17 @@ final class RedirectWorkflowTest extends TestCase
 
     private function writeCanonicalLandingPageSeoUrl(string $landingPageId, string $salesChannelId, string $seoPathInfo): void
     {
-        static::getContainer()->get('seo_url.repository')->create([[
+        $repository = static::getContainer()->get('seo_url.repository');
+        $context = Context::createDefaultContext();
+        $ids = $repository->searchIds(
+            (new Criteria())->addFilter(new EqualsFilter('foreignKey', $landingPageId)),
+            $context,
+        )->getIds();
+        if ([] !== $ids) {
+            $repository->delete(array_map(static fn (string $id): array => ['id' => $id], $ids), $context);
+        }
+
+        $repository->create([[
             'id' => Uuid::randomHex(),
             'languageId' => Defaults::LANGUAGE_SYSTEM,
             'salesChannelId' => $salesChannelId,
@@ -573,7 +585,7 @@ final class RedirectWorkflowTest extends TestCase
             'seoPathInfo' => $seoPathInfo,
             'isCanonical' => true,
             'isDeleted' => false,
-        ]], Context::createDefaultContext());
+        ]], $context);
     }
 
     private function importer(): ImportProductRedirectsInterface
