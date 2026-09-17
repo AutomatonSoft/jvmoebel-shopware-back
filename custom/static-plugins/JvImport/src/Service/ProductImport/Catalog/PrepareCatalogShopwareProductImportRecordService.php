@@ -61,12 +61,17 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
         $parentPrice = $this->requireParentPriceAndTax($productNumber, $currency, $currencyId, $parent);
 
         if ('parent' === $type) {
-            return [
+            $record = [
                 'id' => $parent->getId(),
                 'parentId' => null,
                 'ean' => $ean,
                 'categories' => [['id' => CatalogIdentity::categoryId('okb', $categoryId)]],
             ];
+            if ('1' === ($row['activate_parent'] ?? null)) {
+                $record['active'] = true;
+            }
+
+            return $record;
         }
         if ('child' !== $type) {
             throw new \InvalidArgumentException(sprintf('Catalog import row has unknown record type "%s".', $type));

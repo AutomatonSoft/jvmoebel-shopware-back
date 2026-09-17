@@ -10,7 +10,7 @@ final readonly class PrepareCatalogShopwareImportCsvService
     {
     }
 
-    public function execute(string $productsFile, string $attributesFile, string $outputFile, ?string $failuresFile = null): int
+    public function execute(string $productsFile, string $attributesFile, string $outputFile, ?string $failuresFile = null, bool $activateParents = false): int
     {
         $directory = dirname($outputFile);
         $temporaryFile = tempnam($directory, '.catalog-import-');
@@ -31,7 +31,8 @@ final readonly class PrepareCatalogShopwareImportCsvService
         $previousProductNumber = null;
 
         try {
-            $this->write($output, ['record_type', 'product_number', 'ean', 'category_id', 'category_group_id', 'standard_price_amount', 'suggested_retail_price_amount', 'currency', 'attributes_json', 'failure_reason']);
+            $header = ['record_type', 'product_number', 'ean', 'category_id', 'category_group_id', 'standard_price_amount', 'suggested_retail_price_amount', 'currency', 'attributes_json', 'failure_reason'];
+            $this->write($output, $activateParents ? [...$header, 'activate_parent'] : $header);
             foreach ($this->csvReader->rows($productsFile, ['product_number', 'ean', 'category_id', 'category_group_id', 'standard_price_amount', 'currency']) as $line => $product) {
                 $productNumber = $this->required($product, 'product_number', $productsFile, $line);
                 $ean = $this->required($product, 'ean', $productsFile, $line);
@@ -48,11 +49,11 @@ final readonly class PrepareCatalogShopwareImportCsvService
                 }
                 $row = [$productNumber, $ean, $this->required($product, 'category_id', $productsFile, $line), $this->required($product, 'category_group_id', $productsFile, $line), $product['standard_price_amount'], $product['suggested_retail_price_amount'] ?? '', $product['currency'], json_encode($productAttributes, \JSON_THROW_ON_ERROR)];
                 if ($productNumber !== $previousProductNumber) {
-                    $this->write($output, ['parent', ...$row, '']);
+                    $this->write($output, $activateParents ? ['parent', ...$row, '', '1'] : ['parent', ...$row, '']);
                     ++$written;
                     $previousProductNumber = $productNumber;
                 }
-                $this->write($output, ['child', ...$row, '']);
+                $this->write($output, $activateParents ? ['child', ...$row, '', ''] : ['child', ...$row, '']);
                 ++$written;
             }
             if ($hasAttribute) {
@@ -62,13 +63,14 @@ final readonly class PrepareCatalogShopwareImportCsvService
             }
             if (null !== $failuresFile) {
                 foreach ($this->csvReader->rows($failuresFile, ['product_number', 'ean', 'reason']) as $line => $failure) {
-                    $this->write($output, [
+                    $invalidRow = [
                         'invalid',
                         $this->required($failure, 'product_number', $failuresFile, $line),
                         $this->required($failure, 'ean', $failuresFile, $line),
                         '', '', '', '', '', '[]',
                         $this->required($failure, 'reason', $failuresFile, $line),
-                    ]);
+                    ];
+                    $this->write($output, $activateParents ? [...$invalidRow, ''] : $invalidRow);
                     ++$written;
                 }
             }

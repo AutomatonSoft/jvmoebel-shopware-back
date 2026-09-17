@@ -4,6 +4,7 @@ namespace Jv\Import\Service\AfterCool\Import;
 
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunCollection;
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunEntity;
+use Jv\Import\Message\AfterCoolCatalogEnrichmentMessage;
 use Jv\Import\Service\AfterCool\Contract\AfterCoolImportProductSourceInterface;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolPageProcessingResult;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolPreparedProduct;
@@ -20,6 +21,7 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
  * Owns one idempotent Aftercool page checkpoint. Upstream access and mapping
@@ -39,6 +41,7 @@ readonly class ImportAfterCoolPageService
         private ResolveDefaultProductTaxService $defaultTax,
         private EntityRepository $runRepository,
         private LockFactory $lockFactory,
+        private MessageBusInterface $messageBus,
     ) {
     }
 
@@ -126,6 +129,10 @@ readonly class ImportAfterCoolPageService
         }
 
         $this->checkpoint->checkpoint($run, $offset, $page->total, $page->hasMore, $records, $products, $issues, $context);
+
+        if (!$page->hasMore) {
+            $this->messageBus->dispatch(new AfterCoolCatalogEnrichmentMessage($runId));
+        }
 
         $this->stagedMediaProcessor->process($runId, $offset, $context);
 
