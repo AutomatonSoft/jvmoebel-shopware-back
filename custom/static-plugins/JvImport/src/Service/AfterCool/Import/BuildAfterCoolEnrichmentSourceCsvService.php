@@ -5,17 +5,16 @@ namespace Jv\Import\Service\AfterCool\Import;
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunCollection;
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunEntity;
 use Jv\Import\Core\Content\AfterCoolProductSource\AfterCoolProductSourceCollection;
-use Jv\Import\Core\Content\AfterCoolProductSource\AfterCoolProductSourceEntity;
 use Shopware\Core\Content\Product\ProductCollection;
-use Shopware\Core\Content\Product\ProductEntity;
+use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\RepositoryIterator;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
 
-/** Lists the products of one finished Aftercool run as OKB enrichment source rows. */
 final readonly class BuildAfterCoolEnrichmentSourceCsvService
 {
     /**
@@ -42,7 +41,6 @@ final readonly class BuildAfterCoolEnrichmentSourceCsvService
 
         $eansByProductNumber = [];
         foreach ($this->productRepository->search((new Criteria())->addFilter(new EqualsAnyFilter('id', array_keys($eansByProductId))), $context)->getEntities() as $product) {
-            /* @var ProductEntity $product */
             $eansByProductNumber[$product->getProductNumber()] = $eansByProductId[$product->getId()];
         }
         uksort($eansByProductNumber, strcmp(...));
@@ -64,16 +62,21 @@ final readonly class BuildAfterCoolEnrichmentSourceCsvService
     /** @return array<string, string> */
     private function sourceLinks(AfterCoolImportRunEntity $run, Context $context): array
     {
+        $startedAt = $run->getStartedAt();
+        if (!$startedAt instanceof \DateTimeInterface) {
+            throw new \InvalidArgumentException(sprintf('Aftercool import run "%s" has no started_at timestamp.', $run->getId()));
+        }
+
         $criteria = (new Criteria())
             ->addFilter(new EqualsFilter('account', $run->getAccount()))
             ->addFilter(new EqualsFilter('dataset', $run->getDataset()))
-            ->addFilter(new EqualsFilter('factoryId', $run->getFactoryId()));
+            ->addFilter(new EqualsFilter('factoryId', $run->getFactoryId()))
+            ->addFilter(new RangeFilter('lastSeenAt', [RangeFilter::GTE => $startedAt->format(Defaults::STORAGE_DATE_TIME_FORMAT)]));
         $iterator = new RepositoryIterator($this->sourceRepository, $context, $criteria);
 
         $eansByProductId = [];
         while (null !== ($result = $iterator->fetch())) {
             foreach ($result->getEntities() as $link) {
-                /* @var AfterCoolProductSourceEntity $link */
                 $eansByProductId[$link->getProductId()] = $link->getSourceEan();
             }
         }
