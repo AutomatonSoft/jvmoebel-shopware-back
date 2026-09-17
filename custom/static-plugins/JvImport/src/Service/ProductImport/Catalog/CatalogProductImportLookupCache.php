@@ -10,9 +10,6 @@ final class CatalogProductImportLookupCache implements ResetInterface
     /** @var array<string, ProductEntity> */
     private array $parents = [];
 
-    /** @var array<string, array<string, string>> */
-    private array $childIds = [];
-
     /** @var list<string> */
     private array $order = [];
 
@@ -39,22 +36,9 @@ final class CatalogProductImportLookupCache implements ResetInterface
         return $parent;
     }
 
-    public function childId(string $parentId, string $ean): ?string
-    {
-        return $this->childIds[$parentId][$ean] ?? null;
-    }
-
-    public function rememberChildId(string $parentId, string $ean, string $childId): string
-    {
-        $this->childIds[$parentId][$ean] = $childId;
-
-        return $childId;
-    }
-
     public function reset(): void
     {
         $this->parents = [];
-        $this->childIds = [];
         $this->order = [];
     }
 
@@ -65,11 +49,7 @@ final class CatalogProductImportLookupCache implements ResetInterface
             if (null === $productNumber) {
                 return;
             }
-            $parent = $this->parents[$productNumber] ?? null;
             unset($this->parents[$productNumber]);
-            if ($parent instanceof ProductEntity) {
-                unset($this->childIds[$parent->getId()]);
-            }
         }
     }
 }
