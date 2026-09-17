@@ -297,20 +297,21 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
     /** @return array{id: string, productNumber: string, baseElements: list<Price>} */
     private function child(\Shopware\Core\Content\Product\ProductEntity $parent, string $ean, Context $context): array
     {
-        $children = $this->productRepository->search((new Criteria())
+        $existing = $this->productRepository->search((new Criteria())
             ->addFilter(new EqualsFilter('parentId', $parent->getId()))
-            ->addAssociation('price'), $context)->getEntities();
-
-        foreach ($children as $candidate) {
-            if ($candidate->getEan() === $ean) {
-                return [
-                    'id' => $candidate->getId(),
-                    'productNumber' => $candidate->getProductNumber(),
-                    'baseElements' => $candidate->getPrice()?->getElements() ?? [],
-                ];
-            }
+            ->addFilter(new EqualsFilter('ean', $ean))
+            ->addAssociation('price')
+            ->setLimit(1), $context)->first();
+        if ($existing instanceof \Shopware\Core\Content\Product\ProductEntity) {
+            return [
+                'id' => $existing->getId(),
+                'productNumber' => $existing->getProductNumber(),
+                'baseElements' => $existing->getPrice()?->getElements() ?? [],
+            ];
         }
 
+        $children = $this->productRepository->search((new Criteria())
+            ->addFilter(new EqualsFilter('parentId', $parent->getId())), $context)->getEntities();
         $productNumber = $parent->getProductNumber().'-'.$this->nextFreeChildNumber($parent, $children->getElements());
         $conflict = $this->productRepository->search((new Criteria())
             ->addFilter(new EqualsFilter('productNumber', $productNumber))
