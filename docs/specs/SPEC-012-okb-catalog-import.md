@@ -78,7 +78,11 @@ ID в своём техническом config, поэтому повторна�
 второй catalog import и не отправляет второй `ImportExportMessage` для уже
 созданного log. Если dispatch core-сообщения бросает исключение, созданный, но
 не запущенный catalog log удаляется; повтор source-сообщения повторно готовит
-и ставит в очередь ровно один новый log. Для параллельных Messenger workers
+и ставит в очередь ровно один новый log. Catalog log получает в техническом
+config параметр `jvCatalogEnrichmentDispatched` только после успешной постановки
+сообщения. Если процесс завершился между созданием log и постановкой, повтор
+находит log без этого параметра и ставит в очередь именно его, а не создаёт
+новый и не считает обогащение уже запущенным. Для параллельных Messenger workers
 используются уникальные Redis consumer names и keepalive.
 Stateful lookup и preparation caches сбрасываются ядром между Messenger
 messages; они не переносят ProductEntity, child IDs, schemas или option IDs в
