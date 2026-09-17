@@ -1,0 +1,56 @@
+{% block jv_seo_redirect_list %}
+<div class="jv-seo-redirect-list">
+    <mt-card position-identifier="jv-seo-redirect-filters" :title="$t('jv-seo.filters.title')">
+        <sw-single-select
+            v-model:value="type"
+            :options="typeOptions"
+            value-property="value"
+            label-property="label"
+            @update:value="onTypeChange"
+        />
+    </mt-card>
+
+    <mt-card position-identifier="jv-seo-redirect-list" :title="$t('jv-seo.redirects.title')">
+        <sw-data-grid
+            :data-source="redirects"
+            :columns="columns"
+            :is-loading="isLoading"
+            :show-selection="false"
+            :show-settings="false"
+        >
+            <template #column-type="{ item }">
+                {{ typeLabel(item.type) }}
+            </template>
+            <template #column-target="{ item }">
+                <router-link :to="{ name: 'jv.seo.detail', params: { id: item.id } }">
+                    <span class="jv-seo-redirect-list__multiline">{{ targetLabel(item) }}</span>
+                </router-link>
+            </template>
+            <template #column-channels="{ item }">
+                {{ channelLabel(item) }}
+            </template>
+            <template #column-sources="{ item }">
+                <ul class="jv-seo-redirect-list__sources">
+                    <li v-for="source in sourceUrls(item)" :key="source">{{ source }}</li>
+                </ul>
+            </template>
+            <template #column-updatedAt="{ item }">
+                <sw-time-ago v-if="item.updatedAt || item.createdAt" :date="item.updatedAt || item.createdAt" />
+            </template>
+            <template #actions="{ item }">
+                <sw-context-menu-item :router-link="{ name: 'jv.seo.detail', params: { id: item.id } }">
+                    {{ $t('global.default.edit') }}
+                </sw-context-menu-item>
+            </template>
+        </sw-data-grid>
+
+        <sw-pagination
+            v-if="total > limit"
+            :page="page"
+            :limit="limit"
+            :total="total"
+            @page-change="onPageChange"
+        />
+    </mt-card>
+</div>
+{% endblock %}

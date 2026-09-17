@@ -1,0 +1,11 @@
+.jv-seo-redirect-list {
+    &__sources {
+        margin: 0;
+        padding-left: 18px;
+        overflow-wrap: anywhere;
+    }
+
+    &__multiline {
+        white-space: pre-line;
+    }
+}

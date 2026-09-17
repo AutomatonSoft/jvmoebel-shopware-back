@@ -1,0 +1,16 @@
+.jv-seo-image-redirects {
+    &__toolbar {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 16px;
+    }
+
+    &__sources {
+        margin: 0;
+        padding-left: 16px;
+    }
+
+    &__empty {
+        margin: 0;
+    }
+}

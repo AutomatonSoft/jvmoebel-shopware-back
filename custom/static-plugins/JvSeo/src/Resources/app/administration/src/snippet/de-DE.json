@@ -1,0 +1,87 @@
+{
+    "jv-seo": {
+        "general": {
+            "title": "SEO",
+            "description": "SEO und Weiterleitungen verwalten"
+        },
+        "redirects": {
+            "title": "Weiterleitungen"
+        },
+        "actions": {
+            "create": "Weiterleitung erstellen",
+            "addSource": "301-URL hinzufügen"
+        },
+        "filters": {
+            "title": "Typ",
+            "all": "Alle Weiterleitungen",
+            "general": "Allgemein",
+            "product": "Produkte",
+            "category": "Kategorien",
+            "pages": "Landingpages",
+            "image": "Bilder"
+        },
+        "list": {
+            "type": "Typ",
+            "target": "Ziel-URL",
+            "salesChannels": "Verkaufskanal",
+            "sources": "301-URLs",
+            "updatedAt": "Geändert",
+            "searchPlaceholder": "URLs, Produkte, Kategorien, Landingpages, Bilder oder Verkaufskanäle durchsuchen"
+        },
+        "detail": {
+            "createTitle": "Weiterleitung erstellen",
+            "editTitle": "Weiterleitung bearbeiten",
+            "base": "Ziel",
+            "type": "Weiterleitungstyp",
+            "product": "Produkt",
+            "productPlaceholder": "Produkt suchen",
+            "category": "Kategorie",
+            "categoryPlaceholder": "Kategorie suchen",
+            "landingPage": "Landingpage",
+            "landingPagePlaceholder": "Landingpage suchen",
+            "image": "Bild",
+            "imagePlaceholder": "Bild suchen",
+            "enableChannel": "Für diesen Verkaufskanal konfigurieren",
+            "targetUrl": "Ziel-URL",
+            "targetPreview": "Beispiel der aktuellen kanonischen Ziel-URL",
+            "targetUnavailable": "Kanonische URL ist noch nicht verfügbar",
+            "sourceUrls": "301-URLs",
+            "sourceUrl": "301-URL {number}",
+            "absoluteUrlPlaceholder": "https://www.example.com/pfad"
+        },
+        "validation": {
+            "productRequired": "Wählen Sie ein Produkt aus.",
+            "categoryRequired": "Wählen Sie eine Kategorie aus.",
+            "landingPageRequired": "Wählen Sie eine Landingpage aus.",
+            "imageRequired": "Wählen Sie ein Bild aus.",
+            "channelRequired": "Aktivieren Sie mindestens einen Verkaufskanal.",
+            "sourceRequired": "Fügen Sie mindestens eine 301-URL für {channel} hinzu.",
+            "invalidSource": "Eine 301-URL für {channel} ist keine vollständige HTTP(S)-URL.",
+            "invalidTarget": "Die Ziel-URL für {channel} ist keine vollständige HTTP(S)-URL."
+        },
+        "notifications": {
+            "saved": "Die Weiterleitung wurde gespeichert."
+        },
+        "productCard": {
+            "title": "Legacy-Weiterleitungen nach Verkaufskanal",
+            "empty": "Für dieses Produkt sind keine Legacy-Weiterleitungen konfiguriert."
+        },
+        "categoryCard": {
+            "title": "Legacy-Weiterleitungen nach Verkaufskanal",
+            "empty": "Für diese Kategorie sind keine Legacy-Weiterleitungen konfiguriert."
+        },
+        "landingPageCard": {
+            "title": "Legacy-Weiterleitungen nach Verkaufskanal",
+            "empty": "Für diese Landingpage sind keine Legacy-Weiterleitungen konfiguriert."
+        },
+        "imageCard": {
+            "title": "Legacy-Weiterleitungen nach Verkaufskanal",
+            "empty": "Für dieses Bild sind keine Legacy-Weiterleitungen konfiguriert."
+        }
+    },
+    "sw-settings": {
+        "index": {
+            "tabSeo": "SEO"
+        }
+    }
+}
