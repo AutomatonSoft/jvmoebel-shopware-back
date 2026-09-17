@@ -59,10 +59,6 @@
             <tag name="shopware.cms.data_resolver"/>
         </service>
 
-        <service id="Jv\Cms\DataResolver\Element\PromoBannerCmsElementResolver">
-            <tag name="shopware.cms.data_resolver"/>
-        </service>
-
         <service id="Jv\Cms\DataResolver\Element\OfferRailCmsElementResolver">
             <tag name="shopware.cms.data_resolver"/>
         </service>
@@ -71,23 +67,7 @@
             <tag name="shopware.cms.data_resolver"/>
         </service>
 
-        <service id="Jv\Cms\DataResolver\Element\PromoDealTilesCmsElementResolver">
-            <tag name="shopware.cms.data_resolver"/>
-        </service>
-
-        <service id="Jv\Cms\DataResolver\Element\RelatedLookCardsCmsElementResolver">
-            <tag name="shopware.cms.data_resolver"/>
-        </service>
-
         <service id="Jv\Cms\DataResolver\Element\ChipRailCmsElementResolver">
-            <tag name="shopware.cms.data_resolver"/>
-        </service>
-
-        <service id="Jv\Cms\DataResolver\Element\TrendLookGridCmsElementResolver">
-            <tag name="shopware.cms.data_resolver"/>
-        </service>
-
-        <service id="Jv\Cms\DataResolver\Element\LookSceneCmsElementResolver">
             <tag name="shopware.cms.data_resolver"/>
         </service>
 
@@ -152,10 +132,6 @@
         </service>
 
         <service id="Jv\Cms\DataResolver\Element\SubcategoryLinksCmsElementResolver">
-            <tag name="shopware.cms.data_resolver"/>
-        </service>
-
-        <service id="Jv\Cms\DataResolver\Element\CrossRoomSectionCmsElementResolver">
             <tag name="shopware.cms.data_resolver"/>
         </service>
 

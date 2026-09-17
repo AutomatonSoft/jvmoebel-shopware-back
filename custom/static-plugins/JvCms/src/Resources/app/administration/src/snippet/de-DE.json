@@ -621,38 +621,6 @@
           }
         }
       },
-      "jv-promo-banner": {
-        "label": "Promo Banner",
-        "component": {
-          "emptyTitle": "Promo Banner",
-          "canvasHint": "Breiter Promo-Banner — UI rendert Next.js"
-        },
-        "config": {
-          "title": { "label": "Titel" },
-          "eyebrow": { "label": "Eyebrow" },
-          "description": { "label": "Beschreibung" },
-          "contentPosition": {
-            "label": "Textposition",
-            "left": "Links",
-            "right": "Rechts"
-          },
-          "imageMedia": {
-            "label": "Bild",
-            "caption": "Hintergrundbild"
-          },
-          "link": {
-            "title": "Link (optional)",
-            "label": { "label": "Link-Beschriftung" },
-            "url": { "label": "Link-URL" },
-            "size": {
-              "label": "Link-Größe",
-              "small": "Klein",
-              "medium": "Mittel",
-              "large": "Groß"
-            }
-          }
-        }
-      },
       "jv-offer-rail": {
         "label": "Offer Rail",
         "component": {
@@ -706,101 +674,6 @@
           }
         }
       },
-      "jv-promo-deal-tiles": {
-        "label": "Promo Deal Tiles",
-        "component": {
-          "emptyTitle": "Promo Deal Tiles",
-          "canvasHint": "{count} Deal-Kacheln — UI rendert Next.js"
-        },
-        "config": {
-          "title": {
-            "label": "Titel",
-            "placeholder": "Homie Days"
-          },
-          "eyebrow": {
-            "label": "Eyebrow",
-            "placeholder": "Nur bis Sonntag"
-          },
-          "tiles": {
-            "title": "Deal-Kacheln",
-            "add": "Kachel hinzufügen",
-            "remove": "Entfernen",
-            "cardTitle": "Kachel {index}",
-            "id": {
-              "label": "ID"
-            },
-            "label": {
-              "label": "Beschriftung"
-            },
-            "description": {
-              "label": "Beschreibung"
-            },
-            "discountLabel": {
-              "label": "Rabatt-Beschriftung"
-            },
-            "endsAt": {
-              "label": "Endet am",
-              "placeholder": "2026-09-14T23:59:59+02:00"
-            },
-            "imageMedia": {
-              "label": "Bild",
-              "caption": "Deal-Bild wählen"
-            },
-            "link": {
-              "label": {
-                "label": "Link-Beschriftung"
-              },
-              "url": {
-                "label": "Link-URL",
-                "placeholder": "/sale/sofas"
-              },
-              "size": {
-                "label": "Link-Größe",
-                "small": "Klein",
-                "medium": "Mittel",
-                "large": "Groß"
-              }
-            }
-          }
-        }
-      },
-      "jv-related-look-cards": {
-        "label": "Verwandte Look-Karten",
-        "component": {
-          "emptyTitle": "Verwandte Look-Karten",
-          "canvasHint": "{count} Look-Karten — UI rendert Next.js"
-        },
-        "config": {
-          "title": {
-            "label": "Titel",
-            "placeholder": "Weitere Looks"
-          },
-          "cards": {
-            "title": "Look-Karten",
-            "add": "Karte hinzufügen",
-            "remove": "Entfernen",
-            "cardTitle": "Karte {index}",
-            "id": {
-              "label": "ID",
-              "helpText": "Optionale stabile ID. Leer = card-{index}."
-            },
-            "titleField": {
-              "label": "Titel"
-            },
-            "description": {
-              "label": "Beschreibung"
-            },
-            "url": {
-              "label": "Link",
-              "placeholder": "/shop-the-look/skandi-badezimmer"
-            },
-            "imageMedia": {
-              "label": "Bild",
-              "caption": "Look-Bild wählen"
-            }
-          }
-        }
-      },
       "jv-chip-rail": {
         "label": "Chip-Leiste",
         "component": {
@@ -834,61 +707,6 @@
             "url": {
               "label": "Link",
               "placeholder": "/geschenke?budget=50"
-            }
-          }
-        }
-      },
-      "jv-look-scene": {
-        "label": "Look Scene",
-        "component": {
-          "titlePlaceholder": "Look Scene Titel",
-          "productPlaceholder": "Produkt"
-        },
-        "config": {
-          "title": {
-            "label": "Titel",
-            "placeholder": "Fine Living"
-          },
-          "description": {
-            "label": "Beschreibung",
-            "placeholder": "Wohnzimmer in Studio Line"
-          },
-          "imageMedia": {
-            "label": "Bild",
-            "caption": "Raumbild hochladen"
-          },
-          "products": {
-            "title": "Produkte",
-            "add": "Produkt hinzufügen",
-            "cardTitle": "Produkt {index}",
-            "moveUp": "Nach oben",
-            "moveDown": "Nach unten",
-            "remove": "Entfernen",
-            "productId": {
-              "label": "Produkt",
-              "placeholder": "Produkt wählen",
-              "helpText": "Optional. Name und URL werden aus dem Katalog aufgelöst."
-            },
-            "name": {
-              "label": "Name (manuell)",
-              "placeholder": "Ecksofa HUDSON",
-              "helpText": "Erforderlich ohne Produktauswahl."
-            },
-            "url": {
-              "label": "Link (manuell)",
-              "placeholder": "/produkt/ecksofa-hudson",
-              "helpText": "Erforderlich ohne Produktauswahl."
-            }
-          },
-          "viewAll": {
-            "title": "Alle-anzeigen-Link",
-            "label": {
-              "label": "Label",
-              "placeholder": "Look shoppen"
-            },
-            "url": {
-              "label": "Link",
-              "placeholder": "/trends-looks/fine-living"
             }
           }
         }
@@ -1168,47 +986,6 @@
             "imageMedia": {
               "label": "Foto",
               "caption": "Mitgliedsfoto wählen"
-            }
-          }
-        }
-      },
-      "jv-trend-look-grid": {
-        "label": "Trend-Look-Grid",
-        "component": {
-          "emptyTitle": "Trend-Look-Grid",
-          "canvasHint": "{count} Trend-Karten — UI rendert Next.js"
-        },
-        "config": {
-          "title": {
-            "label": "Titel",
-            "placeholder": "Trends & Looks"
-          },
-          "eyebrow": {
-            "label": "Eyebrow",
-            "placeholder": "Inspiration"
-          },
-          "cards": {
-            "title": "Trend-Karten",
-            "add": "Karte hinzufügen",
-            "remove": "Entfernen",
-            "cardTitle": "Karte {index}",
-            "id": {
-              "label": "ID",
-              "helpText": "Optionale stabile ID. Leer = card-{index}."
-            },
-            "titleField": {
-              "label": "Titel"
-            },
-            "description": {
-              "label": "Beschreibung"
-            },
-            "url": {
-              "label": "Link",
-              "placeholder": "/trends-looks/modern-minimalistisch"
-            },
-            "imageMedia": {
-              "label": "Bild",
-              "caption": "Trend-Bild wählen"
             }
           }
         }
@@ -1501,46 +1278,6 @@
           }
         }
       },
-      "jv-cross-room-section": {
-        "label": "Cross-Room-Sektion",
-        "component": {
-          "emptyTitle": "Cross-Room-Sektion",
-          "canvasHint": "Raumkarten für saisonale Cross-Room-Inhalte."
-        },
-        "config": {
-          "title": {
-            "label": "Titel"
-          },
-          "eyebrow": {
-            "label": "Eyebrow"
-          },
-          "rooms": {
-            "title": "Räume",
-            "add": "Raum hinzufügen",
-            "remove": "Entfernen",
-            "cardTitle": "Raum {index}",
-            "id": {
-              "label": "ID"
-            },
-            "label": {
-              "label": "Label"
-            },
-            "titleField": {
-              "label": "Titel"
-            },
-            "description": {
-              "label": "Beschreibung"
-            },
-            "url": {
-              "label": "URL"
-            },
-            "imageMedia": {
-              "label": "Bild",
-              "caption": "Raumbild wählen"
-            }
-          }
-        }
-      },
       "jv-social-block": {
         "label": "Social Media",
         "component": {
@@ -1676,26 +1413,14 @@
       "jv-countdown-promo": {
         "label": "Countdown Promo"
       },
-      "jv-promo-banner": {
-        "label": "Promo Banner"
-      },
       "jv-offer-rail": {
         "label": "Offer Rail"
       },
       "jv-benefit-strip": {
         "label": "Benefit Strip"
       },
-      "jv-promo-deal-tiles": {
-        "label": "Promo Deal Tiles"
-      },
-      "jv-related-look-cards": {
-        "label": "Verwandte Look-Karten"
-      },
       "jv-chip-rail": {
         "label": "Chip-Leiste"
-      },
-      "jv-trend-look-grid": {
-        "label": "Trend-Look-Grid"
       },
       "jv-expert-tip": {
         "label": "Experten-Tipp"
@@ -1714,9 +1439,6 @@
       },
       "jv-editorial-team-grid": {
         "label": "Redaktions-Grid"
-      },
-      "jv-look-scene": {
-        "label": "Look Scene"
       },
       "jv-color-world-picker": {
         "label": "Color World Picker"
@@ -1747,9 +1469,6 @@
       },
       "jv-subcategory-links": {
         "label": "Unterkategorie-Links"
-      },
-      "jv-cross-room-section": {
-        "label": "Cross-Room-Sektion"
       },
       "jv-social-block": {
         "label": "Social Media"
