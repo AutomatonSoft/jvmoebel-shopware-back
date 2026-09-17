@@ -8,7 +8,9 @@ use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunEntity;
 use Jv\Import\Integration\AfterCool\AfterCoolApiClient;
 use Jv\Import\Integration\AfterCool\AfterCoolResponseNormalizer;
 use Jv\Import\Integration\AfterCool\Exception\AfterCoolApiException;
+use Jv\Import\Message\AfterCoolCatalogEnrichmentMessage;
 use Jv\Import\Message\AfterCoolImportPageMessage;
+use Jv\Import\Service\AfterCool\Import\BuildAfterCoolEnrichmentSourceCsvService;
 use Jv\Import\Service\AfterCool\Import\ImportAfterCoolPageService;
 use Jv\Import\Service\AfterCool\Media\LinkAfterCoolExternalMediaService;
 use Jv\Import\Service\AfterCool\Persistence\AfterCoolImportRunStore;
@@ -464,6 +466,64 @@ final class AfterCoolImportWorkflowTest extends TestCase
         self::assertGreaterThan(0, $run->getSkipped() + $run->getFailed());
         $ids = [ProductImportIdentity::fromProductNumber($this->ean(1)), ProductImportIdentity::fromProductNumber($this->ean(2))];
         self::assertCount($this->sourceProductCount(), $this->products()->searchIds(new Criteria($ids), $context)->getIds());
+    }
+
+    public function testAFinishedRunListsItsProductsAsCatalogEnrichmentSourceRows(): void
+    {
+        $context = $this->prepare([$this->item(2), $this->item(1)]);
+        $runId = $this->process($context);
+        $file = sys_get_temp_dir().'/jv-aftercool-enrichment-'.bin2hex(random_bytes(6)).'.csv';
+
+        try {
+            $rows = static::getContainer()->get(BuildAfterCoolEnrichmentSourceCsvService::class)->execute($runId, $file, $context);
+
+            self::assertSame(2, $rows);
+            self::assertSame(
+                "product_number;ean\n".$this->ean(1).';'.$this->ean(1)."\n".$this->ean(2).';'.$this->ean(2)."\n",
+                file_get_contents($file),
+            );
+        } finally {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
+    }
+
+    public function testAFinishedRunQueuesExactlyOneCatalogEnrichment(): void
+    {
+        $context = $this->prepare([$this->item(1)]);
+        $transport = $this->resetTestTransport();
+
+        $runId = $this->process($context);
+
+        $queued = $this->queuedEnrichments($transport);
+        self::assertCount(1, $queued);
+        self::assertSame($runId, $queued[0]->runId);
+
+        static::getContainer()->get(ImportAfterCoolPageService::class)->process($runId, 0, $context);
+
+        self::assertSame([], $this->queuedEnrichments($transport));
+    }
+
+    /** @return list<AfterCoolCatalogEnrichmentMessage> */
+    private function queuedEnrichments(RedisTransport $transport): array
+    {
+        $messages = [];
+        for ($attempt = 0; $attempt < 20; ++$attempt) {
+            $envelopes = [...$transport->get()];
+            if ([] === $envelopes) {
+                break;
+            }
+            foreach ($envelopes as $envelope) {
+                $transport->ack($envelope);
+                $message = $envelope->getMessage();
+                if ($message instanceof AfterCoolCatalogEnrichmentMessage) {
+                    $messages[] = $message;
+                }
+            }
+        }
+
+        return $messages;
     }
 
     /** @param list<array<string, mixed>> $items */
