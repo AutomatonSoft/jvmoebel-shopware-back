@@ -10,7 +10,6 @@ final readonly class PrepareCatalogShopwareImportCsvService
     {
     }
 
-    /** Returns the number of written Shopware product records. */
     public function execute(string $productsFile, string $attributesFile, string $outputFile, ?string $failuresFile = null): int
     {
         $directory = dirname($outputFile);
