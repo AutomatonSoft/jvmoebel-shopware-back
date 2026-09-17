@@ -77,10 +77,11 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
         $this->validateLongValues($attributes, $schemas);
         $this->validateAttributeMultiValue($attributes, $schemas);
 
-        $gross = $this->normalizedPrice($row, $productNumber);
-        if ($gross <= 0.0) {
+        $okbPrice = $this->normalizedPrice($row, $productNumber);
+        if ($okbPrice <= 0.0) {
             throw new \InvalidArgumentException(sprintf('Catalog import row has a non-positive OKB price for product "%s" EAN "%s".', $productNumber, $ean));
         }
+        $gross = max($parentPrice->getGross(), $okbPrice);
         $suggestedRetailPrice = $this->optionalAmount($row, 'suggested_retail_price_amount');
         $sourceListPrice = $parentPrice->getListPrice()?->getGross();
         $child = $this->child($parent, $ean, $context);
