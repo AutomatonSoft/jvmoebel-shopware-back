@@ -170,12 +170,6 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
         }
     }
 
-    /**
-     * A parent row is not validated against attributes or the OKB price it
-     * carries: those belong to the source variation, not the base card. Every
-     * row still requires the Shopware parent to exist with a price and tax in
-     * the market currency.
-     */
     private function requireParentPriceAndTax(string $productNumber, string $currency, string $currencyId, \Shopware\Core\Content\Product\ProductEntity $parent): Price
     {
         $price = $parent->getPrice()?->getCurrencyPrice($currencyId, false);
@@ -299,14 +293,7 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
         $this->existingOptionIdsByPropertyGroup = [];
     }
 
-    /**
-     * A child is identified by its parent and its EAN, not by the order rows
-     * arrive in. Shopware writes each record before the next one is prepared,
-     * so re-reading the parent's children here always sees every child
-     * written earlier in this run, even across separate worker batches.
-     *
-     * @return array{id: string, productNumber: string, baseElements: list<Price>}
-     */
+    /** @return array{id: string, productNumber: string, baseElements: list<Price>} */
     private function child(\Shopware\Core\Content\Product\ProductEntity $parent, string $ean, Context $context): array
     {
         $children = $this->productRepository->search((new Criteria())

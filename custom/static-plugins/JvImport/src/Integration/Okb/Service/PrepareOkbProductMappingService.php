@@ -108,15 +108,7 @@ final readonly class PrepareOkbProductMappingService
         return new OkbProductMappingPreparationResult($productCount, $attributeCount, $failureCount);
     }
 
-    /**
-     * The family response may include variations of another product or
-     * category that merely share a productReference. Only members with the
-     * same productReference and categoryName as the source variation belong
-     * to its family, and the source variation itself always belongs to it,
-     * even when the family response omits it.
-     *
-     * @return list<OkbProductVariation>
-     */
+    /** @return list<OkbProductVariation> */
     private function familyMembers(OkbProductVariation $source): array
     {
         $family = array_values(array_filter(

@@ -78,13 +78,7 @@ final class CatalogVariantFamilyPlanner
         return $values;
     }
 
-    /**
-     * The group key compares an attribute's values as a set: sorted and kept
-     * as a list, never joined with a separator. Joining would make a single
-     * value containing that separator indistinguishable from two values.
-     *
-     * @param list<string> $axisAttributeNames
-     */
+    /** @param list<string> $axisAttributeNames */
     private function groupKey(OkbProductVariation $variation, array $axisAttributeNames): string
     {
         $axisNames = array_fill_keys($axisAttributeNames, true);
