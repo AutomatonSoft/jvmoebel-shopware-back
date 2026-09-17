@@ -428,6 +428,153 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
         }
     }
 
+    public function testAVariantKeepsItsNumberAndIdWhenTheFamilyGainsAVariant(): void
+    {
+        $this->withCatalogFixture(function (string $productNumber, string $parentId, string $categoryId, string $categoryGroupId, string $profileId, Context $context): void {
+            $first = $this->import($profileId, $this->variantCsv($productNumber, $categoryId, $categoryGroupId, [['4260174000001', '1200', ['Braun']], ['4260174000003', '1200', ['Schwarz']]]));
+            self::assertSame('succeeded', $first->getState(), $this->importResult($first));
+            $black = $this->product($productNumber.'-2', $context);
+            self::assertSame('4260174000003', $black->getEan());
+
+            $second = $this->import($profileId, $this->variantCsv($productNumber, $categoryId, $categoryGroupId, [['4260174000001', '1200', ['Braun']], ['4260174000002', '1200', ['Weiss']], ['4260174000003', '1200', ['Schwarz']]]));
+            self::assertSame('succeeded', $second->getState(), $this->importResult($second));
+
+            self::assertSame('4260174000001', $this->product($productNumber.'-1', $context)->getEan());
+            $blackAfter = $this->product($productNumber.'-2', $context);
+            self::assertSame($black->getId(), $blackAfter->getId());
+            self::assertSame('4260174000003', $blackAfter->getEan());
+            self::assertSame('4260174000002', $this->product($productNumber.'-3', $context)->getEan());
+        });
+    }
+
+    public function testARejectedVariantDoesNotLaterTakeOverTheNumberOfTheNextOne(): void
+    {
+        $this->withCatalogFixture(function (string $productNumber, string $parentId, string $categoryId, string $categoryGroupId, string $profileId, Context $context): void {
+            $this->import($profileId, $this->variantCsv($productNumber, $categoryId, $categoryGroupId, [['4260174000001', '1200', ['Braun']], ['4260174000002', '1200', ['Weiss', 'Grau']], ['4260174000003', '1200', ['Schwarz']]]));
+            $black = $this->product($productNumber.'-2', $context);
+            self::assertSame('4260174000003', $black->getEan());
+
+            $second = $this->import($profileId, $this->variantCsv($productNumber, $categoryId, $categoryGroupId, [['4260174000001', '1200', ['Braun']], ['4260174000002', '1200', ['Weiss']], ['4260174000003', '1200', ['Schwarz']]]));
+            self::assertSame('succeeded', $second->getState(), $this->importResult($second));
+
+            $blackAfter = $this->product($productNumber.'-2', $context);
+            self::assertSame($black->getId(), $blackAfter->getId());
+            self::assertSame('4260174000003', $blackAfter->getEan());
+            self::assertSame('4260174000002', $this->product($productNumber.'-3', $context)->getEan());
+        });
+    }
+
+    public function testReimportKeepsTheVariantsOwnPriceInAnotherCurrency(): void
+    {
+        $this->withCatalogFixture(function (string $productNumber, string $parentId, string $categoryId, string $categoryGroupId, string $profileId, Context $context): void {
+            $csv = $this->variantCsv($productNumber, $categoryId, $categoryGroupId, [['4260174000001', '1200', ['Braun']]]);
+            $this->import($profileId, $csv);
+            $child = $this->product($productNumber.'-1', $context);
+            $gbp = $this->currencyId('GBP', $context);
+            $prices = [];
+            foreach ($child->getPrice() ?? [] as $price) {
+                $prices[] = ['currencyId' => $price->getCurrencyId(), 'net' => $price->getNet(), 'gross' => $price->getGross(), 'linked' => $price->getLinked()];
+            }
+            $prices[] = ['currencyId' => $gbp, 'net' => 756.3, 'gross' => 900.0, 'linked' => false];
+            $this->productRepository()->update([['id' => $child->getId(), 'price' => $prices]], $context);
+
+            $second = $this->import($profileId, $csv);
+            self::assertSame('succeeded', $second->getState(), $this->importResult($second));
+
+            self::assertSame(900.0, $this->product($productNumber.'-1', $context)->getPrice()?->getCurrencyPrice($gbp, false)?->getGross());
+        });
+    }
+
+    public function testAnInvalidSourceVariationStillAssignsTheParentCategoryAndKeepsTheValidVariants(): void
+    {
+        $this->withCatalogFixture(function (string $productNumber, string $parentId, string $categoryId, string $categoryGroupId, string $profileId, Context $context): void {
+            $this->productRepository()->update([['id' => $parentId, 'categories' => []]], $context);
+            $this->connection()->executeStatement('DELETE FROM `product_category` WHERE `product_id` = :id', ['id' => Uuid::fromHexToBytes($parentId)]);
+
+            $progress = $this->import($profileId, $this->variantCsv($productNumber, $categoryId, $categoryGroupId, [['4260174000001', '1200', ['Braun', 'Grau']], ['4260174000002', '1200', ['Weiss']]]));
+
+            self::assertStringContainsString('does not accept multiple values', $this->invalidRecordsCsv($progress));
+            self::assertSame(CatalogIdentity::categoryId('okb', $categoryId), $this->product($productNumber, $context)->getCategories()?->first()?->getId());
+            self::assertNull($this->productRepository()->search((new Criteria())->addFilter(new EqualsFilter('ean', '4260174000001'))->addFilter(new EqualsFilter('parentId', $parentId)), $context)->first());
+            self::assertSame(1, $this->productRepository()->search((new Criteria())->addFilter(new EqualsFilter('ean', '4260174000002'))->addFilter(new EqualsFilter('parentId', $parentId)), $context)->getTotal());
+        });
+    }
+
+    public function testACommaDecimalOkbPriceIsWrittenAsTheAmountItWasValidatedAs(): void
+    {
+        $this->withCatalogFixture(function (string $productNumber, string $parentId, string $categoryId, string $categoryGroupId, string $profileId, Context $context): void {
+            $progress = $this->import($profileId, $this->variantCsv($productNumber, $categoryId, $categoryGroupId, [['4260174000001', '1299,99', ['Braun']]]));
+            self::assertSame('succeeded', $progress->getState(), $this->importResult($progress));
+
+            self::assertSame(1299.99, $this->product($productNumber.'-1', $context)->getPrice()?->getCurrencyPrice(Defaults::CURRENCY, false)?->getGross());
+        });
+    }
+
+    public function testANegativeOkbPriceRejectsTheVariantInsteadOfFallingBackToTheParentPrice(): void
+    {
+        $this->withCatalogFixture(function (string $productNumber, string $parentId, string $categoryId, string $categoryGroupId, string $profileId, Context $context): void {
+            $progress = $this->import($profileId, $this->variantCsv($productNumber, $categoryId, $categoryGroupId, [['4260174000001', '1200', ['Braun']], ['4260174000002', '-5', ['Weiss']]]));
+
+            self::assertStringContainsString('4260174000002', $this->invalidRecordsCsv($progress));
+            self::assertSame('4260174000001', $this->product($productNumber.'-1', $context)->getEan());
+            self::assertSame(0, $this->productRepository()->search((new Criteria())->addFilter(new EqualsFilter('ean', '4260174000002'))->addFilter(new EqualsFilter('parentId', $parentId)), $context)->getTotal());
+        });
+    }
+
+    /** @param \Closure(string, string, string, string, string, Context): void $scenario */
+    private function withCatalogFixture(\Closure $scenario): void
+    {
+        $context = Context::createDefaultContext();
+        $suffix = bin2hex(random_bytes(5));
+        $productNumber = 'CATALOG-VARIANT-'.$suffix;
+        $parentId = Uuid::randomHex();
+        $categoryGroupId = 'group-'.$suffix;
+        $categoryId = 'category-'.$suffix;
+        $propertyGroupId = CatalogIdentity::propertyGroupId('Color '.$suffix);
+        $manualGroupId = Uuid::randomHex();
+        $manualOptionId = Uuid::randomHex();
+        $this->createFixture($parentId, $productNumber, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $manualOptionId, $context);
+        $profileId = CatalogProductImportProfile::definition()['id'];
+        $this->profileRepository()->upsert([CatalogProductImportProfile::definition()], $context);
+
+        try {
+            $scenario($productNumber, $parentId, $categoryId, $categoryGroupId, $profileId, $context);
+        } finally {
+            $this->deleteFixture($parentId, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $context);
+        }
+    }
+
+    /** @param list<array{0: string, 1: string, 2: list<string>}> $variants */
+    private function variantCsv(string $productNumber, string $categoryId, string $categoryGroupId, array $variants): string
+    {
+        $rows = [['record_type', 'product_number', 'ean', 'category_id', 'category_group_id', 'standard_price_amount', 'currency', 'attributes_json']];
+        foreach ($variants as $index => [$ean, $price, $values]) {
+            $row = [$productNumber, $ean, $categoryId, $categoryGroupId, $price, 'EUR', json_encode([['Color '.$categoryGroupId, $values]], JSON_THROW_ON_ERROR)];
+            if (0 === $index) {
+                $rows[] = ['parent', ...$row];
+            }
+            $rows[] = ['child', ...$row];
+        }
+        $stream = fopen('php://temp', 'w+b');
+        self::assertIsResource($stream);
+        foreach ($rows as $row) {
+            fputcsv($stream, $row, ';', '"', '\\');
+        }
+        rewind($stream);
+        $csv = stream_get_contents($stream);
+        fclose($stream);
+
+        return (string) $csv;
+    }
+
+    private function currencyId(string $isoCode, Context $context): string
+    {
+        $id = static::getContainer()->get('currency.repository')->searchIds((new Criteria())->addFilter(new EqualsFilter('isoCode', $isoCode)), $context)->firstId();
+        self::assertIsString($id);
+
+        return $id;
+    }
+
     /** @param list<string> $eans */
     private function familyCsv(string $productNumber, array $eans, string $categoryId, string $categoryGroupId): string
     {
