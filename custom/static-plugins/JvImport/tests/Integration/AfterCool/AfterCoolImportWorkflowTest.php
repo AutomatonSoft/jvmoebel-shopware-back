@@ -8,6 +8,8 @@ use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunEntity;
 use Jv\Import\Integration\AfterCool\AfterCoolApiClient;
 use Jv\Import\Integration\AfterCool\AfterCoolResponseNormalizer;
 use Jv\Import\Integration\AfterCool\Exception\AfterCoolApiException;
+use Jv\Import\Integration\Okb\OkbProductApiClient;
+use Jv\Import\Integration\Okb\OkbProductResponseNormalizer;
 use Jv\Import\Message\AfterCoolCatalogEnrichmentMessage;
 use Jv\Import\Message\AfterCoolImportPageMessage;
 use Jv\Import\Service\AfterCool\Import\BuildAfterCoolEnrichmentSourceCsvService;
@@ -489,6 +491,27 @@ final class AfterCoolImportWorkflowTest extends TestCase
         }
     }
 
+    public function testTheEnrichmentSourceListsOnlyTheProductsSeenInThatRun(): void
+    {
+        $context = $this->prepare([$this->item(1), $this->item(2)]);
+        $this->process($context);
+        $this->items = [$this->item(2)];
+        $runId = $this->process($context);
+        $file = sys_get_temp_dir().'/jv-aftercool-enrichment-'.bin2hex(random_bytes(6)).'.csv';
+
+        try {
+            $rows = static::getContainer()->get(BuildAfterCoolEnrichmentSourceCsvService::class)->execute($runId, $file, $context);
+
+            self::assertSame(2, $this->sourceProductCount());
+            self::assertSame(1, $rows);
+            self::assertSame("product_number;ean\n".$this->ean(2).';'.$this->ean(2)."\n", file_get_contents($file));
+        } finally {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
+    }
+
     public function testAFinishedRunQueuesExactlyOneCatalogEnrichment(): void
     {
         $context = $this->prepare([$this->item(1)]);
@@ -574,6 +597,11 @@ final class AfterCoolImportWorkflowTest extends TestCase
             ], JSON_THROW_ON_ERROR));
         });
         static::getContainer()->set(AfterCoolApiClient::class, new AfterCoolApiClient($http, new NullLogger(), new AfterCoolResponseNormalizer(), 'https://aftercool.example.test', 'test-user', 'test-password', 1.0));
+        static::getContainer()->set(OkbProductApiClient::class, new OkbProductApiClient(
+            new MockHttpClient(static fn (): MockResponse => new MockResponse('{"productVariations":[]}')),
+            new OkbProductResponseNormalizer(),
+            'https://okb.example.test',
+        ));
         $context = Context::createDefaultContext();
         static::getContainer()->get(PrepareMarketReferenceDataService::class)->execute(Market::cases(), $context);
         static::getContainer()->get(BootstrapMarketsService::class)->execute($context);
