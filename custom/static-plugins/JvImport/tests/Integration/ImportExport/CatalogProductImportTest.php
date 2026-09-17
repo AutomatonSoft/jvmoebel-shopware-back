@@ -510,6 +510,16 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
         });
     }
 
+    public function testAVariantNeverSellsBelowTheCosmoShopPriceOfItsParent(): void
+    {
+        $this->withCatalogFixture(function (string $productNumber, string $parentId, string $categoryId, string $categoryGroupId, string $profileId, Context $context): void {
+            $progress = $this->import($profileId, $this->variantCsv($productNumber, $categoryId, $categoryGroupId, [['4260174000001', '999', ['Braun']]]));
+            self::assertSame('succeeded', $progress->getState(), $this->importResult($progress));
+
+            self::assertSame(1190.0, $this->product($productNumber.'-1', $context)->getPrice()?->getCurrencyPrice(Defaults::CURRENCY, false)?->getGross());
+        });
+    }
+
     public function testANegativeOkbPriceRejectsTheVariantInsteadOfFallingBackToTheParentPrice(): void
     {
         $this->withCatalogFixture(function (string $productNumber, string $parentId, string $categoryId, string $categoryGroupId, string $profileId, Context $context): void {

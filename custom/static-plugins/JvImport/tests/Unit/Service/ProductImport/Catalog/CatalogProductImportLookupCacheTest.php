@@ -12,38 +12,21 @@ final class CatalogProductImportLookupCacheTest extends TestCase
     {
         $cache = new CatalogProductImportLookupCache(2);
         $cache->rememberParent('product-1', $this->parent('parent-1'));
-        $cache->rememberChildId('parent-1', 'ean-1', 'child-1');
         $cache->rememberParent('product-2', $this->parent('parent-2'));
-        $cache->rememberChildId('parent-2', 'ean-2', 'child-2');
         $cache->rememberParent('product-3', $this->parent('parent-3'));
-        $cache->rememberChildId('parent-3', 'ean-3', 'child-3');
 
         self::assertNull($cache->parent('product-1'));
-        self::assertNull($cache->childId('parent-1', 'ean-1'));
         self::assertSame('parent-2', $cache->parent('product-2')?->getId());
-        self::assertSame('child-3', $cache->childId('parent-3', 'ean-3'));
     }
 
     public function testItForgetsLookupsBetweenImportJobs(): void
     {
         $cache = new CatalogProductImportLookupCache();
         $cache->rememberParent('product-1', $this->parent('parent-1'));
-        $cache->rememberChildId('parent-1', 'ean-1', 'child-1');
 
         $cache->reset();
 
         self::assertNull($cache->parent('product-1'));
-        self::assertNull($cache->childId('parent-1', 'ean-1'));
-    }
-
-    public function testItKeepsSeparateChildIdsForEachEanOfTheSameParent(): void
-    {
-        $cache = new CatalogProductImportLookupCache();
-        $cache->rememberChildId('parent-1', 'ean-1', 'child-1');
-        $cache->rememberChildId('parent-1', 'ean-2', 'child-2');
-
-        self::assertSame('child-1', $cache->childId('parent-1', 'ean-1'));
-        self::assertSame('child-2', $cache->childId('parent-1', 'ean-2'));
     }
 
     private function parent(string $id): ProductEntity

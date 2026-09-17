@@ -200,18 +200,26 @@ final class PrepareOkbProductMappingServiceTest extends TestCase
                 new OkbProductApiClient($httpClient, new OkbProductResponseNormalizer(), 'https://okb.example'),
             ))->execute($directory.'/source.csv', $directory.'/snapshot', $directory.'/output', null);
 
-            $lines = array_values(array_filter(explode("\n", (string) file_get_contents($directory.'/output/okb-product-mapping.csv'))));
+            $lines = array_values(array_filter(explode("\n", (string) file_get_contents($directory.'/output/okb-product-mapping.csv')), static fn (string $line): bool => '' !== $line));
 
             return array_map(static fn (string $line): array => str_getcsv($line, ';', '"', '\\'), array_slice($lines, 1));
         } finally {
-            foreach (glob($directory.'/*/*') ?: [] as $file) {
+            foreach ($this->paths($directory.'/*/*') as $file) {
                 unlink($file);
             }
-            foreach (glob($directory.'/*') ?: [] as $path) {
+            foreach ($this->paths($directory.'/*') as $path) {
                 is_dir($path) ? rmdir($path) : unlink($path);
             }
             rmdir($directory);
         }
+    }
+
+    /** @return list<string> */
+    private function paths(string $pattern): array
+    {
+        $paths = glob($pattern);
+
+        return false === $paths ? [] : $paths;
     }
 
     /** @return array<string, mixed> */
