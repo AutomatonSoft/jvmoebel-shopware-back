@@ -4,47 +4,22 @@ namespace Jv\Import\Service\ProductImport\Catalog;
 
 use Jv\Import\Integration\CosmoShop\Profile\MarketImportProfile;
 use Jv\Import\Integration\Csv\SemicolonCsvReader;
-use Jv\Import\Integration\Okb\Service\PrepareOkbProductMappingService;
 use League\Flysystem\FilesystemOperator;
-use Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogCollection;
 use Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogEntity;
-use Shopware\Core\Content\ImportExport\ImportExportProfileEntity;
 use Shopware\Core\Content\ImportExport\Service\ImportExportService;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Symfony\Component\Lock\LockFactory;
-use Symfony\Component\Messenger\MessageBusInterface;
 
 final readonly class EnrichCosmoShopImportService
 {
-    private QueueCatalogEnrichmentImportService $queue;
-
-    /**
-     * @param EntityRepository<EntityCollection<ImportExportProfileEntity>> $profileRepository
-     * @param EntityRepository<ImportExportLogCollection>                   $logRepository
-     */
     public function __construct(
         private ImportExportService $importExportService,
         private FilesystemOperator $privateFilesystem,
         private SemicolonCsvReader $csvReader,
-        PrepareOkbProductMappingService $mappingService,
-        PrepareCatalogShopwareImportCsvService $csvService,
-        EntityRepository $profileRepository,
-        EntityRepository $logRepository,
-        MessageBusInterface $messageBus,
+        private QueueCatalogEnrichmentImportService $queue,
         private LockFactory $lockFactory,
         private string $projectDir,
     ) {
-        $this->queue = new QueueCatalogEnrichmentImportService(
-            $mappingService,
-            $csvService,
-            $importExportService,
-            $profileRepository,
-            $logRepository,
-            $messageBus,
-            $projectDir,
-        );
     }
 
     public function execute(string $sourceImportLogId, Context $context): void
