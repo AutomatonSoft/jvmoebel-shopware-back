@@ -24,7 +24,7 @@ final readonly class EnrichAfterCoolImportService
             return;
         }
         try {
-            if ($this->queue->isQueued(CatalogEnrichmentSource::AfterCool, $runId, $context)) {
+            if ($this->queue->handleAlreadyQueued(CatalogEnrichmentSource::AfterCool, $runId, $context)) {
                 return;
             }
             $this->enrich($runId, $context, static fn () => $lock->refresh(7200.0));

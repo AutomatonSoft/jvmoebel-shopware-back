@@ -29,7 +29,7 @@ final readonly class EnrichCosmoShopImportService
             return;
         }
         try {
-            if ($this->queue->isQueued(CatalogEnrichmentSource::CosmoShop, $sourceImportLogId, $context)) {
+            if ($this->queue->handleAlreadyQueued(CatalogEnrichmentSource::CosmoShop, $sourceImportLogId, $context)) {
                 return;
             }
             $this->enrich($sourceImportLogId, $context, static fn () => $lock->refresh(7200.0));

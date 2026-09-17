@@ -5,6 +5,7 @@ namespace Jv\Import\Service\ProductImport\Catalog;
 use Jv\Import\Integration\Okb\Profile\CatalogProductImportProfile;
 use Jv\Import\Integration\Okb\Service\PrepareOkbProductMappingService;
 use Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogCollection;
+use Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogEntity;
 use Shopware\Core\Content\ImportExport\ImportExportProfileEntity;
 use Shopware\Core\Content\ImportExport\Message\ImportExportMessage;
 use Shopware\Core\Content\ImportExport\Service\ImportExportService;
@@ -18,6 +19,8 @@ use Symfony\Component\Messenger\MessageBusInterface;
 
 final readonly class QueueCatalogEnrichmentImportService
 {
+    private const string DISPATCHED_PARAMETER = 'jvCatalogEnrichmentDispatched';
+
     /**
      * @param EntityRepository<EntityCollection<ImportExportProfileEntity>> $profileRepository
      * @param EntityRepository<ImportExportLogCollection>                   $logRepository
@@ -63,15 +66,57 @@ final readonly class QueueCatalogEnrichmentImportService
 
             throw $exception;
         }
+        $this->markDispatched($catalogLog, $source, $sourceKey, $context);
     }
 
-    public function isQueued(CatalogEnrichmentSource $source, string $sourceKey, Context $context): bool
+    public function handleAlreadyQueued(CatalogEnrichmentSource $source, string $sourceKey, Context $context): bool
+    {
+        if ($this->isDispatched($source, $sourceKey, $context)) {
+            return true;
+        }
+
+        $stranded = $this->findStrandedLog($source, $sourceKey, $context);
+        if (null === $stranded) {
+            return false;
+        }
+
+        $this->messageBus->dispatch(new ImportExportMessage($context, $stranded->getId(), $stranded->getActivity()));
+        $this->markDispatched($stranded, $source, $sourceKey, $context);
+
+        return true;
+    }
+
+    private function isDispatched(CatalogEnrichmentSource $source, string $sourceKey, Context $context): bool
+    {
+        $criteria = (new Criteria())
+            ->addFilter(new EqualsFilter('profileId', CatalogProductImportProfile::definition()['id']))
+            ->addFilter(new EqualsFilter('config.parameters.'.$source->value, $sourceKey))
+            ->addFilter(new EqualsFilter('config.parameters.'.self::DISPATCHED_PARAMETER, 'true'))
+            ->setLimit(1);
+
+        return null !== $this->logRepository->searchIds($criteria, $context)->firstId();
+    }
+
+    private function findStrandedLog(CatalogEnrichmentSource $source, string $sourceKey, Context $context): ?ImportExportLogEntity
     {
         $criteria = (new Criteria())
             ->addFilter(new EqualsFilter('profileId', CatalogProductImportProfile::definition()['id']))
             ->addFilter(new EqualsFilter('config.parameters.'.$source->value, $sourceKey))
             ->setLimit(1);
 
-        return null !== $this->logRepository->searchIds($criteria, $context)->firstId();
+        $log = $this->logRepository->search($criteria, $context)->first();
+
+        return $log instanceof ImportExportLogEntity ? $log : null;
+    }
+
+    private function markDispatched(ImportExportLogEntity $log, CatalogEnrichmentSource $source, string $sourceKey, Context $context): void
+    {
+        $config = $log->getConfig();
+        $parameters = \is_array($config['parameters'] ?? null) ? $config['parameters'] : [];
+        $parameters[$source->value] = $sourceKey;
+        $parameters[self::DISPATCHED_PARAMETER] = true;
+        $config['parameters'] = $parameters;
+
+        $this->logRepository->update([['id' => $log->getId(), 'config' => $config]], $context);
     }
 }
