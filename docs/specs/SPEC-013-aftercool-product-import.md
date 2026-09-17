@@ -376,8 +376,8 @@ Sync одной успешно записанной части, source links и 
 id, account, dataset, factory_id, factory_name,
 status, total, next_offset,
 processed, created, updated, skipped, failed,
-active_factory_key, started_at, finished_at, created_at, updated_at,
-safe_failure_code, safe_failure_message
+active_factory_key, started_at, finished_at, enrichment_queued_at,
+created_at, updated_at, safe_failure_code, safe_failure_message
 ```
 
 Статусы:
@@ -394,6 +394,9 @@ queued → running → completed
 защищён коротким Symfony Lock; обработка страницы — lock выбранного run.
 
 `jv_aftercool_product_source` хранит source identity и Shopware product ID.
+`jv_aftercool_import_run_product` хранит товары, записанные конкретным прогоном:
+`run_id`, Shopware product ID, `product_number` и EAN источника, по одной строке
+на товар прогона.
 `jv_aftercool_import_error` хранит только безопасные поля:
 
 ```text
@@ -420,8 +423,22 @@ offset, row_no, result, code, message, created_at
 иначе обогащение может начаться раньше, чем станут видимы записанные товары.
 `failed` прогон обогащение не ставит.
 
-Источником строк служат товары, связанные с этим прогоном: Shopware
-`productNumber` и `source_ean` из source link, в порядке `productNumber`.
+Прогон хранит момент постановки обогащения `enrichment_queued_at`. Он
+записывается только после успешной отправки сообщения. Если отправка не
+удалась, Messenger повторяет сообщение последней страницы; обработка страницы
+для прогона `completed` или `completed_with_errors` без `enrichment_queued_at`
+ставит обогащение и записывает этот момент. Прогон с заполненным
+`enrichment_queued_at` обогащение повторно не ставит.
+
+Каждый товар, успешно записанный прогоном, фиксируется в
+`jv_aftercool_import_run_product` в той же транзакции checkpoint вместе с его
+`productNumber` и EAN источника. Источником строк обогащения служит именно этот
+список прогона, а не время `last_seen_at` source link: более поздний прогон той
+же фабрики не добавляет товары в обогащение более раннего, а повтор товара в
+более позднем прогоне не убирает его из раннего. Список читается пакетами в
+устойчивом порядке `productNumber`, и строки CSV пишутся по мере чтения: все
+товары прогона одновременно в память не загружаются, ни одна строка не
+пропускается и не повторяется на границе пакета.
 Строки не фильтруются по EAN: непригодный EAN распознаёт стадия маппинга по
 SPEC-012 и относит строку в failures, поэтому вторая такая проверка здесь не
 нужна.
