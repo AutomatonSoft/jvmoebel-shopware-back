@@ -23,10 +23,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Messenger\MessageBusInterface;
 
-/**
- * Owns one idempotent Aftercool page checkpoint. Upstream access and mapping
- * remain in Integration; this class only applies the import use case.
- */
 readonly class ImportAfterCoolPageService
 {
     /**
