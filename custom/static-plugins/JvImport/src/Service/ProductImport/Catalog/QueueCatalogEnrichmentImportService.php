@@ -3,7 +3,7 @@
 namespace Jv\Import\Service\ProductImport\Catalog;
 
 use Jv\Import\Integration\Okb\Profile\CatalogProductImportProfile;
-use Jv\Import\Integration\Okb\Service\PrepareOkbProductMappingService;
+use Jv\Import\Service\ProductImport\Catalog\Contract\CatalogProductMappingPreparerInterface;
 use Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogCollection;
 use Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogEntity;
 use Shopware\Core\Content\ImportExport\ImportExportProfileEntity;
@@ -26,7 +26,7 @@ final readonly class QueueCatalogEnrichmentImportService
      * @param EntityRepository<ImportExportLogCollection>                   $logRepository
      */
     public function __construct(
-        private PrepareOkbProductMappingService $mappingService,
+        private CatalogProductMappingPreparerInterface $mappingService,
         private PrepareCatalogShopwareImportCsvService $csvService,
         private ImportExportService $importExportService,
         private EntityRepository $profileRepository,

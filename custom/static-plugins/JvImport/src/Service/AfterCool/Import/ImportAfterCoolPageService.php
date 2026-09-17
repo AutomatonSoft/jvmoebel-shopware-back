@@ -58,6 +58,7 @@ readonly class ImportAfterCoolPageService
     {
         $run = $this->loadRun($runId, $context);
         if (in_array($run->getStatus(), ['completed', 'completed_with_errors', 'failed'], true)) {
+            $this->queueEnrichmentIfNeeded($run, $context);
             $this->stagedMediaProcessor->process($runId, $offset, $context);
 
             return AfterCoolPageProcessingResult::completed();
@@ -127,7 +128,7 @@ readonly class ImportAfterCoolPageService
         $this->checkpoint->checkpoint($run, $offset, $page->total, $page->hasMore, $records, $products, $issues, $context);
 
         if (!$page->hasMore) {
-            $this->messageBus->dispatch(new AfterCoolCatalogEnrichmentMessage($runId));
+            $this->queueEnrichmentIfNeeded($this->loadRun($runId, $context), $context);
         }
 
         $this->stagedMediaProcessor->process($runId, $offset, $context);
@@ -143,5 +144,18 @@ readonly class ImportAfterCoolPageService
         }
 
         return $run;
+    }
+
+    private function queueEnrichmentIfNeeded(AfterCoolImportRunEntity $run, Context $context): void
+    {
+        if (!in_array($run->getStatus(), ['completed', 'completed_with_errors'], true) || null !== $run->getEnrichmentQueuedAt()) {
+            return;
+        }
+
+        $this->messageBus->dispatch(new AfterCoolCatalogEnrichmentMessage($run->getId()));
+        $this->runRepository->update([[
+            'id' => $run->getId(),
+            'enrichmentQueuedAt' => new \DateTimeImmutable(),
+        ]], $context);
     }
 }

@@ -79,6 +79,9 @@
         <service id="Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunDefinition">
             <tag name="shopware.entity.definition" entity="jv_aftercool_import_run"/>
         </service>
+        <service id="Jv\Import\Core\Content\AfterCoolImportRunProduct\AfterCoolImportRunProductDefinition">
+            <tag name="shopware.entity.definition" entity="jv_aftercool_import_run_product"/>
+        </service>
         <service id="Jv\Import\Core\Content\AfterCoolProductSource\AfterCoolProductSourceDefinition">
             <tag name="shopware.entity.definition" entity="jv_aftercool_product_source"/>
         </service>
@@ -128,6 +131,7 @@
             <argument type="service" id="Jv\Import\Service\AfterCool\Persistence\AfterCoolMediaStageStore"/>
             <argument type="service" id="jv_aftercool_import_run.repository"/>
             <argument type="service" id="jv_aftercool_product_source.repository"/>
+            <argument type="service" id="jv_aftercool_import_run_product.repository"/>
             <argument type="service" id="jv_aftercool_import_error.repository"/>
             <argument type="service" id="Doctrine\DBAL\Connection"/>
         </service>
@@ -154,8 +158,7 @@
         <service id="Jv\Import\MessageHandler\AfterCoolImportPageMessageHandler"/>
         <service id="Jv\Import\Service\AfterCool\Import\BuildAfterCoolEnrichmentSourceCsvService">
             <argument type="service" id="jv_aftercool_import_run.repository"/>
-            <argument type="service" id="jv_aftercool_product_source.repository"/>
-            <argument type="service" id="product.repository"/>
+            <argument type="service" id="jv_aftercool_import_run_product.repository"/>
         </service>
         <service id="Jv\Import\Service\AfterCool\Import\EnrichAfterCoolImportService">
             <argument type="service" id="Jv\Import\Service\AfterCool\Import\BuildAfterCoolEnrichmentSourceCsvService"/>
@@ -334,7 +337,7 @@
             <argument key="$projectDir">%kernel.project_dir%</argument>
         </service>
         <service id="Jv\Import\Service\ProductImport\Catalog\QueueCatalogEnrichmentImportService">
-            <argument type="service" id="Jv\Import\Integration\Okb\Service\PrepareOkbProductMappingService"/>
+            <argument type="service" id="Jv\Import\Service\ProductImport\Catalog\Contract\CatalogProductMappingPreparerInterface"/>
             <argument type="service" id="Jv\Import\Service\ProductImport\Catalog\PrepareCatalogShopwareImportCsvService"/>
             <argument type="service" id="Shopware\Core\Content\ImportExport\Service\ImportExportService"/>
             <argument type="service" id="import_export_profile.repository"/>
@@ -368,6 +371,7 @@
             <argument type="service" id="Jv\Import\Integration\Okb\OkbProductApiClient"/>
             <argument type="service" id="Jv\Import\Service\ProductImport\Catalog\CatalogVariantFamilyPlanner"/>
         </service>
+        <service id="Jv\Import\Service\ProductImport\Catalog\Contract\CatalogProductMappingPreparerInterface" alias="Jv\Import\Integration\Okb\Service\PrepareOkbProductMappingService"/>
 
         <service id="Jv\Import\Integration\CosmoShop\Reader\CosmoShopCsvPreflightReaderFactory">
             <argument key="$environment">%kernel.environment%</argument>

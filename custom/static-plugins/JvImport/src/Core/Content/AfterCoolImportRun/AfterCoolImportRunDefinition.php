@@ -49,6 +49,7 @@ final class AfterCoolImportRunDefinition extends EntityDefinition
             new StringField('active_factory_key', 'activeFactoryKey'),
             new DateTimeField('started_at', 'startedAt'),
             new DateTimeField('finished_at', 'finishedAt'),
+            new DateTimeField('enrichment_queued_at', 'enrichmentQueuedAt'),
             new StringField('safe_failure_code', 'safeFailureCode'),
             new StringField('safe_failure_message', 'safeFailureMessage'),
         ]);
