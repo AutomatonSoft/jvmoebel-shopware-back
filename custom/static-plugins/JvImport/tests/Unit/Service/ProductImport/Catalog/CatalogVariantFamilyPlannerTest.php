@@ -139,6 +139,34 @@ final class CatalogVariantFamilyPlannerTest extends TestCase
         self::assertSame(['4260000000001=1', '4260000000003=2'], $this->positionsByEan($plan));
     }
 
+    public function testAxisValuesListedInAnotherOrderAreTheSameCombination(): void
+    {
+        $plan = (new CatalogVariantFamilyPlanner())->plan(
+            [
+                new OkbProductVariation('4260000000001', '4260000000001', '4260000000000', 'Ecksofa', 199.0, 'EUR', [new OkbProductAttribute('Farbe', ['Beige', 'Braun'])]),
+                new OkbProductVariation('4260000000002', '4260000000002', '4260000000000', 'Ecksofa', 199.0, 'EUR', [new OkbProductAttribute('Farbe', ['Braun', 'Beige'])]),
+            ],
+            '4260000000009',
+            ['Farbe'],
+        );
+
+        self::assertCount(1, $plan);
+    }
+
+    public function testAnAxisValueContainingTheSeparatorIsNotMistakenForTwoValues(): void
+    {
+        $plan = (new CatalogVariantFamilyPlanner())->plan(
+            [
+                new OkbProductVariation('4260000000001', '4260000000001', '4260000000000', 'Ecksofa', 199.0, 'EUR', [new OkbProductAttribute('Farbe', ['Beige|Braun'])]),
+                new OkbProductVariation('4260000000002', '4260000000002', '4260000000000', 'Ecksofa', 199.0, 'EUR', [new OkbProductAttribute('Farbe', ['Beige', 'Braun'])]),
+            ],
+            '4260000000009',
+            ['Farbe'],
+        );
+
+        self::assertCount(2, $plan);
+    }
+
     /**
      * @param list<PlannedCatalogVariant> $plan
      *

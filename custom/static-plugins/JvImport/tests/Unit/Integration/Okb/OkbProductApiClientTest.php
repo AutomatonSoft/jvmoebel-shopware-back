@@ -84,6 +84,27 @@ final class OkbProductApiClientTest extends TestCase
         self::assertCount(201, $family);
     }
 
+    public function testAFamilyWhosePagesDoNotAdvanceIsRejectedInsteadOfLoopingForever(): void
+    {
+        $page = array_map(fn (int $i): array => $this->payload(sprintf('42604540%05d', $i)), range(1, 200));
+        $httpClient = $this->createMock(HttpClientInterface::class);
+        $requests = 0;
+        $httpClient->method('request')->willReturnCallback(function () use ($page, &$requests): ResponseInterface {
+            if (++$requests > 50) {
+                self::fail('The family lookup kept requesting pages that never advance.');
+            }
+            $response = $this->createMock(ResponseInterface::class);
+            $response->method('getStatusCode')->willReturn(200);
+            $response->method('toArray')->willReturn(['productVariations' => $page]);
+
+            return $response;
+        });
+
+        $this->expectException(\RuntimeException::class);
+
+        (new OkbProductApiClient($httpClient, new OkbProductResponseNormalizer(), 'https://okb.example'))->findFamily('4260454042902');
+    }
+
     public function testAnEmptyFamilyIsNotAnError(): void
     {
         $response = $this->createMock(ResponseInterface::class);

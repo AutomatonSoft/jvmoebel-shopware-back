@@ -110,4 +110,36 @@ final class OkbProductResponseNormalizerTest extends TestCase
             $this->familyPayload('4260454043504'),
         ]]);
     }
+
+    public function testAnMsrpInAnotherCurrencyIsNotTakenAsTheSuggestedRetailPrice(): void
+    {
+        $variation = (new OkbProductResponseNormalizer())->normalize('4260454042902', ['productVariations' => [[
+            'productReference' => '4260454042902',
+            'sku' => '4260454042902',
+            'ean' => '4260454042902',
+            'productDescription' => ['category' => 'Sofas', 'attributes' => []],
+            'pricing' => [
+                'standardPrice' => ['amount' => 1959, 'currency' => 'EUR'],
+                'msrp' => ['amount' => 2999, 'currency' => 'GBP'],
+            ],
+        ]]]);
+
+        self::assertNull($variation->suggestedRetailPriceAmount);
+    }
+
+    public function testAnMsrpInTheStandardPriceCurrencyIsTheSuggestedRetailPrice(): void
+    {
+        $variation = (new OkbProductResponseNormalizer())->normalize('4260454042902', ['productVariations' => [[
+            'productReference' => '4260454042902',
+            'sku' => '4260454042902',
+            'ean' => '4260454042902',
+            'productDescription' => ['category' => 'Sofas', 'attributes' => []],
+            'pricing' => [
+                'standardPrice' => ['amount' => 1959, 'currency' => 'EUR'],
+                'msrp' => ['amount' => 2999, 'currency' => 'EUR'],
+            ],
+        ]]]);
+
+        self::assertSame(2999.0, $variation->suggestedRetailPriceAmount);
+    }
 }
