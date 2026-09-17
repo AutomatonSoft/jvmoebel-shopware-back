@@ -10,13 +10,21 @@ use Jv\Import\Integration\AfterCool\AfterCoolResponseNormalizer;
 use Jv\Import\Integration\AfterCool\Exception\AfterCoolApiException;
 use Jv\Import\Integration\Okb\OkbProductApiClient;
 use Jv\Import\Integration\Okb\OkbProductResponseNormalizer;
+use Jv\Import\Integration\Okb\Profile\CatalogProductImportProfile;
 use Jv\Import\Message\AfterCoolCatalogEnrichmentMessage;
 use Jv\Import\Message\AfterCoolImportPageMessage;
+use Jv\Import\Service\AfterCool\Contract\AfterCoolImportProductSourceInterface;
 use Jv\Import\Service\AfterCool\Import\BuildAfterCoolEnrichmentSourceCsvService;
+use Jv\Import\Service\AfterCool\Import\BuildAfterCoolShopwareProductRecordService;
+use Jv\Import\Service\AfterCool\Import\EnrichAfterCoolImportService;
 use Jv\Import\Service\AfterCool\Import\ImportAfterCoolPageService;
+use Jv\Import\Service\AfterCool\Import\ResolveAfterCoolProductPageService;
 use Jv\Import\Service\AfterCool\Media\LinkAfterCoolExternalMediaService;
+use Jv\Import\Service\AfterCool\Media\ProcessAfterCoolStagedMediaService;
 use Jv\Import\Service\AfterCool\Persistence\AfterCoolImportRunStore;
 use Jv\Import\Service\AfterCool\Persistence\AfterCoolMediaStageStore;
+use Jv\Import\Service\AfterCool\Persistence\AfterCoolPageCheckpointService;
+use Jv\Import\Service\Catalog\CatalogIdentity;
 use Jv\Import\Service\ProductImport\ProductImportIdentity;
 use Jv\Import\Service\ProductImport\ResolveDefaultProductTaxService;
 use Jv\MarketConfiguration\Service\MarketConfiguration\BootstrapMarketsService;
@@ -26,6 +34,7 @@ use PHPUnit\Framework\Attributes\AfterClass;
 use PHPUnit\Framework\Attributes\Before;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
+use Shopware\Core\Content\ImportExport\ImportExportFactory;
 use Shopware\Core\Content\Media\MediaCollection;
 use Shopware\Core\Content\Media\Upload\MediaUploadService;
 use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
@@ -35,6 +44,7 @@ use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Test\TestCaseBase\AdminApiTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
@@ -44,6 +54,7 @@ use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Symfony\Component\Messenger\Bridge\Redis\Transport\Connection as RedisConnection;
 use Symfony\Component\Messenger\Bridge\Redis\Transport\RedisTransport;
+use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Event\WorkerMessageHandledEvent;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Worker;
@@ -64,6 +75,9 @@ final class AfterCoolImportWorkflowTest extends TestCase
     private array $linkedProductRequests = [];
 
     private int $productHttpStatus = 200;
+
+    /** @var \Closure(array<string, mixed>): list<array<string, mixed>>|null */
+    private ?\Closure $okbVariations = null;
 
     #[Before(100)]
     public function bootIsolatedServiceContainer(): void
@@ -512,6 +526,142 @@ final class AfterCoolImportWorkflowTest extends TestCase
         }
     }
 
+    public function testAnEnrichmentWhoseDispatchFailedIsQueuedWhenThePageIsRetried(): void
+    {
+        $context = $this->prepare([$this->item(1)]);
+        $transport = $this->resetTestTransport();
+        $bus = static::getContainer()->get('messenger.bus.default');
+        self::assertInstanceOf(MessageBusInterface::class, $bus);
+        $container = static::getContainer();
+        $pages = new ImportAfterCoolPageService(
+            $container->get(AfterCoolImportProductSourceInterface::class),
+            $container->get(ResolveAfterCoolProductPageService::class),
+            $container->get(BuildAfterCoolShopwareProductRecordService::class),
+            $container->get(AfterCoolPageCheckpointService::class),
+            $container->get(ProcessAfterCoolStagedMediaService::class),
+            $container->get(ResolveDefaultProductTaxService::class),
+            $container->get('jv_aftercool_import_run.repository'),
+            $container->get('lock.factory'),
+            new class($bus) implements MessageBusInterface {
+                private bool $failed = false;
+
+                public function __construct(private readonly MessageBusInterface $inner)
+                {
+                }
+
+                public function dispatch(object $message, array $stamps = []): Envelope
+                {
+                    if (!$this->failed && $message instanceof AfterCoolCatalogEnrichmentMessage) {
+                        $this->failed = true;
+
+                        throw new \RuntimeException('Redis is unavailable.');
+                    }
+
+                    return $this->inner->dispatch($message, $stamps);
+                }
+            },
+        );
+        $runId = $container->get(AfterCoolImportRunStore::class)->createQueued(self::FACTORY_ID, 'Workflow factory', 'JV:lister:'.self::FACTORY_ID, $context);
+
+        try {
+            $pages->process($runId, 0, $context);
+            self::fail('The first enrichment dispatch must fail.');
+        } catch (\RuntimeException $exception) {
+            self::assertSame('Redis is unavailable.', $exception->getMessage());
+        }
+        self::assertSame([], $this->queuedEnrichments($transport));
+
+        $pages->process($runId, 0, $context);
+        $queued = $this->queuedEnrichments($transport);
+        self::assertCount(1, $queued);
+        self::assertSame($runId, $queued[0]->runId);
+
+        $pages->process($runId, 0, $context);
+        self::assertSame([], $this->queuedEnrichments($transport));
+    }
+
+    public function testAnEarlierRunsEnrichmentListsOnlyItsOwnProductsAfterALaterRunFinished(): void
+    {
+        $context = $this->prepare([$this->item(1), $this->item(3)]);
+        $earlierRunId = $this->process($context);
+        $this->items = [$this->item(2), $this->item(3)];
+        $laterRunId = $this->process($context);
+
+        self::assertSame([$this->ean(1), $this->ean(3)], $this->enrichmentSourceEans($earlierRunId, $context));
+        self::assertSame([$this->ean(2), $this->ean(3)], $this->enrichmentSourceEans($laterRunId, $context));
+    }
+
+    public function testTheEnrichmentSourceOfALargeRunListsEveryProductOnce(): void
+    {
+        $context = $this->prepare(array_map($this->item(...), range(1, 101)));
+        $runId = $this->process($context);
+        while (true) {
+            $run = $this->loadRun($runId, $context);
+            if (!in_array($run->getStatus(), ['queued', 'running'], true)) {
+                break;
+            }
+            static::getContainer()->get(ImportAfterCoolPageService::class)->process($runId, $run->getNextOffset(), $context);
+        }
+
+        $expected = array_map($this->ean(...), range(1, 101));
+        sort($expected);
+        self::assertSame($expected, $this->enrichmentSourceEans($runId, $context));
+    }
+
+    public function testAFinishedRunIsEnrichedThroughOkbIntoACategorisedActiveProductWithVariants(): void
+    {
+        $sourceEan = $this->ean(1);
+        $siblingEan = $this->ean(900);
+        $this->okbVariations = static function (array $options) use ($sourceEan, $siblingEan): array {
+            $variation = static fn (string $ean, string $color): array => [
+                'productReference' => 'WORKFLOW-OKB-FAMILY',
+                'sku' => $ean,
+                'ean' => $ean,
+                'productDescription' => ['category' => '3D-Brille', 'attributes' => [['name' => 'Farbe', 'values' => [$color]]]],
+                'pricing' => ['standardPrice' => ['amount' => 119, 'currency' => 'EUR']],
+            ];
+
+            return isset($options['query']['sku'])
+                ? [$variation($sourceEan, 'Braun')]
+                : [$variation($sourceEan, 'Braun'), $variation($siblingEan, 'Weiss')];
+        };
+        $context = $this->prepare([$this->item(1)]);
+        $this->resetTestTransport();
+        $this->createOkbCatalogFixture('1951', '14423', '95650', 'Farbe', $context);
+        $runId = $this->process($context);
+        $productId = ProductImportIdentity::fromProductNumber($sourceEan);
+        self::assertFalse($this->product($productId, $context)->getActive());
+
+        static::getContainer()->get(EnrichAfterCoolImportService::class)->execute($runId, $context);
+
+        $logId = static::getContainer()->get('import_export_log.repository')->searchIds((new Criteria())
+            ->addFilter(new EqualsFilter('profileId', CatalogProductImportProfile::definition()['id']))
+            ->addFilter(new EqualsFilter('config.parameters.jvCatalogEnrichmentAfterCoolRunId', $runId)), $context)->firstId();
+        self::assertIsString($logId);
+        $factory = static::getContainer()->get(ImportExportFactory::class);
+        $offset = 0;
+        do {
+            static::getContainer()->get('services_resetter')->reset();
+            $progress = $factory->create($logId, 50, 50)->import($context, $offset);
+            $offset = $progress->getOffset();
+        } while (!$progress->isFinished());
+        self::assertSame('succeeded', $progress->getState());
+
+        $parent = $this->products()->search((new Criteria([$productId]))->addAssociation('categories')->addAssociation('children'), $context)->first();
+        self::assertInstanceOf(ProductEntity::class, $parent);
+        self::assertTrue($parent->getActive());
+        self::assertContains(CatalogIdentity::categoryId('okb', '14423'), $parent->getCategories()?->getIds() ?? []);
+        $children = array_values($parent->getChildren()?->getElements() ?? []);
+        $childEans = array_map(static fn (ProductEntity $child): ?string => $child->getEan(), $children);
+        sort($childEans);
+        $expectedEans = [$sourceEan, $siblingEan];
+        sort($expectedEans);
+        self::assertSame($expectedEans, $childEans);
+        $childNumbers = array_map(static fn (ProductEntity $child): string => $child->getProductNumber(), $children);
+        sort($childNumbers);
+        self::assertSame([$sourceEan.'-1', $sourceEan.'-2'], $childNumbers);
+    }
+
     public function testAFinishedRunQueuesExactlyOneCatalogEnrichment(): void
     {
         $context = $this->prepare([$this->item(1)]);
@@ -526,6 +676,51 @@ final class AfterCoolImportWorkflowTest extends TestCase
         static::getContainer()->get(ImportAfterCoolPageService::class)->process($runId, 0, $context);
 
         self::assertSame([], $this->queuedEnrichments($transport));
+    }
+
+    /** @return list<string> */
+    private function enrichmentSourceEans(string $runId, Context $context): array
+    {
+        $file = sys_get_temp_dir().'/jv-aftercool-enrichment-'.bin2hex(random_bytes(6)).'.csv';
+
+        try {
+            static::getContainer()->get(BuildAfterCoolEnrichmentSourceCsvService::class)->execute($runId, $file, $context);
+            $lines = array_values(array_filter(explode("\n", (string) file_get_contents($file)), static fn (string $line): bool => '' !== $line));
+
+            return array_map(static fn (string $line): string => str_getcsv($line, ';', '"', '\\')[1], array_slice($lines, 1));
+        } finally {
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
+    }
+
+    private function createOkbCatalogFixture(string $categoryGroupId, string $categoryId, string $attributeId, string $attributeName, Context $context): void
+    {
+        $propertyGroupId = CatalogIdentity::propertyGroupId($attributeName);
+        static::getContainer()->get('category.repository')->upsert([
+            ['id' => CatalogIdentity::categoryGroupId('okb', $categoryGroupId), 'name' => 'OKB group '.$categoryGroupId, 'type' => 'page', 'active' => true],
+            ['id' => CatalogIdentity::categoryId('okb', $categoryId), 'parentId' => CatalogIdentity::categoryGroupId('okb', $categoryGroupId), 'name' => 'OKB category '.$categoryId, 'type' => 'page', 'active' => true],
+        ], $context);
+        static::getContainer()->get('property_group.repository')->upsert([
+            ['id' => $propertyGroupId, 'name' => $attributeName, 'displayType' => 'text'],
+        ], $context);
+        static::getContainer()->get('jv_catalog_category_attribute.repository')->upsert([[
+            'id' => Uuid::randomHex(),
+            'sourceCode' => 'okb',
+            'categoryGroupId' => $categoryGroupId,
+            'categoryId' => CatalogIdentity::categoryGroupId('okb', $categoryGroupId),
+            'categoryVersionId' => Defaults::LIVE_VERSION,
+            'attributeId' => $attributeId,
+            'attributeName' => $attributeName,
+            'attributeType' => 'STRING',
+            'featureRelevance' => 'VARIATION_THEME',
+            'multiValue' => false,
+            'active' => true,
+            'enabled' => true,
+            'storage' => 'property',
+            'propertyGroupId' => $propertyGroupId,
+        ]], $context);
     }
 
     /** @return list<AfterCoolCatalogEnrichmentMessage> */
@@ -598,7 +793,7 @@ final class AfterCoolImportWorkflowTest extends TestCase
         });
         static::getContainer()->set(AfterCoolApiClient::class, new AfterCoolApiClient($http, new NullLogger(), new AfterCoolResponseNormalizer(), 'https://aftercool.example.test', 'test-user', 'test-password', 1.0));
         static::getContainer()->set(OkbProductApiClient::class, new OkbProductApiClient(
-            new MockHttpClient(static fn (): MockResponse => new MockResponse('{"productVariations":[]}')),
+            new MockHttpClient(fn (string $method, string $url, array $options): MockResponse => new MockResponse(json_encode(['productVariations' => null === $this->okbVariations ? [] : ($this->okbVariations)($options)], JSON_THROW_ON_ERROR))),
             new OkbProductResponseNormalizer(),
             'https://okb.example.test',
         ));
