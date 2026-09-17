@@ -11,7 +11,10 @@ final class OkbProductResponseNormalizer
     public function normalize(string $requestedEan, array $response): OkbProductVariation
     {
         $variations = $response['productVariations'] ?? null;
-        if (!is_array($variations) || 1 !== count($variations) || !is_array($variations[0])) {
+        if (!is_array($variations) || [] === $variations) {
+            throw new \InvalidArgumentException(sprintf('OKB has no product for EAN "%s".', $requestedEan));
+        }
+        if (1 !== count($variations) || !is_array($variations[0])) {
             throw new \InvalidArgumentException(sprintf('OKB must return exactly one productVariation for EAN "%s".', $requestedEan));
         }
         /** @var array<string, mixed> $variation */
@@ -21,23 +24,67 @@ final class OkbProductResponseNormalizer
         if ($requestedEan !== $sku || $requestedEan !== $ean) {
             throw new \InvalidArgumentException(sprintf('OKB productVariation for EAN "%s" returned a different SKU or EAN.', $requestedEan));
         }
+
+        return $this->variation($variation, $requestedEan);
+    }
+
+    /** @param array<string, mixed> $response
+     * @return list<OkbProductVariation>
+     */
+    public function normalizeFamily(array $response): array
+    {
+        $variations = $response['productVariations'] ?? null;
+        if (!is_array($variations)) {
+            throw new \InvalidArgumentException('OKB family response has no productVariations.');
+        }
+
+        $family = [];
+        foreach ($variations as $variation) {
+            if (!is_array($variation)) {
+                throw new \InvalidArgumentException('OKB family response has an invalid productVariation.');
+            }
+            $ean = $this->requiredString($variation, 'ean', 'family');
+            $family[] = $this->variation($variation, $ean);
+        }
+
+        return $family;
+    }
+
+    /** @param array<string, mixed> $variation */
+    private function variation(array $variation, string $requestedEan): OkbProductVariation
+    {
+        $sku = $this->requiredString($variation, 'sku', $requestedEan);
+        $ean = $this->requiredString($variation, 'ean', $requestedEan);
+        $productReference = $this->requiredString($variation, 'productReference', $requestedEan);
         $description = $variation['productDescription'] ?? null;
         if (!is_array($description)) {
             throw new \InvalidArgumentException(sprintf('OKB productVariation for EAN "%s" has no productDescription.', $requestedEan));
         }
-        $pricing = $variation['pricing'] ?? [];
-        $standardPrice = is_array($pricing) ? ($pricing['standardPrice'] ?? null) : null;
+        $rawPricing = $variation['pricing'] ?? [];
+        $pricing = is_array($rawPricing) ? $rawPricing : [];
+        $standardPrice = $pricing['standardPrice'] ?? null;
         if (null !== $standardPrice && !is_array($standardPrice)) {
             throw new \InvalidArgumentException(sprintf('OKB productVariation for EAN "%s" has invalid standardPrice.', $requestedEan));
         }
+        $msrp = $pricing['msrp'] ?? null;
+        if (null !== $msrp && !is_array($msrp)) {
+            throw new \InvalidArgumentException(sprintf('OKB productVariation for EAN "%s" has invalid msrp.', $requestedEan));
+        }
+        $standardCurrency = $this->nullableCurrency($standardPrice, $requestedEan);
+        $msrpCurrency = $this->nullableCurrency($msrp, $requestedEan);
+        $suggestedRetailPrice = null !== $standardCurrency && $standardCurrency === $msrpCurrency
+            ? $this->nullableAmount($msrp, $requestedEan)
+            : null;
 
         return new OkbProductVariation(
             $sku,
             $ean,
+            $productReference,
             $this->requiredString($description, 'category', $requestedEan),
             $this->nullableAmount($standardPrice, $requestedEan),
-            $this->nullableCurrency($standardPrice, $requestedEan),
+            $standardCurrency,
             $this->attributes($description, $requestedEan),
+            $suggestedRetailPrice,
         );
     }
 
@@ -52,15 +99,15 @@ final class OkbProductResponseNormalizer
         return trim($value);
     }
 
-    /** @param array<string, mixed>|null $standardPrice */
-    private function nullableAmount(?array $standardPrice, string $requestedEan): ?float
+    /** @param array<string, mixed>|null $price */
+    private function nullableAmount(?array $price, string $requestedEan): ?float
     {
-        if (null === $standardPrice || !array_key_exists('amount', $standardPrice)) {
+        if (null === $price || !array_key_exists('amount', $price)) {
             return null;
         }
-        $amount = $standardPrice['amount'];
+        $amount = $price['amount'];
         if (!is_int($amount) && !is_float($amount)) {
-            throw new \InvalidArgumentException(sprintf('OKB standardPrice for EAN "%s" has an invalid amount.', $requestedEan));
+            throw new \InvalidArgumentException(sprintf('OKB price for EAN "%s" has an invalid amount.', $requestedEan));
         }
 
         return (float) $amount;

@@ -218,7 +218,7 @@ final class EnrichCosmoShopImportServiceTest extends TestCase
             self::throwException(new \RuntimeException('Redis is unavailable.')),
             new Envelope(new \stdClass()),
         );
-        $service = new EnrichCosmoShopImportService($importExport, $filesystem, new SemicolonCsvReader(), new PrepareOkbProductMappingService(new SemicolonCsvReader(), $this->apiClient(2)), new PrepareCatalogShopwareImportCsvService(new SemicolonCsvReader()), $profiles, $catalogLogs, $messageBus, new LockFactory(new InMemoryStore()), (string) getcwd());
+        $service = new EnrichCosmoShopImportService($importExport, $filesystem, new SemicolonCsvReader(), new PrepareOkbProductMappingService(new SemicolonCsvReader(), $this->apiClient(4)), new PrepareCatalogShopwareImportCsvService(new SemicolonCsvReader()), $profiles, $catalogLogs, $messageBus, new LockFactory(new InMemoryStore()), (string) getcwd());
 
         try {
             $service->execute($source->getId(), $context);
@@ -288,11 +288,12 @@ final class EnrichCosmoShopImportServiceTest extends TestCase
         return $repository;
     }
 
-    private function apiClient(int $requests = 1): OkbProductApiClient
+    private function apiClient(int $requests = 2): OkbProductApiClient
     {
         $response = $this->createMock(ResponseInterface::class);
         $response->method('getStatusCode')->willReturn(200);
         $response->method('toArray')->with(false)->willReturn(['productVariations' => [[
+            'productReference' => '4260454042902',
             'sku' => '4260454042902',
             'ean' => '4260454042902',
             'productDescription' => ['category' => '3D-Brille', 'attributes' => []],

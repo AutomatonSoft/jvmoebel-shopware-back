@@ -41,8 +41,9 @@ final readonly class ReconcileCatalogProductImportRecordService
         }
         $parentId = $record['parentId'] ?? null;
         if (is_string($parentId) && Uuid::isValid($parentId)) {
-            $this->ensureConfiguratorSettings($parentId, $this->ids($record['options'] ?? []));
-            if ($this->reconcile($parentId, 'configurator', $this->ids($record['options'] ?? []))) {
+            $configuratorOptionIds = $this->childrenOptionIds($parentId);
+            $this->ensureConfiguratorSettings($parentId, $configuratorOptionIds);
+            if ($this->reconcile($parentId, 'configurator', $configuratorOptionIds)) {
                 $reindex[] = $parentId;
             }
         }
@@ -74,6 +75,32 @@ final readonly class ReconcileCatalogProductImportRecordService
         }
 
         return [] !== $gone;
+    }
+
+    /** @return list<string> */
+    private function childrenOptionIds(string $parentId): array
+    {
+        $p = Uuid::fromHexToBytes($parentId);
+        $v = Uuid::fromHexToBytes(Defaults::LIVE_VERSION);
+        /** @var list<string> $childIds */
+        $childIds = array_values(array_filter(
+            $this->connection->fetchFirstColumn('SELECT LOWER(HEX(`id`)) FROM `product` WHERE `parent_id`=:p AND `version_id`=:v', ['p' => $p, 'v' => $v]),
+            is_string(...),
+        ));
+        if ([] === $childIds) {
+            return [];
+        }
+        /** @var list<string> $optionIds */
+        $optionIds = array_values(array_filter(
+            $this->connection->fetchFirstColumn(
+                'SELECT DISTINCT LOWER(HEX(`relation_id`)) FROM `jv_catalog_product_relation` WHERE `relation_type`=\'option\' AND `product_version_id`=:v AND `product_id` IN (:ids)',
+                ['v' => $v, 'ids' => array_map(Uuid::fromHexToBytes(...), $childIds)],
+                ['ids' => ArrayParameterType::BINARY],
+            ),
+            is_string(...),
+        ));
+
+        return $optionIds;
     }
 
     /** @param list<string> $optionIds */

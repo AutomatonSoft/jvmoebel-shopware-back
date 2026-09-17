@@ -6,6 +6,7 @@ use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Jv\Import\Service\Catalog\CatalogIdentity;
 use Jv\Import\Service\ProductImport\Catalog\Dto\CatalogCategoryAttributeSchema;
+use Jv\Import\Service\ProductImport\ListPriceResolver;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
@@ -25,9 +26,6 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
     /** @var list<string>|null */
     private ?array $languageIds = null;
 
-    /** @var array<string, string|null> */
-    private array $manufacturerDescriptions = [];
-
     /** @var array<string, array<string, true>> */
     private array $existingOptionIdsByPropertyGroup = [];
 
@@ -40,6 +38,7 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
         private CatalogCategoryAttributeSchemaProvider $schemaProvider,
         private Connection $connection,
         private CatalogProductImportLookupCache $lookupCache,
+        private ListPriceResolver $listPriceResolver = new ListPriceResolver(),
     ) {
     }
 
@@ -56,41 +55,36 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
         $ean = $this->required($row, 'ean');
         $categoryId = $this->required($row, 'category_id');
         $groupId = $this->required($row, 'category_group_id');
-        $attributes = $this->attributes($this->required($row, 'attributes_json'));
         $parent = $this->parent($productNumber, $context);
-        $schemas = $this->schemas($groupId, $context);
-        $this->validateLongValues($attributes, $schemas);
-        $this->validatePair($productNumber, $row, $attributes, $schemas, $parent, $context);
-        $this->validateBrandInformation($productNumber, $attributes, $parent);
-        $childId = $this->childId($parent, $ean, $context);
+        $currency = strtoupper((string) ($row['currency'] ?? 'EUR'));
+        $currencyId = $this->currencyId($currency, $context);
+        $parentPrice = $this->requireParentPriceAndTax($productNumber, $currency, $currencyId, $parent);
 
         if ('parent' === $type) {
-            $record = [
+            return [
                 'id' => $parent->getId(),
                 'parentId' => null,
-                'ean' => null,
+                'ean' => $ean,
                 'categories' => [['id' => CatalogIdentity::categoryId('okb', $categoryId)]],
             ];
-            $brandInformation = $attributes['Markeninformationen'][0] ?? null;
-            if (is_string($brandInformation) && '' !== $brandInformation && null !== $parent->getManufacturerId()) {
-                if (null === $parent->getManufacturer()?->getDescription()) {
-                    $record['manufacturer'] = ['id' => $parent->getManufacturerId(), 'description' => $brandInformation];
-                }
-            }
-
-            return $record;
         }
         if ('child' !== $type) {
             throw new \InvalidArgumentException(sprintf('Catalog import row has unknown record type "%s".', $type));
         }
 
-        $currency = strtoupper((string) ($row['currency'] ?? 'EUR'));
-        $currencyId = $this->currencyId($currency, $context);
-        $existingPrice = $parent->getPrice()?->getCurrencyPrice($currencyId, false);
-        if (!$existingPrice instanceof Price || null === $parent->getTax()?->getTaxRate()) {
-            throw new \LogicException('Validated catalog product pair has no price or tax.');
+        $attributes = $this->attributes($this->required($row, 'attributes_json'));
+        $schemas = $this->schemas($groupId, $context);
+        $this->validateLongValues($attributes, $schemas);
+        $this->validateAttributeMultiValue($attributes, $schemas);
+
+        $okbPrice = $this->normalizedPrice($row, $productNumber);
+        if ($okbPrice <= 0.0) {
+            throw new \InvalidArgumentException(sprintf('Catalog import row has a non-positive OKB price for product "%s" EAN "%s".', $productNumber, $ean));
         }
-        $gross = max($existingPrice->getGross(), (float) $this->required($row, 'standard_price_amount'));
+        $gross = max($parentPrice->getGross(), $okbPrice);
+        $suggestedRetailPrice = $this->optionalAmount($row, 'suggested_retail_price_amount');
+        $sourceListPrice = $parentPrice->getListPrice()?->getGross();
+        $child = $this->child($parent, $ean, $context);
         $optionRecords = [];
         $variantOptionIds = [];
         foreach ($attributes as $name => $values) {
@@ -122,14 +116,14 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
         }
 
         return [
-            'id' => $childId,
+            'id' => $child['id'],
             'parentId' => $parent->getId(),
-            'productNumber' => $parent->getProductNumber().'-1',
+            'productNumber' => $child['productNumber'],
             'ean' => $ean,
             'name' => $parent->getName() ?? $parent->getProductNumber(),
             'stock' => $parent->getStock(),
             'taxId' => $parent->getTaxId(),
-            'price' => $this->prices($parent->getPrice()->getElements(), $currencyId, $gross, $parent->getTax()->getTaxRate()),
+            'price' => $this->prices($child['baseElements'], $currencyId, $gross, $parent->getTax()->getTaxRate(), $suggestedRetailPrice, $sourceListPrice),
             'properties' => array_values($optionRecords),
             'options' => array_values(array_intersect_key($optionRecords, $variantOptionIds)),
         ];
@@ -177,26 +171,22 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
         }
     }
 
+    private function requireParentPriceAndTax(string $productNumber, string $currency, string $currencyId, \Shopware\Core\Content\Product\ProductEntity $parent): Price
+    {
+        $price = $parent->getPrice()?->getCurrencyPrice($currencyId, false);
+        if (!$price instanceof Price || null === $parent->getTax()?->getTaxRate()) {
+            throw new \InvalidArgumentException(sprintf('Shopware parent "%s" has no %s price or tax.', $productNumber, $currency));
+        }
+
+        return $price;
+    }
+
     /**
-     * Validates every rule required for the child before either row of the pair
-     * reaches Shopware. The CSV intentionally repeats attributes on the parent
-     * row so a rejected child cannot partially convert its CosmoShop parent.
-     *
-     * @param array<string, mixed>                          $row
      * @param array<string, list<string>>                   $attributes
      * @param array<string, CatalogCategoryAttributeSchema> $schemas
      */
-    private function validatePair(string $productNumber, array $row, array $attributes, array $schemas, \Shopware\Core\Content\Product\ProductEntity $parent, Context $context): void
+    private function validateAttributeMultiValue(array $attributes, array $schemas): void
     {
-        $currency = strtoupper((string) ($row['currency'] ?? 'EUR'));
-        $currencyId = $this->currencyId($currency, $context);
-        if (!$parent->getPrice()?->getCurrencyPrice($currencyId, false) instanceof Price || null === $parent->getTax()?->getTaxRate()) {
-            throw new \InvalidArgumentException(sprintf('Shopware parent "%s" has no %s price or tax.', $productNumber, $currency));
-        }
-        $price = str_replace(',', '.', $this->required($row, 'standard_price_amount'));
-        if (!is_numeric($price)) {
-            throw new \InvalidArgumentException(sprintf('Catalog import row has invalid "standard_price_amount" for product "%s".', $productNumber));
-        }
         foreach ($attributes as $name => $values) {
             $schema = $schemas[$name] ?? null;
             if (null !== $schema && !$schema->multiValue && count($values) > 1) {
@@ -205,22 +195,15 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
         }
     }
 
-    /** @param array<string, list<string>> $attributes */
-    private function validateBrandInformation(string $productNumber, array $attributes, \Shopware\Core\Content\Product\ProductEntity $parent): void
+    /** @param array<string, mixed> $row */
+    private function normalizedPrice(array $row, string $productNumber): float
     {
-        $brandInformation = $attributes['Markeninformationen'][0] ?? null;
-        $manufacturerId = $parent->getManufacturerId();
-        if (!is_string($brandInformation) || '' === $brandInformation || null === $manufacturerId) {
-            return;
+        $price = str_replace(',', '.', $this->required($row, 'standard_price_amount'));
+        if (!is_numeric($price)) {
+            throw new \InvalidArgumentException(sprintf('Catalog import row has invalid "standard_price_amount" for product "%s".', $productNumber));
         }
-        if (!array_key_exists($manufacturerId, $this->manufacturerDescriptions)) {
-            $this->manufacturerDescriptions[$manufacturerId] = $parent->getManufacturer()?->getDescription();
-        }
-        $description = $this->manufacturerDescriptions[$manufacturerId];
-        if (null !== $description && $brandInformation !== $description) {
-            throw new \InvalidArgumentException(sprintf('Catalog brand information conflicts with existing manufacturer description for product "%s".', $productNumber));
-        }
-        $this->manufacturerDescriptions[$manufacturerId] = $brandInformation;
+
+        return (float) $price;
     }
 
     private function parent(string $productNumber, Context $context): \Shopware\Core\Content\Product\ProductEntity
@@ -229,7 +212,7 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
         if ($cached instanceof \Shopware\Core\Content\Product\ProductEntity) {
             return $cached;
         }
-        $product = $this->productRepository->search((new Criteria())->addFilter(new EqualsFilter('productNumber', $productNumber))->addAssociation('price')->addAssociation('tax')->addAssociation('manufacturer')->setLimit(1), $context)->first();
+        $product = $this->productRepository->search((new Criteria())->addFilter(new EqualsFilter('productNumber', $productNumber))->addAssociation('price')->addAssociation('tax')->setLimit(1), $context)->first();
         if (!$product instanceof \Shopware\Core\Content\Product\ProductEntity) {
             throw new \InvalidArgumentException(sprintf('Shopware product number "%s" does not exist.', $productNumber));
         }
@@ -308,29 +291,59 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
     {
         $this->schemas = [];
         $this->languageIds = null;
-        $this->manufacturerDescriptions = [];
         $this->existingOptionIdsByPropertyGroup = [];
     }
 
-    private function childId(\Shopware\Core\Content\Product\ProductEntity $parent, string $ean, Context $context): string
+    /** @return array{id: string, productNumber: string, baseElements: list<Price>} */
+    private function child(\Shopware\Core\Content\Product\ProductEntity $parent, string $ean, Context $context): array
     {
-        $cached = $this->lookupCache->childId($parent->getId());
-        if (null !== $cached) {
-            return $cached;
-        }
-        $productNumber = $parent->getProductNumber().'-1';
         $existing = $this->productRepository->search((new Criteria())
-            ->addFilter(new EqualsFilter('productNumber', $productNumber))
+            ->addFilter(new EqualsFilter('parentId', $parent->getId()))
+            ->addFilter(new EqualsFilter('ean', $ean))
+            ->addAssociation('price')
             ->setLimit(1), $context)->first();
         if ($existing instanceof \Shopware\Core\Content\Product\ProductEntity) {
-            if ($existing->getParentId() !== $parent->getId()) {
-                throw new \InvalidArgumentException(sprintf('Catalog child product number "%s" belongs to another product.', $productNumber));
-            }
-
-            return $this->lookupCache->rememberChildId($parent->getId(), $existing->getId());
+            return [
+                'id' => $existing->getId(),
+                'productNumber' => $existing->getProductNumber(),
+                'baseElements' => $existing->getPrice()?->getElements() ?? [],
+            ];
         }
 
-        return $this->lookupCache->rememberChildId($parent->getId(), CatalogIdentity::childProductId('okb', $parent->getId(), $ean));
+        $children = $this->productRepository->search((new Criteria())
+            ->addFilter(new EqualsFilter('parentId', $parent->getId())), $context)->getEntities();
+        $productNumber = $parent->getProductNumber().'-'.$this->nextFreeChildNumber($parent, $children->getElements());
+        $conflict = $this->productRepository->search((new Criteria())
+            ->addFilter(new EqualsFilter('productNumber', $productNumber))
+            ->setLimit(1), $context)->first();
+        if ($conflict instanceof \Shopware\Core\Content\Product\ProductEntity && $conflict->getParentId() !== $parent->getId()) {
+            throw new \InvalidArgumentException(sprintf('Catalog child product number "%s" belongs to another product.', $productNumber));
+        }
+
+        return [
+            'id' => CatalogIdentity::childProductId('okb', $parent->getId(), $ean),
+            'productNumber' => $productNumber,
+            'baseElements' => $parent->getPrice()?->getElements() ?? [],
+        ];
+    }
+
+    /** @param array<string, \Shopware\Core\Content\Product\ProductEntity> $children */
+    private function nextFreeChildNumber(\Shopware\Core\Content\Product\ProductEntity $parent, array $children): int
+    {
+        $prefix = $parent->getProductNumber().'-';
+        $max = 0;
+        foreach ($children as $child) {
+            $number = $child->getProductNumber();
+            if (!str_starts_with($number, $prefix)) {
+                continue;
+            }
+            $suffix = substr($number, strlen($prefix));
+            if (1 === preg_match('/^\d+$/', $suffix)) {
+                $max = max($max, (int) $suffix);
+            }
+        }
+
+        return $max + 1;
     }
 
     private function currencyId(string $currency, Context $context): string
@@ -346,13 +359,13 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
         return $id;
     }
 
-    /** @param list<Price> $existingPrices
+    /** @param list<Price> $baseElements
      * @return list<array<string, mixed>>
      */
-    private function prices(array $existingPrices, string $currencyId, float $gross, float $taxRate): array
+    private function prices(array $baseElements, string $currencyId, float $gross, float $taxRate, ?float $suggestedRetailPrice, ?float $sourceListPrice): array
     {
         $prices = [];
-        foreach ($existingPrices as $price) {
+        foreach ($baseElements as $price) {
             $record = [
                 'currencyId' => $price->getCurrencyId(),
                 'net' => $price->getNet(),
@@ -368,9 +381,28 @@ final class PrepareCatalogShopwareProductImportRecordService implements ResetInt
             }
             $prices[$price->getCurrencyId()] = $record;
         }
-        $prices[$currencyId] = ['currencyId' => $currencyId, 'net' => round($gross / (1 + $taxRate / 100), 2), 'gross' => $gross, 'linked' => false];
+        $listPrice = $this->listPriceResolver->resolve($gross, $suggestedRetailPrice, $sourceListPrice);
+        $prices[$currencyId] = [
+            'currencyId' => $currencyId,
+            'net' => round($gross / (1 + $taxRate / 100), 2),
+            'gross' => $gross,
+            'linked' => false,
+            'listPrice' => [
+                'net' => round($listPrice / (1 + $taxRate / 100), 2),
+                'gross' => $listPrice,
+                'linked' => false,
+            ],
+        ];
 
         return array_values($prices);
+    }
+
+    /** @param array<string, mixed> $row */
+    private function optionalAmount(array $row, string $key): ?float
+    {
+        $value = $row[$key] ?? null;
+
+        return is_string($value) && '' !== $value ? (float) $value : null;
     }
 
     /** @return array<string, array{name: string}> */

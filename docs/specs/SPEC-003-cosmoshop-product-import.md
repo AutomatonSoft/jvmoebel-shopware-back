@@ -61,6 +61,23 @@ Uuid::fromStringToHex('jvmoebel.product.' . product_number)
 
 Налоги CosmoShop в этой итерации не переносятся. Каждый товар получает штатный default tax Shopware из `core.tax.defaultTaxRate` (сейчас `Standard rate`); net-цена и UVP net вычисляются по его базовой ставке. Country rules этого tax, настроенные в Admin, Shopware применяет при расчёте налогов для страны покупателя. Непрозрачный CosmoShop `mwstid` остаётся вне контракта и может быть обработан отдельной итерацией, когда появится источник его ставки.
 
+UVP (list price) товара не копируется из `list_price_gross` безусловно, а разрешается по правилу, общему для CosmoShop-карточки и для OKB-варианта (SPEC-012):
+
+1. OKB `msrp` конкретного варианта, если он есть и строго больше цены товара;
+2. иначе source list price — `list_price_gross` CosmoShop либо унаследованная от parent list price — если она строго больше цены товара;
+3. иначе UVP вычисляется из цены по правилу AfterCool:
+
+   ```text
+   price > 5000           -> price * 1.10
+   2500 <= price <= 4999  -> price * 1.18
+   1000 <= price <= 2499  -> price * 1.25
+   иначе                  -> price * 1.35
+   ```
+
+   Правило применяется буквально, поэтому `5000` и дробные значения между `4999` и `5000` попадают в последнюю ветвь.
+
+Это правило защищает от struck-through цены на витрине: вариант вычисляет цену как `max(CosmoShop gross price, OKB standardPrice.amount)` (SPEC-012) и может стоить дороже родителя, поэтому унаследованная от родителя list price подставляется только когда она всё ещё выше цены варианта. UVP net вычисляется как `round(UVP gross / (1 + taxRate / 100), 2)`.
+
 Visibility создаётся для sales channel профиля со значением `VISIBILITY_ALL`. Переводы получают детерминированный `Market::languageId()`, а не locale. Первый импорт любого рынка технически инициализирует обязательный system fallback; последующий DE импорт заменяет его немецким содержимым, другие рынки существующий fallback не перезаписывают. Цена обновляет или добавляет только валюту рынка и сохраняет остальные existing currency prices. Если первый рынок не использует default currency Shopware, его цена также технически инициализирует default currency до поступления EUR. `meta_title`, `meta_description` и `meta_keywords` записываются в одноимённые translation-поля Shopware; `short_description` пока не импортируется. Импорт не создаёт SEO URL вручную. Старый raw `urlkey`, включая возможный `.htm`, сохраняется только в экспортной выборке до отдельной SEO/redirect итерации.
 
 Числовые delivery time и unit ID локальны для базы конкретного CosmoShop. Их deterministic UUID включает `market.domain()`. Reference upsert получает обязательный `--market=<domain>`. Метка `nicht lieferbar`/`not on stock` не создаёт delivery time `0–0 days`: reference import отклоняется до записи.

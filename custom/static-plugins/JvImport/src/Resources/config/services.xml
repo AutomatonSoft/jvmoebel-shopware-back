@@ -295,6 +295,7 @@
             <argument type="service" id="Jv\Import\Service\ProductImport\Catalog\CatalogCategoryAttributeSchemaProvider"/>
             <argument type="service" id="Doctrine\DBAL\Connection"/>
             <argument type="service" id="Jv\Import\Service\ProductImport\Catalog\CatalogProductImportLookupCache"/>
+            <argument type="service" id="Jv\Import\Service\ProductImport\ListPriceResolver"/>
             <tag name="kernel.reset" method="reset"/>
         </service>
         <service id="Jv\Import\Service\ProductImport\Catalog\CatalogProductImportLookupCache">
@@ -331,9 +332,12 @@
             <argument type="service" id="Doctrine\DBAL\Connection"/>
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry"/>
         </service>
+        <service id="Jv\Import\Service\ProductImport\Catalog\CatalogVariantFamilyPlanner"/>
+        <service id="Jv\Import\Service\ProductImport\ListPriceResolver"/>
         <service id="Jv\Import\Integration\Okb\Service\PrepareOkbProductMappingService">
             <argument type="service" id="Jv\Import\Integration\Csv\SemicolonCsvReader"/>
             <argument type="service" id="Jv\Import\Integration\Okb\OkbProductApiClient"/>
+            <argument type="service" id="Jv\Import\Service\ProductImport\Catalog\CatalogVariantFamilyPlanner"/>
         </service>
 
         <service id="Jv\Import\Integration\CosmoShop\Reader\CosmoShopCsvPreflightReaderFactory">
