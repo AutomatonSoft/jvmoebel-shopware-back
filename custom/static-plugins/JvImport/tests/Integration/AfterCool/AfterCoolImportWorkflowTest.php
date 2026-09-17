@@ -723,7 +723,11 @@ final class AfterCoolImportWorkflowTest extends TestCase
         ]], $context);
     }
 
-    /** @return list<AfterCoolCatalogEnrichmentMessage> */
+    /**
+     * @phpstan-impure
+     *
+     * @return list<AfterCoolCatalogEnrichmentMessage>
+     */
     private function queuedEnrichments(RedisTransport $transport): array
     {
         $messages = [];
