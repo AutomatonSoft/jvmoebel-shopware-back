@@ -17,7 +17,7 @@ final class CatalogVariantFamilyPlanner
     {
         $groups = [];
         foreach ($family as $variation) {
-            $groups[$this->groupKey($this->axisValues($variation, $axisAttributeNames))][] = $variation;
+            $groups[$this->groupKey($variation, $axisAttributeNames)][] = $variation;
         }
 
         $retained = [];
@@ -78,9 +78,26 @@ final class CatalogVariantFamilyPlanner
         return $values;
     }
 
-    /** @param array<string, string> $axisValues */
-    private function groupKey(array $axisValues): string
+    /**
+     * The group key compares an attribute's values as a set: sorted and kept
+     * as a list, never joined with a separator. Joining would make a single
+     * value containing that separator indistinguishable from two values.
+     *
+     * @param list<string> $axisAttributeNames
+     */
+    private function groupKey(OkbProductVariation $variation, array $axisAttributeNames): string
     {
-        return json_encode($axisValues, \JSON_THROW_ON_ERROR);
+        $axisNames = array_fill_keys($axisAttributeNames, true);
+        $values = [];
+        foreach ($variation->attributes as $attribute) {
+            if (isset($axisNames[$attribute->name])) {
+                $sorted = $attribute->values;
+                sort($sorted);
+                $values[$attribute->name] = $sorted;
+            }
+        }
+        ksort($values);
+
+        return json_encode($values, \JSON_THROW_ON_ERROR);
     }
 }

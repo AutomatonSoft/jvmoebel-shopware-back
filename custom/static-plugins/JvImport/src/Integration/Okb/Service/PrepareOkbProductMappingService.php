@@ -63,9 +63,9 @@ final readonly class PrepareOkbProductMappingService
                         if (null === $category) {
                             throw new \InvalidArgumentException(sprintf('OKB category "%s" is missing from the supplied snapshot.', $variation->categoryName));
                         }
-                        $family = $this->apiClient->findFamily($variation->productReference);
+                        $family = $this->familyMembers($variation);
                         $axisNames = array_keys($axisAttributeNames[$category['categoryGroupId']] ?? []);
-                        $plan = $this->familyPlanner->plan([] === $family ? [$variation] : $family, $ean, $axisNames);
+                        $plan = $this->familyPlanner->plan($family, $ean, $axisNames);
                         $prepared = ['category' => $category, 'plan' => $plan];
                     } catch (\Throwable $exception) {
                         $this->write($failures, [$productNumber, $ean, $exception->getMessage()]);
@@ -106,6 +106,31 @@ final readonly class PrepareOkbProductMappingService
         }
 
         return new OkbProductMappingPreparationResult($productCount, $attributeCount, $failureCount);
+    }
+
+    /**
+     * The family response may include variations of another product or
+     * category that merely share a productReference. Only members with the
+     * same productReference and categoryName as the source variation belong
+     * to its family, and the source variation itself always belongs to it,
+     * even when the family response omits it.
+     *
+     * @return list<OkbProductVariation>
+     */
+    private function familyMembers(OkbProductVariation $source): array
+    {
+        $family = array_values(array_filter(
+            $this->apiClient->findFamily($source->productReference),
+            static fn (OkbProductVariation $member): bool => $member->productReference === $source->productReference && $member->categoryName === $source->categoryName,
+        ));
+        foreach ($family as $member) {
+            if ($source->ean === $member->ean) {
+                return $family;
+            }
+        }
+        $family[] = $source;
+
+        return $family;
     }
 
     /** @return array<string, array{categoryId: string, categoryGroupId: string}> */

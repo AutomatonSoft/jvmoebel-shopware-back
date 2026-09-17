@@ -57,11 +57,17 @@ final readonly class OkbProductApiClient
     {
         $family = [];
         $page = 0;
+        $previousPageEans = null;
         do {
             $variations = $this->requestFamilyPage($productReference, $page);
+            $pageEans = array_map(static fn (OkbProductVariation $variation): string => $variation->ean, $variations);
+            if (null !== $previousPageEans && [] !== $pageEans && $pageEans === $previousPageEans) {
+                throw new \RuntimeException(sprintf('OKB family lookup for productReference "%s" did not advance to the next page.', $productReference));
+            }
             foreach ($variations as $variation) {
                 $family[] = $variation;
             }
+            $previousPageEans = $pageEans;
             ++$page;
         } while (self::FAMILY_PAGE_SIZE === count($variations));
 

@@ -70,6 +70,11 @@ final class OkbProductResponseNormalizer
         if (null !== $msrp && !is_array($msrp)) {
             throw new \InvalidArgumentException(sprintf('OKB productVariation for EAN "%s" has invalid msrp.', $requestedEan));
         }
+        $standardCurrency = $this->nullableCurrency($standardPrice, $requestedEan);
+        $msrpCurrency = $this->nullableCurrency($msrp, $requestedEan);
+        $suggestedRetailPrice = null !== $standardCurrency && $standardCurrency === $msrpCurrency
+            ? $this->nullableAmount($msrp, $requestedEan)
+            : null;
 
         return new OkbProductVariation(
             $sku,
@@ -77,9 +82,9 @@ final class OkbProductResponseNormalizer
             $productReference,
             $this->requiredString($description, 'category', $requestedEan),
             $this->nullableAmount($standardPrice, $requestedEan),
-            $this->nullableCurrency($standardPrice, $requestedEan),
+            $standardCurrency,
             $this->attributes($description, $requestedEan),
-            $this->nullableAmount($msrp, $requestedEan),
+            $suggestedRetailPrice,
         );
     }
 
