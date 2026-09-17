@@ -394,6 +394,63 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
         }
     }
 
+    public function testAFamilySplitAcrossWorkerBatchesKeepsEveryVariantOnItsOwnNumber(): void
+    {
+        $context = Context::createDefaultContext();
+        $suffix = bin2hex(random_bytes(5));
+        $productNumber = 'CATALOG-BATCH-'.$suffix;
+        $parentId = Uuid::randomHex();
+        $categoryGroupId = 'group-'.$suffix;
+        $categoryId = 'category-'.$suffix;
+        $propertyGroupId = CatalogIdentity::propertyGroupId('Color '.$suffix);
+        $manualGroupId = Uuid::randomHex();
+        $manualOptionId = Uuid::randomHex();
+        $this->createFixture($parentId, $productNumber, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $manualOptionId, $context);
+        $profileId = CatalogProductImportProfile::definition()['id'];
+        $this->profileRepository()->upsert([CatalogProductImportProfile::definition()], $context);
+        $eans = array_map(static fn (int $index): string => sprintf('4260174%06d', $index), range(1, 55));
+
+        try {
+            $progress = $this->importInWorkerBatches($profileId, $this->familyCsv($productNumber, $eans, $categoryId, $categoryGroupId));
+            self::assertSame('succeeded', $progress->getState(), $this->importResult($progress));
+
+            $children = $this->productRepository()->search((new Criteria())->addFilter(new EqualsFilter('parentId', $parentId)), $context)->getEntities();
+            $numbers = array_map(static fn (\Shopware\Core\Content\Product\ProductEntity $child): string => $child->getProductNumber(), array_values($children->getElements()));
+            sort($numbers);
+            $expectedNumbers = array_map(static fn (int $position): string => $productNumber.'-'.$position, range(1, 55));
+            sort($expectedNumbers);
+            self::assertSame($expectedNumbers, $numbers);
+            $childEans = array_map(static fn (\Shopware\Core\Content\Product\ProductEntity $child): ?string => $child->getEan(), array_values($children->getElements()));
+            sort($childEans);
+            self::assertSame($eans, $childEans);
+        } finally {
+            $this->deleteFixture($parentId, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $context);
+        }
+    }
+
+    /** @param list<string> $eans */
+    private function familyCsv(string $productNumber, array $eans, string $categoryId, string $categoryGroupId): string
+    {
+        $rows = [['record_type', 'product_number', 'ean', 'category_id', 'category_group_id', 'standard_price_amount', 'currency', 'attributes_json']];
+        foreach ($eans as $index => $ean) {
+            $row = [$productNumber, $ean, $categoryId, $categoryGroupId, '1200', 'EUR', json_encode([['Color '.$categoryGroupId, ['Shade '.$index]]], JSON_THROW_ON_ERROR)];
+            if (0 === $index) {
+                $rows[] = ['parent', ...$row];
+            }
+            $rows[] = ['child', ...$row];
+        }
+        $stream = fopen('php://temp', 'w+b');
+        self::assertIsResource($stream);
+        foreach ($rows as $row) {
+            fputcsv($stream, $row, ';', '"', '\\');
+        }
+        rewind($stream);
+        $csv = stream_get_contents($stream);
+        fclose($stream);
+
+        return (string) $csv;
+    }
+
     private function product(string $productNumber, Context $context): \Shopware\Core\Content\Product\ProductEntity
     {
         $product = $this->productRepository()->search((new Criteria())->addFilter(new EqualsFilter('productNumber', $productNumber))->addAssociation('price')->addAssociation('options')->addAssociation('properties')->addAssociation('categories'), $context)->first();
