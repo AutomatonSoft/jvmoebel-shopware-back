@@ -3,12 +3,13 @@
 namespace Jv\Import\Integration\Okb\Service;
 
 use Jv\Import\Integration\Csv\SemicolonCsvReader;
-use Jv\Import\Integration\Okb\Dto\OkbProductMappingPreparationResult;
 use Jv\Import\Integration\Okb\Dto\OkbProductVariation;
 use Jv\Import\Integration\Okb\OkbProductApiClient;
 use Jv\Import\Service\ProductImport\Catalog\CatalogVariantFamilyPlanner;
+use Jv\Import\Service\ProductImport\Catalog\Contract\CatalogProductMappingPreparerInterface;
+use Jv\Import\Service\ProductImport\Catalog\Dto\CatalogProductMappingPreparationResult;
 
-final readonly class PrepareOkbProductMappingService
+final readonly class PrepareOkbProductMappingService implements CatalogProductMappingPreparerInterface
 {
     public function __construct(
         private SemicolonCsvReader $csvReader,
@@ -17,7 +18,7 @@ final readonly class PrepareOkbProductMappingService
     ) {
     }
 
-    public function execute(string $sourceCsv, string $snapshotDirectory, string $outputDirectory, ?int $limit, ?\Closure $onProcessed = null): OkbProductMappingPreparationResult
+    public function execute(string $sourceCsv, string $snapshotDirectory, string $outputDirectory, ?int $limit, ?\Closure $onProcessed = null): CatalogProductMappingPreparationResult
     {
         if (null !== $limit && $limit <= 0) {
             throw new \InvalidArgumentException('--limit must be greater than zero.');
@@ -105,7 +106,7 @@ final readonly class PrepareOkbProductMappingService
             throw $exception;
         }
 
-        return new OkbProductMappingPreparationResult($productCount, $attributeCount, $failureCount);
+        return new CatalogProductMappingPreparationResult($productCount, $attributeCount, $failureCount);
     }
 
     /** @return list<OkbProductVariation> */

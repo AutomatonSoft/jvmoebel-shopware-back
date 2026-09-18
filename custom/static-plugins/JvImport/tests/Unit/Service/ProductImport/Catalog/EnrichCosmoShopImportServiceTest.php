@@ -9,9 +9,11 @@ use Jv\Import\Integration\Okb\Profile\CatalogProductImportProfile;
 use Jv\Import\Integration\Okb\Service\PrepareOkbProductMappingService;
 use Jv\Import\Service\ProductImport\Catalog\EnrichCosmoShopImportService;
 use Jv\Import\Service\ProductImport\Catalog\PrepareCatalogShopwareImportCsvService;
+use Jv\Import\Service\ProductImport\Catalog\QueueCatalogEnrichmentImportService;
 use League\Flysystem\FilesystemOperator;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFileEntity;
+use Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogCollection;
 use Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogEntity;
 use Shopware\Core\Content\ImportExport\ImportExportProfileEntity;
 use Shopware\Core\Content\ImportExport\Message\ImportExportMessage;
@@ -19,6 +21,7 @@ use Shopware\Core\Content\ImportExport\Service\ImportExportService;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\IdSearchResult;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Lock\LockFactory;
@@ -78,11 +81,15 @@ final class EnrichCosmoShopImportServiceTest extends TestCase
             $importExport,
             $filesystem,
             new SemicolonCsvReader(),
-            new PrepareOkbProductMappingService(new SemicolonCsvReader(), $this->apiClient()),
-            new PrepareCatalogShopwareImportCsvService(new SemicolonCsvReader()),
-            $profiles,
-            $catalogLogs,
-            $messageBus,
+            new QueueCatalogEnrichmentImportService(
+                new PrepareOkbProductMappingService(new SemicolonCsvReader(), $this->apiClient()),
+                new PrepareCatalogShopwareImportCsvService(new SemicolonCsvReader()),
+                $importExport,
+                $profiles,
+                $catalogLogs,
+                $messageBus,
+                (string) getcwd(),
+            ),
             new LockFactory(new InMemoryStore()),
             (string) getcwd(),
         );
@@ -135,11 +142,15 @@ final class EnrichCosmoShopImportServiceTest extends TestCase
             $importExport,
             $filesystem,
             new SemicolonCsvReader(),
-            new PrepareOkbProductMappingService(new SemicolonCsvReader(), $this->apiClient()),
-            new PrepareCatalogShopwareImportCsvService(new SemicolonCsvReader()),
-            $profiles,
-            $catalogLogs,
-            $messageBus,
+            new QueueCatalogEnrichmentImportService(
+                new PrepareOkbProductMappingService(new SemicolonCsvReader(), $this->apiClient()),
+                new PrepareCatalogShopwareImportCsvService(new SemicolonCsvReader()),
+                $importExport,
+                $profiles,
+                $catalogLogs,
+                $messageBus,
+                (string) getcwd(),
+            ),
             new LockFactory(new InMemoryStore()),
             (string) getcwd(),
         ))->execute($source->getId(), $context);
@@ -176,11 +187,15 @@ final class EnrichCosmoShopImportServiceTest extends TestCase
             $importExport,
             $filesystem,
             new SemicolonCsvReader(),
-            new PrepareOkbProductMappingService(new SemicolonCsvReader(), $this->apiClient()),
-            new PrepareCatalogShopwareImportCsvService(new SemicolonCsvReader()),
-            $profiles,
-            $catalogLogs,
-            $messageBus,
+            new QueueCatalogEnrichmentImportService(
+                new PrepareOkbProductMappingService(new SemicolonCsvReader(), $this->apiClient()),
+                new PrepareCatalogShopwareImportCsvService(new SemicolonCsvReader()),
+                $importExport,
+                $profiles,
+                $catalogLogs,
+                $messageBus,
+                (string) getcwd(),
+            ),
             new LockFactory(new InMemoryStore()),
             (string) getcwd(),
         );
@@ -218,7 +233,22 @@ final class EnrichCosmoShopImportServiceTest extends TestCase
             self::throwException(new \RuntimeException('Redis is unavailable.')),
             new Envelope(new \stdClass()),
         );
-        $service = new EnrichCosmoShopImportService($importExport, $filesystem, new SemicolonCsvReader(), new PrepareOkbProductMappingService(new SemicolonCsvReader(), $this->apiClient(4)), new PrepareCatalogShopwareImportCsvService(new SemicolonCsvReader()), $profiles, $catalogLogs, $messageBus, new LockFactory(new InMemoryStore()), (string) getcwd());
+        $service = new EnrichCosmoShopImportService(
+            $importExport,
+            $filesystem,
+            new SemicolonCsvReader(),
+            new QueueCatalogEnrichmentImportService(
+                new PrepareOkbProductMappingService(new SemicolonCsvReader(), $this->apiClient(4)),
+                new PrepareCatalogShopwareImportCsvService(new SemicolonCsvReader()),
+                $importExport,
+                $profiles,
+                $catalogLogs,
+                $messageBus,
+                (string) getcwd(),
+            ),
+            new LockFactory(new InMemoryStore()),
+            (string) getcwd(),
+        );
 
         try {
             $service->execute($source->getId(), $context);
@@ -247,11 +277,58 @@ final class EnrichCosmoShopImportServiceTest extends TestCase
             $importExport,
             $this->createMock(FilesystemOperator::class),
             new SemicolonCsvReader(),
-            new PrepareOkbProductMappingService(new SemicolonCsvReader(), $this->apiClient(0)),
-            new PrepareCatalogShopwareImportCsvService(new SemicolonCsvReader()),
-            $this->createMock(EntityRepository::class),
-            $catalogLogs,
-            $messageBus,
+            new QueueCatalogEnrichmentImportService(
+                new PrepareOkbProductMappingService(new SemicolonCsvReader(), $this->apiClient(0)),
+                new PrepareCatalogShopwareImportCsvService(new SemicolonCsvReader()),
+                $importExport,
+                $this->createMock(EntityRepository::class),
+                $catalogLogs,
+                $messageBus,
+                (string) getcwd(),
+            ),
+            new LockFactory(new InMemoryStore()),
+            (string) getcwd(),
+        ))->execute($source->getId(), $context);
+    }
+
+    public function testItDispatchesACatalogImportThatWasPreparedButNeverDispatched(): void
+    {
+        $context = Context::createDefaultContext();
+        $source = $this->sourceLog();
+        $stranded = $this->catalogLog('019fe6386ca771b29f5a8412a8cc3d99');
+        $stranded->setConfig(['parameters' => ['jvCatalogEnrichmentSourceImportLogId' => $source->getId()]]);
+        $importExport = $this->createMock(ImportExportService::class);
+        $importExport->expects(self::never())->method('findLog');
+        $importExport->expects(self::never())->method('prepareImport');
+        $catalogLogs = $this->createMock(EntityRepository::class);
+        $catalogLogs->method('searchIds')->willReturnCallback(
+            static fn (Criteria $criteria, Context $queryContext): IdSearchResult => IdSearchResult::fromIds([], $criteria, $queryContext),
+        );
+        $catalogLogs->method('search')->willReturnCallback(
+            static fn (Criteria $criteria, Context $queryContext): EntitySearchResult => new EntitySearchResult('import_export_log', 1, new ImportExportLogCollection([$stranded]), null, $criteria, $queryContext),
+        );
+        $catalogLogs->expects(self::once())->method('update')->with(
+            self::callback(static fn (array $payload): bool => $stranded->getId() === ($payload[0]['id'] ?? null)
+                && true === ($payload[0]['config']['parameters']['jvCatalogEnrichmentDispatched'] ?? null)
+                && $source->getId() === ($payload[0]['config']['parameters']['jvCatalogEnrichmentSourceImportLogId'] ?? null)),
+            $context,
+        );
+        $messageBus = $this->createMock(MessageBusInterface::class);
+        $messageBus->expects(self::once())->method('dispatch')->with(self::callback(static fn (object $message): bool => $message instanceof ImportExportMessage && $stranded->getId() === $message->getLogId()))->willReturn(new Envelope(new \stdClass()));
+
+        (new EnrichCosmoShopImportService(
+            $importExport,
+            $this->createMock(FilesystemOperator::class),
+            new SemicolonCsvReader(),
+            new QueueCatalogEnrichmentImportService(
+                new PrepareOkbProductMappingService(new SemicolonCsvReader(), $this->apiClient(0)),
+                new PrepareCatalogShopwareImportCsvService(new SemicolonCsvReader()),
+                $importExport,
+                $this->createMock(EntityRepository::class),
+                $catalogLogs,
+                $messageBus,
+                (string) getcwd(),
+            ),
             new LockFactory(new InMemoryStore()),
             (string) getcwd(),
         ))->execute($source->getId(), $context);
@@ -268,7 +345,22 @@ final class EnrichCosmoShopImportServiceTest extends TestCase
         $importExport->expects(self::never())->method('findLog');
         $logs = $this->createMock(EntityRepository::class);
         $logs->expects(self::never())->method('searchIds');
-        $service = new EnrichCosmoShopImportService($importExport, $this->createMock(FilesystemOperator::class), new SemicolonCsvReader(), new PrepareOkbProductMappingService(new SemicolonCsvReader(), $this->apiClient(0)), new PrepareCatalogShopwareImportCsvService(new SemicolonCsvReader()), $this->createMock(EntityRepository::class), $logs, $this->createMock(MessageBusInterface::class), $locks, (string) getcwd());
+        $service = new EnrichCosmoShopImportService(
+            $importExport,
+            $this->createMock(FilesystemOperator::class),
+            new SemicolonCsvReader(),
+            new QueueCatalogEnrichmentImportService(
+                new PrepareOkbProductMappingService(new SemicolonCsvReader(), $this->apiClient(0)),
+                new PrepareCatalogShopwareImportCsvService(new SemicolonCsvReader()),
+                $importExport,
+                $this->createMock(EntityRepository::class),
+                $logs,
+                $this->createMock(MessageBusInterface::class),
+                (string) getcwd(),
+            ),
+            $locks,
+            (string) getcwd(),
+        );
 
         try {
             $service->execute($source->getId(), $context);
@@ -277,7 +369,7 @@ final class EnrichCosmoShopImportServiceTest extends TestCase
         }
     }
 
-    /** @return EntityRepository<\Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogCollection> */
+    /** @return EntityRepository<ImportExportLogCollection> */
     private function catalogLogs(): EntityRepository
     {
         $repository = $this->createMock(EntityRepository::class);

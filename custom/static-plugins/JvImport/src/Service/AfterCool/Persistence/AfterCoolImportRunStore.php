@@ -4,9 +4,11 @@ namespace Jv\Import\Service\AfterCool\Persistence;
 
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunCollection;
+use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunEntity;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolFactoryImportAlreadyRunningException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Uuid\Uuid;
 
 readonly class AfterCoolImportRunStore
@@ -49,6 +51,11 @@ readonly class AfterCoolImportRunStore
 
     public function markFailed(string $runId, string $safeCode, string $safeMessage, Context $context): void
     {
+        $run = $this->runRepository->search(new Criteria([$runId]), $context)->first();
+        if (!$run instanceof AfterCoolImportRunEntity || !in_array($run->getStatus(), ['queued', 'running'], true)) {
+            return;
+        }
+
         $this->runRepository->update([[
             'id' => $runId,
             'status' => 'failed',
