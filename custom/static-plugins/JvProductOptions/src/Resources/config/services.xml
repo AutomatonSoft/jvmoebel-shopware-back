@@ -51,6 +51,11 @@
             <argument type="service" id="Shopware\Core\Checkout\Cart\Price\CashRounding"/>
         </service>
 
+        <service id="Jv\ProductOptions\Service\OptionPricing\OptionValueSurchargeResolver">
+            <argument type="service" id="Jv\ProductOptions\Service\OptionPricing\FixedSurchargeAmountResolver"/>
+            <argument type="service" id="Jv\ProductOptions\Service\OptionPricing\OptionSurchargeCalculator"/>
+        </service>
+
         <service id="Jv\ProductOptions\Service\OptionPricing\OptionLineItemIdGenerator"/>
 
         <service id="Jv\ProductOptions\Service\OptionPricing\OptionSelectionResolver"/>
@@ -59,6 +64,11 @@
             <argument type="service" id="product.repository"/>
             <argument type="service" id="jv_option_template.repository"/>
             <argument type="service" id="jv_option_template_product.repository"/>
+        </service>
+
+        <service id="Jv\ProductOptions\Service\OptionPricing\ProductOptionsLoader">
+            <argument type="service" id="Jv\ProductOptions\Service\OptionPricing\OptionTemplateResolver"/>
+            <argument type="service" id="Jv\ProductOptions\Service\OptionPricing\OptionValueSurchargeResolver"/>
         </service>
 
         <service id="Jv\ProductOptions\Checkout\Cart\ProductLineItemFactoryDecorator"
@@ -72,8 +82,7 @@
         <service id="Jv\ProductOptions\Checkout\Cart\OptionCartProcessor">
             <argument type="service" id="Jv\ProductOptions\Service\OptionPricing\OptionTemplateResolver"/>
             <argument type="service" id="Jv\ProductOptions\Service\OptionPricing\OptionSelectionResolver"/>
-            <argument type="service" id="Jv\ProductOptions\Service\OptionPricing\OptionSurchargeCalculator"/>
-            <argument type="service" id="Jv\ProductOptions\Service\OptionPricing\FixedSurchargeAmountResolver"/>
+            <argument type="service" id="Jv\ProductOptions\Service\OptionPricing\OptionValueSurchargeResolver"/>
             <argument type="service" id="Shopware\Core\Checkout\Cart\Price\QuantityPriceCalculator"/>
             <tag name="shopware.cart.processor" priority="4950"/>
             <tag name="shopware.cart.collector" priority="4950"/>
@@ -81,9 +90,7 @@
 
         <service id="Jv\ProductOptions\StoreApi\Route\ProductOptionsRoute" public="true">
             <argument type="service" id="sales_channel.product.repository"/>
-            <argument type="service" id="Jv\ProductOptions\Service\OptionPricing\OptionTemplateResolver"/>
-            <argument type="service" id="Jv\ProductOptions\Service\OptionPricing\OptionSurchargeCalculator"/>
-            <argument type="service" id="Jv\ProductOptions\Service\OptionPricing\FixedSurchargeAmountResolver"/>
+            <argument type="service" id="Jv\ProductOptions\Service\OptionPricing\ProductOptionsLoader"/>
             <tag name="controller.service_arguments"/>
         </service>
     </services>
