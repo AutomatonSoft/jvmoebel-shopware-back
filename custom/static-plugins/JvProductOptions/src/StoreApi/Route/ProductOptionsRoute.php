@@ -46,7 +46,7 @@ final class ProductOptionsRoute
         /** @var SalesChannelProductEntity|null $product */
         $product = $this->productRepository->search($criteria, $context)->get($productId);
 
-        if ($product === null) {
+        if (null === $product) {
             return new JsonResponse(['error' => 'Product not found'], Response::HTTP_NOT_FOUND);
         }
 
@@ -54,7 +54,7 @@ final class ProductOptionsRoute
 
         $template = $this->templateResolver->resolve($productId, $context->getContext());
 
-        if ($template === null) {
+        if (null === $template) {
             return new JsonResponse([
                 'apiAlias' => 'jv_product_options',
                 'productId' => $productId,
@@ -72,13 +72,14 @@ final class ProductOptionsRoute
         $groups = [];
         $templateGroups = $template->getGroups();
 
-        if ($templateGroups !== null) {
+        if (null !== $templateGroups) {
             $sortedGroups = $templateGroups->getElements();
             usort(
                 $sortedGroups,
                 static function ($a, $b): int {
                     $pos = $a->getPosition() <=> $b->getPosition();
-                    return $pos !== 0 ? $pos : strcmp($a->getId(), $b->getId());
+
+                    return 0 !== $pos ? $pos : strcmp($a->getId(), $b->getId());
                 }
             );
 
@@ -86,13 +87,14 @@ final class ProductOptionsRoute
                 $values = [];
                 $groupValues = $group->getValues();
 
-                if ($groupValues !== null) {
+                if (null !== $groupValues) {
                     $sortedValues = $groupValues->getElements();
                     usort(
                         $sortedValues,
                         static function ($a, $b): int {
                             $pos = $a->getPosition() <=> $b->getPosition();
-                            return $pos !== 0 ? $pos : strcmp($a->getId(), $b->getId());
+
+                            return 0 !== $pos ? $pos : strcmp($a->getId(), $b->getId());
                         }
                     );
 
@@ -101,17 +103,17 @@ final class ProductOptionsRoute
                         $percentage = null;
                         $unitAmount = 0.0;
 
-                        if ($surchargeType === 'fixed') {
+                        if ('fixed' === $surchargeType) {
                             $rawAmount = $this->fixedResolver->resolve($value->getSurchargePrice(), $currencyId, $currencyFactor, $isGross);
                             $unitAmount = $this->surchargeCalculator->round($rawAmount, $cashRounding);
-                        } elseif ($surchargeType === 'percentage') {
+                        } elseif ('percentage' === $surchargeType) {
                             $percentage = (float) $value->getSurchargePercentage();
                             $rawAmount = $baseUnitPrice * ($percentage / 100.0);
                             $unitAmount = $this->surchargeCalculator->round($rawAmount, $cashRounding);
                         }
 
                         $media = null;
-                        if ($value->getMedia() !== null) {
+                        if (null !== $value->getMedia()) {
                             $media = [
                                 'id' => $value->getMedia()->getId(),
                                 'url' => $value->getMedia()->getUrl(),

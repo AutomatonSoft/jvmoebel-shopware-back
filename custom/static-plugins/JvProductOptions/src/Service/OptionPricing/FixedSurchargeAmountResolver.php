@@ -10,12 +10,12 @@ final readonly class FixedSurchargeAmountResolver
     public function resolve(PriceCollection $price, string $currencyId, float $currencyFactor, bool $isGross): float
     {
         $currencyPrice = $price->getCurrencyPrice($currencyId, false);
-        if ($currencyPrice !== null) {
+        if (null !== $currencyPrice) {
             return $isGross ? $currencyPrice->getGross() : $currencyPrice->getNet();
         }
 
         $defaultPrice = $price->getCurrencyPrice(Defaults::CURRENCY, false);
-        if ($defaultPrice !== null) {
+        if (null !== $defaultPrice) {
             $amount = $isGross ? $defaultPrice->getGross() : $defaultPrice->getNet();
 
             return $amount * $currencyFactor;

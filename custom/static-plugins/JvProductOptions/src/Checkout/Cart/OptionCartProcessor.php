@@ -39,11 +39,11 @@ final readonly class OptionCartProcessor implements CartProcessorInterface, Cart
 
         foreach ($lineItems as $item) {
             $productId = $item->getReferencedId();
-            if ($productId === null) {
+            if (null === $productId) {
                 continue;
             }
 
-            $key = 'jv_option_template_' . $productId;
+            $key = 'jv_option_template_'.$productId;
             if (!$data->has($key)) {
                 $template = $this->templateResolver->resolve($productId, $context->getContext());
                 $data->set($key, $template);
@@ -57,23 +57,23 @@ final readonly class OptionCartProcessor implements CartProcessorInterface, Cart
 
         foreach ($lineItems as $item) {
             $productId = $item->getReferencedId();
-            if ($productId === null) {
+            if (null === $productId) {
                 continue;
             }
 
-            $key = 'jv_option_template_' . $productId;
+            $key = 'jv_option_template_'.$productId;
             $template = $data->get($key);
-            if ($template === null) {
+            if (null === $template) {
                 $template = $this->templateResolver->resolve($productId, $context->getContext());
             }
 
             $rawSelections = $item->getPayload()['jvOptionSelections'] ?? null;
 
-            if ($template === null) {
-                if ($rawSelections !== null && $rawSelections !== []) {
+            if (null === $template) {
+                if (null !== $rawSelections && [] !== $rawSelections) {
                     $this->removeLineItem($toCalculate, $original, $item->getId());
                     $error = new GenericCartError(
-                        self::ERROR_INVALID_SELECTION . '-' . $item->getId(),
+                        self::ERROR_INVALID_SELECTION.'-'.$item->getId(),
                         self::ERROR_INVALID_SELECTION,
                         ['id' => $item->getId()],
                         Error::LEVEL_ERROR,
@@ -92,7 +92,7 @@ final readonly class OptionCartProcessor implements CartProcessorInterface, Cart
             } catch (InvalidOptionSelectionException) {
                 $this->removeLineItem($toCalculate, $original, $item->getId());
                 $error = new GenericCartError(
-                    self::ERROR_INVALID_SELECTION . '-' . $item->getId(),
+                    self::ERROR_INVALID_SELECTION.'-'.$item->getId(),
                     self::ERROR_INVALID_SELECTION,
                     ['id' => $item->getId()],
                     Error::LEVEL_ERROR,
@@ -126,14 +126,14 @@ final readonly class OptionCartProcessor implements CartProcessorInterface, Cart
                 $groupId = $val->getGroupId();
                 $group = $val->getGroup();
                 $groupName = '';
-                if ($group !== null) {
+                if (null !== $group) {
                     $groupName = $group->getTranslation('name') ?? $group->getName() ?? '';
-                } elseif ($template->getGroups() !== null && $template->getGroups()->has($groupId)) {
+                } elseif (null !== $template->getGroups() && $template->getGroups()->has($groupId)) {
                     $g = $template->getGroups()->get($groupId);
                     $groupName = $g?->getTranslation('name') ?? $g?->getName() ?? '';
                 }
 
-                if ($val->getSurchargeType() === 'fixed') {
+                if ('fixed' === $val->getSurchargeType()) {
                     $rawAmount = $this->fixedResolver->resolve($val->getSurchargePrice(), $currencyId, $currencyFactor, $isGross);
                     $surcharges[] = Surcharge::fixed($rawAmount);
                     $unitAmount = $this->surchargeCalculator->round($rawAmount, $cashRounding);
@@ -150,7 +150,7 @@ final readonly class OptionCartProcessor implements CartProcessorInterface, Cart
                     'valueId' => $val->getId(),
                     'valueName' => $val->getTranslation('name') ?? $val->getName() ?? '',
                     'surchargeType' => $val->getSurchargeType(),
-                    'surchargePercentage' => $val->getSurchargeType() === 'percentage' ? (float) $val->getSurchargePercentage() : null,
+                    'surchargePercentage' => 'percentage' === $val->getSurchargeType() ? (float) $val->getSurchargePercentage() : null,
                     'surchargeUnitAmount' => $unitAmount,
                 ];
             }

@@ -6,7 +6,6 @@ use Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateGroup\
 use Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateProduct\OptionTemplateProductDefinition;
 use Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateProductStream\OptionTemplateProductStreamDefinition;
 use Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateTranslation\OptionTemplateTranslationDefinition;
-use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Content\ProductStream\ProductStreamDefinition;
 use Shopware\Core\Framework\Api\Context\AdminApiSource;
 use Shopware\Core\Framework\Api\Context\SalesChannelApiSource;

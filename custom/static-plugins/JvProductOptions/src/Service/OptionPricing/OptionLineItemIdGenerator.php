@@ -13,9 +13,9 @@ final readonly class OptionLineItemIdGenerator
 
         $parts = [];
         foreach ($selections as $groupId => $valueId) {
-            $parts[] = $groupId . ':' . $valueId;
+            $parts[] = $groupId.':'.$valueId;
         }
 
-        return md5($productId . ':' . implode('|', $parts));
+        return md5($productId.':'.implode('|', $parts));
     }
 }

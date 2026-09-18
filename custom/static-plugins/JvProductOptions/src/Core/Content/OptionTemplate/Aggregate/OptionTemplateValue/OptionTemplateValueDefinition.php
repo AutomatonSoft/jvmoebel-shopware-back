@@ -5,6 +5,8 @@ namespace Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplate
 use Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateGroup\OptionTemplateGroupDefinition;
 use Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateValueTranslation\OptionTemplateValueTranslationDefinition;
 use Shopware\Core\Content\Media\MediaDefinition;
+use Shopware\Core\Framework\Api\Context\AdminApiSource;
+use Shopware\Core\Framework\Api\Context\SalesChannelApiSource;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\FkField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\ApiAware;
@@ -19,8 +21,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\TranslatedField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\TranslationsAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
-use Shopware\Core\Framework\Api\Context\AdminApiSource;
-use Shopware\Core\Framework\Api\Context\SalesChannelApiSource;
 
 final class OptionTemplateValueDefinition extends EntityDefinition
 {

@@ -39,7 +39,7 @@ final readonly class ProductLineItemFactoryDecorator implements LineItemFactoryI
             : ($hasDirectSelections ? $data['jvOptionSelections'] : null);
 
         $template = $this->templateResolver->resolve($productId, $context->getContext());
-        if ($template !== null) {
+        if (null !== $template) {
             try {
                 $effectiveValues = $this->selectionResolver->resolve($template, $rawSelections);
                 $effectiveSelections = [];

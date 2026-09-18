@@ -21,7 +21,7 @@ final readonly class OptionSurchargeCalculator
         $total = 0.0;
 
         foreach ($surcharges as $surcharge) {
-            $amount = $surcharge->type === 'percentage'
+            $amount = 'percentage' === $surcharge->type
                 ? $baseUnitPrice * ($surcharge->amount / 100.0)
                 : $surcharge->amount;
 

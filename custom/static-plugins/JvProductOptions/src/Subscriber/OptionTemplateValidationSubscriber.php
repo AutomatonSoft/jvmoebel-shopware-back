@@ -43,9 +43,9 @@ final readonly class OptionTemplateValidationSubscriber implements EventSubscrib
         foreach ($commands as $command) {
             $entityName = $command->getEntityName();
 
-            if ($entityName === OptionTemplateValueDefinition::ENTITY_NAME) {
+            if (OptionTemplateValueDefinition::ENTITY_NAME === $entityName) {
                 $this->validateValue($command, $event);
-            } elseif ($entityName === OptionTemplateGroupDefinition::ENTITY_NAME) {
+            } elseif (OptionTemplateGroupDefinition::ENTITY_NAME === $entityName) {
                 $this->validateGroup($command, $event);
             }
         }
@@ -58,16 +58,16 @@ final readonly class OptionTemplateValidationSubscriber implements EventSubscrib
 
         $surchargeType = $payload['surcharge_type'] ?? $payload['surchargeType'] ?? null;
 
-        if ($surchargeType === null && $command instanceof UpdateCommand) {
+        if (null === $surchargeType && $command instanceof UpdateCommand) {
             $pk = $this->extractId($command->getPrimaryKey()['id'] ?? null);
-            if ($pk !== null) {
+            if (null !== $pk) {
                 /** @var OptionTemplateValueEntity|null $existing */
                 $existing = $this->valueRepository->search(new Criteria([$pk]), $event->getContext())->get($pk);
                 $surchargeType = $existing?->getSurchargeType();
             }
         }
 
-        if ($surchargeType !== null && !in_array($surchargeType, ['fixed', 'percentage'], true)) {
+        if (null !== $surchargeType && !in_array($surchargeType, ['fixed', 'percentage'], true)) {
             $violations->add(new ConstraintViolation(
                 sprintf('Invalid surcharge type "%s"', (string) $surchargeType),
                 null,
@@ -79,7 +79,7 @@ final readonly class OptionTemplateValidationSubscriber implements EventSubscrib
         }
 
         $colorHex = $payload['color_hex'] ?? $payload['colorHex'] ?? null;
-        if ($colorHex !== null && (!is_string($colorHex) || !preg_match('/^#[0-9A-Fa-f]{6}$/', $colorHex))) {
+        if (null !== $colorHex && (!is_string($colorHex) || !preg_match('/^#[0-9A-Fa-f]{6}$/', $colorHex))) {
             $violations->add(new ConstraintViolation(
                 sprintf('Invalid color hex "%s", must match #RRGGBB', (string) $colorHex),
                 null,
@@ -90,12 +90,12 @@ final readonly class OptionTemplateValidationSubscriber implements EventSubscrib
             ));
         }
 
-        if ($surchargeType === 'fixed') {
+        if ('fixed' === $surchargeType) {
             $hasPriceKey = array_key_exists('surcharge_price', $payload) || array_key_exists('surchargePrice', $payload);
             $rawPrice = $payload['surcharge_price'] ?? $payload['surchargePrice'] ?? null;
             $priceArray = null;
 
-            if ($rawPrice !== null) {
+            if (null !== $rawPrice) {
                 if (is_string($rawPrice)) {
                     $decoded = json_decode($rawPrice, true);
                     if (is_array($decoded)) {
@@ -116,7 +116,7 @@ final readonly class OptionTemplateValidationSubscriber implements EventSubscrib
                     null
                 ));
             } elseif ($hasPriceKey) {
-                if ($priceArray === null || $priceArray === []) {
+                if (null === $priceArray || [] === $priceArray) {
                     $violations->add(new ConstraintViolation(
                         'Fixed surcharge requires valid surchargePrice',
                         null,
@@ -134,7 +134,7 @@ final readonly class OptionTemplateValidationSubscriber implements EventSubscrib
                         }
                     }
 
-                    if ($defaultCurrencyPrice === null) {
+                    if (null === $defaultCurrencyPrice) {
                         $violations->add(new ConstraintViolation(
                             'Fixed surchargePrice must contain price for default currency',
                             null,
@@ -163,7 +163,7 @@ final readonly class OptionTemplateValidationSubscriber implements EventSubscrib
             $hasPercentageKey = array_key_exists('surcharge_percentage', $payload) || array_key_exists('surchargePercentage', $payload);
             $percentage = $payload['surcharge_percentage'] ?? $payload['surchargePercentage'] ?? null;
             if ($command instanceof InsertCommand) {
-                if ($hasPercentageKey && $percentage !== null) {
+                if ($hasPercentageKey && null !== $percentage) {
                     $violations->add(new ConstraintViolation(
                         'Percentage surcharge cannot be set when surcharge type is fixed',
                         null,
@@ -173,7 +173,7 @@ final readonly class OptionTemplateValidationSubscriber implements EventSubscrib
                         $percentage
                     ));
                 }
-            } elseif ($hasPercentageKey && $percentage !== null) {
+            } elseif ($hasPercentageKey && null !== $percentage) {
                 $violations->add(new ConstraintViolation(
                     'Percentage surcharge cannot be set when surcharge type is fixed',
                     null,
@@ -183,7 +183,7 @@ final readonly class OptionTemplateValidationSubscriber implements EventSubscrib
                     $percentage
                 ));
             }
-        } elseif ($surchargeType === 'percentage') {
+        } elseif ('percentage' === $surchargeType) {
             $hasPercentageKey = array_key_exists('surcharge_percentage', $payload) || array_key_exists('surchargePercentage', $payload);
             $percentage = $payload['surcharge_percentage'] ?? $payload['surchargePercentage'] ?? null;
 
@@ -211,7 +211,7 @@ final readonly class OptionTemplateValidationSubscriber implements EventSubscrib
 
             $hasPriceKey = array_key_exists('surcharge_price', $payload) || array_key_exists('surchargePrice', $payload);
             $rawPrice = $payload['surcharge_price'] ?? $payload['surchargePrice'] ?? null;
-            if ($hasPriceKey && $rawPrice !== null) {
+            if ($hasPriceKey && null !== $rawPrice) {
                 $violations->add(new ConstraintViolation(
                     'Price surcharge cannot be set when surcharge type is percentage',
                     null,
@@ -240,19 +240,19 @@ final readonly class OptionTemplateValidationSubscriber implements EventSubscrib
         $rawDefaultValId = $payload['default_value_id'] ?? $payload['defaultValueId'] ?? null;
         $defaultValueId = $this->extractId($rawDefaultValId);
 
-        if ($defaultValueId === null) {
+        if (null === $defaultValueId) {
             return;
         }
 
         $groupId = $this->extractId($command->getPrimaryKey()['id'] ?? null);
-        if ($groupId === null) {
+        if (null === $groupId) {
             return;
         }
 
         $valueGroupId = null;
 
         foreach ($event->getCommands() as $otherCommand) {
-            if ($otherCommand->getEntityName() !== OptionTemplateValueDefinition::ENTITY_NAME) {
+            if (OptionTemplateValueDefinition::ENTITY_NAME !== $otherCommand->getEntityName()) {
                 continue;
             }
 
@@ -265,7 +265,7 @@ final readonly class OptionTemplateValidationSubscriber implements EventSubscrib
             }
         }
 
-        if ($valueGroupId === null) {
+        if (null === $valueGroupId) {
             /** @var OptionTemplateValueEntity|null $val */
             $val = $this->valueRepository->search(new Criteria([$defaultValueId]), $event->getContext())->get($defaultValueId);
             $valueGroupId = $val?->getGroupId();
@@ -287,7 +287,7 @@ final readonly class OptionTemplateValidationSubscriber implements EventSubscrib
 
     private function extractId(mixed $raw): ?string
     {
-        if ($raw === null) {
+        if (null === $raw) {
             return null;
         }
 
@@ -296,7 +296,7 @@ final readonly class OptionTemplateValidationSubscriber implements EventSubscrib
                 return strtolower($raw);
             }
 
-            if (strlen($raw) === 16) {
+            if (16 === strlen($raw)) {
                 return Uuid::fromBytesToHex($raw);
             }
         }

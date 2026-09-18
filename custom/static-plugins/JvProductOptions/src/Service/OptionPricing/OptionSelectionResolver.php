@@ -10,24 +10,23 @@ use Shopware\Core\Framework\Uuid\Uuid;
 final readonly class OptionSelectionResolver
 {
     /**
-     * @param mixed $selections
      * @return list<OptionTemplateValueEntity>
      */
     public function resolve(OptionTemplateEntity $template, mixed $selections): array
     {
-        if ($selections !== null && !is_array($selections)) {
+        if (null !== $selections && !is_array($selections)) {
             throw new InvalidOptionSelectionException('Selections must be an associative array');
         }
 
-        if (is_array($selections) && array_is_list($selections) && $selections !== []) {
+        if (is_array($selections) && array_is_list($selections) && [] !== $selections) {
             throw new InvalidOptionSelectionException('Selections must be an associative array, list given');
         }
 
         $normalizedSelections = $selections ?? [];
 
         $groups = $template->getGroups();
-        if ($groups === null || $groups->count() === 0) {
-            if ($normalizedSelections !== []) {
+        if (null === $groups || 0 === $groups->count()) {
+            if ([] !== $normalizedSelections) {
                 throw new InvalidOptionSelectionException('Selections provided for template without groups');
             }
 
@@ -59,7 +58,7 @@ final readonly class OptionSelectionResolver
             $values = $group->getValues();
             $valueMap = [];
 
-            if ($values !== null) {
+            if (null !== $values) {
                 foreach ($values as $value) {
                     $valueMap[$value->getId()] = $value;
                 }
@@ -79,7 +78,7 @@ final readonly class OptionSelectionResolver
                 $selectedId = $group->getDefaultValueId();
             }
 
-            if ($selectedId === null) {
+            if (null === $selectedId) {
                 throw new InvalidOptionSelectionException(sprintf('No option selected and no default value defined for group "%s"', $groupId));
             }
 

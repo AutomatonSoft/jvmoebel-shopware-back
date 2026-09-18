@@ -20,8 +20,8 @@ use Shopware\Core\Framework\Uuid\Uuid;
 final readonly class OptionTemplateResolver
 {
     /**
-     * @param EntityRepository<ProductCollection> $productRepository
-     * @param EntityRepository<OptionTemplateCollection> $templateRepository
+     * @param EntityRepository<ProductCollection>               $productRepository
+     * @param EntityRepository<OptionTemplateCollection>        $templateRepository
      * @param EntityRepository<OptionTemplateProductCollection> $templateProductRepository
      */
     public function __construct(
@@ -39,7 +39,7 @@ final readonly class OptionTemplateResolver
         /** @var ProductEntity|null $product */
         $product = $this->productRepository->search($productCriteria, $context)->get($productId);
 
-        if ($product === null) {
+        if (null === $product) {
             return null;
         }
 
@@ -50,24 +50,24 @@ final readonly class OptionTemplateResolver
         $directCriteria->setLimit(1);
         /** @var OptionTemplateProductEntity|null $direct */
         $direct = $this->templateProductRepository->search($directCriteria, $context)->first();
-        if ($direct !== null) {
+        if (null !== $direct) {
             $templateId = $direct->getTemplateId();
         }
 
-        if ($templateId === null && $product->getParentId() !== null) {
+        if (null === $templateId && null !== $product->getParentId()) {
             $parentCriteria = new Criteria();
             $parentCriteria->addFilter(new EqualsFilter('productId', $product->getParentId()));
             $parentCriteria->setLimit(1);
             /** @var OptionTemplateProductEntity|null $parentDirect */
             $parentDirect = $this->templateProductRepository->search($parentCriteria, $context)->first();
-            if ($parentDirect !== null) {
+            if (null !== $parentDirect) {
                 $templateId = $parentDirect->getTemplateId();
             }
         }
 
-        if ($templateId !== null) {
+        if (null !== $templateId) {
             $template = $this->loadTemplate($templateId, $context);
-            if ($template !== null && $template->isActive() && $template->getGroups() !== null && $template->getGroups()->count() > 0) {
+            if (null !== $template && $template->isActive() && null !== $template->getGroups() && $template->getGroups()->count() > 0) {
                 return $template;
             }
 
@@ -80,16 +80,16 @@ final readonly class OptionTemplateResolver
                 'SELECT LOWER(HEX(product_stream_id)) FROM product_stream_mapping WHERE product_id = :productId',
                 ['productId' => Uuid::fromHexToBytes($productId)]
             );
-            if ($dbStreamIds !== []) {
+            if ([] !== $dbStreamIds) {
                 $streamIds = array_unique(array_merge($streamIds, $dbStreamIds));
             }
 
-            if ($product->getParentId() !== null) {
+            if (null !== $product->getParentId()) {
                 $parentStreamIds = $this->connection->fetchFirstColumn(
                     'SELECT LOWER(HEX(product_stream_id)) FROM product_stream_mapping WHERE product_id = :parentId',
                     ['parentId' => Uuid::fromHexToBytes($product->getParentId())]
                 );
-                if ($parentStreamIds !== []) {
+                if ([] !== $parentStreamIds) {
                     $streamIds = array_unique(array_merge($streamIds, $parentStreamIds));
                 }
             }
@@ -107,12 +107,12 @@ final readonly class OptionTemplateResolver
         $templates = $this->templateRepository->search($candidateCriteria, $context)->getEntities();
 
         foreach ($templates as $candidate) {
-            if ($candidate->getGroups() === null || $candidate->getGroups()->count() === 0) {
+            if (null === $candidate->getGroups() || 0 === $candidate->getGroups()->count()) {
                 continue;
             }
 
             $streams = $candidate->getProductStreams();
-            if ($streams === null || $streams->count() === 0) {
+            if (null === $streams || 0 === $streams->count()) {
                 continue;
             }
 
@@ -123,14 +123,14 @@ final readonly class OptionTemplateResolver
 
                 try {
                     $filters = $this->productStreamBuilder->buildFilters($stream->getId(), $context);
-                    if ($filters !== []) {
+                    if ([] !== $filters) {
                         $checkCriteria = new Criteria([$productId]);
                         $checkCriteria->addFilter(...$filters);
                         if ($this->productRepository->searchIds($checkCriteria, $context)->getTotal() > 0) {
                             return $this->loadTemplate($candidate->getId(), $context);
                         }
 
-                        if ($product->getParentId() !== null) {
+                        if (null !== $product->getParentId()) {
                             $parentCheckCriteria = new Criteria([$product->getParentId()]);
                             $parentCheckCriteria->addFilter(...$filters);
                             if ($this->productRepository->searchIds($parentCheckCriteria, $context)->getTotal() > 0) {
