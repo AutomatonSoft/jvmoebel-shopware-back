@@ -5,6 +5,7 @@
         class="jv-category-tree-sticky"
         :style="stickyOverlayStyle"
         :aria-label="$t('jv-import.categoryTree.stickyPathLabel')"
+        @focusin="onStickyFocusIn"
     >
         <div
             v-for="ancestor in stickyAncestors"

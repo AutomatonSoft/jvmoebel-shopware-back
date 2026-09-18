@@ -220,6 +220,15 @@ Shopware.Component.override('sw-category-tree', {
             return category?.translated?.name || category?.name || '';
         },
 
+        /**
+         * sw-tree listens for focusin on its root and pulls the focus back onto a tree
+         * item, falling back to the very first one. A pinned row is focusable but is not
+         * a tree item, so without stopping the event every click would jump the tree.
+         */
+        onStickyFocusIn(event) {
+            event.stopPropagation();
+        },
+
         onStickyAncestorClick(categoryId) {
             const category = this.loadedCategories[categoryId];
 
