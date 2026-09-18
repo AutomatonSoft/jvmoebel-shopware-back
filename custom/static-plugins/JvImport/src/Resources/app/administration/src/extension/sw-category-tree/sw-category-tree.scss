@@ -1,0 +1,41 @@
+/* Position, offset and width come from the component: the overlay is parked at the top
+   edge of the visible tree on every scroll frame. Keeping it out of the flow means pinned
+   rows never push the tree down, which would move the rows the pinning is measured from. */
+.jv-category-tree-sticky {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 10;
+
+    &__row {
+        display: flex;
+        align-items: center;
+        gap: var(--scale-size-4);
+        height: var(--scale-size-42);
+        padding-right: var(--scale-size-8);
+        background: var(--color-elevation-surface-raised);
+        cursor: pointer;
+
+        &:last-child {
+            box-shadow: 0 1px 0 var(--color-border-secondary-default);
+        }
+
+        &:hover .jv-category-tree-sticky__label {
+            color: var(--color-text-brand-default);
+        }
+    }
+
+    &__icon {
+        flex-shrink: 0;
+        color: var(--color-icon-primary-default);
+    }
+
+    &__label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: var(--font-size-xs);
+        line-height: var(--line-height-xs);
+        color: var(--color-text-primary-default);
+    }
+}
