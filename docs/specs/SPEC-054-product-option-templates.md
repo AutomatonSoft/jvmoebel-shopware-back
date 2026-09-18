@@ -263,7 +263,8 @@ Frontend показывает итоговую цену как `baseUnitPrice` +
   - `OptionSurchargeCalculator` — сумма надбавок за единицу;
   - `FixedSurchargeAmountResolver` — сумма `fixed` для валюты и налогового режима;
   - `OptionSelectionResolver` — проверка выбора и подстановка значений по умолчанию;
-  - `OptionTemplateResolver` — действующий шаблон товара.
+  - `OptionTemplateResolver` — действующий шаблон товара;
+  - `OptionLineItemIdGenerator` — детерминированный id позиции по товару и выбору.
 - Cart collector/processor с приоритетом ниже `ProductCartProcessor` (5000) и
   выше промоакций (4900).
 - Декоратор фабрики product line item для детерминированного id позиции.
