@@ -32,11 +32,9 @@ final readonly class ProductLineItemFactoryDecorator implements LineItemFactoryI
     {
         $productId = (string) ($data['referencedId'] ?? $data['id'] ?? '');
 
-        $hasPayloadSelections = isset($data['payload']['jvOptionSelections']) && is_array($data['payload']['jvOptionSelections']);
-        $hasDirectSelections = isset($data['jvOptionSelections']) && is_array($data['jvOptionSelections']);
-        $rawSelections = $hasPayloadSelections
+        $rawSelections = isset($data['payload']['jvOptionSelections']) && is_array($data['payload']['jvOptionSelections'])
             ? $data['payload']['jvOptionSelections']
-            : ($hasDirectSelections ? $data['jvOptionSelections'] : null);
+            : null;
 
         $template = $this->templateResolver->resolve($productId, $context->getContext());
         if (null !== $template) {
