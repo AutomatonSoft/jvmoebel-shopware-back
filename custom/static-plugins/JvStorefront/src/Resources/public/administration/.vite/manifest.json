@@ -1,6 +1,6 @@
 {
   "main.js": {
-    "file": "assets/jv-storefront-DrYs_Lz6.js",
+    "file": "assets/jv-storefront-C2DeGpr3.js",
     "name": "jv-storefront",
     "src": "main.js",
     "isEntry": true,
@@ -9,7 +9,7 @@
     ]
   },
   "module/jv-storefront-settings/page/jv-storefront-settings-index/index.js": {
-    "file": "assets/index-Q1Avaikd.js",
+    "file": "assets/index-B1FY6GW-.js",
     "name": "index",
     "src": "module/jv-storefront-settings/page/jv-storefront-settings-index/index.js",
     "isDynamicEntry": true,
