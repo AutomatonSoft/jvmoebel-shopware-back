@@ -20,7 +20,7 @@ export default {
             isLoading: false,
             isSaveSuccessful: false,
             groups: [],
-            currencyId: 'b7d255464c2148a789c66b92d80f582f',
+            currencyId: Shopware.Context.app.systemCurrencyId,
         };
     },
 

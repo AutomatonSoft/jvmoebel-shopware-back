@@ -16,12 +16,16 @@ Module.register('jv-option-template', {
         index: {
             component: 'jv-option-template-list',
             path: 'index',
+            meta: {
+                privilege: 'jv_option_template.viewer',
+            },
         },
         create: {
             component: 'jv-option-template-detail',
             path: 'create',
             meta: {
                 parentPath: 'jv.option.template.index',
+                privilege: 'jv_option_template.creator',
             },
         },
         detail: {
@@ -29,6 +33,7 @@ Module.register('jv-option-template', {
             path: 'detail/:id',
             meta: {
                 parentPath: 'jv.option.template.index',
+                privilege: 'jv_option_template.editor',
             },
         },
     },
@@ -40,6 +45,7 @@ Module.register('jv-option-template', {
             parent: 'sw-catalogue',
             path: 'jv.option.template.index',
             position: 50,
+            privilege: 'jv_option_template.viewer',
         },
     ],
 });

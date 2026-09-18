@@ -47,6 +47,8 @@
       "surchargeTypeFixed": "Fixed amount (currency)",
       "surchargeTypePercentage": "Percentage (%)",
       "labelValueSurchargePrice": "Price surcharge (gross / net)",
+      "labelValueSurchargeGross": "Gross",
+      "labelValueSurchargeNet": "Net",
       "labelValueSurchargePercentage": "Surcharge in %",
       "buttonDeleteValue": "Delete",
       "saveSuccess": "Option template saved successfully",

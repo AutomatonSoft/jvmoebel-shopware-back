@@ -47,6 +47,8 @@
       "surchargeTypeFixed": "Fester Betrag (Währung)",
       "surchargeTypePercentage": "Prozentual (%)",
       "labelValueSurchargePrice": "Preisaufschlag (Brutto / Netto)",
+      "labelValueSurchargeGross": "Brutto",
+      "labelValueSurchargeNet": "Netto",
       "labelValueSurchargePercentage": "Aufschlag in %",
       "buttonDeleteValue": "Löschen",
       "saveSuccess": "Optionsvorlage wurde erfolgreich gespeichert",

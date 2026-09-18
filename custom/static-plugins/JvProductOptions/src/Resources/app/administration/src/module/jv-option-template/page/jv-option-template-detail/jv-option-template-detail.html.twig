@@ -181,7 +181,7 @@
                                             <sw-container columns="1fr 1fr" gap="6px">
                                                 <sw-number-field
                                                     v-model:value="val.grossPrice"
-                                                    label="Gross €"
+                                                    :label="$t('jv-option-template.detail.labelValueSurchargeGross')"
                                                     size="small"
                                                     :step="0.01"
                                                     :digits="2"
@@ -189,7 +189,7 @@
                                                 />
                                                 <sw-number-field
                                                     v-model:value="val.netPrice"
-                                                    label="Net €"
+                                                    :label="$t('jv-option-template.detail.labelValueSurchargeNet')"
                                                     size="small"
                                                     :step="0.01"
                                                     :digits="2"
