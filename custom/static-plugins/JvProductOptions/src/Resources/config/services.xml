@@ -59,8 +59,6 @@
             <argument type="service" id="product.repository"/>
             <argument type="service" id="jv_option_template.repository"/>
             <argument type="service" id="jv_option_template_product.repository"/>
-            <argument type="service" id="Shopware\Core\Content\ProductStream\Service\ProductStreamBuilder"/>
-            <argument type="service" id="Doctrine\DBAL\Connection"/>
         </service>
 
         <service id="Jv\ProductOptions\Checkout\Cart\ProductLineItemFactoryDecorator"

@@ -4,6 +4,8 @@ namespace Jv\ProductOptions\Tests\Integration;
 
 use Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateValue\OptionTemplateValueCollection;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Content\Product\DataAbstractionLayer\ProductIndexer;
+use Shopware\Core\Content\Product\DataAbstractionLayer\ProductIndexingMessage;
 use Shopware\Core\Content\Test\Product\ProductBuilder;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
@@ -34,6 +36,7 @@ final class OptionTemplateStoreApiTest extends TestCase
 
         $this->createProducts($salesChannelId);
         $this->createStream();
+        $this->indexProducts();
         $this->createTemplates();
     }
 
@@ -281,6 +284,18 @@ final class OptionTemplateStoreApiTest extends TestCase
         ];
 
         static::getContainer()->get('product.repository')->create($products, Context::createDefaultContext());
+    }
+
+    private function indexProducts(): void
+    {
+        $productIds = array_map(
+            fn (string $key): string => $this->ids->get($key),
+            ['sofa', 'table', 'chair', 'bed', 'bed-variant'],
+        );
+
+        static::getContainer()->get(ProductIndexer::class)->handle(
+            new ProductIndexingMessage($productIds, null, Context::createDefaultContext()),
+        );
     }
 
     private function createStream(): void

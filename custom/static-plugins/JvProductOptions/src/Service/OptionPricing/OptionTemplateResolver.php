@@ -2,20 +2,18 @@
 
 namespace Jv\ProductOptions\Service\OptionPricing;
 
-use Doctrine\DBAL\Connection;
 use Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateProduct\OptionTemplateProductCollection;
 use Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateProduct\OptionTemplateProductEntity;
 use Jv\ProductOptions\Core\Content\OptionTemplate\OptionTemplateCollection;
 use Jv\ProductOptions\Core\Content\OptionTemplate\OptionTemplateEntity;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
-use Shopware\Core\Content\ProductStream\Service\ProductStreamBuilderInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
-use Shopware\Core\Framework\Uuid\Uuid;
 
 final readonly class OptionTemplateResolver
 {
@@ -28,122 +26,91 @@ final readonly class OptionTemplateResolver
         private EntityRepository $productRepository,
         private EntityRepository $templateRepository,
         private EntityRepository $templateProductRepository,
-        private ProductStreamBuilderInterface $productStreamBuilder,
-        private Connection $connection,
     ) {
     }
 
     public function resolve(string $productId, Context $context): ?OptionTemplateEntity
     {
-        $productCriteria = new Criteria([$productId]);
-        /** @var ProductEntity|null $product */
-        $product = $this->productRepository->search($productCriteria, $context)->get($productId);
+        $product = $context->enableInheritance(
+            fn (Context $inheritanceContext): ?ProductEntity => $this->productRepository
+                ->search(new Criteria([$productId]), $inheritanceContext)
+                ->get($productId)
+        );
 
         if (null === $product) {
             return null;
         }
 
-        $templateId = null;
-
-        $directCriteria = new Criteria();
-        $directCriteria->addFilter(new EqualsFilter('productId', $productId));
-        $directCriteria->setLimit(1);
-        /** @var OptionTemplateProductEntity|null $direct */
-        $direct = $this->templateProductRepository->search($directCriteria, $context)->first();
-        if (null !== $direct) {
-            $templateId = $direct->getTemplateId();
+        $candidateProductIds = [$productId];
+        if (null !== $product->getParentId()) {
+            $candidateProductIds[] = $product->getParentId();
         }
 
-        if (null === $templateId && null !== $product->getParentId()) {
-            $parentCriteria = new Criteria();
-            $parentCriteria->addFilter(new EqualsFilter('productId', $product->getParentId()));
-            $parentCriteria->setLimit(1);
-            /** @var OptionTemplateProductEntity|null $parentDirect */
-            $parentDirect = $this->templateProductRepository->search($parentCriteria, $context)->first();
-            if (null !== $parentDirect) {
-                $templateId = $parentDirect->getTemplateId();
-            }
-        }
-
-        if (null !== $templateId) {
-            $template = $this->loadTemplate($templateId, $context);
-            if (null !== $template && $template->isActive() && null !== $template->getGroups() && $template->getGroups()->count() > 0) {
-                return $template;
-            }
-
-            return null;
+        $manual = $this->resolveManualAssignment($candidateProductIds, $context);
+        if (null !== $manual) {
+            return $manual;
         }
 
         $streamIds = $product->getStreamIds() ?? [];
-        try {
-            $dbStreamIds = $this->connection->fetchFirstColumn(
-                'SELECT LOWER(HEX(product_stream_id)) FROM product_stream_mapping WHERE product_id = :productId',
-                ['productId' => Uuid::fromHexToBytes($productId)]
-            );
-            if ([] !== $dbStreamIds) {
-                $streamIds = array_unique(array_merge($streamIds, $dbStreamIds));
-            }
-
-            if (null !== $product->getParentId()) {
-                $parentStreamIds = $this->connection->fetchFirstColumn(
-                    'SELECT LOWER(HEX(product_stream_id)) FROM product_stream_mapping WHERE product_id = :parentId',
-                    ['parentId' => Uuid::fromHexToBytes($product->getParentId())]
-                );
-                if ([] !== $parentStreamIds) {
-                    $streamIds = array_unique(array_merge($streamIds, $parentStreamIds));
-                }
-            }
-        } catch (\Throwable) {
+        if ([] === $streamIds) {
+            return null;
         }
 
-        $candidateCriteria = new Criteria();
-        $candidateCriteria->addFilter(new EqualsFilter('active', true));
-        $candidateCriteria->addAssociation('productStreams');
-        $candidateCriteria->addAssociation('groups');
-        $candidateCriteria->addSorting(new FieldSorting('priority', FieldSorting::DESCENDING));
-        $candidateCriteria->addSorting(new FieldSorting('id', FieldSorting::ASCENDING));
+        return $this->resolveByStreams($streamIds, $context);
+    }
 
-        /** @var OptionTemplateCollection $templates */
-        $templates = $this->templateRepository->search($candidateCriteria, $context)->getEntities();
+    /**
+     * @param list<string> $productIds
+     */
+    private function resolveManualAssignment(array $productIds, Context $context): ?OptionTemplateEntity
+    {
+        foreach ($productIds as $productId) {
+            $criteria = new Criteria();
+            $criteria->addFilter(new EqualsFilter('productId', $productId));
+            $criteria->setLimit(1);
 
-        foreach ($templates as $candidate) {
-            if (null === $candidate->getGroups() || 0 === $candidate->getGroups()->count()) {
+            /** @var OptionTemplateProductEntity|null $assignment */
+            $assignment = $this->templateProductRepository->search($criteria, $context)->first();
+            if (null === $assignment) {
                 continue;
             }
 
-            $streams = $candidate->getProductStreams();
-            if (null === $streams || 0 === $streams->count()) {
-                continue;
-            }
-
-            foreach ($streams as $stream) {
-                if (\in_array($stream->getId(), $streamIds, true)) {
-                    return $this->loadTemplate($candidate->getId(), $context);
-                }
-
-                try {
-                    $filters = $this->productStreamBuilder->buildFilters($stream->getId(), $context);
-                    if ([] !== $filters) {
-                        $checkCriteria = new Criteria([$productId]);
-                        $checkCriteria->addFilter(...$filters);
-                        if ($this->productRepository->searchIds($checkCriteria, $context)->getTotal() > 0) {
-                            return $this->loadTemplate($candidate->getId(), $context);
-                        }
-
-                        if (null !== $product->getParentId()) {
-                            $parentCheckCriteria = new Criteria([$product->getParentId()]);
-                            $parentCheckCriteria->addFilter(...$filters);
-                            if ($this->productRepository->searchIds($parentCheckCriteria, $context)->getTotal() > 0) {
-                                return $this->loadTemplate($candidate->getId(), $context);
-                            }
-                        }
-                    }
-                } catch (\Throwable) {
-                }
+            $template = $this->loadTemplate($assignment->getTemplateId(), $context);
+            if (null !== $template && $this->isUsable($template)) {
+                return $template;
             }
         }
 
         return null;
+    }
+
+    /**
+     * @param list<string> $streamIds
+     */
+    private function resolveByStreams(array $streamIds, Context $context): ?OptionTemplateEntity
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('active', true));
+        $criteria->addFilter(new EqualsAnyFilter('productStreams.id', $streamIds));
+        $criteria->addAssociation('groups');
+        $criteria->addSorting(new FieldSorting('priority', FieldSorting::DESCENDING));
+        $criteria->addSorting(new FieldSorting('id', FieldSorting::ASCENDING));
+
+        /** @var OptionTemplateCollection $templates */
+        $templates = $this->templateRepository->search($criteria, $context)->getEntities();
+
+        foreach ($templates as $candidate) {
+            if ($this->isUsable($candidate)) {
+                return $this->loadTemplate($candidate->getId(), $context);
+            }
+        }
+
+        return null;
+    }
+
+    private function isUsable(OptionTemplateEntity $template): bool
+    {
+        return $template->isActive() && null !== $template->getGroups() && $template->getGroups()->count() > 0;
     }
 
     private function loadTemplate(string $templateId, Context $context): ?OptionTemplateEntity
