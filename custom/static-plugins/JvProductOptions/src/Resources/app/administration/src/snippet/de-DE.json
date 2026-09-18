@@ -1,0 +1,63 @@
+{
+  "jv-option-template": {
+    "general": {
+      "mainMenuItemGeneral": "Optionsvorlagen",
+      "descriptionTextModule": "Verwaltung von Produkt-Optionsvorlagen mit Preisaufschlägen"
+    },
+    "list": {
+      "title": "Optionsvorlagen",
+      "buttonAddTemplate": "Vorlage anlegen",
+      "columnName": "Name",
+      "columnActive": "Aktiv",
+      "columnPriority": "Priorität",
+      "columnGroupsCount": "Gruppen",
+      "columnCreatedAt": "Erstellt am",
+      "contextMenuEdit": "Bearbeiten",
+      "contextMenuDelete": "Löschen"
+    },
+    "detail": {
+      "titleNew": "Neue Optionsvorlage",
+      "buttonSave": "Speichern",
+      "buttonCancel": "Abbrechen",
+      "cardGeneral": "Allgemeine Informationen",
+      "labelName": "Name",
+      "placeholderName": "Name der Optionsvorlage...",
+      "labelActive": "Aktiv",
+      "labelPriority": "Priorität",
+      "labelProductStreams": "Dynamische Produktgruppen",
+      "placeholderProductStreams": "Dynamische Produktgruppen zuweisen...",
+      "cardGroups": "Optionsgruppen",
+      "buttonAddGroup": "Gruppe hinzufügen",
+      "emptyGroups": "Noch keine Optionsgruppen vorhanden. Klicken Sie auf «Gruppe hinzufügen».",
+      "labelGroupName": "Gruppenname",
+      "placeholderGroupName": "Name der Gruppe (z.B. Material, Farbe)...",
+      "labelGroupPosition": "Position",
+      "labelDefaultValue": "Standardwert",
+      "placeholderDefaultValue": "Standardwert wählen...",
+      "buttonDeleteGroup": "Gruppe löschen",
+      "valuesTitle": "Werte der Gruppe",
+      "buttonAddValue": "Wert hinzufügen",
+      "emptyValues": "Keine Werte in dieser Gruppe.",
+      "labelValueName": "Name des Wertes",
+      "placeholderValueName": "z.B. Leder, Rot...",
+      "labelValuePosition": "Position",
+      "labelValueColorHex": "Farbcode (HEX)",
+      "labelValueMedia": "Bild / Farbmuster",
+      "labelValueSurchargeType": "Aufschlag-Art",
+      "surchargeTypeFixed": "Fester Betrag (Währung)",
+      "surchargeTypePercentage": "Prozentual (%)",
+      "labelValueSurchargePrice": "Preisaufschlag (Brutto / Netto)",
+      "labelValueSurchargePercentage": "Aufschlag in %",
+      "buttonDeleteValue": "Löschen",
+      "saveSuccess": "Optionsvorlage wurde erfolgreich gespeichert",
+      "saveError": "Fehler beim Speichern der Optionsvorlage"
+    },
+    "product": {
+      "cardTitle": "Optionsvorlage",
+      "labelTemplate": "Optionsvorlage",
+      "placeholderTemplate": "Vorlage auswählen (leer lassen für automatische Zuweisung)...",
+      "helpText": "Wenn keine Vorlage explizit gewählt ist, gilt die aktive Vorlage der dynamischen Produktgruppe mit der höchsten Priorität.",
+      "saveSuccess": "Optionsvorlage für Produkt erfolgreich aktualisiert"
+    }
+  }
+}

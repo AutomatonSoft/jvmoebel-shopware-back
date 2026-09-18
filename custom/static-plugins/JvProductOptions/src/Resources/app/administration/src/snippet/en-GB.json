@@ -1,0 +1,63 @@
+{
+  "jv-option-template": {
+    "general": {
+      "mainMenuItemGeneral": "Option Templates",
+      "descriptionTextModule": "Manage product option templates with price surcharges"
+    },
+    "list": {
+      "title": "Option Templates",
+      "buttonAddTemplate": "Add template",
+      "columnName": "Name",
+      "columnActive": "Active",
+      "columnPriority": "Priority",
+      "columnGroupsCount": "Groups",
+      "columnCreatedAt": "Created at",
+      "contextMenuEdit": "Edit",
+      "contextMenuDelete": "Delete"
+    },
+    "detail": {
+      "titleNew": "New option template",
+      "buttonSave": "Save",
+      "buttonCancel": "Cancel",
+      "cardGeneral": "General information",
+      "labelName": "Name",
+      "placeholderName": "Enter template name...",
+      "labelActive": "Active",
+      "labelPriority": "Priority",
+      "labelProductStreams": "Dynamic product groups",
+      "placeholderProductStreams": "Assign dynamic product groups...",
+      "cardGroups": "Option groups",
+      "buttonAddGroup": "Add group",
+      "emptyGroups": "No option groups defined yet. Click «Add group».",
+      "labelGroupName": "Group name",
+      "placeholderGroupName": "Group name (e.g. Material, Color)...",
+      "labelGroupPosition": "Position",
+      "labelDefaultValue": "Default value",
+      "placeholderDefaultValue": "Select default value...",
+      "buttonDeleteGroup": "Delete group",
+      "valuesTitle": "Group values",
+      "buttonAddValue": "Add value",
+      "emptyValues": "No values in this group.",
+      "labelValueName": "Value name",
+      "placeholderValueName": "e.g. Leather, Red...",
+      "labelValuePosition": "Position",
+      "labelValueColorHex": "Color code (HEX)",
+      "labelValueMedia": "Image / Pattern swatch",
+      "labelValueSurchargeType": "Surcharge type",
+      "surchargeTypeFixed": "Fixed amount (currency)",
+      "surchargeTypePercentage": "Percentage (%)",
+      "labelValueSurchargePrice": "Price surcharge (gross / net)",
+      "labelValueSurchargePercentage": "Surcharge in %",
+      "buttonDeleteValue": "Delete",
+      "saveSuccess": "Option template saved successfully",
+      "saveError": "Failed to save option template"
+    },
+    "product": {
+      "cardTitle": "Option template",
+      "labelTemplate": "Option template",
+      "placeholderTemplate": "Select template (leave blank for automatic stream resolution)...",
+      "helpText": "If no template is explicitly selected, the active template from dynamic product groups with highest priority applies.",
+      "saveSuccess": "Product option template successfully updated"
+    }
+  }
+}

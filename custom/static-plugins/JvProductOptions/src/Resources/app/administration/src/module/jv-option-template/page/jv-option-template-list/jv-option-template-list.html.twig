@@ -1,0 +1,93 @@
+<sw-page class="jv-option-template-list">
+    <template #search-bar>
+        <sw-search-bar
+            initial-search-type="jv_option_template"
+            :placeholder="$t('jv-option-template.list.title')"
+            @search="onSearch"
+        />
+    </template>
+
+    <template #smart-bar-header>
+        <h2>
+            {{ $t('jv-option-template.list.title') }}
+            <span
+                v-if="!isLoading"
+                class="sw-page__smart-bar-amount"
+            >
+                ({{ total }})
+            </span>
+        </h2>
+    </template>
+
+    <template #smart-bar-actions>
+        <sw-button
+            variant="primary"
+            :router-link="{ name: 'jv.option.template.create' }"
+        >
+            {{ $t('jv-option-template.list.buttonAddTemplate') }}
+        </sw-button>
+    </template>
+
+    <template #content>
+        <div class="jv-option-template-list__content">
+            <sw-entity-listing
+                v-if="templates"
+                ref="templateGrid"
+                class="jv-option-template-list__grid"
+                :data-source="templates"
+                :columns="columns"
+                :repository="templateRepository"
+                :show-selection="false"
+                :show-settings="true"
+                :full-page="true"
+                :sort-by="sortBy"
+                :sort-direction="sortDirection"
+                :is-loading="isLoading"
+                :allow-edit="true"
+                :allow-delete="true"
+                :allow-inline-edit="true"
+                identifier="jv-option-template-list"
+                :disable-data-fetching="true"
+                @column-sort="onSortColumn"
+                @page-change="onPageChange"
+            >
+                <template #column-active="{ item }">
+                    <sw-icon
+                        v-if="item.active"
+                        name="regular-checkmark-xs"
+                        size="16px"
+                        color="#37d046"
+                    />
+                    <sw-icon
+                        v-else
+                        name="regular-times-s"
+                        size="16px"
+                        color="#de294c"
+                    />
+                </template>
+
+                <template #column-groups="{ item }">
+                    <span>{{ item.groups ? item.groups.length : 0 }}</span>
+                </template>
+
+                <template #column-createdAt="{ item }">
+                    <span>{{ item.createdAt ? item.createdAt.substring(0, 10) : '' }}</span>
+                </template>
+
+                <template #actions="{ item }">
+                    <sw-context-menu-item
+                        :router-link="{ name: 'jv.option.template.detail', params: { id: item.id } }"
+                    >
+                        {{ $t('jv-option-template.list.contextMenuEdit') }}
+                    </sw-context-menu-item>
+                    <sw-context-menu-item
+                        variant="danger"
+                        @click="deleteItem(item.id)"
+                    >
+                        {{ $t('jv-option-template.list.contextMenuDelete') }}
+                    </sw-context-menu-item>
+                </template>
+            </sw-entity-listing>
+        </div>
+    </template>
+</sw-page>
