@@ -10,6 +10,7 @@
         "jvmoebel/import": "^0.1",
         "jvmoebel/promotion": "^0.1",
         "jvmoebel/market-configuration": "^0.1",
+        "jvmoebel/product-options": "^0.1",
         "jvmoebel/seo": "^0.1",
         "jvmoebel/storefront": "^0.1.0",
         "shopware/administration": "*",

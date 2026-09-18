@@ -208,6 +208,7 @@ jobs:
             custom/static-plugins/JvCms/src/Resources/public/administration \
             custom/static-plugins/JvImport/src/Resources/public/administration \
             custom/static-plugins/JvStorefront/src/Resources/public/administration \
+            custom/static-plugins/JvProductOptions/src/Resources/public/administration \
             || {
               echo "Administration source and committed production assets differ."
               echo "Run: docker compose exec web bash bin/build-administration.sh"
@@ -215,6 +216,7 @@ jobs:
               git status --short -- \
                 custom/static-plugins/JvCms/src/Resources/public/administration \
                 custom/static-plugins/JvImport/src/Resources/public/administration \
-                custom/static-plugins/JvStorefront/src/Resources/public/administration
+                custom/static-plugins/JvStorefront/src/Resources/public/administration \
+                custom/static-plugins/JvProductOptions/src/Resources/public/administration
               exit 1
             }
