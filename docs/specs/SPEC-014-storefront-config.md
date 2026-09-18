@@ -2,7 +2,7 @@
 
 ## Цель
 
-Реализовать глобальную конфигурацию headless-витрины: DAL entities для social links, payment badges, shipping badges и international links, custom fields sales channel для footer about, Store API `GET /store-api/storefront-config`, Administration «Storefront settings».
+Реализовать глобальную конфигурацию headless-витрины: DAL entities для social links, payment badges, shipping badges, international links и contact channels, custom fields sales channel для footer about, Store API `GET /store-api/storefront-config`, Administration «Storefront settings».
 
 Межрепозиторный контракт:  
 `jvmoebel-shopware-docs` / `docs/specs/SPEC-011-storefront-config.md`.
@@ -14,7 +14,8 @@ CMS element `jv-footer` **не** реализуется.
 Входит:
 
 - новый static plugin `JvStorefront` (или согласованное расширение существующего плагина);
-- entities `jv_storefront_social_link`, `jv_storefront_payment_badge`, `jv_storefront_shipping_badge`, `jv_storefront_international_link`;
+- entities `jv_storefront_social_link`, `jv_storefront_payment_badge`, `jv_storefront_shipping_badge`, `jv_storefront_international_link`, `jv_storefront_contact_channel`;
+- `footer.contactWidget` в Store API ответе;
 - migrations, Admin module, Store API route;
 - custom fields sales channel (footer about, copyright, revocation, header nav whitelist);
 - Admin card **Navigation** (root category + visible direct children);
@@ -44,9 +45,10 @@ CMS element `jv-footer` **не** реализуется.
 5. Редактирует payment badge: label, icon media, position.
 6. Редактирует shipping badge: optional label, icon media (required), position — **без URL**, только информативный логотип перевозчика.
 7. Редактирует international link: target sales channel, optional label, flag icon (required), position, active.
-8. Footer / service navigation — по-прежнему **Sales channel → General** (entry points) + **Katalog → Kategorien** (состав и URL категорий).
-9. Store API `GET /store-api/storefront-config` отдаёт агрегированный JSON; `header.navigation` — отфильтрованный whitelist; `footer.shippingBadges` — логотипы доставки; `footer.internationalLinks` — флаги других рынков.
-10. Next.js рендерит header/footer без mock fixtures.
+8. Редактирует contact channel: type (required), url (required), optional label, optional icon, position, active — плавающая «кнопка связи» на всех страницах витрины.
+9. Footer / service navigation — по-прежнему **Sales channel → General** (entry points) + **Katalog → Kategorien** (состав и URL категорий).
+10. Store API `GET /store-api/storefront-config` отдаёт агрегированный JSON; `header.navigation` — отфильтрованный whitelist; `footer.shippingBadges` — логотипы доставки; `footer.internationalLinks` — флаги других рынков; `footer.contactWidget.channels` — способы связи.
+11. Next.js рендерит header / footer / contact widget без mock fixtures.
 
 ## Данные
 
@@ -112,6 +114,24 @@ Unique (logical): не более одной строки с одинаково�
 
 `url` в таблице **нет** — resolve в loader из primary domain `target_sales_channel_id`.
 
+#### `jv_storefront_contact_channel`
+
+| поле | тип | правило |
+|---|---|---|
+| `id` | UUID | PK |
+| `sales_channel_id` | UUID | FK, required, `ON DELETE CASCADE` |
+| `type` | string(32) | required, default `custom`; `telegram` \| `whatsapp` \| `email` \| `phone` \| `custom` |
+| `url` | string(500) | required; `http(s)`, `mailto:`, `tel:`, `sms:` |
+| `label` | string \| null | **optional**, trim; пусто → `NULL` |
+| `icon_media_id` | UUID \| null | FK media, **optional**, `ON DELETE SET NULL` |
+| `position` | int | default 0 |
+| `active` | bool | default true |
+| `created_at` / `updated_at` | datetime | |
+
+`type` — PHP enum `StorefrontContactChannelType` (backed string); в БД хранится `VARCHAR`, чтобы переименование case не ломало persisted rows. Неизвестное значение нормализуется в `custom` при сериализации, а не отбрасывает item.
+
+`icon_media_id` nullable: для `telegram` / `whatsapp` / `email` / `phone` у front есть встроенные векторные иконки; кастомная media их перекрывает.
+
 ### Sales channel custom fields
 
 | ключ | тип | назначение |
@@ -157,9 +177,13 @@ Custom fields — `TranslatedField` на `sales_channel_translation`. Admin ре
 | `StorefrontPaymentBadgeStruct` | `jv_storefront_footer_payment_badge` |
 | `StorefrontShippingBadgeStruct` | `jv_storefront_footer_shipping_badge` |
 | `StorefrontInternationalLinkStruct` | `jv_storefront_footer_international_link` |
+| `StorefrontContactWidgetStruct` | `jv_storefront_contact_widget` |
+| `StorefrontContactChannelStruct` | `jv_storefront_contact_widget_channel` |
 | `StorefrontMediaStruct` | `jv_storefront_media` |
 
 Navigation items — reuse struct или flat array по контракту front (`StoreNavigationItem`).
+
+**`apiAlias` не может совпадать с именем DAL-сущности.** `StructEncoder::isProtected()` ищет entity definition по `apiAlias`; при совпадении он применяет field protections сущности, а поля с `ApiAware(AdminApiSource::class)` вырезаются — Store API отдаёт item только с `apiAlias`. Поэтому entity `jv_storefront_contact_channel` сериализуется как `jv_storefront_contact_widget_channel` (так же, как `jv_storefront_social_link` → `jv_storefront_footer_social_link`).
 
 ## Правила
 
@@ -170,6 +194,8 @@ Navigation items — reuse struct или flat array по контракту fron
 - Shipping: `active = true`, resolved media; иначе skip; empty label → `null` в struct (item **не** skip).
 - International: `active = true`; target ≠ current sales channel; resolved storefront URL + flag media; иначе skip; empty label → `null` (item **не** skip).
 - International URL: primary domain target channel → `https://{host}` via `StorefrontInputNormalizer::safeSocialUrl()` или dedicated helper.
+- Contact: `active = true`; valid url обязателен, иначе skip item; `icon` и `label` optional (`null` в struct, item **не** skip); `type` вне enum → `custom`.
+- Contact URL: `StorefrontInputNormalizer::safeContactUrl()` — `http(s)` через `safeSocialUrl()`, `mailto:` через `safeEmail()`, `tel:` / `sms:` → optional `+` и ≥ 3 цифр, разделители `space ( ) . -` вырезаются (`tel:+49 (151) 234-5678` → `tel:+491512345678`).
 - Email: `FILTER_VALIDATE_EMAIL`; invalid → `null`.
 - Header navigation: root = `navigation_category_id`; depth = 1; фильтр + sort по `jv_header_navigation_visible_category_ids` (см. platform SPEC-011).
 - Footer navigation: `NavigationLoader` / `readNavigation` equivalents; SEO URLs текущего языка.
@@ -179,6 +205,7 @@ Navigation items — reuse struct или flat array по контракту fron
 - Migration `Migration1771000003CreateInternationalLinkSchema`: таблица `jv_storefront_international_link`.
 - Migration `Migration1771000004CreateShippingBadgeSchema`: таблица `jv_storefront_shipping_badge`.
 - Migration `Migration1771000005InternationalLinkOptionalLabel`: `label` nullable на `jv_storefront_international_link` (если v1 уже с NOT NULL).
+- Migration `Migration1771000006CreateContactChannelSchema`: таблица `jv_storefront_contact_channel`.
 - Admin: list + reorder + media picker; **+ Add** без deploy.
 
 ## Ошибки и повтор
@@ -186,7 +213,11 @@ Navigation items — reuse struct или flat array по контракту fron
 | случай | ожидание |
 |---|---|
 | нет social/payment/shipping/international | `[]` |
+| нет contact channels | `footer.contactWidget.channels: []` |
 | shipping/international без label | item в ответе с `label: null` |
+| contact channel без label / icon | item в ответе с `label: null` / `icon: null` |
+| contact channel с неизвестным `type` | item в ответе с `type: "custom"` |
+| contact channel с invalid url | item omit |
 | target = current sales channel | item omit |
 | target channel без domain | item omit |
 | duplicate target на source channel | Admin validation error on save |
@@ -211,6 +242,7 @@ custom/static-plugins/JvStorefront/
 │   ├── Core/Content/StorefrontPaymentBadge/
 │   ├── Core/Content/StorefrontShippingBadge/
 │   ├── Core/Content/StorefrontInternationalLink/
+│   ├── Core/Content/StorefrontContactChannel/
 │   ├── Migration/
 │   ├── StoreApi/Route/StorefrontConfigRoute.php
 │   ├── Service/StorefrontConfigLoader.php
@@ -236,6 +268,7 @@ Settings → Storefront settings
   Payment badges (data grid + add modal)
   Shipping badges (data grid + add modal)
   International links (data grid + add modal)
+  Contact widget (data grid + add modal)
 ```
 
 #### Navigation card (реализация)
@@ -275,6 +308,24 @@ Snippets: `jv-storefront-settings.*`.
 | Validation | reject save if `targetSalesChannelId === salesChannelId`; reject duplicate target for same source; reject save if `iconMediaId` missing; **label не required** |
 | Optional hint | load target channel with `domains` association → show resolved URL read-only |
 | i18n | `jv-storefront-settings.international.*` |
+
+#### Contact widget card (реализация)
+
+Паттерн — как social/payment: отдельный grid + modal, CRUD через repository.
+
+| Concern | Подход |
+|---|---|
+| Modal fields | `type` (`sw-single-select`, required, default `telegram`), `url` (required text, **пустое значение по умолчанию**, placeholder `https://`, helper по схемам), `label` (optional text), `iconMediaId` (media picker, **optional**), `position`, `active` |
+| Validation | reject save if `type` или `url` пустые; icon и label **не** required |
+| List columns | label (может быть пустым), type (переведённый), url, position, active |
+| i18n | `jv-storefront-settings.contact.*`, `jv-storefront-settings.contact.types.*` |
+
+#### Loader — contact channels
+
+1. Criteria: `salesChannelId = context`, `active = true`, sort `position`, `createdAt`.
+2. Association: `iconMedia`.
+3. Normalize: `url` via `safeContactUrl()` — `null` → skip item; `label` via `optionalString()`; `type` via `StorefrontContactChannelType::fromStoredValue()`; icon via `resolveMedia()` (может быть `null`).
+4. Map to `StorefrontContactChannelStruct`, обернуть в `StorefrontContactWidgetStruct` и передать в `StorefrontFooterStruct` как `contactWidget`.
 
 #### Loader — international links
 
@@ -322,13 +373,15 @@ Post-deploy hook `assets:install --force` синхронизирует `Resource
 - migration up повторно (+ custom field `jv_header_navigation_visible_category_ids`);
 - entity CRUD;
 - loader: header nav — null whitelist (catalog order), explicit `[]`, partial whitelist with custom order, stale uuid, duplicate ids in stored array;
-- loader: empty + populated social/payment/shipping/international;
+- loader: empty + populated social/payment/shipping/international/contact;
 - loader: shipping + international with `label: null` (icon-only);
 - loader: international — self-link omit, missing domain omit, URL resolve;
+- loader: contact — position order, inactive omit, invalid url omit, `icon: null`, unknown `type` → `custom`, изоляция по sales channel;
 - entity CRUD international link; duplicate target validation;
-- url/media normalization;
-- StructEncoder contract;
-- functional `GET /store-api/storefront-config` (header whitelist, footer SEO nav, international links, channel isolation).
+- url/media normalization (включая `safeContactUrl`: `mailto:`, `tel:`, `sms:`, reject `javascript:` и относительных путей);
+- enum `StorefrontContactChannelType::fromStoredValue()` + `values()`;
+- StructEncoder contract (в том числе `footer.contactWidget` и alias `jv_storefront_contact_widget_channel`);
+- functional `GET /store-api/storefront-config` (header whitelist, footer SEO nav, international links, contact widget, channel isolation).
 
 Ручные:
 
@@ -336,8 +389,9 @@ Post-deploy hook `assets:install --force` синхронизирует `Resource
 - Admin: add/reorder/deactivate social + payment + shipping + international;
 - Admin: shipping — save без label OK; без icon → error;
 - Admin: international — save без label OK; без flag icon → error; нельзя выбрать текущий channel; duplicate target → error;
+- Admin: contact widget — save без label и без icon OK; без url → error; смена `type` меняет иконку по умолчанию на витрине;
 - save custom fields + logo, reload;
-- Store API JSON = SPEC-011;
+- Store API JSON = SPEC-011 (включая `footer.contactWidget`);
 - новая категория под root появляется в Admin unchecked (при materialized whitelist);
 - footer category links меняются через Katalog, видны в `footer.categoryNavigation`.
 

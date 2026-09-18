@@ -24,6 +24,7 @@ final class StorefrontFooterStruct extends Struct
         protected array $paymentBadges,
         protected array $shippingBadges,
         protected array $internationalLinks,
+        protected StorefrontContactWidgetStruct $contactWidget,
     ) {
     }
 
@@ -76,6 +77,11 @@ final class StorefrontFooterStruct extends Struct
     public function getInternationalLinks(): array
     {
         return $this->internationalLinks;
+    }
+
+    public function getContactWidget(): StorefrontContactWidgetStruct
+    {
+        return $this->contactWidget;
     }
 
     public function getApiAlias(): string

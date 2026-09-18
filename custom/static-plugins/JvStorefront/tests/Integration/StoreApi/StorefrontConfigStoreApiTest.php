@@ -2,9 +2,12 @@
 
 namespace Jv\Storefront\Tests\Integration\StoreApi;
 
+use Jv\Storefront\Core\Content\StorefrontContactChannel\StorefrontContactChannelType;
 use Jv\Storefront\Service\StorefrontConfigLoader;
 use Jv\Storefront\StoreApi\Struct\StorefrontBrandingStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontConfigStruct;
+use Jv\Storefront\StoreApi\Struct\StorefrontContactChannelStruct;
+use Jv\Storefront\StoreApi\Struct\StorefrontContactWidgetStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontFooterAboutStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontFooterRevocationStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontFooterStruct;
@@ -62,6 +65,8 @@ final class StorefrontConfigStoreApiTest extends TestCase
         self::assertIsArray($payload['footer'] ?? null);
         self::assertSame('jv_storefront_header', $payload['header']['apiAlias'] ?? null);
         self::assertSame('jv_storefront_footer', $payload['footer']['apiAlias'] ?? null);
+        self::assertSame('jv_storefront_contact_widget', $payload['footer']['contactWidget']['apiAlias'] ?? null);
+        self::assertIsArray($payload['footer']['contactWidget']['channels'] ?? null);
         self::assertIsArray($payload['header']['navigation'] ?? null);
         self::assertIsArray($payload['footer']['socialLinks'] ?? null);
         self::assertIsArray($payload['footer']['paymentBadges'] ?? null);
@@ -89,6 +94,8 @@ final class StorefrontConfigStoreApiTest extends TestCase
         self::assertSame('jv_storefront_branding', $payload['header']['branding']['apiAlias']);
         self::assertSame('jv_storefront_footer_about', $payload['footer']['about']['apiAlias']);
         self::assertSame('jv_storefront_footer_revocation', $payload['footer']['revocation']['apiAlias']);
+        self::assertSame('jv_storefront_contact_widget', $payload['footer']['contactWidget']['apiAlias']);
+        self::assertSame([], $payload['footer']['contactWidget']['channels']);
     }
 
     public function testStructEncoderIncludesSocialLinkFieldsWhenPresent(): void
@@ -145,6 +152,7 @@ final class StorefrontConfigStoreApiTest extends TestCase
                         icon: $icon,
                     ),
                 ],
+                contactWidget: new StorefrontContactWidgetStruct(channels: []),
             ),
         );
 
@@ -173,6 +181,252 @@ final class StorefrontConfigStoreApiTest extends TestCase
         self::assertNull($payload['footer']['internationalLinks'][0]['label']);
         self::assertSame('https://www.jvmoebel.at', $payload['footer']['internationalLinks'][0]['url'] ?? null);
         self::assertIsArray($payload['footer']['internationalLinks'][0]['icon'] ?? null);
+    }
+
+    public function testStructEncoderIncludesContactWidgetChannels(): void
+    {
+        /** @var StructEncoder $encoder */
+        $encoder = static::getContainer()->get(StructEncoder::class);
+
+        $struct = new StorefrontConfigStruct(
+            header: new StorefrontHeaderStruct(
+                branding: new StorefrontBrandingStruct('Test', null),
+                navigation: [],
+            ),
+            footer: new StorefrontFooterStruct(
+                about: new StorefrontFooterAboutStruct(null, 'Title', ''),
+                revocation: new StorefrontFooterRevocationStruct(false, null, null),
+                copyrightText: null,
+                categoryNavigation: [],
+                serviceNavigation: [],
+                socialLinks: [],
+                paymentBadges: [],
+                shippingBadges: [],
+                internationalLinks: [],
+                contactWidget: new StorefrontContactWidgetStruct(
+                    channels: [
+                        new StorefrontContactChannelStruct(
+                            id: Uuid::randomHex(),
+                            type: StorefrontContactChannelType::Telegram,
+                            url: 'https://t.me/XLANDJV',
+                            label: 'Telegram',
+                            position: 0,
+                            icon: null,
+                        ),
+                        new StorefrontContactChannelStruct(
+                            id: Uuid::randomHex(),
+                            type: StorefrontContactChannelType::Custom,
+                            url: 'mailto:info@example.com',
+                            label: null,
+                            position: 1,
+                            icon: new StorefrontMediaStruct('https://example.com/icon.png', 'Icon'),
+                        ),
+                    ],
+                ),
+            ),
+        );
+
+        $payload = $encoder->encode($struct, new ResponseFields());
+
+        self::assertSame('jv_storefront_contact_widget', $payload['footer']['contactWidget']['apiAlias'] ?? null);
+        self::assertCount(2, $payload['footer']['contactWidget']['channels']);
+
+        $first = $payload['footer']['contactWidget']['channels'][0];
+        self::assertSame('jv_storefront_contact_widget_channel', $first['apiAlias'] ?? null);
+        self::assertSame('telegram', $first['type'] ?? null);
+        self::assertSame('https://t.me/XLANDJV', $first['url'] ?? null);
+        self::assertSame('Telegram', $first['label'] ?? null);
+        self::assertSame(0, $first['position'] ?? null);
+        self::assertArrayHasKey('icon', $first);
+        self::assertNull($first['icon']);
+
+        $second = $payload['footer']['contactWidget']['channels'][1];
+        self::assertSame('custom', $second['type'] ?? null);
+        self::assertSame('mailto:info@example.com', $second['url'] ?? null);
+        self::assertArrayHasKey('label', $second);
+        self::assertNull($second['label']);
+        self::assertSame('jv_storefront_media', $second['icon']['apiAlias'] ?? null);
+    }
+
+    public function testContactWidgetReturnsActiveChannelsInPositionOrder(): void
+    {
+        $mediaId = Uuid::randomHex();
+        $telegramId = Uuid::randomHex();
+        $phoneId = Uuid::randomHex();
+        $inactiveId = Uuid::randomHex();
+        $invalidUrlId = Uuid::randomHex();
+
+        /** @var EntityRepository<MediaCollection> $mediaRepository */
+        $mediaRepository = static::getContainer()->get('media.repository');
+        Context::createDefaultContext()->scope(Context::SYSTEM_SCOPE, static function (Context $systemContext) use ($mediaRepository, $mediaId): void {
+            $mediaRepository->create([
+                [
+                    'id' => $mediaId,
+                    'fileName' => 'vk-icon',
+                    'fileExtension' => 'png',
+                    'mimeType' => 'image/png',
+                    'fileSize' => 100,
+                    'private' => false,
+                    'path' => 'media/vk-icon.png',
+                ],
+            ], $systemContext);
+        });
+
+        $browser = $this->createCustomSalesChannelBrowser();
+        $salesChannelId = $this->getSalesChannelApiSalesChannelId();
+
+        static::getContainer()->get('jv_storefront_contact_channel.repository')->create([
+            [
+                'id' => $phoneId,
+                'salesChannelId' => $salesChannelId,
+                'type' => 'phone',
+                'url' => 'tel:+49 (151) 234-5678',
+                'label' => null,
+                'iconMediaId' => $mediaId,
+                'position' => 2,
+                'active' => true,
+            ],
+            [
+                'id' => $telegramId,
+                'salesChannelId' => $salesChannelId,
+                'type' => 'telegram',
+                'url' => 'https://t.me/XLANDJV',
+                'label' => 'Telegram',
+                'iconMediaId' => null,
+                'position' => 1,
+                'active' => true,
+            ],
+            [
+                'id' => $inactiveId,
+                'salesChannelId' => $salesChannelId,
+                'type' => 'whatsapp',
+                'url' => 'https://wa.me/491512345678',
+                'label' => 'WhatsApp',
+                'iconMediaId' => null,
+                'position' => 3,
+                'active' => false,
+            ],
+            [
+                'id' => $invalidUrlId,
+                'salesChannelId' => $salesChannelId,
+                'type' => 'custom',
+                'url' => 'javascript:alert(1)',
+                'label' => 'Broken',
+                'iconMediaId' => null,
+                'position' => 4,
+                'active' => true,
+            ],
+        ], Context::createDefaultContext());
+
+        $browser->request('GET', '/store-api/storefront-config');
+
+        self::assertSame(200, $browser->getResponse()->getStatusCode());
+
+        /** @var array<string, mixed> $payload */
+        $payload = json_decode((string) $browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        $channels = $payload['footer']['contactWidget']['channels'] ?? [];
+
+        self::assertCount(2, $channels);
+        self::assertSame($telegramId, $channels[0]['id'] ?? null);
+        self::assertSame('telegram', $channels[0]['type'] ?? null);
+        self::assertSame('https://t.me/XLANDJV', $channels[0]['url'] ?? null);
+        self::assertSame('Telegram', $channels[0]['label'] ?? null);
+        self::assertNull($channels[0]['icon']);
+
+        self::assertSame($phoneId, $channels[1]['id'] ?? null);
+        self::assertSame('phone', $channels[1]['type'] ?? null);
+        self::assertSame('tel:+491512345678', $channels[1]['url'] ?? null);
+        self::assertArrayHasKey('label', $channels[1]);
+        self::assertNull($channels[1]['label']);
+        self::assertSame('jv_storefront_media', $channels[1]['icon']['apiAlias'] ?? null);
+    }
+
+    public function testContactWidgetFallsBackToCustomTypeForUnknownStoredValue(): void
+    {
+        $channelId = Uuid::randomHex();
+
+        $browser = $this->createCustomSalesChannelBrowser();
+
+        static::getContainer()->get('jv_storefront_contact_channel.repository')->create([
+            [
+                'id' => $channelId,
+                'salesChannelId' => $this->getSalesChannelApiSalesChannelId(),
+                'type' => 'viber',
+                'url' => 'https://example.com/chat',
+                'label' => 'Viber',
+                'iconMediaId' => null,
+                'position' => 1,
+                'active' => true,
+            ],
+        ], Context::createDefaultContext());
+
+        $browser->request('GET', '/store-api/storefront-config');
+
+        self::assertSame(200, $browser->getResponse()->getStatusCode());
+
+        /** @var array<string, mixed> $payload */
+        $payload = json_decode((string) $browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertCount(1, $payload['footer']['contactWidget']['channels'] ?? []);
+        self::assertSame($channelId, $payload['footer']['contactWidget']['channels'][0]['id'] ?? null);
+        self::assertSame('custom', $payload['footer']['contactWidget']['channels'][0]['type'] ?? null);
+    }
+
+    public function testContactWidgetIsScopedToCurrentSalesChannel(): void
+    {
+        $foreignSalesChannelId = Uuid::randomHex();
+
+        /** @var EntityRepository<SalesChannelCollection> $salesChannelRepository */
+        $salesChannelRepository = static::getContainer()->get('sales_channel.repository');
+        $paymentMethod = $this->getAvailablePaymentMethod();
+        $shippingMethod = $this->getAvailableShippingMethod();
+
+        $salesChannelRepository->create([
+            [
+                'id' => $foreignSalesChannelId,
+                'typeId' => Defaults::SALES_CHANNEL_TYPE_STOREFRONT,
+                'name' => 'Contact widget foreign channel',
+                'accessKey' => 'contact-widget-foreign-key',
+                'languageId' => Defaults::LANGUAGE_SYSTEM,
+                'snippetSetId' => $this->getSnippetSetIdForLocale('en-GB'),
+                'currencyId' => Defaults::CURRENCY,
+                'paymentMethodId' => $paymentMethod->getId(),
+                'paymentMethods' => [['id' => $paymentMethod->getId()]],
+                'shippingMethodId' => $shippingMethod->getId(),
+                'shippingMethods' => [['id' => $shippingMethod->getId()]],
+                'navigationCategoryId' => $this->getValidCategoryId(),
+                'countryId' => $this->getValidCountryId(null),
+                'currencies' => [['id' => Defaults::CURRENCY]],
+                'languages' => [['id' => Defaults::LANGUAGE_SYSTEM]],
+                'customerGroupId' => TestDefaults::FALLBACK_CUSTOMER_GROUP,
+                'countries' => [['id' => $this->getValidCountryId(null)]],
+            ],
+        ], Context::createDefaultContext());
+
+        $browser = $this->createCustomSalesChannelBrowser();
+
+        static::getContainer()->get('jv_storefront_contact_channel.repository')->create([
+            [
+                'id' => Uuid::randomHex(),
+                'salesChannelId' => $foreignSalesChannelId,
+                'type' => 'telegram',
+                'url' => 'https://t.me/other-market',
+                'label' => 'Other market',
+                'iconMediaId' => null,
+                'position' => 1,
+                'active' => true,
+            ],
+        ], Context::createDefaultContext());
+
+        $browser->request('GET', '/store-api/storefront-config');
+
+        self::assertSame(200, $browser->getResponse()->getStatusCode());
+
+        /** @var array<string, mixed> $payload */
+        $payload = json_decode((string) $browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+
+        self::assertSame([], $payload['footer']['contactWidget']['channels'] ?? null);
     }
 
     public function testInternationalLinksReturnsActiveLinksWithResolvedTargetUrl(): void

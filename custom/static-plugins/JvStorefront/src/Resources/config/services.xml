@@ -22,6 +22,10 @@
             <tag name="shopware.entity.definition" entity="jv_storefront_international_link"/>
         </service>
 
+        <service id="Jv\Storefront\Core\Content\StorefrontContactChannel\StorefrontContactChannelDefinition">
+            <tag name="shopware.entity.definition" entity="jv_storefront_contact_channel"/>
+        </service>
+
         <service id="Jv\Storefront\Service\StorefrontInputNormalizer"/>
         <service id="Jv\Storefront\Service\StorefrontSalesChannelUrlResolver"/>
         <service id="Jv\Storefront\Service\StorefrontConfigLoader">
@@ -29,6 +33,7 @@
             <argument type="service" id="jv_storefront_payment_badge.repository"/>
             <argument type="service" id="jv_storefront_shipping_badge.repository"/>
             <argument type="service" id="jv_storefront_international_link.repository"/>
+            <argument type="service" id="jv_storefront_contact_channel.repository"/>
             <argument type="service" id="media.repository"/>
             <argument type="service" id="sales_channel.repository"/>
             <argument type="service" id="Shopware\Core\Content\Category\Service\NavigationLoader"/>

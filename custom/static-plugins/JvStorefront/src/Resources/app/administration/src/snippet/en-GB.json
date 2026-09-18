@@ -46,6 +46,22 @@
             "flagIconCaption": "Select flag icon",
             "labelHelp": "Leave empty to show flag only."
         },
+        "contact": {
+            "title": "Contact widget",
+            "helpText": "Floating contact button shown on every storefront page.",
+            "type": "Channel type",
+            "urlPlaceholder": "https://",
+            "urlHelp": "Supported: http(s)://, mailto:, tel:, sms:",
+            "labelHelp": "Shown as tooltip on the storefront. Leave empty to show icon only.",
+            "iconCaption": "Select channel icon",
+            "types": {
+                "telegram": "Telegram",
+                "whatsapp": "WhatsApp",
+                "email": "Email",
+                "phone": "Phone",
+                "custom": "Custom"
+            }
+        },
         "list": {
             "label": "Label",
             "url": "URL",
@@ -64,7 +80,9 @@
             "shippingCreate": "Add shipping badge",
             "shippingEdit": "Edit shipping badge",
             "internationalCreate": "Add international link",
-            "internationalEdit": "Edit international link"
+            "internationalEdit": "Edit international link",
+            "contactCreate": "Add contact channel",
+            "contactEdit": "Edit contact channel"
         },
         "actions": {
             "add": "Add"
@@ -93,7 +111,12 @@
             "internationalSelfTargetFailed": "Target sales channel must differ from the current sales channel.",
             "internationalDuplicateTargetFailed": "This target sales channel is already linked.",
             "internationalDeleted": "International link deleted.",
-            "internationalDeleteFailed": "Could not delete international link."
+            "internationalDeleteFailed": "Could not delete international link.",
+            "contactSaved": "Contact channel saved.",
+            "contactSaveFailed": "Could not save contact channel.",
+            "contactValidationFailed": "Please select a channel type and fill in the URL.",
+            "contactDeleted": "Contact channel deleted.",
+            "contactDeleteFailed": "Could not delete contact channel."
         }
     }
 }
