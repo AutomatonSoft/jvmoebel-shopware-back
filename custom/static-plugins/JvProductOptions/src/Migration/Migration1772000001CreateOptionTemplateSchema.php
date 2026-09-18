@@ -40,9 +40,7 @@ final class Migration1772000001CreateOptionTemplateSchema extends MigrationStep
             CREATE TABLE IF NOT EXISTS `jv_option_template_group` (
                 `id` BINARY(16) NOT NULL,
                 `template_id` BINARY(16) NOT NULL,
-                `display_type` VARCHAR(32) NOT NULL DEFAULT \'select\',
                 `position` INT NOT NULL DEFAULT 0,
-                `required` TINYINT(1) NOT NULL DEFAULT 1,
                 `default_value_id` BINARY(16) NULL,
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,
@@ -55,7 +53,6 @@ final class Migration1772000001CreateOptionTemplateSchema extends MigrationStep
                 `jv_option_template_group_id` BINARY(16) NOT NULL,
                 `language_id` BINARY(16) NOT NULL,
                 `name` VARCHAR(255) NOT NULL,
-                `description` LONGTEXT NULL,
                 `created_at` DATETIME(3) NOT NULL,
                 `updated_at` DATETIME(3) NULL,
                 PRIMARY KEY (`jv_option_template_group_id`, `language_id`),
