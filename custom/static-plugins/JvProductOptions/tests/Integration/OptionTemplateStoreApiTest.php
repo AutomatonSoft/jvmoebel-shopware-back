@@ -197,7 +197,7 @@ final class OptionTemplateStoreApiTest extends TestCase
             'referencedId' => $this->ids->get($productKey),
             'quantity' => $quantity,
         ];
-        if ($selection !== null) {
+        if (null !== $selection) {
             $selections = [];
             foreach ($selection as $groupKey => $valueKey) {
                 $selections[$this->ids->get($groupKey)] = $this->ids->get($valueKey);

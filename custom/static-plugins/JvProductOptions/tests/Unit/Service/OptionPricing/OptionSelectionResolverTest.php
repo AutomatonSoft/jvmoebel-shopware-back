@@ -60,9 +60,6 @@ final class OptionSelectionResolverTest extends TestCase
         $this->resolver->resolve($template, [self::MATERIAL => self::LEATHER]);
     }
 
-    /**
-     * @param mixed $selections
-     */
     #[DataProvider('invalidSelectionProvider')]
     public function testInvalidSelectionIsRejected($selections): void
     {
