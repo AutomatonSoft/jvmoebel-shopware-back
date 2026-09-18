@@ -197,9 +197,9 @@ final readonly class OptionTemplateValidationSubscriber implements EventSubscrib
                     null
                 ));
             } elseif ($hasPercentageKey) {
-                if (!is_numeric($percentage) || (float) $percentage < 0) {
+                if (!is_numeric($percentage) || (float) $percentage < 0 || (float) $percentage > 1000) {
                     $violations->add(new ConstraintViolation(
-                        'Percentage surcharge cannot be negative',
+                        'Percentage surcharge must be between 0 and 1000',
                         null,
                         [],
                         null,
