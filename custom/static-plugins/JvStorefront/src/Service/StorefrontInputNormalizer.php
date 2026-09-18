@@ -127,6 +127,36 @@ final class StorefrontInputNormalizer
         return $url;
     }
 
+    /**
+     * Contact channels additionally accept the direct-contact schemes used by the storefront widget:
+     * `mailto:`, `tel:` and `sms:`. Dial numbers are returned without separators so the front can
+     * use the value as-is in an anchor href.
+     */
+    public function safeContactUrl(?string $url): ?string
+    {
+        $url = trim((string) $url);
+        if ('' === $url) {
+            return null;
+        }
+
+        $schemeRaw = parse_url($url, \PHP_URL_SCHEME);
+        $scheme = \is_string($schemeRaw) ? strtolower($schemeRaw) : '';
+
+        if ('mailto' === $scheme) {
+            $email = $this->safeEmail(substr($url, \strlen('mailto:')));
+
+            return null === $email ? null : 'mailto:'.$email;
+        }
+
+        if (\in_array($scheme, ['tel', 'sms'], true)) {
+            $number = $this->safeDialNumber(substr($url, \strlen($scheme) + 1));
+
+            return null === $number ? null : $scheme.':'.$number;
+        }
+
+        return $this->safeSocialUrl($url);
+    }
+
     public function safeHref(?string $href): ?string
     {
         $href = trim((string) $href);
@@ -151,5 +181,15 @@ final class StorefrontInputNormalizer
         $validated = filter_var($email, \FILTER_VALIDATE_EMAIL);
 
         return \is_string($validated) ? $validated : null;
+    }
+
+    private function safeDialNumber(string $number): ?string
+    {
+        $compact = preg_replace('/[\s().\-]/', '', trim($number));
+        if (!\is_string($compact) || 1 !== preg_match('/^\+?\d{3,}$/', $compact)) {
+            return null;
+        }
+
+        return $compact;
     }
 }

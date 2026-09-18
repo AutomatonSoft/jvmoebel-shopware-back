@@ -2,6 +2,9 @@
 
 namespace Jv\Storefront\Service;
 
+use Jv\Storefront\Core\Content\StorefrontContactChannel\StorefrontContactChannelCollection;
+use Jv\Storefront\Core\Content\StorefrontContactChannel\StorefrontContactChannelEntity;
+use Jv\Storefront\Core\Content\StorefrontContactChannel\StorefrontContactChannelType;
 use Jv\Storefront\Core\Content\StorefrontInternationalLink\StorefrontInternationalLinkCollection;
 use Jv\Storefront\Core\Content\StorefrontInternationalLink\StorefrontInternationalLinkEntity;
 use Jv\Storefront\Core\Content\StorefrontPaymentBadge\StorefrontPaymentBadgeCollection;
@@ -12,6 +15,8 @@ use Jv\Storefront\Core\Content\StorefrontSocialLink\StorefrontSocialLinkCollecti
 use Jv\Storefront\Core\Content\StorefrontSocialLink\StorefrontSocialLinkEntity;
 use Jv\Storefront\StoreApi\Struct\StorefrontBrandingStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontConfigStruct;
+use Jv\Storefront\StoreApi\Struct\StorefrontContactChannelStruct;
+use Jv\Storefront\StoreApi\Struct\StorefrontContactWidgetStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontFooterAboutStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontFooterRevocationStruct;
 use Jv\Storefront\StoreApi\Struct\StorefrontFooterStruct;
@@ -51,6 +56,7 @@ final class StorefrontConfigLoader
      * @param EntityRepository<StorefrontPaymentBadgeCollection>      $paymentBadgeRepository
      * @param EntityRepository<StorefrontShippingBadgeCollection>     $shippingBadgeRepository
      * @param EntityRepository<StorefrontInternationalLinkCollection> $internationalLinkRepository
+     * @param EntityRepository<StorefrontContactChannelCollection>    $contactChannelRepository
      * @param EntityRepository<MediaCollection>                       $mediaRepository
      * @param EntityRepository<SalesChannelCollection>                $salesChannelRepository
      */
@@ -59,6 +65,7 @@ final class StorefrontConfigLoader
         private readonly EntityRepository $paymentBadgeRepository,
         private readonly EntityRepository $shippingBadgeRepository,
         private readonly EntityRepository $internationalLinkRepository,
+        private readonly EntityRepository $contactChannelRepository,
         private readonly EntityRepository $mediaRepository,
         private readonly EntityRepository $salesChannelRepository,
         private readonly NavigationLoaderInterface $navigationLoader,
@@ -87,6 +94,9 @@ final class StorefrontConfigLoader
                 paymentBadges: $this->loadPaymentBadges($salesChannel->getId(), $context),
                 shippingBadges: $this->loadShippingBadges($salesChannel->getId(), $context),
                 internationalLinks: $this->loadInternationalLinks($salesChannel->getId(), $context),
+                contactWidget: new StorefrontContactWidgetStruct(
+                    channels: $this->loadContactChannels($salesChannel->getId(), $context),
+                ),
             ),
         );
     }
@@ -505,6 +515,50 @@ final class StorefrontConfigLoader
             openInNewTab: $entity->isOpenInNewTab(),
             position: $entity->getPosition(),
             icon: $icon,
+        );
+    }
+
+    /**
+     * @return list<StorefrontContactChannelStruct>
+     */
+    private function loadContactChannels(string $salesChannelId, SalesChannelContext $context): array
+    {
+        $criteria = (new Criteria())
+            ->addFilter(new EqualsFilter('salesChannelId', $salesChannelId))
+            ->addFilter(new EqualsFilter('active', true))
+            ->addSorting(new FieldSorting('position', FieldSorting::ASCENDING))
+            ->addSorting(new FieldSorting('createdAt', FieldSorting::ASCENDING))
+            ->addAssociation('iconMedia');
+
+        $entities = $this->contactChannelRepository->search($criteria, $context->getContext())->getEntities();
+        $normalized = [];
+
+        foreach ($entities as $entity) {
+            $item = $this->normalizeContactChannel($entity);
+            if (null !== $item) {
+                $normalized[] = $item;
+            }
+        }
+
+        return $normalized;
+    }
+
+    private function normalizeContactChannel(StorefrontContactChannelEntity $entity): ?StorefrontContactChannelStruct
+    {
+        $url = $this->normalizer->safeContactUrl($entity->getUrl());
+        if (null === $url) {
+            return null;
+        }
+
+        $label = $this->normalizer->optionalString($entity->getLabel());
+
+        return new StorefrontContactChannelStruct(
+            id: $entity->getId(),
+            type: StorefrontContactChannelType::fromStoredValue($entity->getType()),
+            url: $url,
+            label: $label,
+            position: $entity->getPosition(),
+            icon: $this->resolveMedia($entity->getIconMedia(), $label),
         );
     }
 

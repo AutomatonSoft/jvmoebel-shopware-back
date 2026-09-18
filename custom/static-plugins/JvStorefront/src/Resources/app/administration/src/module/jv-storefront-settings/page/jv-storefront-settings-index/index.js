@@ -37,22 +37,27 @@ export default {
             paymentBadges: [],
             shippingBadges: [],
             internationalLinks: [],
+            contactChannels: [],
             isSocialLinksLoading: false,
             isPaymentBadgesLoading: false,
             isShippingBadgesLoading: false,
             isInternationalLinksLoading: false,
+            isContactChannelsLoading: false,
             socialLinkModalOpen: false,
             paymentBadgeModalOpen: false,
             shippingBadgeModalOpen: false,
             internationalLinkModalOpen: false,
+            contactChannelModalOpen: false,
             socialLinkDraft: null,
             paymentBadgeDraft: null,
             shippingBadgeDraft: null,
             internationalLinkDraft: null,
+            contactChannelDraft: null,
             isSocialLinkSaving: false,
             isPaymentBadgeSaving: false,
             isShippingBadgeSaving: false,
             isInternationalLinkSaving: false,
+            isContactChannelSaving: false,
             navigationRootCategoryId: null,
             headerNavigationLinks: [],
             isHeaderNavigationLoading: false,
@@ -90,6 +95,10 @@ export default {
             return this.repositoryFactory.create('jv_storefront_international_link');
         },
 
+        contactChannelRepository() {
+            return this.repositoryFactory.create('jv_storefront_contact_channel');
+        },
+
         socialLinkGridColumns() {
             return [
                 { property: 'label', label: this.$t('jv-storefront-settings.list.label'), primary: true },
@@ -124,6 +133,23 @@ export default {
             ];
         },
 
+        contactChannelGridColumns() {
+            return [
+                { property: 'label', label: this.$t('jv-storefront-settings.list.label'), primary: true },
+                { property: 'type', label: this.$t('jv-storefront-settings.contact.type') },
+                { property: 'url', label: this.$t('jv-storefront-settings.list.url') },
+                { property: 'position', label: this.$t('jv-storefront-settings.list.position'), align: 'right' },
+                { property: 'active', label: this.$t('jv-storefront-settings.list.active'), align: 'center' },
+            ];
+        },
+
+        contactChannelTypeOptions() {
+            return ['telegram', 'whatsapp', 'email', 'phone', 'custom'].map((value) => ({
+                value,
+                label: this.$t(`jv-storefront-settings.contact.types.${value}`),
+            }));
+        },
+
         targetSalesChannelCriteria() {
             const criteria = new Criteria(1, 100);
             criteria.addSorting(Criteria.sort('name', 'ASC'));
@@ -149,6 +175,10 @@ export default {
 
         isInternationalLinkCreate() {
             return !this.internationalLinks.some((item) => item.id === this.internationalLinkDraft?.id);
+        },
+
+        isContactChannelCreate() {
+            return !this.contactChannels.some((item) => item.id === this.contactChannelDraft?.id);
         },
 
         logoUploadTag() {
@@ -189,6 +219,14 @@ export default {
 
         internationalLinkIconPreviewSource() {
             return this.internationalLinkDraft?.iconMedia ?? this.internationalLinkDraft?.iconMediaId ?? null;
+        },
+
+        contactChannelIconUploadTag() {
+            return `jv-storefront-contact-icon-${this.contactChannelDraft?.id ?? 'new'}`;
+        },
+
+        contactChannelIconPreviewSource() {
+            return this.contactChannelDraft?.iconMedia ?? this.contactChannelDraft?.iconMediaId ?? null;
         },
     },
 
@@ -242,6 +280,7 @@ export default {
                     this.loadPaymentBadges(),
                     this.loadShippingBadges(),
                     this.loadInternationalLinks(),
+                    this.loadContactChannels(),
                 ]);
             } finally {
                 this.isLoading = false;
@@ -556,6 +595,11 @@ export default {
             this.iconMediaModalOpen = true;
         },
 
+        openContactChannelIconMediaModal() {
+            this.iconMediaTarget = 'contact-channel';
+            this.iconMediaModalOpen = true;
+        },
+
         onCloseIconMediaModal() {
             this.iconMediaModalOpen = false;
             this.iconMediaTarget = null;
@@ -585,6 +629,11 @@ export default {
             if (this.iconMediaTarget === 'international-link' && this.internationalLinkDraft) {
                 this.internationalLinkDraft.iconMediaId = media.id;
                 this.internationalLinkDraft.iconMedia = media;
+            }
+
+            if (this.iconMediaTarget === 'contact-channel' && this.contactChannelDraft) {
+                this.contactChannelDraft.iconMediaId = media.id;
+                this.contactChannelDraft.iconMedia = media;
             }
 
             this.onCloseIconMediaModal();
@@ -660,6 +709,24 @@ export default {
 
             this.internationalLinkDraft.iconMediaId = null;
             this.internationalLinkDraft.iconMedia = null;
+        },
+
+        async onContactChannelIconUpload({ targetId }) {
+            if (!this.contactChannelDraft) {
+                return;
+            }
+
+            this.contactChannelDraft.iconMediaId = targetId;
+            this.contactChannelDraft.iconMedia = await this.mediaRepository.get(targetId);
+        },
+
+        onContactChannelIconRemove() {
+            if (!this.contactChannelDraft) {
+                return;
+            }
+
+            this.contactChannelDraft.iconMediaId = null;
+            this.contactChannelDraft.iconMedia = null;
         },
 
         buildSocialLinkCriteria() {
@@ -771,6 +838,39 @@ export default {
             }
         },
 
+        buildContactChannelCriteria() {
+            const criteria = new Criteria(1, 100);
+            criteria.addFilter(Criteria.equals('salesChannelId', this.salesChannelId));
+            criteria.addSorting(Criteria.sort('position', 'ASC'));
+            criteria.addSorting(Criteria.sort('createdAt', 'ASC'));
+            criteria.addAssociation('iconMedia');
+
+            return criteria;
+        },
+
+        async loadContactChannels() {
+            if (!this.salesChannelId) {
+                this.contactChannels = [];
+
+                return;
+            }
+
+            this.isContactChannelsLoading = true;
+
+            try {
+                const result = await this.contactChannelRepository.search(this.buildContactChannelCriteria());
+                this.contactChannels = result;
+            } finally {
+                this.isContactChannelsLoading = false;
+            }
+        },
+
+        formatContactChannelType(item) {
+            const option = this.contactChannelTypeOptions.find((entry) => entry.value === item.type);
+
+            return option?.label ?? item.type ?? '';
+        },
+
         formatTargetSalesChannelName(item) {
             return item.targetSalesChannel?.translated?.name
                 ?? item.targetSalesChannel?.name
@@ -837,6 +937,20 @@ export default {
                 position: this.internationalLinks.length,
                 active: true,
                 openInNewTab: true,
+            };
+        },
+
+        createContactChannelDraft() {
+            return {
+                id: Utils.createId(),
+                salesChannelId: this.salesChannelId,
+                type: 'telegram',
+                url: '',
+                label: '',
+                iconMediaId: null,
+                iconMedia: null,
+                position: this.contactChannels.length,
+                active: true,
             };
         },
 
@@ -965,6 +1079,39 @@ export default {
 
             if (!isOpen) {
                 this.internationalLinkDraft = null;
+            }
+        },
+
+        openContactChannelCreate() {
+            this.contactChannelDraft = this.createContactChannelDraft();
+            this.contactChannelModalOpen = true;
+        },
+
+        openContactChannelEdit(item) {
+            this.contactChannelDraft = {
+                id: item.id,
+                salesChannelId: item.salesChannelId,
+                type: item.type,
+                url: item.url,
+                label: item.label ?? '',
+                iconMediaId: item.iconMediaId,
+                iconMedia: item.iconMedia ?? null,
+                position: item.position,
+                active: item.active,
+            };
+            this.contactChannelModalOpen = true;
+        },
+
+        closeContactChannelModal() {
+            this.contactChannelModalOpen = false;
+            this.contactChannelDraft = null;
+        },
+
+        onContactChannelModalChange(isOpen) {
+            this.contactChannelModalOpen = isOpen;
+
+            if (!isOpen) {
+                this.contactChannelDraft = null;
             }
         },
 
@@ -1222,6 +1369,66 @@ export default {
             } catch (error) {
                 this.createNotificationError({
                     message: this.$t('jv-storefront-settings.notifications.internationalDeleteFailed'),
+                });
+            }
+        },
+
+        async saveContactChannelDraft() {
+            if (!this.contactChannelDraft || !this.salesChannelId) {
+                return;
+            }
+
+            if (!this.contactChannelDraft.type || !this.contactChannelDraft.url?.trim()) {
+                this.createNotificationError({
+                    message: this.$t('jv-storefront-settings.notifications.contactValidationFailed'),
+                });
+
+                return;
+            }
+
+            this.isContactChannelSaving = true;
+
+            try {
+                const entity = this.isContactChannelCreate
+                    ? this.contactChannelRepository.create()
+                    : await this.contactChannelRepository.get(this.contactChannelDraft.id);
+
+                Object.assign(entity, {
+                    id: this.contactChannelDraft.id,
+                    salesChannelId: this.salesChannelId,
+                    type: this.contactChannelDraft.type,
+                    url: this.contactChannelDraft.url.trim(),
+                    label: this.contactChannelDraft.label?.trim() || null,
+                    iconMediaId: this.contactChannelDraft.iconMediaId ?? null,
+                    position: Number(this.contactChannelDraft.position) || 0,
+                    active: !!this.contactChannelDraft.active,
+                });
+
+                await this.contactChannelRepository.save(entity);
+                await this.loadContactChannels();
+                this.closeContactChannelModal();
+                this.createNotificationSuccess({
+                    message: this.$t('jv-storefront-settings.notifications.contactSaved'),
+                });
+            } catch (error) {
+                this.createNotificationError({
+                    message: this.$t('jv-storefront-settings.notifications.contactSaveFailed'),
+                });
+            } finally {
+                this.isContactChannelSaving = false;
+            }
+        },
+
+        async deleteContactChannel(item) {
+            try {
+                await this.contactChannelRepository.delete(item.id);
+                await this.loadContactChannels();
+                this.createNotificationSuccess({
+                    message: this.$t('jv-storefront-settings.notifications.contactDeleted'),
+                });
+            } catch (error) {
+                this.createNotificationError({
+                    message: this.$t('jv-storefront-settings.notifications.contactDeleteFailed'),
                 });
             }
         },

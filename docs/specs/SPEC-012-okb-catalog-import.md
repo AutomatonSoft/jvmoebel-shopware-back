@@ -62,7 +62,10 @@ OKB, её схему атрибутов и сопоставление товар
 EAN: повтор EAN сам по себе разрешён.
 
 После успешного CosmoShop product import фоновая задача выполняет по одному
-запросу `/extermal/get_products?sku=<EAN>` только для строк этого import. Она
+запросу `/extermal/get_products?sku=<EAN>` только для строк этого import. Тот же
+конвейер запускается после завершённого прогона Aftercool по SPEC-013; тогда
+строки берутся из товаров этого прогона, а защита от повтора ключуется его ID
+вместо ID Import/Export лога. Она
 создаёт product mapping, product attributes и failures в уникальной временной
 папке `var/import/okb-enrichment`, формирует единый CSV parent/child и сразу
 ставит его в штатный Shopware Import/Export. После постановки файла в core
@@ -75,7 +78,11 @@ ID в своём техническом config, поэтому повторна�
 второй catalog import и не отправляет второй `ImportExportMessage` для уже
 созданного log. Если dispatch core-сообщения бросает исключение, созданный, но
 не запущенный catalog log удаляется; повтор source-сообщения повторно готовит
-и ставит в очередь ровно один новый log. Для параллельных Messenger workers
+и ставит в очередь ровно один новый log. Catalog log получает в техническом
+config параметр `jvCatalogEnrichmentDispatched` только после успешной постановки
+сообщения. Если процесс завершился между созданием log и постановкой, повтор
+находит log без этого параметра и ставит в очередь именно его, а не создаёт
+новый и не считает обогащение уже запущенным. Для параллельных Messenger workers
 используются уникальные Redis consumer names и keepalive.
 Stateful lookup и preparation caches сбрасываются ядром между Messenger
 messages; они не переносят ProductEntity, child IDs, schemas или option IDs в

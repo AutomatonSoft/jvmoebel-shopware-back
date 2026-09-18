@@ -305,6 +305,57 @@
                     </template>
                 </sw-data-grid>
             </mt-card>
+
+            <mt-card
+                v-if="salesChannel"
+                position-identifier="jv-storefront-settings-contact-channels"
+                :title="$t('jv-storefront-settings.contact.title')"
+            >
+                <template #toolbar>
+                    <mt-button
+                        size="small"
+                        variant="secondary"
+                        :disabled="!salesChannelId"
+                        @click="openContactChannelCreate"
+                    >
+                        {{ $t('jv-storefront-settings.actions.add') }}
+                    </mt-button>
+                </template>
+
+                <p class="jv-storefront-settings-index__navigation-help">
+                    {{ $t('jv-storefront-settings.contact.helpText') }}
+                </p>
+
+                <sw-data-grid
+                    v-if="salesChannelId"
+                    identifier="jv-storefront-settings-contact-channels"
+                    :data-source="contactChannels"
+                    :columns="contactChannelGridColumns"
+                    :is-loading="isContactChannelsLoading"
+                    :show-selection="false"
+                    :show-settings="false"
+                >
+                    <template #column-type="{ item }">
+                        <span class="sw-data-grid__cell-value">{{ formatContactChannelType(item) }}</span>
+                    </template>
+
+                    <template #column-active="{ item }">
+                        <span class="sw-data-grid__cell-value">{{ formatActive(item.active) }}</span>
+                    </template>
+
+                    <template #actions="{ item }">
+                        <sw-context-menu-item @click="openContactChannelEdit(item)">
+                            {{ $t('global.default.edit') }}
+                        </sw-context-menu-item>
+                        <sw-context-menu-item
+                            variant="danger"
+                            @click="deleteContactChannel(item)"
+                        >
+                            {{ $t('global.default.delete') }}
+                        </sw-context-menu-item>
+                    </template>
+                </sw-data-grid>
+            </mt-card>
         </sw-card-view>
 
         <sw-media-modal-v2
@@ -612,6 +663,87 @@
                         variant="primary"
                         :is-loading="isInternationalLinkSaving"
                         @click="saveInternationalLinkDraft"
+                    >
+                        {{ $t('global.default.save') }}
+                    </mt-modal-action>
+                </template>
+            </mt-modal>
+        </mt-modal-root>
+
+        <mt-modal-root
+            :is-open="contactChannelModalOpen"
+            @change="onContactChannelModalChange"
+        >
+            <mt-modal
+                v-if="contactChannelDraft"
+                class="jv-storefront-settings-modal"
+                width="s"
+                :title="isContactChannelCreate ? $t('jv-storefront-settings.modal.contactCreate') : $t('jv-storefront-settings.modal.contactEdit')"
+            >
+                <sw-single-select
+                    v-model:value="contactChannelDraft.type"
+                    :options="contactChannelTypeOptions"
+                    :label="$t('jv-storefront-settings.contact.type')"
+                    required
+                />
+                <sw-text-field
+                    v-model:value="contactChannelDraft.url"
+                    :label="$t('jv-storefront-settings.list.url')"
+                    :placeholder="$t('jv-storefront-settings.contact.urlPlaceholder')"
+                    :help-text="$t('jv-storefront-settings.contact.urlHelp')"
+                    required
+                />
+                <sw-text-field
+                    v-model:value="contactChannelDraft.label"
+                    :label="$t('jv-storefront-settings.list.label')"
+                    :help-text="$t('jv-storefront-settings.contact.labelHelp')"
+                />
+                <div class="jv-storefront-settings-index__icon-field">
+                    <label class="jv-storefront-settings-index__logo-label">
+                        {{ $t('jv-storefront-settings.list.icon') }}
+                    </label>
+
+                    <sw-media-upload-v2
+                        variant="regular"
+                        :upload-tag="contactChannelIconUploadTag"
+                        :source="contactChannelIconPreviewSource"
+                        :allow-multi-select="false"
+                        :caption="$t('jv-storefront-settings.contact.iconCaption')"
+                        :on-media-upload-sidebar-open="openContactChannelIconMediaModal"
+                        @media-upload-sidebar-open="openContactChannelIconMediaModal"
+                        @media-upload-remove-image="onContactChannelIconRemove"
+                    />
+
+                    <sw-upload-listener
+                        :upload-tag="contactChannelIconUploadTag"
+                        auto-upload
+                        @media-upload-finish="onContactChannelIconUpload"
+                    />
+                </div>
+                <mt-number-field
+                    v-model="contactChannelDraft.position"
+                    number-type="int"
+                    :label="$t('jv-storefront-settings.list.position')"
+                />
+                <sw-switch-field
+                    v-model:value="contactChannelDraft.active"
+                    :label="$t('jv-storefront-settings.list.active')"
+                />
+
+                <template #footer>
+                    <mt-modal-close
+                        as="mt-button"
+                        size="small"
+                        variant="secondary"
+                    >
+                        {{ $t('global.default.cancel') }}
+                    </mt-modal-close>
+                    <mt-modal-action
+                        as="mt-button"
+                        size="small"
+                        variant="primary"
+                        :is-loading="isContactChannelSaving"
+                        @click="saveContactChannelDraft"
                     >
                         {{ $t('global.default.save') }}
                     </mt-modal-action>

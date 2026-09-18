@@ -48,6 +48,31 @@ final class StorefrontInputNormalizerTest extends TestCase
         yield 'reject empty' => ['', null];
     }
 
+    #[DataProvider('contactUrlProvider')]
+    public function testSafeContactUrl(?string $input, ?string $expected): void
+    {
+        self::assertSame($expected, $this->normalizer->safeContactUrl($input));
+    }
+
+    /** @return iterable<string, array{0: ?string, 1: ?string}> */
+    public static function contactUrlProvider(): iterable
+    {
+        yield 'telegram https' => ['https://t.me/XLANDJV', 'https://t.me/XLANDJV'];
+        yield 'whatsapp https' => ['https://wa.me/491512345678', 'https://wa.me/491512345678'];
+        yield 'mailto' => ['mailto:info@example.com', 'mailto:info@example.com'];
+        yield 'mailto trims input' => ['  mailto:info@example.com  ', 'mailto:info@example.com'];
+        yield 'mailto invalid address' => ['mailto:not-an-email', null];
+        yield 'mailto empty address' => ['mailto:', null];
+        yield 'tel with separators' => ['tel:+49 (151) 234-5678', 'tel:+491512345678'];
+        yield 'sms plain digits' => ['sms:491512345678', 'sms:491512345678'];
+        yield 'tel too short' => ['tel:12', null];
+        yield 'tel with letters' => ['tel:+49-CALL-NOW', null];
+        yield 'reject javascript' => ['javascript:alert(1)', null];
+        yield 'reject relative path' => ['/contact', null];
+        yield 'reject empty' => ['', null];
+        yield 'reject null' => [null, null];
+    }
+
     #[DataProvider('emailProvider')]
     public function testSafeEmail(?string $input, ?string $expected): void
     {

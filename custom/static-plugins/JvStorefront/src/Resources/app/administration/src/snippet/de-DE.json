@@ -46,6 +46,22 @@
             "flagIconCaption": "Flaggen-Icon auswählen",
             "labelHelp": "Leer lassen, um nur die Flagge anzuzeigen."
         },
+        "contact": {
+            "title": "Kontakt-Widget",
+            "helpText": "Schwebender Kontakt-Button, der auf allen Storefront-Seiten angezeigt wird.",
+            "type": "Kanaltyp",
+            "urlPlaceholder": "https://",
+            "urlHelp": "Unterstützt: http(s)://, mailto:, tel:, sms:",
+            "labelHelp": "Wird in der Storefront als Tooltip angezeigt. Leer lassen, um nur das Icon anzuzeigen.",
+            "iconCaption": "Kanal-Icon auswählen",
+            "types": {
+                "telegram": "Telegram",
+                "whatsapp": "WhatsApp",
+                "email": "E-Mail",
+                "phone": "Telefon",
+                "custom": "Benutzerdefiniert"
+            }
+        },
         "list": {
             "label": "Label",
             "url": "URL",
@@ -64,7 +80,9 @@
             "shippingCreate": "Versand-Badge hinzufügen",
             "shippingEdit": "Versand-Badge bearbeiten",
             "internationalCreate": "International-Link hinzufügen",
-            "internationalEdit": "International-Link bearbeiten"
+            "internationalEdit": "International-Link bearbeiten",
+            "contactCreate": "Kontaktkanal hinzufügen",
+            "contactEdit": "Kontaktkanal bearbeiten"
         },
         "actions": {
             "add": "Hinzufügen"
@@ -93,7 +111,12 @@
             "internationalSelfTargetFailed": "Der Ziel-Verkaufskanal muss vom aktuellen Verkaufskanal abweichen.",
             "internationalDuplicateTargetFailed": "Dieser Ziel-Verkaufskanal ist bereits verknüpft.",
             "internationalDeleted": "International-Link gelöscht.",
-            "internationalDeleteFailed": "International-Link konnte nicht gelöscht werden."
+            "internationalDeleteFailed": "International-Link konnte nicht gelöscht werden.",
+            "contactSaved": "Kontaktkanal gespeichert.",
+            "contactSaveFailed": "Kontaktkanal konnte nicht gespeichert werden.",
+            "contactValidationFailed": "Bitte Kanaltyp auswählen und URL ausfüllen.",
+            "contactDeleted": "Kontaktkanal gelöscht.",
+            "contactDeleteFailed": "Kontaktkanal konnte nicht gelöscht werden."
         }
     }
 }

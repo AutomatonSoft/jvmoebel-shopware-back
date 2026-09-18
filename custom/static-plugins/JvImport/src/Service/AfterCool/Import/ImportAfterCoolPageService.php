@@ -4,6 +4,7 @@ namespace Jv\Import\Service\AfterCool\Import;
 
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunCollection;
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunEntity;
+use Jv\Import\Message\AfterCoolCatalogEnrichmentMessage;
 use Jv\Import\Service\AfterCool\Contract\AfterCoolImportProductSourceInterface;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolPageProcessingResult;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolPreparedProduct;
@@ -20,11 +21,8 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Messenger\MessageBusInterface;
 
-/**
- * Owns one idempotent Aftercool page checkpoint. Upstream access and mapping
- * remain in Integration; this class only applies the import use case.
- */
 readonly class ImportAfterCoolPageService
 {
     /**
@@ -39,6 +37,7 @@ readonly class ImportAfterCoolPageService
         private ResolveDefaultProductTaxService $defaultTax,
         private EntityRepository $runRepository,
         private LockFactory $lockFactory,
+        private MessageBusInterface $messageBus,
     ) {
     }
 
@@ -59,6 +58,7 @@ readonly class ImportAfterCoolPageService
     {
         $run = $this->loadRun($runId, $context);
         if (in_array($run->getStatus(), ['completed', 'completed_with_errors', 'failed'], true)) {
+            $this->queueEnrichmentIfNeeded($run, $context);
             $this->stagedMediaProcessor->process($runId, $offset, $context);
 
             return AfterCoolPageProcessingResult::completed();
@@ -127,6 +127,10 @@ readonly class ImportAfterCoolPageService
 
         $this->checkpoint->checkpoint($run, $offset, $page->total, $page->hasMore, $records, $products, $issues, $context);
 
+        if (!$page->hasMore) {
+            $this->queueEnrichmentIfNeeded($this->loadRun($runId, $context), $context);
+        }
+
         $this->stagedMediaProcessor->process($runId, $offset, $context);
 
         return $page->hasMore ? AfterCoolPageProcessingResult::continueWith($offset + 100) : AfterCoolPageProcessingResult::completed();
@@ -140,5 +144,18 @@ readonly class ImportAfterCoolPageService
         }
 
         return $run;
+    }
+
+    private function queueEnrichmentIfNeeded(AfterCoolImportRunEntity $run, Context $context): void
+    {
+        if (!in_array($run->getStatus(), ['completed', 'completed_with_errors'], true) || null !== $run->getEnrichmentQueuedAt()) {
+            return;
+        }
+
+        $this->messageBus->dispatch(new AfterCoolCatalogEnrichmentMessage($run->getId()));
+        $this->runRepository->update([[
+            'id' => $run->getId(),
+            'enrichmentQueuedAt' => new \DateTimeImmutable(),
+        ]], $context);
     }
 }

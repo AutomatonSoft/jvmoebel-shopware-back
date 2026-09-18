@@ -6,6 +6,7 @@ use Doctrine\DBAL\Connection;
 use Jv\Import\Core\Content\AfterCoolImportError\AfterCoolImportErrorCollection;
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunCollection;
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunEntity;
+use Jv\Import\Core\Content\AfterCoolImportRunProduct\AfterCoolImportRunProductCollection;
 use Jv\Import\Core\Content\AfterCoolProductSource\AfterCoolProductSourceCollection;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolPageOutcome;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolPreparedProduct;
@@ -24,15 +25,17 @@ use Shopware\Core\Framework\Uuid\Uuid;
 final readonly class AfterCoolPageCheckpointService
 {
     /**
-     * @param EntityRepository<AfterCoolImportRunCollection>     $runRepository
-     * @param EntityRepository<AfterCoolProductSourceCollection> $sourceRepository
-     * @param EntityRepository<AfterCoolImportErrorCollection>   $errorRepository
+     * @param EntityRepository<AfterCoolImportRunCollection>        $runRepository
+     * @param EntityRepository<AfterCoolProductSourceCollection>    $sourceRepository
+     * @param EntityRepository<AfterCoolImportRunProductCollection> $runProductRepository
+     * @param EntityRepository<AfterCoolImportErrorCollection>      $errorRepository
      */
     public function __construct(
         private AfterCoolShopwareProductWriter $writer,
         private AfterCoolMediaStageStore $mediaStage,
         private EntityRepository $runRepository,
         private EntityRepository $sourceRepository,
+        private EntityRepository $runProductRepository,
         private EntityRepository $errorRepository,
         private Connection $connection,
     ) {
@@ -63,6 +66,7 @@ final readonly class AfterCoolPageCheckpointService
             );
 
             $this->upsertSourceLinks($successfulProducts, $context);
+            $this->upsertRunProducts($run, $successfulProducts, $context);
             $this->stageMedia($run, $offset, $successfulProducts);
             $this->recordIssues($run, $offset, $issues, $context);
 
@@ -153,6 +157,26 @@ final readonly class AfterCoolPageCheckpointService
                 'sourceArtikelnummer' => $prepared->product->sourceArtikelnummer,
                 'sourceEan' => $prepared->product->ean,
                 'lastSeenAt' => $now,
+            ],
+            $products,
+        )), $context);
+    }
+
+    /** @param array<string, AfterCoolPreparedProduct> $products */
+    private function upsertRunProducts(AfterCoolImportRunEntity $run, array $products, Context $context): void
+    {
+        if ([] === $products) {
+            return;
+        }
+
+        $this->runProductRepository->upsert(array_values(array_map(
+            static fn (AfterCoolPreparedProduct $prepared): array => [
+                'id' => Uuid::fromStringToHex('jvmoebel.aftercool.run-product.'.$run->getId().'.'.$prepared->productId),
+                'runId' => $run->getId(),
+                'productId' => $prepared->productId,
+                'productVersionId' => Defaults::LIVE_VERSION,
+                'productNumber' => $prepared->product->ean,
+                'sourceEan' => $prepared->product->ean,
             ],
             $products,
         )), $context);

@@ -20,6 +20,8 @@ final class AfterCoolImportRunEntity extends Entity
     protected int $failed;
     protected ?string $safeFailureCode = null;
     protected ?string $safeFailureMessage = null;
+    protected ?\DateTimeInterface $startedAt = null;
+    protected ?\DateTimeInterface $enrichmentQueuedAt = null;
 
     protected string $account;
     protected string $dataset;
@@ -93,5 +95,15 @@ final class AfterCoolImportRunEntity extends Entity
     public function getSafeFailureMessage(): ?string
     {
         return $this->safeFailureMessage;
+    }
+
+    public function getStartedAt(): ?\DateTimeInterface
+    {
+        return $this->startedAt;
+    }
+
+    public function getEnrichmentQueuedAt(): ?\DateTimeInterface
+    {
+        return $this->enrichmentQueuedAt;
     }
 }

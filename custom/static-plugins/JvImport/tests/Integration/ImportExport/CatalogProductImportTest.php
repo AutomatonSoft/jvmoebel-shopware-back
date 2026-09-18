@@ -307,16 +307,18 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
         ]], $context);
     }
 
-    private function catalogCsv(string $productNumber, string $ean, string $categoryId, string $categoryGroupId, int $price, string $value, ?string $brandInformation = null): string
+    private function catalogCsv(string $productNumber, string $ean, string $categoryId, string $categoryGroupId, int $price, string $value, ?string $brandInformation = null, bool $activateParent = false): string
     {
         $attributeList = [['Color '.$categoryGroupId, [$value]]];
         if (null !== $brandInformation) {
             $attributeList[] = ['Markeninformationen', [$brandInformation]];
         }
         $attributes = json_encode($attributeList, JSON_THROW_ON_ERROR);
-        $rows = [['record_type', 'product_number', 'ean', 'category_id', 'category_group_id', 'standard_price_amount', 'currency', 'attributes_json']];
+        $header = ['record_type', 'product_number', 'ean', 'category_id', 'category_group_id', 'standard_price_amount', 'currency', 'attributes_json'];
+        $rows = [$activateParent ? [...$header, 'activate_parent'] : $header];
         foreach (['parent', 'child'] as $recordType) {
-            $rows[] = [$recordType, $productNumber, $ean, $categoryId, $categoryGroupId, (string) $price, 'EUR', $attributes];
+            $row = [$recordType, $productNumber, $ean, $categoryId, $categoryGroupId, (string) $price, 'EUR', $attributes];
+            $rows[] = $activateParent ? [...$row, 'parent' === $recordType ? '1' : ''] : $row;
         }
         $stream = fopen('php://temp', 'w+b');
         self::assertIsResource($stream);
@@ -389,6 +391,35 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
 
             self::assertSame('4260174423463', $this->product($productNumber, $context)->getEan());
             self::assertSame('4260174423463', $this->product($productNumber.'-1', $context)->getEan());
+        } finally {
+            $this->deleteFixture($parentId, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $context);
+        }
+    }
+
+    public function testItActivatesAnEnrichedParentOnlyWhenTheSourceRequestsIt(): void
+    {
+        $context = Context::createDefaultContext();
+        $suffix = bin2hex(random_bytes(5));
+        $productNumber = 'CATALOG-ACTIVE-'.$suffix;
+        $parentId = Uuid::randomHex();
+        $categoryGroupId = 'group-'.$suffix;
+        $categoryId = 'category-'.$suffix;
+        $propertyGroupId = CatalogIdentity::propertyGroupId('Color '.$suffix);
+        $manualGroupId = Uuid::randomHex();
+        $manualOptionId = Uuid::randomHex();
+        $this->createFixture($parentId, $productNumber, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $manualOptionId, $context);
+        $this->productRepository()->update([['id' => $parentId, 'active' => false]], $context);
+        $profileId = CatalogProductImportProfile::definition()['id'];
+        $this->profileRepository()->upsert([CatalogProductImportProfile::definition()], $context);
+
+        try {
+            $untouched = $this->import($profileId, $this->catalogCsv($productNumber, '4260174423463', $categoryId, $categoryGroupId, 1200, 'Brown'));
+            self::assertSame('succeeded', $untouched->getState(), $this->importResult($untouched));
+            self::assertFalse($this->product($productNumber, $context)->getActive());
+
+            $activating = $this->import($profileId, $this->catalogCsv($productNumber, '4260174423463', $categoryId, $categoryGroupId, 1200, 'Brown', null, true));
+            self::assertSame('succeeded', $activating->getState(), $this->importResult($activating));
+            self::assertTrue($this->product($productNumber, $context)->getActive());
         } finally {
             $this->deleteFixture($parentId, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $context);
         }

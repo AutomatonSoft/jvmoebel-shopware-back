@@ -40,6 +40,9 @@
             "ready": "Ready",
             "details": "Details"
         },
+        "categoryTree": {
+            "stickyPathLabel": "Parent categories"
+        },
         "variantGroups": {
             "used": "Used by product",
             "recommended": "Recommended for variants",

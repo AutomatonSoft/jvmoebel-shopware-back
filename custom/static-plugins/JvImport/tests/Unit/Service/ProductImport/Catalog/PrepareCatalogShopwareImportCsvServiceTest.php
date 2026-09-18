@@ -35,6 +35,32 @@ final class PrepareCatalogShopwareImportCsvServiceTest extends TestCase
         }
     }
 
+    public function testItMarksParentRowsForActivationWhenTheSourceRequestsIt(): void
+    {
+        $directory = sys_get_temp_dir().'/jv-catalog-shopware-csv-'.bin2hex(random_bytes(8));
+        mkdir($directory, 0775, true);
+        $products = $directory.'/products.csv';
+        $attributes = $directory.'/attributes.csv';
+        $output = $directory.'/shopware.csv';
+        file_put_contents($products, "product_number;ean;category_name;category_id;category_group_id;standard_price_amount;currency\nSKU-1;4260454043503;Sofas;25922;3446;1200;EUR\n");
+        file_put_contents($attributes, "product_number;ean;attribute_name;values_json\n");
+
+        try {
+            $result = (new PrepareCatalogShopwareImportCsvService(new SemicolonCsvReader()))->execute($products, $attributes, $output, null, true);
+
+            self::assertSame(2, $result);
+            $rows = $this->rows($output);
+            self::assertSame('activate_parent', $rows[0][10] ?? null);
+            self::assertSame('1', $rows[1][10] ?? null);
+            self::assertSame('', $rows[2][10] ?? null);
+        } finally {
+            unlink($products);
+            unlink($attributes);
+            unlink($output);
+            rmdir($directory);
+        }
+    }
+
     public function testItCarriesOkbLookupFailuresIntoTheFinalImportCsv(): void
     {
         $directory = sys_get_temp_dir().'/jv-catalog-shopware-csv-'.bin2hex(random_bytes(8));
