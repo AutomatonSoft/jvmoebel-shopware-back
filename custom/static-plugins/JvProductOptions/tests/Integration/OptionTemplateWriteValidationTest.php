@@ -2,6 +2,7 @@
 
 namespace Jv\ProductOptions\Tests\Integration;
 
+use Jv\ProductOptions\Core\Content\OptionTemplate\OptionTemplateCollection;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Defaults;
@@ -110,6 +111,9 @@ final class OptionTemplateWriteValidationTest extends TestCase
         return [['currencyId' => Defaults::CURRENCY, 'gross' => $gross, 'net' => round($gross / 1.19, 2), 'linked' => false]];
     }
 
+    /**
+     * @return EntityRepository<OptionTemplateCollection>
+     */
     private function repository(): EntityRepository
     {
         $repository = static::getContainer()->get('jv_option_template.repository');

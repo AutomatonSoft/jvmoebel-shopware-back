@@ -2,6 +2,7 @@
 
 namespace Jv\ProductOptions\Tests\Integration;
 
+use Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateValue\OptionTemplateValueCollection;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Test\Product\ProductBuilder;
 use Shopware\Core\Defaults;
@@ -355,6 +356,9 @@ final class OptionTemplateStoreApiTest extends TestCase
         ];
     }
 
+    /**
+     * @return EntityRepository<OptionTemplateValueCollection>
+     */
     private function valueRepository(): EntityRepository
     {
         $repository = static::getContainer()->get('jv_option_template_value.repository');
