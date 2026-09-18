@@ -1,5 +1,6 @@
 import deDE from './snippet/de-DE.json';
 import enGB from './snippet/en-GB.json';
+import './extension/sw-category-tree';
 import './extension/sw-product-deliverability-form';
 import './extension/sw-product-detail';
 import './extension/sw-product-variants-configurator-selection';
