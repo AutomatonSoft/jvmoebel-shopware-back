@@ -1,0 +1,7 @@
+{% block sw_landing_page_detail_base_seo %}
+    {% parent %}
+    <jv-seo-landing-page-redirects
+        v-if="landingPage && landingPage.id"
+        :landing-page-id="landingPage.id"
+    />
+{% endblock %}

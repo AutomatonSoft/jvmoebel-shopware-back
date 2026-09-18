@@ -1,0 +1,87 @@
+{
+    "jv-seo": {
+        "general": {
+            "title": "SEO",
+            "description": "Manage SEO and redirects"
+        },
+        "redirects": {
+            "title": "Redirects"
+        },
+        "actions": {
+            "create": "Create redirect",
+            "addSource": "Add 301 URL"
+        },
+        "filters": {
+            "title": "Type",
+            "all": "All redirects",
+            "general": "General",
+            "product": "Products",
+            "category": "Categories",
+            "pages": "Landing Pages",
+            "image": "Images"
+        },
+        "list": {
+            "type": "Type",
+            "target": "Target URL",
+            "salesChannels": "Sales Channel",
+            "sources": "301 URLs",
+            "updatedAt": "Updated",
+            "searchPlaceholder": "Search URLs, products, categories, landing pages, images or Sales Channels"
+        },
+        "detail": {
+            "createTitle": "Create redirect",
+            "editTitle": "Edit redirect",
+            "base": "Target",
+            "type": "Redirect type",
+            "product": "Product",
+            "productPlaceholder": "Search for a product",
+            "category": "Category",
+            "categoryPlaceholder": "Search for a category",
+            "landingPage": "Landing Page",
+            "landingPagePlaceholder": "Search for a landing page",
+            "image": "Image",
+            "imagePlaceholder": "Search for an image",
+            "enableChannel": "Configure for this Sales Channel",
+            "targetUrl": "Target URL",
+            "targetPreview": "Current canonical target URL example",
+            "targetUnavailable": "Canonical URL is not available yet",
+            "sourceUrls": "301 URLs",
+            "sourceUrl": "301 URL {number}",
+            "absoluteUrlPlaceholder": "https://www.example.com/path"
+        },
+        "validation": {
+            "productRequired": "Select a product.",
+            "categoryRequired": "Select a category.",
+            "landingPageRequired": "Select a landing page.",
+            "imageRequired": "Select an image.",
+            "channelRequired": "Enable at least one Sales Channel.",
+            "sourceRequired": "Add at least one 301 URL for {channel}.",
+            "invalidSource": "A 301 URL for {channel} is not a complete HTTP(S) URL.",
+            "invalidTarget": "The target URL for {channel} is not a complete HTTP(S) URL."
+        },
+        "notifications": {
+            "saved": "The redirect was saved."
+        },
+        "productCard": {
+            "title": "Legacy redirects by Sales Channel",
+            "empty": "No legacy redirects are configured for this product."
+        },
+        "categoryCard": {
+            "title": "Legacy redirects by Sales Channel",
+            "empty": "No legacy redirects are configured for this category."
+        },
+        "landingPageCard": {
+            "title": "Legacy redirects by Sales Channel",
+            "empty": "No legacy redirects are configured for this landing page."
+        },
+        "imageCard": {
+            "title": "Legacy redirects by Sales Channel",
+            "empty": "No legacy redirects are configured for this image."
+        }
+    },
+    "sw-settings": {
+        "index": {
+            "tabSeo": "SEO"
+        }
+    }
+}

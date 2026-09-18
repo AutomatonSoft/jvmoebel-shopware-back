@@ -9,6 +9,7 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 final readonly class OkbProductApiClient
 {
     private const MAX_ATTEMPTS = 3;
+    private const FAMILY_PAGE_SIZE = 200;
 
     public function __construct(
         private HttpClientInterface $httpClient,
@@ -49,6 +50,62 @@ final readonly class OkbProductApiClient
         }
 
         throw new \LogicException('OKB lookup retry loop unexpectedly finished.');
+    }
+
+    /** @return list<OkbProductVariation> */
+    public function findFamily(string $productReference): array
+    {
+        $family = [];
+        $page = 0;
+        $previousPageEans = null;
+        do {
+            $variations = $this->requestFamilyPage($productReference, $page);
+            $pageEans = array_map(static fn (OkbProductVariation $variation): string => $variation->ean, $variations);
+            if (null !== $previousPageEans && [] !== $pageEans && $pageEans === $previousPageEans) {
+                throw new \RuntimeException(sprintf('OKB family lookup for productReference "%s" did not advance to the next page.', $productReference));
+            }
+            foreach ($variations as $variation) {
+                $family[] = $variation;
+            }
+            $previousPageEans = $pageEans;
+            ++$page;
+        } while (self::FAMILY_PAGE_SIZE === count($variations));
+
+        return $family;
+    }
+
+    /** @return list<OkbProductVariation> */
+    private function requestFamilyPage(string $productReference, int $page): array
+    {
+        for ($attempt = 1; $attempt <= self::MAX_ATTEMPTS; ++$attempt) {
+            try {
+                $response = $this->httpClient->request('GET', rtrim($this->baseUri, '/').'/extermal/get_products', [
+                    'query' => ['productReference' => $productReference, 'page' => $page, 'limit' => self::FAMILY_PAGE_SIZE],
+                    'timeout' => 20,
+                ]);
+                $status = $response->getStatusCode();
+                if (200 !== $status) {
+                    if ($this->isTemporaryStatus($status) && $attempt < self::MAX_ATTEMPTS) {
+                        $this->waitBeforeRetry($attempt);
+
+                        continue;
+                    }
+                    throw new \RuntimeException(sprintf('OKB family lookup for productReference "%s" returned HTTP %d.', $productReference, $status));
+                }
+
+                return $this->normalizer->normalizeFamily($response->toArray(false));
+            } catch (TransportExceptionInterface $exception) {
+                if ($attempt < self::MAX_ATTEMPTS) {
+                    $this->waitBeforeRetry($attempt);
+
+                    continue;
+                }
+
+                throw new \RuntimeException(sprintf('OKB family lookup for productReference "%s" failed because the service is unavailable.', $productReference), previous: $exception);
+            }
+        }
+
+        throw new \LogicException('OKB family lookup retry loop unexpectedly finished.');
     }
 
     private function isTemporaryStatus(int $status): bool

@@ -10,7 +10,6 @@ final readonly class PrepareCatalogShopwareImportCsvService
     {
     }
 
-    /** Returns the number of written Shopware product records. */
     public function execute(string $productsFile, string $attributesFile, string $outputFile, ?string $failuresFile = null): int
     {
         $directory = dirname($outputFile);
@@ -29,9 +28,10 @@ final readonly class PrepareCatalogShopwareImportCsvService
         $attributes->rewind();
         $hasAttribute = $attributes->valid();
         $written = 0;
+        $previousProductNumber = null;
 
         try {
-            $this->write($output, ['record_type', 'product_number', 'ean', 'category_id', 'category_group_id', 'standard_price_amount', 'currency', 'attributes_json', 'failure_reason']);
+            $this->write($output, ['record_type', 'product_number', 'ean', 'category_id', 'category_group_id', 'standard_price_amount', 'suggested_retail_price_amount', 'currency', 'attributes_json', 'failure_reason']);
             foreach ($this->csvReader->rows($productsFile, ['product_number', 'ean', 'category_id', 'category_group_id', 'standard_price_amount', 'currency']) as $line => $product) {
                 $productNumber = $this->required($product, 'product_number', $productsFile, $line);
                 $ean = $this->required($product, 'ean', $productsFile, $line);
@@ -39,20 +39,21 @@ final readonly class PrepareCatalogShopwareImportCsvService
                 while ($hasAttribute) {
                     /** @var array<string, string> $attribute */
                     $attribute = $attributes->current();
-                    if ($attribute['product_number'] !== $productNumber) {
+                    if ($attribute['product_number'] !== $productNumber || $attribute['ean'] !== $ean) {
                         break;
-                    }
-                    if ($attribute['ean'] !== $ean) {
-                        throw new \InvalidArgumentException(sprintf('Attribute EAN does not match product number "%s".', $productNumber));
                     }
                     $productAttributes[] = [$attribute['attribute_name'], $this->values($attribute['values_json'], $attributesFile, $attributes->key())];
                     $attributes->next();
                     $hasAttribute = $attributes->valid();
                 }
-                $row = [$productNumber, $ean, $this->required($product, 'category_id', $productsFile, $line), $this->required($product, 'category_group_id', $productsFile, $line), $product['standard_price_amount'], $product['currency'], json_encode($productAttributes, \JSON_THROW_ON_ERROR)];
-                $this->write($output, ['parent', ...$row, '']);
+                $row = [$productNumber, $ean, $this->required($product, 'category_id', $productsFile, $line), $this->required($product, 'category_group_id', $productsFile, $line), $product['standard_price_amount'], $product['suggested_retail_price_amount'] ?? '', $product['currency'], json_encode($productAttributes, \JSON_THROW_ON_ERROR)];
+                if ($productNumber !== $previousProductNumber) {
+                    $this->write($output, ['parent', ...$row, '']);
+                    ++$written;
+                    $previousProductNumber = $productNumber;
+                }
                 $this->write($output, ['child', ...$row, '']);
-                $written += 2;
+                ++$written;
             }
             if ($hasAttribute) {
                 /** @var array<string, string> $attribute */
@@ -65,7 +66,7 @@ final readonly class PrepareCatalogShopwareImportCsvService
                         'invalid',
                         $this->required($failure, 'product_number', $failuresFile, $line),
                         $this->required($failure, 'ean', $failuresFile, $line),
-                        '', '', '', '', '[]',
+                        '', '', '', '', '', '[]',
                         $this->required($failure, 'reason', $failuresFile, $line),
                     ]);
                     ++$written;

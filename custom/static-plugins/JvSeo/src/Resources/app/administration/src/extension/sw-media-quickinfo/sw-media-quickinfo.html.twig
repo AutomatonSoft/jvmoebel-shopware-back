@@ -1,0 +1,7 @@
+{% block sw_media_quickinfo_custom_field_sets %}
+    {% parent %}
+    <jv-seo-image-redirects
+        v-if="item && item.id && item.mimeType && item.mimeType.startsWith('image/')"
+        :media-id="item.id"
+    />
+{% endblock %}

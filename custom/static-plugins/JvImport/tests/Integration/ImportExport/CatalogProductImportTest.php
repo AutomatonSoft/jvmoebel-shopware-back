@@ -10,6 +10,7 @@ use Jv\Import\Integration\Okb\Profile\CatalogProductImportProfile;
 use Jv\Import\Service\Catalog\CatalogIdentity;
 use Shopware\Core\Content\Category\CategoryCollection;
 use Shopware\Core\Content\ImportExport\ImportExportProfileEntity;
+use Shopware\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufacturerCollection;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Property\PropertyGroupCollection;
 use Shopware\Core\Defaults;
@@ -132,13 +133,13 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
                 ['name' => 'Manuell übersetzt', 'optionId' => Uuid::fromHexToBytes($brownOptionId), 'languageId' => Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM)],
             );
 
-            $second = $this->import($profileId, $this->catalogCsv($productNumber, '4260174423464', $replacementCategoryId, $categoryGroupId, 1300, 'Black'));
+            $second = $this->import($profileId, $this->catalogCsv($productNumber, '4260174423463', $replacementCategoryId, $categoryGroupId, 1300, 'Black'));
             self::assertSame('succeeded', $second->getState(), $this->importResult($second));
 
             $reloadedChild = $this->product($productNumber.'-1', $context);
             self::assertSame($child->getId(), $reloadedChild->getId());
             self::assertNull($reloadedChild->getDeliveryTimeId());
-            self::assertSame('4260174423464', $reloadedChild->getEan());
+            self::assertSame('4260174423463', $reloadedChild->getEan());
             self::assertSame(1300.0, $reloadedChild->getPrice()?->first()?->getGross());
             self::assertCount(1, $reloadedChild->getOptions() ?? []);
             self::assertSame('Black', $reloadedChild->getOptions()?->first()?->getName());
@@ -153,7 +154,7 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
             self::assertSame(0, (int) $this->connection()->fetchOne('SELECT COUNT(*) FROM `product_category_tree` WHERE `product_id` = :productId AND `category_id` = :categoryId', ['productId' => Uuid::fromHexToBytes($parentId), 'categoryId' => Uuid::fromHexToBytes(CatalogIdentity::categoryId('okb', $categoryId))]));
             self::assertSame(1, (int) $this->connection()->fetchOne('SELECT COUNT(*) FROM `product_category_tree` WHERE `product_id` = :productId AND `category_id` = :categoryId', ['productId' => Uuid::fromHexToBytes($parentId), 'categoryId' => Uuid::fromHexToBytes($replacementCategoryShopwareId)]));
 
-            $third = $this->import($profileId, $this->catalogCsv($productNumber, '4260174423464', $replacementCategoryId, $categoryGroupId, 1300, 'Brown'));
+            $third = $this->import($profileId, $this->catalogCsv($productNumber, '4260174423463', $replacementCategoryId, $categoryGroupId, 1300, 'Brown'));
             self::assertSame('succeeded', $third->getState(), $this->importResult($third));
             self::assertSame('Manuell übersetzt', $this->connection()->fetchOne(
                 'SELECT `name` FROM `property_group_option_translation` WHERE `property_group_option_id` = :optionId AND `language_id` = :languageId',
@@ -198,6 +199,44 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
         }
     }
 
+    public function testItIgnoresMarkeninformationenAndLeavesTheManufacturerDescriptionUnchanged(): void
+    {
+        $context = Context::createDefaultContext();
+        $suffix = bin2hex(random_bytes(5));
+        $productNumber = 'CATALOG-BRAND-'.$suffix;
+        $parentId = Uuid::randomHex();
+        $categoryGroupId = 'group-'.$suffix;
+        $categoryId = 'category-'.$suffix;
+        $propertyGroupId = CatalogIdentity::propertyGroupId('Color '.$suffix);
+        $manualGroupId = Uuid::randomHex();
+        $manualOptionId = Uuid::randomHex();
+        $manufacturerId = Uuid::randomHex();
+        $this->manufacturerRepository()->create([[
+            'id' => $manufacturerId,
+            'name' => 'JVMOEBEL '.$suffix,
+            'description' => 'Handwritten manufacturer text',
+        ]], $context);
+        $this->createFixture($parentId, $productNumber, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $manualOptionId, $context, $manufacturerId);
+        $profileId = CatalogProductImportProfile::definition()['id'];
+        $this->profileRepository()->upsert([CatalogProductImportProfile::definition()], $context);
+
+        try {
+            $csv = $this->catalogCsv($productNumber, '4260174423463', $categoryId, $categoryGroupId, 1200, 'Brown', 'Marketing copy about our own brand');
+            $progress = $this->import($profileId, $csv);
+            self::assertSame('succeeded', $progress->getState(), $this->importResult($progress));
+
+            $child = $this->product($productNumber.'-1', $context);
+            self::assertSame($parentId, $child->getParentId());
+
+            $manufacturer = $this->manufacturerRepository()->search(new Criteria([$manufacturerId]), $context)->first();
+            self::assertInstanceOf(\Shopware\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufacturerEntity::class, $manufacturer);
+            self::assertSame('Handwritten manufacturer text', $manufacturer->getDescription());
+        } finally {
+            $this->deleteFixture($parentId, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $context);
+            $this->manufacturerRepository()->delete([['id' => $manufacturerId]], $context);
+        }
+    }
+
     private function deleteFixture(string $parentId, string $categoryGroupId, string $categoryId, string $propertyGroupId, string $manualGroupId, Context $context): void
     {
         $this->productRepository()->delete([['id' => $parentId]], $context);
@@ -207,7 +246,7 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
         $this->propertyGroupRepository()->delete([['id' => $propertyGroupId], ['id' => $manualGroupId]], $context);
     }
 
-    private function createFixture(string $parentId, string $productNumber, string $categoryGroupId, string $categoryId, string $propertyGroupId, string $manualGroupId, string $manualOptionId, Context $context): void
+    private function createFixture(string $parentId, string $productNumber, string $categoryGroupId, string $categoryId, string $propertyGroupId, string $manualGroupId, string $manualOptionId, Context $context, ?string $manufacturerId = null): void
     {
         $taxId = $this->taxRepository()->searchIds((new Criteria())->setLimit(1), $context)->firstId();
         self::assertNotNull($taxId);
@@ -241,7 +280,14 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
             'name' => 'Catalog parent',
             'stock' => 4,
             'taxId' => $taxId,
-            'price' => [['currencyId' => Defaults::CURRENCY, 'net' => 1000.0, 'gross' => 1190.0, 'linked' => false]],
+            'manufacturerId' => $manufacturerId,
+            'price' => [[
+                'currencyId' => Defaults::CURRENCY,
+                'net' => 1000.0,
+                'gross' => 1190.0,
+                'linked' => false,
+                'listPrice' => ['currencyId' => Defaults::CURRENCY, 'net' => 1500.0, 'gross' => 1785.0, 'linked' => false],
+            ]],
             'categories' => [['id' => CatalogIdentity::categoryId('okb', $categoryId)]],
             'properties' => [['id' => $manualOptionId]],
         ]], $context);
@@ -261,9 +307,13 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
         ]], $context);
     }
 
-    private function catalogCsv(string $productNumber, string $ean, string $categoryId, string $categoryGroupId, int $price, string $value): string
+    private function catalogCsv(string $productNumber, string $ean, string $categoryId, string $categoryGroupId, int $price, string $value, ?string $brandInformation = null): string
     {
-        $attributes = json_encode([['Color '.$categoryGroupId, [$value]]], JSON_THROW_ON_ERROR);
+        $attributeList = [['Color '.$categoryGroupId, [$value]]];
+        if (null !== $brandInformation) {
+            $attributeList[] = ['Markeninformationen', [$brandInformation]];
+        }
+        $attributes = json_encode($attributeList, JSON_THROW_ON_ERROR);
         $rows = [['record_type', 'product_number', 'ean', 'category_id', 'category_group_id', 'standard_price_amount', 'currency', 'attributes_json']];
         foreach (['parent', 'child'] as $recordType) {
             $rows[] = [$recordType, $productNumber, $ean, $categoryId, $categoryGroupId, (string) $price, 'EUR', $attributes];
@@ -286,6 +336,276 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
         $secondRows = explode("\n", trim($second));
 
         return implode("\n", [...$firstRows, ...array_slice($secondRows, 1)])."\n";
+    }
+
+    public function testTheChildKeepsTheListPriceOfItsParent(): void
+    {
+        $context = Context::createDefaultContext();
+        $suffix = bin2hex(random_bytes(5));
+        $productNumber = 'CATALOG-UVP-'.$suffix;
+        $parentId = Uuid::randomHex();
+        $categoryGroupId = 'group-'.$suffix;
+        $categoryId = 'category-'.$suffix;
+        $propertyGroupId = CatalogIdentity::propertyGroupId('Color '.$suffix);
+        $manualGroupId = Uuid::randomHex();
+        $manualOptionId = Uuid::randomHex();
+        $this->createFixture($parentId, $productNumber, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $manualOptionId, $context);
+        $profileId = CatalogProductImportProfile::definition()['id'];
+        $this->profileRepository()->upsert([CatalogProductImportProfile::definition()], $context);
+
+        try {
+            $progress = $this->import($profileId, $this->catalogCsv($productNumber, '4260174423463', $categoryId, $categoryGroupId, 1200, 'Brown'));
+            self::assertSame('succeeded', $progress->getState(), $this->importResult($progress));
+
+            $price = $this->product($productNumber.'-1', $context)->getPrice()?->getCurrencyPrice(Defaults::CURRENCY);
+            self::assertNotNull($price);
+            self::assertSame(1200.0, $price->getGross());
+            self::assertNotNull($price->getListPrice());
+            self::assertSame(1785.0, $price->getListPrice()->getGross());
+        } finally {
+            $this->deleteFixture($parentId, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $context);
+        }
+    }
+
+    public function testTheEnrichedParentKeepsItsSourceEan(): void
+    {
+        $context = Context::createDefaultContext();
+        $suffix = bin2hex(random_bytes(5));
+        $productNumber = 'CATALOG-EAN-'.$suffix;
+        $parentId = Uuid::randomHex();
+        $categoryGroupId = 'group-'.$suffix;
+        $categoryId = 'category-'.$suffix;
+        $propertyGroupId = CatalogIdentity::propertyGroupId('Color '.$suffix);
+        $manualGroupId = Uuid::randomHex();
+        $manualOptionId = Uuid::randomHex();
+        $this->createFixture($parentId, $productNumber, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $manualOptionId, $context);
+        $this->productRepository()->update([['id' => $parentId, 'ean' => '4260174423463']], $context);
+        $profileId = CatalogProductImportProfile::definition()['id'];
+        $this->profileRepository()->upsert([CatalogProductImportProfile::definition()], $context);
+
+        try {
+            $progress = $this->import($profileId, $this->catalogCsv($productNumber, '4260174423463', $categoryId, $categoryGroupId, 1200, 'Brown'));
+            self::assertSame('succeeded', $progress->getState(), $this->importResult($progress));
+
+            self::assertSame('4260174423463', $this->product($productNumber, $context)->getEan());
+            self::assertSame('4260174423463', $this->product($productNumber.'-1', $context)->getEan());
+        } finally {
+            $this->deleteFixture($parentId, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $context);
+        }
+    }
+
+    public function testAFamilySplitAcrossWorkerBatchesKeepsEveryVariantOnItsOwnNumber(): void
+    {
+        $context = Context::createDefaultContext();
+        $suffix = bin2hex(random_bytes(5));
+        $productNumber = 'CATALOG-BATCH-'.$suffix;
+        $parentId = Uuid::randomHex();
+        $categoryGroupId = 'group-'.$suffix;
+        $categoryId = 'category-'.$suffix;
+        $propertyGroupId = CatalogIdentity::propertyGroupId('Color '.$suffix);
+        $manualGroupId = Uuid::randomHex();
+        $manualOptionId = Uuid::randomHex();
+        $this->createFixture($parentId, $productNumber, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $manualOptionId, $context);
+        $profileId = CatalogProductImportProfile::definition()['id'];
+        $this->profileRepository()->upsert([CatalogProductImportProfile::definition()], $context);
+        $eans = array_map(static fn (int $index): string => sprintf('4260174%06d', $index), range(1, 55));
+
+        try {
+            $progress = $this->importInWorkerBatches($profileId, $this->familyCsv($productNumber, $eans, $categoryId, $categoryGroupId));
+            self::assertSame('succeeded', $progress->getState(), $this->importResult($progress));
+
+            $children = $this->productRepository()->search((new Criteria())->addFilter(new EqualsFilter('parentId', $parentId)), $context)->getEntities();
+            $numbers = array_map(static fn (\Shopware\Core\Content\Product\ProductEntity $child): string => $child->getProductNumber(), array_values($children->getElements()));
+            sort($numbers);
+            $expectedNumbers = array_map(static fn (int $position): string => $productNumber.'-'.$position, range(1, 55));
+            sort($expectedNumbers);
+            self::assertSame($expectedNumbers, $numbers);
+            $childEans = array_map(static fn (\Shopware\Core\Content\Product\ProductEntity $child): ?string => $child->getEan(), array_values($children->getElements()));
+            sort($childEans);
+            self::assertSame($eans, $childEans);
+        } finally {
+            $this->deleteFixture($parentId, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $context);
+        }
+    }
+
+    public function testAVariantKeepsItsNumberAndIdWhenTheFamilyGainsAVariant(): void
+    {
+        $this->withCatalogFixture(function (string $productNumber, string $parentId, string $categoryId, string $categoryGroupId, string $profileId, Context $context): void {
+            $first = $this->import($profileId, $this->variantCsv($productNumber, $categoryId, $categoryGroupId, [['4260174000001', '1200', ['Braun']], ['4260174000003', '1200', ['Schwarz']]]));
+            self::assertSame('succeeded', $first->getState(), $this->importResult($first));
+            $black = $this->product($productNumber.'-2', $context);
+            self::assertSame('4260174000003', $black->getEan());
+
+            $second = $this->import($profileId, $this->variantCsv($productNumber, $categoryId, $categoryGroupId, [['4260174000001', '1200', ['Braun']], ['4260174000002', '1200', ['Weiss']], ['4260174000003', '1200', ['Schwarz']]]));
+            self::assertSame('succeeded', $second->getState(), $this->importResult($second));
+
+            self::assertSame('4260174000001', $this->product($productNumber.'-1', $context)->getEan());
+            $blackAfter = $this->product($productNumber.'-2', $context);
+            self::assertSame($black->getId(), $blackAfter->getId());
+            self::assertSame('4260174000003', $blackAfter->getEan());
+            self::assertSame('4260174000002', $this->product($productNumber.'-3', $context)->getEan());
+        });
+    }
+
+    public function testARejectedVariantDoesNotLaterTakeOverTheNumberOfTheNextOne(): void
+    {
+        $this->withCatalogFixture(function (string $productNumber, string $parentId, string $categoryId, string $categoryGroupId, string $profileId, Context $context): void {
+            $this->import($profileId, $this->variantCsv($productNumber, $categoryId, $categoryGroupId, [['4260174000001', '1200', ['Braun']], ['4260174000002', '1200', ['Weiss', 'Grau']], ['4260174000003', '1200', ['Schwarz']]]));
+            $black = $this->product($productNumber.'-2', $context);
+            self::assertSame('4260174000003', $black->getEan());
+
+            $second = $this->import($profileId, $this->variantCsv($productNumber, $categoryId, $categoryGroupId, [['4260174000001', '1200', ['Braun']], ['4260174000002', '1200', ['Weiss']], ['4260174000003', '1200', ['Schwarz']]]));
+            self::assertSame('succeeded', $second->getState(), $this->importResult($second));
+
+            $blackAfter = $this->product($productNumber.'-2', $context);
+            self::assertSame($black->getId(), $blackAfter->getId());
+            self::assertSame('4260174000003', $blackAfter->getEan());
+            self::assertSame('4260174000002', $this->product($productNumber.'-3', $context)->getEan());
+        });
+    }
+
+    public function testReimportKeepsTheVariantsOwnPriceInAnotherCurrency(): void
+    {
+        $this->withCatalogFixture(function (string $productNumber, string $parentId, string $categoryId, string $categoryGroupId, string $profileId, Context $context): void {
+            $csv = $this->variantCsv($productNumber, $categoryId, $categoryGroupId, [['4260174000001', '1200', ['Braun']]]);
+            $this->import($profileId, $csv);
+            $child = $this->product($productNumber.'-1', $context);
+            $gbp = $this->currencyId('GBP', $context);
+            $prices = [];
+            foreach ($child->getPrice() ?? [] as $price) {
+                $prices[] = ['currencyId' => $price->getCurrencyId(), 'net' => $price->getNet(), 'gross' => $price->getGross(), 'linked' => $price->getLinked()];
+            }
+            $prices[] = ['currencyId' => $gbp, 'net' => 756.3, 'gross' => 900.0, 'linked' => false];
+            $this->productRepository()->update([['id' => $child->getId(), 'price' => $prices]], $context);
+
+            $second = $this->import($profileId, $csv);
+            self::assertSame('succeeded', $second->getState(), $this->importResult($second));
+
+            self::assertSame(900.0, $this->product($productNumber.'-1', $context)->getPrice()?->getCurrencyPrice($gbp, false)?->getGross());
+        });
+    }
+
+    public function testAnInvalidSourceVariationStillAssignsTheParentCategoryAndKeepsTheValidVariants(): void
+    {
+        $this->withCatalogFixture(function (string $productNumber, string $parentId, string $categoryId, string $categoryGroupId, string $profileId, Context $context): void {
+            $this->productRepository()->update([['id' => $parentId, 'categories' => []]], $context);
+            $this->connection()->executeStatement('DELETE FROM `product_category` WHERE `product_id` = :id', ['id' => Uuid::fromHexToBytes($parentId)]);
+
+            $progress = $this->import($profileId, $this->variantCsv($productNumber, $categoryId, $categoryGroupId, [['4260174000001', '1200', ['Braun', 'Grau']], ['4260174000002', '1200', ['Weiss']]]));
+
+            self::assertStringContainsString('does not accept multiple values', $this->invalidRecordsCsv($progress));
+            self::assertSame(CatalogIdentity::categoryId('okb', $categoryId), $this->product($productNumber, $context)->getCategories()?->first()?->getId());
+            self::assertNull($this->productRepository()->search((new Criteria())->addFilter(new EqualsFilter('ean', '4260174000001'))->addFilter(new EqualsFilter('parentId', $parentId)), $context)->first());
+            self::assertSame(1, $this->productRepository()->search((new Criteria())->addFilter(new EqualsFilter('ean', '4260174000002'))->addFilter(new EqualsFilter('parentId', $parentId)), $context)->getTotal());
+        });
+    }
+
+    public function testACommaDecimalOkbPriceIsWrittenAsTheAmountItWasValidatedAs(): void
+    {
+        $this->withCatalogFixture(function (string $productNumber, string $parentId, string $categoryId, string $categoryGroupId, string $profileId, Context $context): void {
+            $progress = $this->import($profileId, $this->variantCsv($productNumber, $categoryId, $categoryGroupId, [['4260174000001', '1299,99', ['Braun']]]));
+            self::assertSame('succeeded', $progress->getState(), $this->importResult($progress));
+
+            self::assertSame(1299.99, $this->product($productNumber.'-1', $context)->getPrice()?->getCurrencyPrice(Defaults::CURRENCY, false)?->getGross());
+        });
+    }
+
+    public function testAVariantNeverSellsBelowTheCosmoShopPriceOfItsParent(): void
+    {
+        $this->withCatalogFixture(function (string $productNumber, string $parentId, string $categoryId, string $categoryGroupId, string $profileId, Context $context): void {
+            $progress = $this->import($profileId, $this->variantCsv($productNumber, $categoryId, $categoryGroupId, [['4260174000001', '999', ['Braun']]]));
+            self::assertSame('succeeded', $progress->getState(), $this->importResult($progress));
+
+            self::assertSame(1190.0, $this->product($productNumber.'-1', $context)->getPrice()?->getCurrencyPrice(Defaults::CURRENCY, false)?->getGross());
+        });
+    }
+
+    public function testANegativeOkbPriceRejectsTheVariantInsteadOfFallingBackToTheParentPrice(): void
+    {
+        $this->withCatalogFixture(function (string $productNumber, string $parentId, string $categoryId, string $categoryGroupId, string $profileId, Context $context): void {
+            $progress = $this->import($profileId, $this->variantCsv($productNumber, $categoryId, $categoryGroupId, [['4260174000001', '1200', ['Braun']], ['4260174000002', '-5', ['Weiss']]]));
+
+            self::assertStringContainsString('4260174000002', $this->invalidRecordsCsv($progress));
+            self::assertSame('4260174000001', $this->product($productNumber.'-1', $context)->getEan());
+            self::assertSame(0, $this->productRepository()->search((new Criteria())->addFilter(new EqualsFilter('ean', '4260174000002'))->addFilter(new EqualsFilter('parentId', $parentId)), $context)->getTotal());
+        });
+    }
+
+    /** @param \Closure(string, string, string, string, string, Context): void $scenario */
+    private function withCatalogFixture(\Closure $scenario): void
+    {
+        $context = Context::createDefaultContext();
+        $suffix = bin2hex(random_bytes(5));
+        $productNumber = 'CATALOG-VARIANT-'.$suffix;
+        $parentId = Uuid::randomHex();
+        $categoryGroupId = 'group-'.$suffix;
+        $categoryId = 'category-'.$suffix;
+        $propertyGroupId = CatalogIdentity::propertyGroupId('Color '.$suffix);
+        $manualGroupId = Uuid::randomHex();
+        $manualOptionId = Uuid::randomHex();
+        $this->createFixture($parentId, $productNumber, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $manualOptionId, $context);
+        $profileId = CatalogProductImportProfile::definition()['id'];
+        $this->profileRepository()->upsert([CatalogProductImportProfile::definition()], $context);
+
+        try {
+            $scenario($productNumber, $parentId, $categoryId, $categoryGroupId, $profileId, $context);
+        } finally {
+            $this->deleteFixture($parentId, $categoryGroupId, $categoryId, $propertyGroupId, $manualGroupId, $context);
+        }
+    }
+
+    /** @param list<array{0: string, 1: string, 2: list<string>}> $variants */
+    private function variantCsv(string $productNumber, string $categoryId, string $categoryGroupId, array $variants): string
+    {
+        $rows = [['record_type', 'product_number', 'ean', 'category_id', 'category_group_id', 'standard_price_amount', 'currency', 'attributes_json']];
+        foreach ($variants as $index => [$ean, $price, $values]) {
+            $row = [$productNumber, $ean, $categoryId, $categoryGroupId, $price, 'EUR', json_encode([['Color '.$categoryGroupId, $values]], JSON_THROW_ON_ERROR)];
+            if (0 === $index) {
+                $rows[] = ['parent', ...$row];
+            }
+            $rows[] = ['child', ...$row];
+        }
+        $stream = fopen('php://temp', 'w+b');
+        self::assertIsResource($stream);
+        foreach ($rows as $row) {
+            fputcsv($stream, $row, ';', '"', '\\');
+        }
+        rewind($stream);
+        $csv = stream_get_contents($stream);
+        fclose($stream);
+
+        return (string) $csv;
+    }
+
+    private function currencyId(string $isoCode, Context $context): string
+    {
+        $id = static::getContainer()->get('currency.repository')->searchIds((new Criteria())->addFilter(new EqualsFilter('isoCode', $isoCode)), $context)->firstId();
+        self::assertIsString($id);
+
+        return $id;
+    }
+
+    /** @param list<string> $eans */
+    private function familyCsv(string $productNumber, array $eans, string $categoryId, string $categoryGroupId): string
+    {
+        $rows = [['record_type', 'product_number', 'ean', 'category_id', 'category_group_id', 'standard_price_amount', 'currency', 'attributes_json']];
+        foreach ($eans as $index => $ean) {
+            $row = [$productNumber, $ean, $categoryId, $categoryGroupId, '1200', 'EUR', json_encode([['Color '.$categoryGroupId, ['Shade '.$index]]], JSON_THROW_ON_ERROR)];
+            if (0 === $index) {
+                $rows[] = ['parent', ...$row];
+            }
+            $rows[] = ['child', ...$row];
+        }
+        $stream = fopen('php://temp', 'w+b');
+        self::assertIsResource($stream);
+        foreach ($rows as $row) {
+            fputcsv($stream, $row, ';', '"', '\\');
+        }
+        rewind($stream);
+        $csv = stream_get_contents($stream);
+        fclose($stream);
+
+        return (string) $csv;
     }
 
     private function product(string $productNumber, Context $context): \Shopware\Core\Content\Product\ProductEntity
@@ -312,6 +632,12 @@ final class CatalogProductImportTest extends AbstractCosmoShopImportExportTestCa
     private function propertyGroupRepository(): EntityRepository
     {
         return static::getContainer()->get('property_group.repository');
+    }
+
+    /** @return EntityRepository<ProductManufacturerCollection> */
+    private function manufacturerRepository(): EntityRepository
+    {
+        return static::getContainer()->get('product_manufacturer.repository');
     }
 
     /** @return EntityRepository<CatalogCategoryAttributeCollection> */

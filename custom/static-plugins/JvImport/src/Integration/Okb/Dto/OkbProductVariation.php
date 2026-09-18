@@ -8,10 +8,12 @@ final readonly class OkbProductVariation
     public function __construct(
         public string $sku,
         public string $ean,
+        public string $productReference,
         public string $categoryName,
         public ?float $standardPriceAmount,
         public ?string $currency,
         public array $attributes,
+        public ?float $suggestedRetailPriceAmount = null,
     ) {
     }
 }

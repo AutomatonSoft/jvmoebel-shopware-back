@@ -1,0 +1,80 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services https://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <defaults autowire="true" autoconfigure="true" public="false"/>
+
+        <service id="Jv\Seo\Core\Content\Redirect\RedirectDefinition">
+            <tag name="shopware.entity.definition" entity="jv_seo_redirect"/>
+        </service>
+        <service id="Jv\Seo\Core\Content\RedirectChannel\RedirectChannelDefinition">
+            <tag name="shopware.entity.definition" entity="jv_seo_redirect_channel"/>
+        </service>
+        <service id="Jv\Seo\Core\Content\RedirectSource\RedirectSourceDefinition">
+            <tag name="shopware.entity.definition" entity="jv_seo_redirect_source"/>
+        </service>
+
+        <service id="Jv\Seo\Service\Redirect\UrlNormalizer"/>
+        <service id="Jv\Seo\Service\Redirect\ProductTargetUrlResolver">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+        </service>
+        <service id="Jv\Seo\Service\Redirect\CategoryTargetUrlResolver">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+        </service>
+        <service id="Jv\Seo\Service\Redirect\LandingPageTargetUrlResolver">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+        </service>
+        <service id="Jv\Seo\Service\Redirect\ImageTargetUrlResolver">
+            <argument type="service" id="media.repository"/>
+            <argument type="service" id="Jv\Seo\Service\Redirect\UrlNormalizer"/>
+        </service>
+        <service id="Jv\Seo\Service\Redirect\ImportProductRedirectsService">
+            <argument type="service" id="jv_seo_redirect.repository"/>
+            <argument type="service" id="jv_seo_redirect_channel.repository"/>
+            <argument type="service" id="jv_seo_redirect_source.repository"/>
+            <argument type="service" id="Jv\Seo\Service\Redirect\UrlNormalizer"/>
+        </service>
+        <service id="Jv\Seo\Contract\ImportProductRedirectsInterface" alias="Jv\Seo\Service\Redirect\ImportProductRedirectsService"/>
+        <service id="Jv\Seo\Service\Redirect\SaveRedirectService">
+            <argument type="service" id="jv_seo_redirect.repository"/>
+            <argument type="service" id="jv_seo_redirect_channel.repository"/>
+            <argument type="service" id="jv_seo_redirect_source.repository"/>
+            <argument type="service" id="product.repository"/>
+            <argument type="service" id="category.repository"/>
+            <argument type="service" id="landing_page.repository"/>
+            <argument type="service" id="media.repository"/>
+            <argument type="service" id="sales_channel.repository"/>
+            <argument type="service" id="Jv\Seo\Service\Redirect\UrlNormalizer"/>
+            <argument type="service" id="Jv\Seo\Service\Redirect\ProductTargetUrlResolver"/>
+            <argument type="service" id="Jv\Seo\Service\Redirect\CategoryTargetUrlResolver"/>
+            <argument type="service" id="Jv\Seo\Service\Redirect\LandingPageTargetUrlResolver"/>
+            <argument type="service" id="Jv\Seo\Service\Redirect\ImageTargetUrlResolver"/>
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+        </service>
+        <service id="Jv\Seo\Service\Redirect\RedirectQueryService">
+            <argument type="service" id="jv_seo_redirect.repository"/>
+            <argument type="service" id="sales_channel.repository"/>
+            <argument type="service" id="Jv\Seo\Service\Redirect\ProductTargetUrlResolver"/>
+            <argument type="service" id="Jv\Seo\Service\Redirect\CategoryTargetUrlResolver"/>
+            <argument type="service" id="Jv\Seo\Service\Redirect\LandingPageTargetUrlResolver"/>
+            <argument type="service" id="Jv\Seo\Service\Redirect\ImageTargetUrlResolver"/>
+        </service>
+        <service id="Jv\Seo\Service\Redirect\LookupRedirectService">
+            <argument type="service" id="jv_seo_redirect_source.repository"/>
+            <argument type="service" id="Jv\Seo\Service\Redirect\UrlNormalizer"/>
+            <argument type="service" id="Jv\Seo\Service\Redirect\ProductTargetUrlResolver"/>
+            <argument type="service" id="Jv\Seo\Service\Redirect\CategoryTargetUrlResolver"/>
+            <argument type="service" id="Jv\Seo\Service\Redirect\LandingPageTargetUrlResolver"/>
+            <argument type="service" id="Jv\Seo\Service\Redirect\ImageTargetUrlResolver"/>
+        </service>
+
+        <service id="Jv\Seo\Controller\RedirectController" public="true">
+            <tag name="controller.service_arguments"/>
+        </service>
+        <service id="Jv\Seo\StoreApi\Route\RedirectLookupRoute" public="true">
+            <tag name="controller.service_arguments"/>
+        </service>
+    </services>
+</container>

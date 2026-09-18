@@ -1,0 +1,11 @@
+{
+  "main.js": {
+    "file": "assets/jv-seo-DD2ETvhe.js",
+    "name": "jv-seo",
+    "src": "main.js",
+    "isEntry": true,
+    "css": [
+      "assets/jv-seo-CF6yPxul.css"
+    ]
+  }
+}

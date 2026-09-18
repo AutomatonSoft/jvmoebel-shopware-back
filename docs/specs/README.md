@@ -88,7 +88,6 @@ SPEC-NNN-short-name.md
 | [SPEC-011-cms-product-grid](SPEC-011-cms-product-grid.md) | Backend CMS element/block `jv-product-grid` (сетка товаров, цены sales channel); контракт — platform SPEC-009 |
 | [SPEC-012-okb-catalog-import](SPEC-012-okb-catalog-import.md) | Дерево OKB, schema attributes и EAN-обогащение CosmoShop товаров |
 | [SPEC-013-aftercool-product-import](SPEC-013-aftercool-product-import.md) | Фоновый импорт товаров выбранной Aftercool Lister-фабрики |
-| [SPEC-014-cms-shop-the-look](SPEC-014-cms-shop-the-look.md) | Backend CMS element/block `jv-shop-the-look` (интерьерное изображение, товары и hotspot-точки); контракт — platform SPEC-011 |
 | [SPEC-015-cms-category-rail](SPEC-015-cms-category-rail.md) | Backend CMS element/block `jv-category-rail` (лента категорий, layout rail/grid); контракт — platform SPEC-012 |
 | [SPEC-016-cms-home-editorial](SPEC-016-cms-home-editorial.md) | Backend CMS element/block `jv-home-editorial` (вводный и раскрываемый rich-text контент); контракт — frontend `docs/components/jv-home-editorial.md` |
 | [SPEC-017-cms-faq](SPEC-017-cms-faq.md) | Backend CMS element/block `jv-faq` (упорядоченные вопросы и rich-text ответы); контракт — frontend `docs/components/jv-faq.md` |
@@ -96,13 +95,8 @@ SPEC-NNN-short-name.md
 | [SPEC-019-cosmoshop-customer-import](SPEC-019-cosmoshop-customer-import.md) | Импорт клиентов и newsletter recipients немецкого CosmoShop через штатный Shopware Import/Export |
 | [SPEC-020-cosmoshop-customer-wishlist-import](SPEC-020-cosmoshop-customer-wishlist-import.md) | Импорт wishlist зарегистрированных клиентов немецкого CosmoShop |
 | [SPEC-021-cms-validation](SPEC-021-cms-validation.md) | Общая валидация CMS elements в Administration и при DAL-записи; инструкция подключения правил к компонентам |
-| [SPEC-022-cms-promo-banner](SPEC-022-cms-promo-banner.md) | Backend CMS element/block `jv-promo-banner`; контракт — platform SPEC-014 |
 | [SPEC-023-cms-countdown-promo](SPEC-023-cms-countdown-promo.md) | Backend CMS element/block `jv-countdown-promo`; контракт — platform SPEC-015 |
-| [SPEC-024-cms-promo-deal-tiles](SPEC-024-cms-promo-deal-tiles.md) | Backend CMS element/block `jv-promo-deal-tiles`; контракт — platform SPEC-016 |
-| [SPEC-025-cms-related-look-cards](SPEC-025-cms-related-look-cards.md) | Backend CMS element/block `jv-related-look-cards`; контракт — platform SPEC-017 |
 | [SPEC-026-cms-chip-rail](SPEC-026-cms-chip-rail.md) | Backend CMS element/block `jv-chip-rail`; контракт — platform SPEC-018 |
-| [SPEC-027-cms-trend-look-grid](SPEC-027-cms-trend-look-grid.md) | Backend CMS element/block `jv-trend-look-grid`; контракт — platform SPEC-019 |
-| [SPEC-028-cms-look-scene](SPEC-028-cms-look-scene.md) | Backend CMS element/block `jv-look-scene`; контракт — platform SPEC-020 |
 | [SPEC-029-cms-color-world-picker](SPEC-029-cms-color-world-picker.md) | Backend CMS element/block `jv-color-world-picker`; контракт — platform SPEC-021 |
 | [SPEC-030-cms-article-hero](SPEC-030-cms-article-hero.md) | Backend CMS element/block `jv-article-hero`; контракт — platform SPEC-022 |
 | [SPEC-031-cms-table-of-contents](SPEC-031-cms-table-of-contents.md) | Backend CMS element/block `jv-table-of-contents`; контракт — platform SPEC-023 |
@@ -120,6 +114,7 @@ SPEC-NNN-short-name.md
 | [SPEC-043-cosmoshop-order-import](SPEC-043-cosmoshop-order-import.md) | Импорт исторических заказов немецкого CosmoShop без checkout/analytics side effects |
 | [SPEC-045-cms-review-summary](SPEC-045-cms-review-summary.md) | Backend CMS element/block `jv-review-summary`; контракт — platform SPEC-037 |
 | [SPEC-046-cms-subcategory-links](SPEC-046-cms-subcategory-links.md) | Backend CMS element/block `jv-subcategory-links`; контракт — platform SPEC-038 |
-| [SPEC-047-cms-cross-room-section](SPEC-047-cms-cross-room-section.md) | Backend CMS element/block `jv-cross-room-section`; контракт — platform SPEC-039 |
 | [SPEC-048-cms-social-block](SPEC-048-cms-social-block.md) | Backend CMS element/block `jv-social-block` (заголовок и social items с media/name/url); контракт — platform SPEC-048 |
 | [SPEC-049-cms-text-custom-tables](SPEC-049-cms-text-custom-tables.md) | Backend CMS element/block `jv-text-custom-tables` (rich text и секции с двухколоночными таблицами); frontend contract отсутствует |
+| [SPEC-050-cms-shop-the-look](SPEC-050-cms-shop-the-look.md) | Backend CMS element/block `jv-shop-the-look` (интерьерное изображение, товары и hotspot-точки); контракт — platform SPEC-045 |
+| [SPEC-053-product-legacy-redirects](SPEC-053-product-legacy-redirects.md) | Реестр общих, товарных, категорийных и image legacy redirects, импорт CosmoShop product URL и Store API lookup для Next.js; доставка HTTP `301` — platform SPEC-049 |

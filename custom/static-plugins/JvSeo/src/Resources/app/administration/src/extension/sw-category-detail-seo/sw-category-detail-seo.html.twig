@@ -1,0 +1,7 @@
+{% block sw_category_detail_seo_list %}
+    {% parent %}
+    <jv-seo-category-redirects
+        v-if="category && category.id"
+        :category-id="category.id"
+    />
+{% endblock %}

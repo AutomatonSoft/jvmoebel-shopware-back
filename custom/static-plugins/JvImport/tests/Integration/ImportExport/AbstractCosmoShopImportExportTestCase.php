@@ -63,6 +63,33 @@ abstract class AbstractCosmoShopImportExportTestCase extends TestCase
         return $factory->create($log->getId(), 50, 50)->import($context);
     }
 
+    protected function importInWorkerBatches(string $profileId, string $csv): Progress
+    {
+        $context = Context::createDefaultContext();
+        $path = tempnam(sys_get_temp_dir(), 'jv-cosmoshop-import-');
+        self::assertNotFalse($path);
+        file_put_contents($path, $csv);
+
+        try {
+            $service = static::getContainer()->get(ImportExportService::class);
+            self::assertInstanceOf(ImportExportService::class, $service);
+            $log = $service->prepareImport($context, $profileId, new \DateTimeImmutable('+1 day'), new UploadedFile($path, 'products.csv', 'text/csv', null, true));
+        } finally {
+            unlink($path);
+        }
+
+        $factory = static::getContainer()->get(ImportExportFactory::class);
+        self::assertInstanceOf(ImportExportFactory::class, $factory);
+        $offset = 0;
+        do {
+            static::getContainer()->get('services_resetter')->reset();
+            $progress = $factory->create($log->getId(), 50, 50)->import($context, $offset);
+            $offset = $progress->getOffset();
+        } while (!$progress->isFinished());
+
+        return $progress;
+    }
+
     protected function storeApiDeliveryTimeId(string $productId, Market $market): ?string
     {
         /** @var EntityRepository<SalesChannelCollection> $salesChannelRepository */

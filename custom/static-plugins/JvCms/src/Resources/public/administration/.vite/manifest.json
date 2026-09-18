@@ -1,6 +1,6 @@
 {
   "main.js": {
-    "file": "assets/jv-cms-BjJjFWK3.js",
+    "file": "assets/jv-cms-DSnDEbNh.js",
     "name": "jv-cms",
     "src": "main.js",
     "isEntry": true,
@@ -74,11 +74,6 @@
       "module/sw-cms/elements/jv-countdown-promo/component/index.js",
       "module/sw-cms/blocks/jv-countdown-promo/jv-countdown-promo/preview/index.js",
       "module/sw-cms/blocks/jv-countdown-promo/jv-countdown-promo/component/index.js",
-      "module/sw-cms/elements/jv-promo-banner/preview/index.js",
-      "module/sw-cms/elements/jv-promo-banner/config/index.js",
-      "module/sw-cms/elements/jv-promo-banner/component/index.js",
-      "module/sw-cms/blocks/jv-promo-banner/jv-promo-banner/preview/index.js",
-      "module/sw-cms/blocks/jv-promo-banner/jv-promo-banner/component/index.js",
       "module/sw-cms/elements/jv-offer-rail/preview/index.js",
       "module/sw-cms/elements/jv-offer-rail/config/index.js",
       "module/sw-cms/elements/jv-offer-rail/component/index.js",
@@ -89,31 +84,11 @@
       "module/sw-cms/elements/jv-benefit-strip/component/index.js",
       "module/sw-cms/blocks/jv-benefit-strip/jv-benefit-strip/preview/index.js",
       "module/sw-cms/blocks/jv-benefit-strip/jv-benefit-strip/component/index.js",
-      "module/sw-cms/elements/jv-promo-deal-tiles/preview/index.js",
-      "module/sw-cms/elements/jv-promo-deal-tiles/config/index.js",
-      "module/sw-cms/elements/jv-promo-deal-tiles/component/index.js",
-      "module/sw-cms/blocks/jv-promo-deal-tiles/jv-promo-deal-tiles/preview/index.js",
-      "module/sw-cms/blocks/jv-promo-deal-tiles/jv-promo-deal-tiles/component/index.js",
-      "module/sw-cms/elements/jv-related-look-cards/preview/index.js",
-      "module/sw-cms/elements/jv-related-look-cards/config/index.js",
-      "module/sw-cms/elements/jv-related-look-cards/component/index.js",
-      "module/sw-cms/blocks/jv-related-look-cards/jv-related-look-cards/preview/index.js",
-      "module/sw-cms/blocks/jv-related-look-cards/jv-related-look-cards/component/index.js",
       "module/sw-cms/elements/jv-chip-rail/preview/index.js",
       "module/sw-cms/elements/jv-chip-rail/config/index.js",
       "module/sw-cms/elements/jv-chip-rail/component/index.js",
       "module/sw-cms/blocks/jv-chip-rail/jv-chip-rail/preview/index.js",
       "module/sw-cms/blocks/jv-chip-rail/jv-chip-rail/component/index.js",
-      "module/sw-cms/elements/jv-trend-look-grid/preview/index.js",
-      "module/sw-cms/elements/jv-trend-look-grid/config/index.js",
-      "module/sw-cms/elements/jv-trend-look-grid/component/index.js",
-      "module/sw-cms/blocks/jv-trend-look-grid/jv-trend-look-grid/preview/index.js",
-      "module/sw-cms/blocks/jv-trend-look-grid/jv-trend-look-grid/component/index.js",
-      "module/sw-cms/elements/jv-look-scene/preview/index.js",
-      "module/sw-cms/elements/jv-look-scene/config/index.js",
-      "module/sw-cms/elements/jv-look-scene/component/index.js",
-      "module/sw-cms/blocks/jv-look-scene/jv-look-scene/preview/index.js",
-      "module/sw-cms/blocks/jv-look-scene/jv-look-scene/component/index.js",
       "module/sw-cms/elements/jv-color-world-picker/preview/index.js",
       "module/sw-cms/elements/jv-color-world-picker/config/index.js",
       "module/sw-cms/elements/jv-color-world-picker/component/index.js",
@@ -194,11 +169,6 @@
       "module/sw-cms/elements/jv-subcategory-links/component/index.js",
       "module/sw-cms/blocks/jv-subcategory-links/jv-subcategory-links/preview/index.js",
       "module/sw-cms/blocks/jv-subcategory-links/jv-subcategory-links/component/index.js",
-      "module/sw-cms/elements/jv-cross-room-section/preview/index.js",
-      "module/sw-cms/elements/jv-cross-room-section/config/index.js",
-      "module/sw-cms/elements/jv-cross-room-section/component/index.js",
-      "module/sw-cms/blocks/jv-cross-room-section/jv-cross-room-section/preview/index.js",
-      "module/sw-cms/blocks/jv-cross-room-section/jv-cross-room-section/component/index.js",
       "module/sw-cms/elements/jv-social-block/preview/index.js",
       "module/sw-cms/elements/jv-social-block/config/index.js",
       "module/sw-cms/elements/jv-social-block/component/index.js",
@@ -385,21 +355,6 @@
       "assets/index-ClgI1_6c.css"
     ]
   },
-  "module/sw-cms/blocks/jv-cross-room-section/jv-cross-room-section/component/index.js": {
-    "file": "assets/index-Bw0NT7s-.js",
-    "name": "index",
-    "src": "module/sw-cms/blocks/jv-cross-room-section/jv-cross-room-section/component/index.js",
-    "isDynamicEntry": true
-  },
-  "module/sw-cms/blocks/jv-cross-room-section/jv-cross-room-section/preview/index.js": {
-    "file": "assets/index-DXKXAyfD.js",
-    "name": "index",
-    "src": "module/sw-cms/blocks/jv-cross-room-section/jv-cross-room-section/preview/index.js",
-    "isDynamicEntry": true,
-    "css": [
-      "assets/index-CZ1NYBWb.css"
-    ]
-  },
   "module/sw-cms/blocks/jv-editorial-team-grid/jv-editorial-team-grid/component/index.js": {
     "file": "assets/index-BJEibcDw.js",
     "name": "index",
@@ -571,21 +526,6 @@
       "assets/index-BKUmWdkk.css"
     ]
   },
-  "module/sw-cms/blocks/jv-look-scene/jv-look-scene/component/index.js": {
-    "file": "assets/index-D6eevqML.js",
-    "name": "index",
-    "src": "module/sw-cms/blocks/jv-look-scene/jv-look-scene/component/index.js",
-    "isDynamicEntry": true
-  },
-  "module/sw-cms/blocks/jv-look-scene/jv-look-scene/preview/index.js": {
-    "file": "assets/index-BFcNlLFI.js",
-    "name": "index",
-    "src": "module/sw-cms/blocks/jv-look-scene/jv-look-scene/preview/index.js",
-    "isDynamicEntry": true,
-    "css": [
-      "assets/index-CqzNTf3u.css"
-    ]
-  },
   "module/sw-cms/blocks/jv-loyalty-promo/jv-loyalty-promo/component/index.js": {
     "file": "assets/index-ZQEMhuTj.js",
     "name": "index",
@@ -650,51 +590,6 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-CUoAPTvW.css"
-    ]
-  },
-  "module/sw-cms/blocks/jv-promo-banner/jv-promo-banner/component/index.js": {
-    "file": "assets/index-V6k7qADe.js",
-    "name": "index",
-    "src": "module/sw-cms/blocks/jv-promo-banner/jv-promo-banner/component/index.js",
-    "isDynamicEntry": true
-  },
-  "module/sw-cms/blocks/jv-promo-banner/jv-promo-banner/preview/index.js": {
-    "file": "assets/index-CC-tkpfQ.js",
-    "name": "index",
-    "src": "module/sw-cms/blocks/jv-promo-banner/jv-promo-banner/preview/index.js",
-    "isDynamicEntry": true,
-    "css": [
-      "assets/index-Dj1WtH7W.css"
-    ]
-  },
-  "module/sw-cms/blocks/jv-promo-deal-tiles/jv-promo-deal-tiles/component/index.js": {
-    "file": "assets/index-DYDBuO8p.js",
-    "name": "index",
-    "src": "module/sw-cms/blocks/jv-promo-deal-tiles/jv-promo-deal-tiles/component/index.js",
-    "isDynamicEntry": true
-  },
-  "module/sw-cms/blocks/jv-promo-deal-tiles/jv-promo-deal-tiles/preview/index.js": {
-    "file": "assets/index-Dq9t6KGu.js",
-    "name": "index",
-    "src": "module/sw-cms/blocks/jv-promo-deal-tiles/jv-promo-deal-tiles/preview/index.js",
-    "isDynamicEntry": true,
-    "css": [
-      "assets/index-BVepXgaV.css"
-    ]
-  },
-  "module/sw-cms/blocks/jv-related-look-cards/jv-related-look-cards/component/index.js": {
-    "file": "assets/index-CUJgKQVg.js",
-    "name": "index",
-    "src": "module/sw-cms/blocks/jv-related-look-cards/jv-related-look-cards/component/index.js",
-    "isDynamicEntry": true
-  },
-  "module/sw-cms/blocks/jv-related-look-cards/jv-related-look-cards/preview/index.js": {
-    "file": "assets/index-ndPpWt3P.js",
-    "name": "index",
-    "src": "module/sw-cms/blocks/jv-related-look-cards/jv-related-look-cards/preview/index.js",
-    "isDynamicEntry": true,
-    "css": [
-      "assets/index-aiDb4jI2.css"
     ]
   },
   "module/sw-cms/blocks/jv-review-summary/jv-review-summary/component/index.js": {
@@ -830,21 +725,6 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-C38KzPN7.css"
-    ]
-  },
-  "module/sw-cms/blocks/jv-trend-look-grid/jv-trend-look-grid/component/index.js": {
-    "file": "assets/index-DToxjpzA.js",
-    "name": "index",
-    "src": "module/sw-cms/blocks/jv-trend-look-grid/jv-trend-look-grid/component/index.js",
-    "isDynamicEntry": true
-  },
-  "module/sw-cms/blocks/jv-trend-look-grid/jv-trend-look-grid/preview/index.js": {
-    "file": "assets/index-NXbJygjI.js",
-    "name": "index",
-    "src": "module/sw-cms/blocks/jv-trend-look-grid/jv-trend-look-grid/preview/index.js",
-    "isDynamicEntry": true,
-    "css": [
-      "assets/index-IgkWOFRC.css"
     ]
   },
   "module/sw-cms/blocks/jv-trust-rating/jv-trust-rating/component/index.js": {
@@ -1118,33 +998,6 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-B8pYfzOg.css"
-    ]
-  },
-  "module/sw-cms/elements/jv-cross-room-section/component/index.js": {
-    "file": "assets/index-CUpbN4UX.js",
-    "name": "index",
-    "src": "module/sw-cms/elements/jv-cross-room-section/component/index.js",
-    "isDynamicEntry": true,
-    "css": [
-      "assets/index-WIbO0eqZ.css"
-    ]
-  },
-  "module/sw-cms/elements/jv-cross-room-section/config/index.js": {
-    "file": "assets/index-BRM5zqPa.js",
-    "name": "index",
-    "src": "module/sw-cms/elements/jv-cross-room-section/config/index.js",
-    "isDynamicEntry": true,
-    "css": [
-      "assets/index-DdY6eqcw.css"
-    ]
-  },
-  "module/sw-cms/elements/jv-cross-room-section/preview/index.js": {
-    "file": "assets/index-C2NYPrfu.js",
-    "name": "index",
-    "src": "module/sw-cms/elements/jv-cross-room-section/preview/index.js",
-    "isDynamicEntry": true,
-    "css": [
-      "assets/index-4CnuMdMx.css"
     ]
   },
   "module/sw-cms/elements/jv-editorial-team-grid/component/index.js": {
@@ -1441,33 +1294,6 @@
       "assets/index-BzPgAVrd.css"
     ]
   },
-  "module/sw-cms/elements/jv-look-scene/component/index.js": {
-    "file": "assets/index-Dns0f-DQ.js",
-    "name": "index",
-    "src": "module/sw-cms/elements/jv-look-scene/component/index.js",
-    "isDynamicEntry": true,
-    "css": [
-      "assets/index-BD37Bm5-.css"
-    ]
-  },
-  "module/sw-cms/elements/jv-look-scene/config/index.js": {
-    "file": "assets/index-CNO94O0v.js",
-    "name": "index",
-    "src": "module/sw-cms/elements/jv-look-scene/config/index.js",
-    "isDynamicEntry": true,
-    "css": [
-      "assets/index-lgK1IxtU.css"
-    ]
-  },
-  "module/sw-cms/elements/jv-look-scene/preview/index.js": {
-    "file": "assets/index-CIwh4m8U.js",
-    "name": "index",
-    "src": "module/sw-cms/elements/jv-look-scene/preview/index.js",
-    "isDynamicEntry": true,
-    "css": [
-      "assets/index-ru4EhxZV.css"
-    ]
-  },
   "module/sw-cms/elements/jv-loyalty-promo/component/index.js": {
     "file": "assets/index-B5HVRPvE.js",
     "name": "index",
@@ -1574,87 +1400,6 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-K-3EoiyK.css"
-    ]
-  },
-  "module/sw-cms/elements/jv-promo-banner/component/index.js": {
-    "file": "assets/index-DjNj4RV2.js",
-    "name": "index",
-    "src": "module/sw-cms/elements/jv-promo-banner/component/index.js",
-    "isDynamicEntry": true,
-    "css": [
-      "assets/index-CmyZKbmQ.css"
-    ]
-  },
-  "module/sw-cms/elements/jv-promo-banner/config/index.js": {
-    "file": "assets/index-tiWAzhdQ.js",
-    "name": "index",
-    "src": "module/sw-cms/elements/jv-promo-banner/config/index.js",
-    "isDynamicEntry": true,
-    "css": [
-      "assets/index-D9e1kP1H.css"
-    ]
-  },
-  "module/sw-cms/elements/jv-promo-banner/preview/index.js": {
-    "file": "assets/index-5Dwk7-OE.js",
-    "name": "index",
-    "src": "module/sw-cms/elements/jv-promo-banner/preview/index.js",
-    "isDynamicEntry": true,
-    "css": [
-      "assets/index-DgRqNaMx.css"
-    ]
-  },
-  "module/sw-cms/elements/jv-promo-deal-tiles/component/index.js": {
-    "file": "assets/index-dMiIFH2m.js",
-    "name": "index",
-    "src": "module/sw-cms/elements/jv-promo-deal-tiles/component/index.js",
-    "isDynamicEntry": true,
-    "css": [
-      "assets/index-Csi6o2Sb.css"
-    ]
-  },
-  "module/sw-cms/elements/jv-promo-deal-tiles/config/index.js": {
-    "file": "assets/index-DY-anhmp.js",
-    "name": "index",
-    "src": "module/sw-cms/elements/jv-promo-deal-tiles/config/index.js",
-    "isDynamicEntry": true,
-    "css": [
-      "assets/index-CWuJfaYh.css"
-    ]
-  },
-  "module/sw-cms/elements/jv-promo-deal-tiles/preview/index.js": {
-    "file": "assets/index-B8Dq2Hht.js",
-    "name": "index",
-    "src": "module/sw-cms/elements/jv-promo-deal-tiles/preview/index.js",
-    "isDynamicEntry": true,
-    "css": [
-      "assets/index-C6tdmeNz.css"
-    ]
-  },
-  "module/sw-cms/elements/jv-related-look-cards/component/index.js": {
-    "file": "assets/index-BalQ5c3T.js",
-    "name": "index",
-    "src": "module/sw-cms/elements/jv-related-look-cards/component/index.js",
-    "isDynamicEntry": true,
-    "css": [
-      "assets/index-BUmpMemp.css"
-    ]
-  },
-  "module/sw-cms/elements/jv-related-look-cards/config/index.js": {
-    "file": "assets/index-CWIjVjra.js",
-    "name": "index",
-    "src": "module/sw-cms/elements/jv-related-look-cards/config/index.js",
-    "isDynamicEntry": true,
-    "css": [
-      "assets/index-Bvg4uFMK.css"
-    ]
-  },
-  "module/sw-cms/elements/jv-related-look-cards/preview/index.js": {
-    "file": "assets/index-I8_A09UJ.js",
-    "name": "index",
-    "src": "module/sw-cms/elements/jv-related-look-cards/preview/index.js",
-    "isDynamicEntry": true,
-    "css": [
-      "assets/index-H-MZ2-0r.css"
     ]
   },
   "module/sw-cms/elements/jv-review-summary/component/index.js": {
@@ -1871,33 +1616,6 @@
     "isDynamicEntry": true,
     "css": [
       "assets/index-DvcRB_j6.css"
-    ]
-  },
-  "module/sw-cms/elements/jv-trend-look-grid/component/index.js": {
-    "file": "assets/index-CUOxlwKE.js",
-    "name": "index",
-    "src": "module/sw-cms/elements/jv-trend-look-grid/component/index.js",
-    "isDynamicEntry": true,
-    "css": [
-      "assets/index-CRTvUBDo.css"
-    ]
-  },
-  "module/sw-cms/elements/jv-trend-look-grid/config/index.js": {
-    "file": "assets/index-CV8RwYIj.js",
-    "name": "index",
-    "src": "module/sw-cms/elements/jv-trend-look-grid/config/index.js",
-    "isDynamicEntry": true,
-    "css": [
-      "assets/index-hDM81V14.css"
-    ]
-  },
-  "module/sw-cms/elements/jv-trend-look-grid/preview/index.js": {
-    "file": "assets/index-DsWs_V7F.js",
-    "name": "index",
-    "src": "module/sw-cms/elements/jv-trend-look-grid/preview/index.js",
-    "isDynamicEntry": true,
-    "css": [
-      "assets/index-DSoDzxLA.css"
     ]
   },
   "module/sw-cms/elements/jv-trust-rating/component/index.js": {

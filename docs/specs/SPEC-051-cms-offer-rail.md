@@ -25,7 +25,7 @@
 - Next.js renderer, pixel-perfect, carousel UI;
 - Twig Storefront;
 - собственный Store API route;
-- `jv-promo-banner`, `jv-countdown-promo`, `jv-promo-deal-tiles`;
+- `jv-countdown-promo`;
 - изменение Shopware core / `vendor/`.
 
 ## Сценарий

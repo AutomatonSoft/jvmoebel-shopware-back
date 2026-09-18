@@ -1,0 +1,50 @@
+{% block jv_seo_image_redirects %}
+<sw-media-collapse
+    v-if="acl.can('jv_seo_redirect:read')"
+    :title="$t('jv-seo.imageCard.title')"
+    :expand-on-loading="true"
+>
+    <template #content>
+        <div class="jv-seo-image-redirects">
+            <div class="jv-seo-image-redirects__toolbar">
+                <mt-button
+                    v-if="acl.can(redirectId ? 'jv_seo_redirect:update' : 'jv_seo_redirect:create')"
+                    size="small"
+                    variant="secondary"
+                    @click="$router.push(redirectId
+                        ? { name: 'jv.seo.detail', params: { id: redirectId } }
+                        : { name: 'jv.seo.create', query: { mediaId } })"
+                >
+                    {{ redirectId ? $t('global.default.edit') : $t('jv-seo.actions.create') }}
+                </mt-button>
+            </div>
+
+            <sw-loader v-if="isLoading" />
+
+            <sw-data-grid
+                v-else-if="rows.length"
+                :data-source="rows"
+                :columns="columns"
+                :show-selection="false"
+                :show-settings="false"
+                :show-actions="false"
+                :compact-mode="true"
+            >
+                <template #column-targetUrl="{ item }">
+                    <span v-if="item.targetUrl">{{ item.targetUrl }}</span>
+                    <span v-else>{{ $t('jv-seo.detail.targetUnavailable') }}</span>
+                </template>
+                <template #column-sources="{ item }">
+                    <ul class="jv-seo-image-redirects__sources">
+                        <li v-for="sourceUrl in item.sourceUrls" :key="sourceUrl">{{ sourceUrl }}</li>
+                    </ul>
+                </template>
+            </sw-data-grid>
+
+            <p v-else class="jv-seo-image-redirects__empty">
+                {{ $t('jv-seo.imageCard.empty') }}
+            </p>
+        </div>
+    </template>
+</sw-media-collapse>
+{% endblock %}

@@ -217,6 +217,7 @@ docker compose run --rm web bin/console plugin:install \
     --no-interaction \
     JvMarketConfiguration \
     JvCms \
+    JvSeo \
     JvImport \
     JvStorefront
 
