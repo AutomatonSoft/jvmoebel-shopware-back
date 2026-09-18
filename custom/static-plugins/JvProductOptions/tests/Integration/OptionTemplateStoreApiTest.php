@@ -86,6 +86,35 @@ final class OptionTemplateStoreApiTest extends TestCase
         $this->browser->request('POST', '/store-api/jv-product-options/'.Uuid::randomHex());
 
         self::assertSame(404, $this->browser->getResponse()->getStatusCode());
+        self::assertSame('CONTENT__PRODUCT_NOT_FOUND', $this->json()['errors'][0]['code'] ?? null);
+    }
+
+    public function testManualAssignmentToInactiveTemplateFallsBackToStream(): void
+    {
+        static::getContainer()->get('jv_option_template_product.repository')->create([[
+            'productId' => $this->ids->get('table'),
+            'templateId' => $this->ids->get('inactive-template'),
+        ]], Context::createDefaultContext());
+
+        self::assertSame($this->ids->get('factory-template'), $this->options('table')['templateId']);
+    }
+
+    public function testCartUsesCurrentBasePriceAfterProductPriceChange(): void
+    {
+        $this->addToCart('sofa', 1, ['material' => 'leather']);
+
+        static::getContainer()->get('product.repository')->update([[
+            'id' => $this->ids->get('sofa'),
+            'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 2000.0, 'net' => 1739.13, 'linked' => false]],
+        ]], Context::createDefaultContext());
+
+        $this->browser->request('GET', '/store-api/checkout/cart');
+        self::assertSame(200, $this->browser->getResponse()->getStatusCode());
+        $lineItem = $this->json()['lineItems'][0];
+
+        self::assertEqualsWithDelta(2400.0, $lineItem['price']['unitPrice'], 0.001);
+        self::assertEqualsWithDelta(2000.0, $lineItem['payload']['jvProductOptions']['baseUnitPrice'], 0.001);
+        self::assertEqualsWithDelta(400.0, $lineItem['payload']['jvProductOptions']['surchargeUnitPrice'], 0.001);
     }
 
     public function testCartPriceIncludesSurcharges(): void
@@ -206,7 +235,14 @@ final class OptionTemplateStoreApiTest extends TestCase
             $item['payload'] = ['jvOptionSelections' => $selections];
         }
 
-        $this->browser->request('POST', '/store-api/checkout/cart/line-item', ['items' => [$item]]);
+        $this->browser->request(
+            'POST',
+            '/store-api/checkout/cart/line-item',
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/json'],
+            json_encode(['items' => [$item]], \JSON_THROW_ON_ERROR),
+        );
         self::assertSame(200, $this->browser->getResponse()->getStatusCode(), (string) $this->browser->getResponse()->getContent());
 
         return $this->json();
@@ -237,6 +273,7 @@ final class OptionTemplateStoreApiTest extends TestCase
     {
         $products = [
             (new ProductBuilder($this->ids, 'sofa', 100))->price(1000.0)->manufacturer('factory-x')->visibility($salesChannelId)->build(),
+            (new ProductBuilder($this->ids, 'table', 100))->price(500.0)->manufacturer('factory-x')->visibility($salesChannelId)->build(),
             (new ProductBuilder($this->ids, 'chair', 100))->price(300.0)->manufacturer('other-factory')->visibility($salesChannelId)->build(),
             (new ProductBuilder($this->ids, 'bed', 100))->price(800.0)->manufacturer('factory-x')->visibility($salesChannelId)
                 ->variant((new ProductBuilder($this->ids, 'bed-variant', 100))->visibility($salesChannelId)->build())

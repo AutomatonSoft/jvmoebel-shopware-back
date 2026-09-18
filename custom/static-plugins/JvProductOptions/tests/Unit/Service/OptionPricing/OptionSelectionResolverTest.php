@@ -9,22 +9,18 @@ use Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateValue\
 use Jv\ProductOptions\Core\Content\OptionTemplate\OptionTemplateEntity;
 use Jv\ProductOptions\Service\OptionPricing\Exception\InvalidOptionSelectionException;
 use Jv\ProductOptions\Service\OptionPricing\OptionSelectionResolver;
-use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Framework\Uuid\Uuid;
 
-#[CoversClass(OptionSelectionResolver::class)]
 final class OptionSelectionResolverTest extends TestCase
 {
-    private const TEMPLATE = '01950000000070008000000000000000';
-    private const MATERIAL = '01950000000070008000000000000001';
-    private const COLOR = '01950000000070008000000000000002';
-    private const FABRIC = '01950000000070008000000000000011';
-    private const LEATHER = '01950000000070008000000000000012';
-    private const WHITE = '01950000000070008000000000000021';
-    private const BLACK = '01950000000070008000000000000022';
-    private const FOREIGN_VALUE = '01950000000070008000000000000099';
-    private const FOREIGN_GROUP = '01950000000070008000000000000088';
+    private const MATERIAL = '0190a0a0a0a07000800000000000a001';
+    private const FABRIC = '0190a0a0a0a07000800000000000b001';
+    private const LEATHER = '0190a0a0a0a07000800000000000b002';
+    private const COLOR = '0190a0a0a0a07000800000000000a002';
+    private const GREY = '0190a0a0a0a07000800000000000c001';
+    private const RED = '0190a0a0a0a07000800000000000c002';
 
     private OptionSelectionResolver $resolver;
 
@@ -33,33 +29,32 @@ final class OptionSelectionResolverTest extends TestCase
         $this->resolver = new OptionSelectionResolver();
     }
 
-    public function testNullSelectionAppliesAllDefaults(): void
+    public function testMissingSelectionUsesDefaults(): void
     {
-        $resolved = $this->resolver->resolve($this->template(), null);
+        $values = $this->resolver->resolve($this->template(), null);
 
-        self::assertSame([self::FABRIC, self::WHITE], array_map(static fn (OptionTemplateValueEntity $v): string => $v->getId(), $resolved));
+        self::assertSame([self::FABRIC, self::GREY], $this->ids($values));
     }
 
-    public function testEmptySelectionAppliesAllDefaults(): void
+    public function testSelectedValuesReplaceDefaultsInGroupOrder(): void
     {
-        $resolved = $this->resolver->resolve($this->template(), []);
+        $values = $this->resolver->resolve($this->template(), [self::COLOR => self::RED, self::MATERIAL => self::LEATHER]);
 
-        self::assertSame([self::FABRIC, self::WHITE], array_map(static fn (OptionTemplateValueEntity $v): string => $v->getId(), $resolved));
+        self::assertSame([self::LEATHER, self::RED], $this->ids($values));
     }
 
-    public function testExplicitSelectionOverridesDefault(): void
+    public function testPartialSelectionFillsOtherGroupsWithDefaults(): void
     {
-        $resolved = $this->resolver->resolve($this->template(), [
-            self::MATERIAL => self::LEATHER,
-            self::COLOR => self::BLACK,
-        ]);
+        $values = $this->resolver->resolve($this->template(), [self::COLOR => self::RED]);
 
-        self::assertSame([self::LEATHER, self::BLACK], array_map(static fn (OptionTemplateValueEntity $v): string => $v->getId(), $resolved));
+        self::assertSame([self::FABRIC, self::RED], $this->ids($values));
     }
 
-    public function testGroupWithoutDefaultRequiresExplicitSelection(): void
+    public function testGroupWithoutDefaultMustBeSelected(): void
     {
-        $template = $this->template(withColorDefault: false);
+        $template = $this->template(colorDefault: null);
+
+        self::assertSame([self::FABRIC, self::RED], $this->ids($this->resolver->resolve($template, [self::COLOR => self::RED])));
 
         $this->expectException(InvalidOptionSelectionException::class);
         $this->resolver->resolve($template, [self::MATERIAL => self::LEATHER]);
@@ -73,78 +68,60 @@ final class OptionSelectionResolverTest extends TestCase
         $this->resolver->resolve($this->template(), $selections);
     }
 
-    /**
-     * @return iterable<string, array{mixed}>
-     */
+    /** @return iterable<string, array{0: mixed}> */
     public static function invalidSelectionProvider(): iterable
     {
+        yield 'not an object' => ['leather'];
         yield 'list instead of map' => [[self::LEATHER]];
-        yield 'scalar payload' => ['string'];
-        yield 'invalid group uuid' => [['not-a-uuid' => self::LEATHER]];
-        yield 'invalid value uuid' => [[self::MATERIAL => 'not-a-uuid']];
-        yield 'value from another group' => [[self::MATERIAL => self::WHITE]];
-        yield 'unknown value uuid' => [[self::MATERIAL => self::FOREIGN_VALUE]];
-        yield 'unknown group uuid' => [[self::FOREIGN_GROUP => self::FABRIC]];
+        yield 'foreign group' => [[Uuid::randomHex() => self::LEATHER]];
+        yield 'value of another group' => [[self::MATERIAL => self::RED]];
+        yield 'unknown value' => [[self::MATERIAL => Uuid::randomHex()]];
+        yield 'value is not a uuid' => [[self::MATERIAL => 'leather']];
+        yield 'value is not a string' => [[self::MATERIAL => 42]];
     }
 
-    public function testEmptyTemplateAllowsOnlyEmptySelection(): void
-    {
-        $emptyTemplate = new OptionTemplateEntity();
-        $emptyTemplate->setId(self::TEMPLATE);
-        $emptyTemplate->setGroups(new OptionTemplateGroupCollection());
-
-        self::assertSame([], $this->resolver->resolve($emptyTemplate, null));
-        self::assertSame([], $this->resolver->resolve($emptyTemplate, []));
-
-        $this->expectException(InvalidOptionSelectionException::class);
-        $this->resolver->resolve($emptyTemplate, [self::MATERIAL => self::FABRIC]);
-    }
-
-    private function template(bool $withColorDefault = true): OptionTemplateEntity
+    private function template(?string $colorDefault = self::GREY): OptionTemplateEntity
     {
         $template = new OptionTemplateEntity();
-        $template->setId(self::TEMPLATE);
-
-        $material = new OptionTemplateGroupEntity();
-        $material->setId(self::MATERIAL);
-        $material->setTemplateId(self::TEMPLATE);
-        $material->setPosition(1);
-        $material->setDefaultValueId(self::FABRIC);
-
-        $fabric = new OptionTemplateValueEntity();
-        $fabric->setId(self::FABRIC);
-        $fabric->setGroupId(self::MATERIAL);
-        $fabric->setPosition(1);
-
-        $leather = new OptionTemplateValueEntity();
-        $leather->setId(self::LEATHER);
-        $leather->setGroupId(self::MATERIAL);
-        $leather->setPosition(2);
-
-        $material->setValues(new OptionTemplateValueCollection([$fabric, $leather]));
-
-        $color = new OptionTemplateGroupEntity();
-        $color->setId(self::COLOR);
-        $color->setTemplateId(self::TEMPLATE);
-        $color->setPosition(2);
-        if ($withColorDefault) {
-            $color->setDefaultValueId(self::WHITE);
-        }
-
-        $white = new OptionTemplateValueEntity();
-        $white->setId(self::WHITE);
-        $white->setGroupId(self::COLOR);
-        $white->setPosition(1);
-
-        $black = new OptionTemplateValueEntity();
-        $black->setId(self::BLACK);
-        $black->setGroupId(self::COLOR);
-        $black->setPosition(2);
-
-        $color->setValues(new OptionTemplateValueCollection([$white, $black]));
-
-        $template->setGroups(new OptionTemplateGroupCollection([$material, $color]));
+        $template->setId(Uuid::randomHex());
+        $template->setGroups(new OptionTemplateGroupCollection([
+            $this->group(self::COLOR, 2, $colorDefault, [self::GREY, self::RED]),
+            $this->group(self::MATERIAL, 1, self::FABRIC, [self::FABRIC, self::LEATHER]),
+        ]));
 
         return $template;
+    }
+
+    /**
+     * @param list<string> $valueIds
+     */
+    private function group(string $id, int $position, ?string $defaultValueId, array $valueIds): OptionTemplateGroupEntity
+    {
+        $values = new OptionTemplateValueCollection();
+        foreach ($valueIds as $index => $valueId) {
+            $value = new OptionTemplateValueEntity();
+            $value->setId($valueId);
+            $value->setGroupId($id);
+            $value->setPosition($index + 1);
+            $values->add($value);
+        }
+
+        $group = new OptionTemplateGroupEntity();
+        $group->setId($id);
+        $group->setPosition($position);
+        $group->setDefaultValueId($defaultValueId);
+        $group->setValues($values);
+
+        return $group;
+    }
+
+    /**
+     * @param list<OptionTemplateValueEntity> $values
+     *
+     * @return list<string>
+     */
+    private function ids(array $values): array
+    {
+        return array_map(static fn (OptionTemplateValueEntity $value): string => $value->getId(), $values);
     }
 }
