@@ -530,38 +530,8 @@ final class AfterCoolImportWorkflowTest extends TestCase
     {
         $context = $this->prepare([$this->item(1)]);
         $transport = $this->resetTestTransport();
-        $bus = static::getContainer()->get('messenger.bus.default');
-        self::assertInstanceOf(MessageBusInterface::class, $bus);
-        $container = static::getContainer();
-        $pages = new ImportAfterCoolPageService(
-            $container->get(AfterCoolImportProductSourceInterface::class),
-            $container->get(ResolveAfterCoolProductPageService::class),
-            $container->get(BuildAfterCoolShopwareProductRecordService::class),
-            $container->get(AfterCoolPageCheckpointService::class),
-            $container->get(ProcessAfterCoolStagedMediaService::class),
-            $container->get(ResolveDefaultProductTaxService::class),
-            $container->get('jv_aftercool_import_run.repository'),
-            $container->get('lock.factory'),
-            new class($bus) implements MessageBusInterface {
-                private bool $failed = false;
-
-                public function __construct(private readonly MessageBusInterface $inner)
-                {
-                }
-
-                public function dispatch(object $message, array $stamps = []): Envelope
-                {
-                    if (!$this->failed && $message instanceof AfterCoolCatalogEnrichmentMessage) {
-                        $this->failed = true;
-
-                        throw new \RuntimeException('Redis is unavailable.');
-                    }
-
-                    return $this->inner->dispatch($message, $stamps);
-                }
-            },
-        );
-        $runId = $container->get(AfterCoolImportRunStore::class)->createQueued(self::FACTORY_ID, 'Workflow factory', 'JV:lister:'.self::FACTORY_ID, $context);
+        $pages = $this->pagesWithEnrichmentDispatchFailing(1);
+        $runId = static::getContainer()->get(AfterCoolImportRunStore::class)->createQueued(self::FACTORY_ID, 'Workflow factory', 'JV:lister:'.self::FACTORY_ID, $context);
 
         try {
             $pages->process($runId, 0, $context);
@@ -578,6 +548,31 @@ final class AfterCoolImportWorkflowTest extends TestCase
 
         $pages->process($runId, 0, $context);
         self::assertSame([], $this->queuedEnrichments($transport));
+    }
+
+    public function testExhaustedRetriesDoNotTurnACompletedRunIntoAFailedOne(): void
+    {
+        $context = $this->prepare([$this->item(1)]);
+        $transport = $this->resetTestTransport();
+        $runs = static::getContainer()->get(AfterCoolImportRunStore::class);
+        $runId = $runs->createQueued(self::FACTORY_ID, 'Workflow factory', 'JV:lister:'.self::FACTORY_ID, $context);
+
+        try {
+            $this->pagesWithEnrichmentDispatchFailing(\PHP_INT_MAX)->process($runId, 0, $context);
+            self::fail('The enrichment dispatch must fail.');
+        } catch (\RuntimeException $exception) {
+            self::assertSame('Redis is unavailable.', $exception->getMessage());
+        }
+        $runs->markFailed($runId, 'aftercool_import_failed', 'The Aftercool import could not be completed.', $context);
+
+        $run = $this->loadRun($runId, $context);
+        self::assertSame('completed', $run->getStatus());
+        self::assertNull($run->getSafeFailureCode());
+
+        static::getContainer()->get(ImportAfterCoolPageService::class)->process($runId, 0, $context);
+        $queued = $this->queuedEnrichments($transport);
+        self::assertCount(1, $queued);
+        self::assertSame($runId, $queued[0]->runId);
     }
 
     public function testAnEarlierRunsEnrichmentListsOnlyItsOwnProductsAfterALaterRunFinished(): void
@@ -676,6 +671,40 @@ final class AfterCoolImportWorkflowTest extends TestCase
         static::getContainer()->get(ImportAfterCoolPageService::class)->process($runId, 0, $context);
 
         self::assertSame([], $this->queuedEnrichments($transport));
+    }
+
+    private function pagesWithEnrichmentDispatchFailing(int $failures): ImportAfterCoolPageService
+    {
+        $container = static::getContainer();
+        $bus = $container->get('messenger.bus.default');
+        self::assertInstanceOf(MessageBusInterface::class, $bus);
+
+        return new ImportAfterCoolPageService(
+            $container->get(AfterCoolImportProductSourceInterface::class),
+            $container->get(ResolveAfterCoolProductPageService::class),
+            $container->get(BuildAfterCoolShopwareProductRecordService::class),
+            $container->get(AfterCoolPageCheckpointService::class),
+            $container->get(ProcessAfterCoolStagedMediaService::class),
+            $container->get(ResolveDefaultProductTaxService::class),
+            $container->get('jv_aftercool_import_run.repository'),
+            $container->get('lock.factory'),
+            new class($bus, $failures) implements MessageBusInterface {
+                public function __construct(private readonly MessageBusInterface $inner, private int $failures)
+                {
+                }
+
+                public function dispatch(object $message, array $stamps = []): Envelope
+                {
+                    if (0 < $this->failures && $message instanceof AfterCoolCatalogEnrichmentMessage) {
+                        --$this->failures;
+
+                        throw new \RuntimeException('Redis is unavailable.');
+                    }
+
+                    return $this->inner->dispatch($message, $stamps);
+                }
+            },
+        );
     }
 
     /** @return list<string> */
