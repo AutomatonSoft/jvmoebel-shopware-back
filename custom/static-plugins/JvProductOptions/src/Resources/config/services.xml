@@ -45,10 +45,6 @@
             <tag name="kernel.event_subscriber"/>
         </service>
 
-        <service id="Jv\ProductOptions\Subscriber\CartItemRequestSubscriber">
-            <tag name="kernel.event_subscriber"/>
-        </service>
-
         <service id="Jv\ProductOptions\Service\OptionPricing\FixedSurchargeAmountResolver"/>
 
         <service id="Jv\ProductOptions\Service\OptionPricing\OptionSurchargeCalculator">
