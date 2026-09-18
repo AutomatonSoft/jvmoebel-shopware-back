@@ -480,7 +480,11 @@ Handler принимает только ожидаемый `next_offset`. Messag
 - infrastructure DAL error: retry всего message без деления.
 
 После исчерпания Messenger retry run становится `failed`, освобождает
-`active_factory_key` и сохраняет безопасный код. Credentials, cookie, полный
+`active_factory_key` и сохраняет безопасный код. Это относится только к run в
+состоянии `queued` или `running`: run, уже перешедший в `completed` или
+`completed_with_errors`, остаётся в своём состоянии, даже если сообщение его
+последней страницы исчерпало повторы, потому что не удалось поставить
+OKB-обогащение. Такое сообщение можно повторить, и обогащение будет поставлено. Credentials, cookie, полный
 URL с чувствительными параметрами, полный response и stack trace не попадают в
 пользовательский отчёт. Технический exception логируется один раз на границе,
 которая принимает решение о terminal failure.
