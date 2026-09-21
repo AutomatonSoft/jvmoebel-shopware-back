@@ -49,16 +49,6 @@
             <tag name="kernel.event_subscriber"/>
         </service>
 
-        <service id="Jv\ProductOptions\Subscriber\ProductStreamSearchSubscriber">
-            <tag name="kernel.event_subscriber"/>
-        </service>
-
-        <service id="Jv\ProductOptions\Subscriber\ProductStreamEntitySearcherDecorator"
-                 decorates="Shopware\Elasticsearch\Admin\AdminElasticsearchEntitySearcher"
-                 decoration-priority="1000">
-            <argument type="service" id="Jv\ProductOptions\Subscriber\ProductStreamEntitySearcherDecorator.inner"/>
-        </service>
-
         <service id="Jv\ProductOptions\Service\OptionPricing\FixedSurchargeAmountResolver"/>
 
         <service id="Jv\ProductOptions\Service\OptionPricing\OptionSurchargeCalculator">
