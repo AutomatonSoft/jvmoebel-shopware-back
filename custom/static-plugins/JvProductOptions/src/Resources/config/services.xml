@@ -40,6 +40,10 @@
             <tag name="shopware.entity.extension"/>
         </service>
 
+        <service id="Jv\ProductOptions\Core\Content\ProductStream\ProductStreamExtension">
+            <tag name="shopware.entity.extension"/>
+        </service>
+
         <service id="Jv\ProductOptions\Subscriber\OptionTemplateValidationSubscriber">
             <argument type="service" id="jv_option_template_value.repository"/>
             <tag name="kernel.event_subscriber"/>

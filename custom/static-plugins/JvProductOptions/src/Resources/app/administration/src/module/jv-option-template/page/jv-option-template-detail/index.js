@@ -21,6 +21,7 @@ export default {
             isSaveSuccessful: false,
             groups: [],
             currencyId: Shopware.Context.app.systemCurrencyId,
+            originalGroups: [],
         };
     },
 
@@ -79,11 +80,13 @@ export default {
                 this.templateEntity.priority = 0;
                 this.templateEntity.name = '';
                 this.templateEntity.productStreams = new EntityCollection(
-                    this.templateRepository.route,
+                    `${this.templateRepository.route}/${this.templateEntity.id}/product-streams`,
                     'product_stream',
-                    Shopware.Context.api
+                    Shopware.Context.api,
+                    new Criteria(1, 25)
                 );
                 this.groups = [];
+                this.originalGroups = [];
             }
 
             this.isLoading = false;
@@ -92,7 +95,10 @@ export default {
         async loadTemplate(id) {
             const criteria = new Criteria([id]);
             criteria.addAssociation('productStreams');
+            criteria.addAssociation('translations');
+            criteria.addAssociation('groups.translations');
             criteria.addAssociation('groups.values.media');
+            criteria.addAssociation('groups.values.translations');
             criteria.addSorting(Criteria.sort('groups.position', 'ASC'));
             criteria.addSorting(Criteria.sort('groups.values.position', 'ASC'));
 
@@ -101,6 +107,11 @@ export default {
 
                 const rawGroups = this.templateEntity.groups ? this.templateEntity.groups.slice() : [];
                 rawGroups.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+                this.originalGroups = rawGroups.map((group) => ({
+                    id: group.id,
+                    valueIds: group.values ? group.values.map((value) => value.id) : [],
+                    defaultValueId: group.defaultValueId || null,
+                }));
 
                 this.groups = rawGroups.map((group) => {
                     const rawValues = group.values ? group.values.slice() : [];
@@ -119,6 +130,7 @@ export default {
                         }
 
                         return {
+                            entity: val,
                             id: val.id,
                             name: val.name || '',
                             position: val.position ?? 0,
@@ -133,6 +145,7 @@ export default {
                     });
 
                     return {
+                        entity: group,
                         id: group.id,
                         name: group.name || '',
                         position: group.position ?? 0,
@@ -149,8 +162,10 @@ export default {
         },
 
         addGroup() {
+            const entity = this.groupRepository.create(Shopware.Context.api);
             const newGroup = {
-                id: Shopware.Utils.createId(),
+                entity,
+                id: entity.id,
                 name: '',
                 position: this.groups.length + 1,
                 defaultValueId: null,
@@ -165,9 +180,41 @@ export default {
             this.groups.splice(groupIndex, 1);
         },
 
+        setSystemTranslations(entity, entityRepository, translationEntityName, parentField, name) {
+            const systemLanguageId = Shopware.Context.api.systemLanguageId;
+            const languageIds = [
+                systemLanguageId,
+                Shopware.Context.api.languageId,
+            ].filter((languageId, index, ids) => languageId && ids.indexOf(languageId) === index);
+
+            if (!entity.translations) {
+                entity.translations = new EntityCollection(
+                    `${entityRepository.route}/${entity.id}/translations`,
+                    translationEntityName,
+                    Shopware.Context.api,
+                    new Criteria(1, 25)
+                );
+            }
+
+            languageIds.forEach((languageId) => {
+                let translation = entity.translations.find((item) => item.languageId === languageId);
+                if (!translation) {
+                    const translationRepository = this.repositoryFactory.create(translationEntityName);
+                    translation = translationRepository.create(Shopware.Context.api);
+                    entity.translations.add(translation);
+                }
+
+                translation[parentField] = entity.id;
+                translation.languageId = languageId;
+                translation.name = name;
+            });
+        },
+
         addValue(group) {
+            const entity = this.valueRepository.create(Shopware.Context.api);
             const newValue = {
-                id: Shopware.Utils.createId(),
+                entity,
+                id: entity.id,
                 name: '',
                 position: group.values.length + 1,
                 colorHex: '',
@@ -211,60 +258,97 @@ export default {
                     return;
                 }
 
-                const templatePayload = {
-                    id: this.templateEntity.id,
-                    name: this.templateEntity.name,
-                    active: !!this.templateEntity.active,
-                    priority: parseInt(this.templateEntity.priority, 10) || 0,
-                };
+                this.setSystemTranslations(
+                    this.templateEntity,
+                    this.templateRepository,
+                    'jv_option_template_translation',
+                    'jvOptionTemplateId',
+                    this.templateEntity.name
+                );
+                await this.templateRepository.save(this.templateEntity, Shopware.Context.api);
 
-                if (this.templateEntity.productStreams) {
-                    templatePayload.productStreams = this.templateEntity.productStreams.map((s) => ({ id: s.id }));
-                }
+                for (const group of this.groups) {
+                    let groupEntity = group.entity || this.groupRepository.create(Shopware.Context.api, group.id);
+                    const originalGroup = this.originalGroups.find((item) => item.id === group.id);
+                    const currentValueIds = new Set(group.values.map((value) => value.id));
+                    const preservedDefaultValueId = originalGroup?.defaultValueId && currentValueIds.has(originalGroup.defaultValueId)
+                        ? originalGroup.defaultValueId
+                        : null;
+                    const defaultValueId = group.defaultValueId || preservedDefaultValueId || group.values[0]?.id || null;
 
-                const groupsPayload = this.groups.map((g) => {
-                    const valuesPayload = g.values.map((v) => {
-                        const valItem = {
-                            id: v.id,
-                            groupId: g.id,
-                            name: v.name,
-                            position: parseInt(v.position, 10) || 0,
-                            colorHex: v.colorHex && v.colorHex.trim() !== '' ? v.colorHex.trim() : null,
-                            mediaId: v.mediaId || null,
-                            surchargeType: v.surchargeType,
-                        };
-
-                        if (v.surchargeType === 'fixed') {
-                            valItem.surchargePrice = [
-                                {
-                                    currencyId: this.currencyId,
-                                    gross: Number(v.grossPrice) || 0,
-                                    net: Number(v.netPrice) || 0,
-                                    linked: false,
-                                },
-                            ];
-                            valItem.surchargePercentage = null;
-                        } else {
-                            valItem.surchargePercentage = Number(v.surchargePercentage) || 0;
-                            valItem.surchargePrice = null;
+                    if (originalGroup) {
+                        for (const originalValueId of originalGroup.valueIds) {
+                            if (!currentValueIds.has(originalValueId)) {
+                                await this.valueRepository.delete(originalValueId, Shopware.Context.api);
+                            }
                         }
+                    }
 
-                        return valItem;
+                    groupEntity.templateId = this.templateEntity.id;
+                    groupEntity.name = group.name;
+                    groupEntity.position = parseInt(group.position, 10) || 0;
+                    groupEntity.defaultValueId = null;
+                    this.setSystemTranslations(
+                        groupEntity,
+                        this.groupRepository,
+                        'jv_option_template_group_translation',
+                        'jvOptionTemplateGroupId',
+                        group.name
+                    );
+
+                    const values = new EntityCollection(
+                        `${this.groupRepository.route}/${groupEntity.id}/values`,
+                        'jv_option_template_value',
+                        Shopware.Context.api,
+                        new Criteria(1, 25)
+                    );
+
+                    group.values.forEach((value) => {
+                        const valueEntity = value.entity || this.valueRepository.create(Shopware.Context.api, value.id);
+                        valueEntity.groupId = groupEntity.id;
+                        valueEntity.name = value.name;
+                        valueEntity.position = parseInt(value.position, 10) || 0;
+                        valueEntity.colorHex = value.colorHex && value.colorHex.trim() !== '' ? value.colorHex.trim() : null;
+                        valueEntity.mediaId = value.mediaId || null;
+                        valueEntity.surchargeType = value.surchargeType;
+                        valueEntity.surchargePrice = value.surchargeType === 'fixed' ? [{
+                            currencyId: this.currencyId,
+                            gross: Number(value.grossPrice) || 0,
+                            net: Number(value.netPrice) || 0,
+                            linked: false,
+                        }] : null;
+                        valueEntity.surchargePercentage = value.surchargeType === 'percentage'
+                            ? Number(value.surchargePercentage) || 0
+                            : null;
+                        this.setSystemTranslations(
+                            valueEntity,
+                            this.valueRepository,
+                            'jv_option_template_value_translation',
+                            'jvOptionTemplateValueId',
+                            value.name
+                        );
+                        values.add(valueEntity);
                     });
 
-                    return {
-                        id: g.id,
-                        templateId: this.templateEntity.id,
-                        name: g.name,
-                        position: parseInt(g.position, 10) || 0,
-                        defaultValueId: g.defaultValueId || null,
-                        values: valuesPayload,
-                    };
-                });
+                    groupEntity.values = values;
+                    await this.groupRepository.save(groupEntity, Shopware.Context.api);
 
-                templatePayload.groups = groupsPayload;
+                    for (const valueEntity of values) {
+                        await this.valueRepository.save(valueEntity, Shopware.Context.api);
+                    }
 
-                await this.templateRepository.save(templatePayload, Shopware.Context.api);
+                    groupEntity = await this.groupRepository.get(groupEntity.id, Shopware.Context.api);
+                    group.entity = groupEntity;
+                    groupEntity.defaultValueId = defaultValueId;
+                    await this.groupRepository.save(groupEntity, Shopware.Context.api);
+                }
+
+                const currentGroupIds = new Set(this.groups.map((group) => group.id));
+                for (const originalGroup of this.originalGroups) {
+                    if (!currentGroupIds.has(originalGroup.id)) {
+                        await this.groupRepository.delete(originalGroup.id, Shopware.Context.api);
+                    }
+                }
 
                 this.isSaveSuccessful = true;
                 this.createNotificationSuccess({

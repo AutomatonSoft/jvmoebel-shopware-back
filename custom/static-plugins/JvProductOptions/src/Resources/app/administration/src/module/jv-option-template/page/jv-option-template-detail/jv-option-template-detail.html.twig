@@ -35,8 +35,8 @@
                         :placeholder="$t('jv-option-template.detail.placeholderName')"
                     />
 
-                    <sw-number-field
-                        v-model:value="templateEntity.priority"
+                    <mt-number-field
+                        v-model="templateEntity.priority"
                         :label="$t('jv-option-template.detail.labelPriority')"
                         number-type="int"
                         :step="1"
@@ -93,8 +93,8 @@
                                     :placeholder="$t('jv-option-template.detail.placeholderGroupName')"
                                 />
 
-                                <sw-number-field
-                                    v-model:value="group.position"
+                                <mt-number-field
+                                    v-model="group.position"
                                     :label="$t('jv-option-template.detail.labelGroupPosition')"
                                     number-type="int"
                                     :step="1"
@@ -141,8 +141,8 @@
                                     style="padding: 10px; background: #fff; border: 1px solid #e1e4e8; border-radius: 4px; margin-bottom: 8px;"
                                 >
                                     <sw-container columns="70px 1.5fr 150px 1.5fr 150px 2fr auto" gap="10px" align="end">
-                                        <sw-number-field
-                                            v-model:value="val.position"
+                                        <mt-number-field
+                                            v-model="val.position"
                                             :label="$t('jv-option-template.detail.labelValuePosition')"
                                             size="small"
                                             number-type="int"
@@ -156,9 +156,10 @@
                                             size="small"
                                         />
 
-                                        <sw-colorpicker
-                                            v-model:value="val.colorHex"
+                                        <mt-colorpicker
+                                            v-model="val.colorHex"
                                             :label="$t('jv-option-template.detail.labelValueColorHex')"
+                                            :alpha="false"
                                             size="small"
                                         />
 
@@ -179,16 +180,16 @@
 
                                         <template v-if="val.surchargeType === 'fixed'">
                                             <sw-container columns="1fr 1fr" gap="6px">
-                                                <sw-number-field
-                                                    v-model:value="val.grossPrice"
+                                                <mt-number-field
+                                                    v-model="val.grossPrice"
                                                     :label="$t('jv-option-template.detail.labelValueSurchargeGross')"
                                                     size="small"
                                                     :step="0.01"
                                                     :digits="2"
-                                                    @update:value="onGrossPriceChange(val)"
+                                                    @update:model-value="onGrossPriceChange(val)"
                                                 />
-                                                <sw-number-field
-                                                    v-model:value="val.netPrice"
+                                                <mt-number-field
+                                                    v-model="val.netPrice"
                                                     :label="$t('jv-option-template.detail.labelValueSurchargeNet')"
                                                     size="small"
                                                     :step="0.01"
@@ -198,8 +199,8 @@
                                         </template>
 
                                         <template v-else>
-                                            <sw-number-field
-                                                v-model:value="val.surchargePercentage"
+                                            <mt-number-field
+                                                v-model="val.surchargePercentage"
                                                 :label="$t('jv-option-template.detail.labelValueSurchargePercentage')"
                                                 size="small"
                                                 :step="0.1"
