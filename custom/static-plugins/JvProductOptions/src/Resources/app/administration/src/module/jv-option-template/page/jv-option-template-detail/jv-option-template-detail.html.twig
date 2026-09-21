@@ -128,6 +128,7 @@
                                     :source="mediaPreviewSource(group.paletteMediaId)"
                                     :allow-multi-select="false"
                                     :caption="$t('jv-option-template.detail.captionGroupPaletteMedia')"
+                                    :on-media-upload-sidebar-open="() => openGroupPaletteMediaModal(group.id)"
                                     @media-upload-sidebar-open="openGroupPaletteMediaModal(group.id)"
                                     @media-upload-remove-image="onGroupPaletteMediaRemove(group)"
                                 />
@@ -212,6 +213,7 @@
                                                 :source="mediaPreviewSource(val.mediaId)"
                                                 :allow-multi-select="false"
                                                 :caption="$t('jv-option-template.detail.captionValueMedia')"
+                                                :on-media-upload-sidebar-open="() => openValueMediaModal(group.id, val.id)"
                                                 @media-upload-sidebar-open="openValueMediaModal(group.id, val.id)"
                                                 @media-upload-remove-image="onValueMediaRemove(val)"
                                             />
@@ -264,13 +266,16 @@
                     </div>
                 </template>
             </sw-card>
+
+            <sw-media-modal-v2
+                v-if="mediaModalIsOpen"
+                variant="full"
+                :caption="$t('jv-option-template.detail.captionValueMedia')"
+                entity-context="media"
+                :allow-multi-select="false"
+                @media-modal-selection-change="onMediaSelectionChanges"
+                @modal-close="closeMediaModal"
+            />
         </sw-card-view>
     </template>
-
-    <sw-media-modal-v2
-        v-if="mediaModalIsOpen"
-        :allow-multi-select="false"
-        @media-modal-selection-change="onMediaSelectionChanges"
-        @media-modal-close="closeMediaModal"
-    />
 </sw-page>
