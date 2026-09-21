@@ -154,14 +154,6 @@ final readonly class OptionCartProcessor implements CartProcessorInterface, Cart
         return $currentUnitPrice;
     }
 
-    /**
-     * A price definition we built ourselves (marked with OWN_PRICE_DEFINITION_EXTENSION) already
-     * includes the surcharge. If it is still the current definition, ProductCartProcessor did not
-     * rebuild it from the product in this pass (e.g. the cart-rule stabilizer reprocessed an
-     * already-priced cart without re-collecting product data), so it must not be treated as a fresh
-     * base or the surcharge would be added again. A definition ProductCartProcessor rebuilt from the
-     * product never carries this extension.
-     */
     private function isOwnPriceDefinition(?PriceDefinitionInterface $definition): bool
     {
         return $definition instanceof QuantityPriceDefinition && $definition->hasExtension(self::OWN_PRICE_DEFINITION_EXTENSION);
