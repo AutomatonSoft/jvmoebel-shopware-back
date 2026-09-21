@@ -16,14 +16,18 @@ use Shopware\Core\Checkout\Cart\Error\GenericCartError;
 use Shopware\Core\Checkout\Cart\LineItem\CartDataCollection;
 use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Cart\Price\QuantityPriceCalculator;
+use Shopware\Core\Checkout\Cart\Price\Struct\PriceDefinitionInterface;
 use Shopware\Core\Checkout\Cart\Price\Struct\QuantityPriceDefinition;
 use Shopware\Core\Checkout\CheckoutPermissions;
 use Shopware\Core\Content\Product\Cart\ProductCartProcessor;
+use Shopware\Core\Framework\Struct\ArrayStruct;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 final readonly class OptionCartProcessor implements CartProcessorInterface, CartDataCollectorInterface
 {
     public const ERROR_INVALID_SELECTION = 'jv-product-options-invalid-selection';
+
+    private const OWN_PRICE_DEFINITION_EXTENSION = 'jvProductOptionsPriceDefinition';
 
     public function __construct(
         private OptionTemplateResolver $templateResolver,
@@ -119,6 +123,7 @@ final readonly class OptionCartProcessor implements CartProcessorInterface, Cart
                     $definition->getTaxRules(),
                     $item->getQuantity()
                 );
+                $newDefinition->addExtension(self::OWN_PRICE_DEFINITION_EXTENSION, new ArrayStruct());
                 $item->setPriceDefinition($newDefinition);
                 $item->setPrice($this->quantityPriceCalculator->calculate($newDefinition, $context));
             }
@@ -138,36 +143,28 @@ final readonly class OptionCartProcessor implements CartProcessorInterface, Cart
         $currentUnitPrice = $item->getPrice()?->getUnitPrice()
             ?? ($priceDef instanceof QuantityPriceDefinition ? $priceDef->getPrice() : 0.0);
 
-        /** @var array{baseUnitPrice?: int|float, surchargeUnitPrice?: int|float}|null $snapshot */
-        $snapshot = $item->getPayload()['jvProductOptions'] ?? null;
-
-        if (null !== $snapshot && $this->reuseSnapshotBase($item, $behavior, $snapshot, $currentUnitPrice)) {
-            return (float) $snapshot['baseUnitPrice'];
+        if ($this->isPriceRecalculationSkipped($item, $behavior) || $this->isOwnPriceDefinition($priceDef)) {
+            /** @var array{baseUnitPrice?: int|float}|null $snapshot */
+            $snapshot = $item->getPayload()['jvProductOptions'] ?? null;
+            if (null !== $snapshot && isset($snapshot['baseUnitPrice'])) {
+                return (float) $snapshot['baseUnitPrice'];
+            }
         }
 
         return $currentUnitPrice;
     }
 
     /**
-     * @param array{baseUnitPrice?: int|float, surchargeUnitPrice?: int|float} $snapshot
+     * A price definition we built ourselves (marked with OWN_PRICE_DEFINITION_EXTENSION) already
+     * includes the surcharge. If it is still the current definition, ProductCartProcessor did not
+     * rebuild it from the product in this pass (e.g. the cart-rule stabilizer reprocessed an
+     * already-priced cart without re-collecting product data), so it must not be treated as a fresh
+     * base or the surcharge would be added again. A definition ProductCartProcessor rebuilt from the
+     * product never carries this extension.
      */
-    private function reuseSnapshotBase(LineItem $item, CartBehavior $behavior, array $snapshot, float $currentUnitPrice): bool
+    private function isOwnPriceDefinition(?PriceDefinitionInterface $definition): bool
     {
-        if (!isset($snapshot['baseUnitPrice'])) {
-            return false;
-        }
-
-        if ($this->isPriceRecalculationSkipped($item, $behavior)) {
-            return true;
-        }
-
-        if (!isset($snapshot['surchargeUnitPrice'])) {
-            return false;
-        }
-
-        $previousTotal = (float) $snapshot['baseUnitPrice'] + (float) $snapshot['surchargeUnitPrice'];
-
-        return abs($previousTotal - $currentUnitPrice) < 0.005;
+        return $definition instanceof QuantityPriceDefinition && $definition->hasExtension(self::OWN_PRICE_DEFINITION_EXTENSION);
     }
 
     private function isPriceRecalculationSkipped(LineItem $item, CartBehavior $behavior): bool

@@ -120,6 +120,25 @@ final class OptionTemplateStoreApiTest extends TestCase
         self::assertEqualsWithDelta(400.0, $lineItem['payload']['jvProductOptions']['surchargeUnitPrice'], 0.001);
     }
 
+    public function testCartUsesNewBaseWhenProductPriceChangesToPreviousTotal(): void
+    {
+        $cart = $this->addToCart('sofa', 1, ['material' => 'leather']);
+        self::assertEqualsWithDelta(1200.0, $cart['lineItems'][0]['price']['unitPrice'], 0.001);
+
+        static::getContainer()->get('product.repository')->update([[
+            'id' => $this->ids->get('sofa'),
+            'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 1200.0, 'net' => 1043.48, 'linked' => false]],
+        ]], Context::createDefaultContext());
+
+        $this->browser->request('GET', '/store-api/checkout/cart');
+        self::assertSame(200, $this->browser->getResponse()->getStatusCode());
+        $lineItem = $this->json()['lineItems'][0];
+
+        self::assertEqualsWithDelta(1440.0, $lineItem['price']['unitPrice'], 0.001);
+        self::assertEqualsWithDelta(1200.0, $lineItem['payload']['jvProductOptions']['baseUnitPrice'], 0.001);
+        self::assertEqualsWithDelta(240.0, $lineItem['payload']['jvProductOptions']['surchargeUnitPrice'], 0.001);
+    }
+
     public function testCartPriceIncludesSurcharges(): void
     {
         $cart = $this->addToCart('sofa', 2, ['material' => 'leather', 'color' => 'red']);
