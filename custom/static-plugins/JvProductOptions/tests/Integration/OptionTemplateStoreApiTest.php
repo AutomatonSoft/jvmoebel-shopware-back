@@ -69,6 +69,30 @@ final class OptionTemplateStoreApiTest extends TestCase
         self::assertEqualsWithDelta(50.0, $red['surcharge']['unitAmount'], 0.001);
     }
 
+    public function testStoreApiReturnsGroupPaletteMedia(): void
+    {
+        $mediaId = Uuid::randomHex();
+        static::getContainer()->get('media.repository')->create([[
+            'id' => $mediaId,
+            'alt' => 'Material palette',
+        ]], Context::createDefaultContext());
+
+        static::getContainer()->get('jv_option_template_group.repository')->update([[
+            'id' => $this->ids->get('material'),
+            'paletteMediaId' => $mediaId,
+        ]], Context::createDefaultContext());
+
+        $payload = $this->options('sofa');
+
+        $material = $payload['groups'][0];
+        self::assertNotNull($material['paletteMedia']);
+        self::assertArrayHasKey('url', $material['paletteMedia']);
+        self::assertSame('Material palette', $material['paletteMedia']['alt']);
+
+        $color = $payload['groups'][1];
+        self::assertNull($color['paletteMedia']);
+    }
+
     public function testProductWithoutTemplateHasNoGroups(): void
     {
         $payload = $this->options('chair');
