@@ -83,9 +83,9 @@
                         <div
                             v-for="(group, groupIndex) in groups"
                             :key="group.id"
-                            style="border: 1px solid #d1d9e0; border-radius: 4px; padding: 16px; margin-bottom: 24px; background: #fafbfc;"
+                            class="jv-option-template-group"
                         >
-                            <sw-container columns="2fr 100px 2fr auto" gap="12px" align="end" style="margin-bottom: 16px;">
+                            <sw-container class="jv-option-template-group__header" columns="minmax(220px, 2fr) 120px minmax(220px, 2fr) 44px" gap="16px" align="end">
                                 <sw-text-field
                                     v-model:value="group.name"
                                     required
@@ -118,9 +118,20 @@
                                 </sw-button>
                             </sw-container>
 
-                            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e1e4e8;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                                    <h4 style="margin: 0;">{{ $t('jv-option-template.detail.valuesTitle') }} ({{ group.values.length }})</h4>
+                            <div class="jv-option-template-group__palette">
+                                <sw-entity-single-select
+                                    v-model:value="group.paletteMediaId"
+                                    entity="media"
+                                    :label="$t('jv-option-template.detail.labelGroupPaletteMedia')"
+                                    :placeholder="$t('jv-option-template.detail.placeholderGroupPaletteMedia')"
+                                    :help-text="$t('jv-option-template.detail.helpGroupPaletteMedia')"
+                                    show-clearable-button
+                                />
+                            </div>
+
+                            <div class="jv-option-template-group__values">
+                                <div class="jv-option-template-group__values-header">
+                                    <h4>{{ $t('jv-option-template.detail.valuesTitle') }} ({{ group.values.length }})</h4>
                                     <sw-button
                                         size="x-small"
                                         variant="ghost"
@@ -131,16 +142,16 @@
                                     </sw-button>
                                 </div>
 
-                                <div v-if="group.values.length === 0" style="color: #999; font-style: italic; font-size: 13px;">
+                                <div v-if="group.values.length === 0" class="jv-option-template-group__empty-values">
                                     {{ $t('jv-option-template.detail.emptyValues') }}
                                 </div>
 
                                 <div
                                     v-for="(val, valIndex) in group.values"
                                     :key="val.id"
-                                    style="padding: 10px; background: #fff; border: 1px solid #e1e4e8; border-radius: 4px; margin-bottom: 8px;"
+                                    class="jv-option-template-value"
                                 >
-                                    <sw-container columns="70px 1.5fr 150px 1.5fr 150px 2fr auto" gap="10px" align="end">
+                                    <sw-container class="jv-option-template-value__header" columns="100px minmax(240px, 2fr) minmax(220px, 1fr) 44px" gap="16px" align="end">
                                         <mt-number-field
                                             v-model="val.position"
                                             :label="$t('jv-option-template.detail.labelValuePosition')"
@@ -156,57 +167,11 @@
                                             size="small"
                                         />
 
-                                        <mt-colorpicker
-                                            v-model="val.colorHex"
-                                            :label="$t('jv-option-template.detail.labelValueColorHex')"
-                                            :alpha="false"
-                                            size="small"
-                                        />
-
-                                        <sw-entity-single-select
-                                            v-model:value="val.mediaId"
-                                            entity="media"
-                                            :label="$t('jv-option-template.detail.labelValueMedia')"
-                                            show-clearable-button
-                                            size="small"
-                                        />
-
                                         <sw-single-select
                                             v-model:value="val.surchargeType"
                                             :options="surchargeTypeOptions"
                                             :label="$t('jv-option-template.detail.labelValueSurchargeType')"
-                                            size="small"
                                         />
-
-                                        <template v-if="val.surchargeType === 'fixed'">
-                                            <sw-container columns="1fr 1fr" gap="6px">
-                                                <mt-number-field
-                                                    v-model="val.grossPrice"
-                                                    :label="$t('jv-option-template.detail.labelValueSurchargeGross')"
-                                                    size="small"
-                                                    :step="0.01"
-                                                    :digits="2"
-                                                    @update:model-value="onGrossPriceChange(val)"
-                                                />
-                                                <mt-number-field
-                                                    v-model="val.netPrice"
-                                                    :label="$t('jv-option-template.detail.labelValueSurchargeNet')"
-                                                    size="small"
-                                                    :step="0.01"
-                                                    :digits="2"
-                                                />
-                                            </sw-container>
-                                        </template>
-
-                                        <template v-else>
-                                            <mt-number-field
-                                                v-model="val.surchargePercentage"
-                                                :label="$t('jv-option-template.detail.labelValueSurchargePercentage')"
-                                                size="small"
-                                                :step="0.1"
-                                                :min="0"
-                                            />
-                                        </template>
 
                                         <sw-button
                                             variant="danger"
@@ -217,6 +182,55 @@
                                             <sw-icon name="regular-trash" size="14px" />
                                         </sw-button>
                                     </sw-container>
+
+                                    <sw-container class="jv-option-template-value__visuals" columns="minmax(220px, 1fr) minmax(280px, 1.4fr)" gap="16px">
+                                        <mt-colorpicker
+                                            v-model="val.colorHex"
+                                            :label="$t('jv-option-template.detail.labelValueColorHex')"
+                                            :alpha="false"
+                                        />
+
+                                        <sw-entity-single-select
+                                            v-model:value="val.mediaId"
+                                            entity="media"
+                                            :label="$t('jv-option-template.detail.labelValueMedia')"
+                                            :placeholder="$t('jv-option-template.detail.placeholderValueMedia')"
+                                            show-clearable-button
+                                        />
+                                    </sw-container>
+
+                                    <div class="jv-option-template-value__surcharge">
+                                        <div class="jv-option-template-value__surcharge-title">
+                                            {{ $t('jv-option-template.detail.labelValueSurchargePrice') }}
+                                            <span>{{ systemCurrencyLabel }}</span>
+                                        </div>
+
+                                        <sw-container v-if="val.surchargeType === 'fixed'" columns="minmax(180px, 240px) minmax(180px, 240px)" gap="16px">
+                                            <mt-number-field
+                                                v-model="val.grossPrice"
+                                                :label="$t('jv-option-template.detail.labelValueSurchargeGross')"
+                                                :step="0.01"
+                                                :digits="2"
+                                                :min="0"
+                                            />
+                                            <mt-number-field
+                                                v-model="val.netPrice"
+                                                :label="$t('jv-option-template.detail.labelValueSurchargeNet')"
+                                                :step="0.01"
+                                                :digits="2"
+                                                :min="0"
+                                            />
+                                        </sw-container>
+
+                                        <mt-number-field
+                                            v-else
+                                            v-model="val.surchargePercentage"
+                                            :label="$t('jv-option-template.detail.labelValueSurchargePercentage')"
+                                            :step="0.1"
+                                            :min="0"
+                                            :max="1000"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>

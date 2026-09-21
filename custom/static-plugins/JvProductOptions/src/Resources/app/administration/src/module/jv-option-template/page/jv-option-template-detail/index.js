@@ -1,4 +1,5 @@
 import template from './jv-option-template-detail.html.twig';
+import './jv-option-template-detail.scss';
 
 const { Mixin } = Shopware;
 const { Criteria, EntityCollection } = Shopware.Data;
@@ -22,6 +23,8 @@ export default {
             groups: [],
             currencyId: Shopware.Context.app.systemCurrencyId,
             originalGroups: [],
+            currencyName: null,
+            currencyIsoCode: null,
         };
     },
 
@@ -48,6 +51,18 @@ export default {
             return this.repositoryFactory.create('jv_option_template_value');
         },
 
+        currencyRepository() {
+            return this.repositoryFactory.create('currency');
+        },
+
+        systemCurrencyLabel() {
+            if (this.currencyName && this.currencyIsoCode) {
+                return `${this.currencyName} (${this.currencyIsoCode})`;
+            }
+
+            return this.currencyIsoCode || this.$t('jv-option-template.detail.systemCurrency');
+        },
+
         surchargeTypeOptions() {
             return [
                 {
@@ -71,6 +86,8 @@ export default {
             this.isLoading = true;
 
             const templateId = this.$route.params.id;
+
+            await this.loadSystemCurrency();
 
             if (templateId) {
                 await this.loadTemplate(templateId);
@@ -97,6 +114,7 @@ export default {
             criteria.addAssociation('productStreams');
             criteria.addAssociation('translations');
             criteria.addAssociation('groups.translations');
+            criteria.addAssociation('groups.paletteMedia');
             criteria.addAssociation('groups.values.media');
             criteria.addAssociation('groups.values.translations');
             criteria.addSorting(Criteria.sort('groups.position', 'ASC'));
@@ -149,6 +167,7 @@ export default {
                         id: group.id,
                         name: group.name || '',
                         position: group.position ?? 0,
+                        paletteMediaId: group.paletteMediaId || null,
                         defaultValueId: group.defaultValueId || null,
                         values,
                         isNew: false,
@@ -161,6 +180,17 @@ export default {
             }
         },
 
+        async loadSystemCurrency() {
+            try {
+                const currency = await this.currencyRepository.get(this.currencyId, Shopware.Context.api);
+                this.currencyName = currency.name || null;
+                this.currencyIsoCode = currency.isoCode || null;
+            } catch (error) {
+                this.currencyName = null;
+                this.currencyIsoCode = null;
+            }
+        },
+
         addGroup() {
             const entity = this.groupRepository.create(Shopware.Context.api);
             const newGroup = {
@@ -168,6 +198,7 @@ export default {
                 id: entity.id,
                 name: '',
                 position: this.groups.length + 1,
+                paletteMediaId: null,
                 defaultValueId: null,
                 values: [],
                 isNew: true,
@@ -240,12 +271,6 @@ export default {
             }
         },
 
-        onGrossPriceChange(val) {
-            if (val.grossPrice !== null && val.grossPrice !== undefined) {
-                val.netPrice = Math.round((Number(val.grossPrice) / 1.19) * 100) / 100;
-            }
-        },
-
         async onSave() {
             this.isLoading = true;
 
@@ -287,6 +312,7 @@ export default {
                     groupEntity.templateId = this.templateEntity.id;
                     groupEntity.name = group.name;
                     groupEntity.position = parseInt(group.position, 10) || 0;
+                    groupEntity.paletteMediaId = group.paletteMediaId || null;
                     groupEntity.defaultValueId = null;
                     this.setSystemTranslations(
                         groupEntity,

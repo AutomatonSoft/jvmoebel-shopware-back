@@ -4,6 +4,7 @@ namespace Jv\ProductOptions\Service\OptionPricing;
 
 use Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateGroup\OptionTemplateGroupEntity;
 use Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateValue\OptionTemplateValueEntity;
+use Jv\ProductOptions\StoreApi\Struct\ProductOptionGroupMediaStruct;
 use Jv\ProductOptions\StoreApi\Struct\ProductOptionGroupStruct;
 use Jv\ProductOptions\StoreApi\Struct\ProductOptionsStruct;
 use Jv\ProductOptions\StoreApi\Struct\ProductOptionSurchargeStruct;
@@ -74,11 +75,20 @@ final readonly class ProductOptionsLoader
                 );
             }
 
+            $paletteMedia = null;
+            if (null !== $group->getPaletteMedia()) {
+                $paletteMedia = new ProductOptionGroupMediaStruct(
+                    $group->getPaletteMedia()->getUrl(),
+                    $group->getPaletteMedia()->getTranslation('alt'),
+                );
+            }
+
             $groups[] = new ProductOptionGroupStruct(
                 $group->getId(),
                 $group->getTranslation('name') ?? $group->getName() ?? '',
                 $group->getPosition(),
                 $group->getDefaultValueId(),
+                $paletteMedia,
                 $values,
             );
         }

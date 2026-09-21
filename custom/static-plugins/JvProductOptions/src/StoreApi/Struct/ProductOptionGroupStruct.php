@@ -14,6 +14,7 @@ final class ProductOptionGroupStruct extends Struct
         protected string $name,
         protected int $position,
         protected ?string $defaultValueId,
+        protected ?ProductOptionGroupMediaStruct $paletteMedia,
         protected array $values,
     ) {
     }
@@ -36,6 +37,11 @@ final class ProductOptionGroupStruct extends Struct
     public function getDefaultValueId(): ?string
     {
         return $this->defaultValueId;
+    }
+
+    public function getPaletteMedia(): ?ProductOptionGroupMediaStruct
+    {
+        return $this->paletteMedia;
     }
 
     /**

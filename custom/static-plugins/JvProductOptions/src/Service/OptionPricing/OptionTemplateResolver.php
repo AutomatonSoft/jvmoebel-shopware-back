@@ -116,6 +116,7 @@ final readonly class OptionTemplateResolver
     private function loadTemplate(string $templateId, Context $context): ?OptionTemplateEntity
     {
         $criteria = new Criteria([$templateId]);
+        $criteria->addAssociation('groups.paletteMedia');
         $criteria->addAssociation('groups.values.media');
         $criteria->addAssociation('groups.values.translations');
         $criteria->addAssociation('groups.translations');

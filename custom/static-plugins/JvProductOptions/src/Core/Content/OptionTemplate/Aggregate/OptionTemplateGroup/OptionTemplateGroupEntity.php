@@ -6,6 +6,7 @@ use Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateGroupT
 use Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateValue\OptionTemplateValueCollection;
 use Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateValue\OptionTemplateValueEntity;
 use Jv\ProductOptions\Core\Content\OptionTemplate\OptionTemplateEntity;
+use Shopware\Core\Content\Media\MediaEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
 
@@ -26,6 +27,10 @@ final class OptionTemplateGroupEntity extends Entity
     protected ?OptionTemplateValueCollection $values = null;
 
     protected ?OptionTemplateValueEntity $defaultValue = null;
+
+    protected ?string $paletteMediaId = null;
+
+    protected ?MediaEntity $paletteMedia = null;
 
     protected ?OptionTemplateGroupTranslationCollection $translations = null;
 
@@ -97,6 +102,26 @@ final class OptionTemplateGroupEntity extends Entity
     public function setDefaultValue(?OptionTemplateValueEntity $defaultValue): void
     {
         $this->defaultValue = $defaultValue;
+    }
+
+    public function getPaletteMediaId(): ?string
+    {
+        return $this->paletteMediaId;
+    }
+
+    public function setPaletteMediaId(?string $paletteMediaId): void
+    {
+        $this->paletteMediaId = $paletteMediaId;
+    }
+
+    public function getPaletteMedia(): ?MediaEntity
+    {
+        return $this->paletteMedia;
+    }
+
+    public function setPaletteMedia(?MediaEntity $paletteMedia): void
+    {
+        $this->paletteMedia = $paletteMedia;
     }
 
     public function getTranslations(): ?OptionTemplateGroupTranslationCollection

@@ -71,6 +71,7 @@
 | `name` | translated string | обязательно |
 | `position` | int | порядок в шаблоне |
 | `defaultValueId` | FK → `jv_option_template_value`, nullable | SET NULL; значение этой же группы |
+| `paletteMediaId` | FK → `media`, nullable | SET NULL; общая палитра/референсное изображение группы (материал, цвет, размер и т.п.) |
 
 `jv_option_template_value` — значение опции («Кожа Anthrazit»):
 
@@ -218,6 +219,7 @@ context. Товар должен быть доступен в sales channel, и�
     "name": "Material",
     "position": 1,
     "defaultValueId": "<id>",
+    "paletteMedia": { "url": "https://…", "alt": "…" },
     "values": [{
       "id": "<id>",
       "name": "Leder",
@@ -239,6 +241,9 @@ context. Товар должен быть доступен в sales channel, и�
 - Без шаблона: `templateId: null`, `groups: []`, `baseUnitPrice` заполнен.
 - Группы и значения отсортированы по `position`, затем по `id`.
 - `media` равно `null`, если картинки нет.
+- `paletteMedia` равно `null`, если у группы нет общей палитры/референсного изображения.
+- `paletteMedia` является общим визуальным источником группы; `values[].media` остаётся
+  необязательным изображением конкретного значения.
 
 Frontend показывает итоговую цену как `baseUnitPrice` + сумма `unitAmount`
 выбранных значений. Цена в корзине остаётся определяющей.

@@ -5,6 +5,7 @@ namespace Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplate
 use Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateGroupTranslation\OptionTemplateGroupTranslationDefinition;
 use Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateValue\OptionTemplateValueDefinition;
 use Jv\ProductOptions\Core\Content\OptionTemplate\OptionTemplateDefinition;
+use Shopware\Core\Content\Media\MediaDefinition;
 use Shopware\Core\Framework\Api\Context\AdminApiSource;
 use Shopware\Core\Framework\Api\Context\SalesChannelApiSource;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
@@ -53,6 +54,7 @@ final class OptionTemplateGroupDefinition extends EntityDefinition
             (new FkField('template_id', 'templateId', OptionTemplateDefinition::class))->addFlags(new Required(), new ApiAware(AdminApiSource::class, SalesChannelApiSource::class)),
             (new IntField('position', 'position'))->addFlags(new ApiAware(AdminApiSource::class, SalesChannelApiSource::class)),
             (new FkField('default_value_id', 'defaultValueId', OptionTemplateValueDefinition::class))->addFlags(new ApiAware(AdminApiSource::class, SalesChannelApiSource::class)),
+            (new FkField('palette_media_id', 'paletteMediaId', MediaDefinition::class))->addFlags(new ApiAware(AdminApiSource::class, SalesChannelApiSource::class)),
 
             (new TranslatedField('name'))->addFlags(new ApiAware(AdminApiSource::class, SalesChannelApiSource::class)),
 
@@ -60,6 +62,7 @@ final class OptionTemplateGroupDefinition extends EntityDefinition
             (new ManyToOneAssociationField('template', 'template_id', OptionTemplateDefinition::class, 'id', false))->addFlags(new ApiAware(AdminApiSource::class)),
             (new OneToManyAssociationField('values', OptionTemplateValueDefinition::class, 'group_id'))->addFlags(new CascadeDelete(), new ApiAware(AdminApiSource::class, SalesChannelApiSource::class)),
             (new OneToOneAssociationField('defaultValue', 'default_value_id', 'id', OptionTemplateValueDefinition::class, false))->addFlags(new ApiAware(AdminApiSource::class, SalesChannelApiSource::class)),
+            (new ManyToOneAssociationField('paletteMedia', 'palette_media_id', MediaDefinition::class, 'id', false))->addFlags(new ApiAware(AdminApiSource::class, SalesChannelApiSource::class)),
         ]);
     }
 }
