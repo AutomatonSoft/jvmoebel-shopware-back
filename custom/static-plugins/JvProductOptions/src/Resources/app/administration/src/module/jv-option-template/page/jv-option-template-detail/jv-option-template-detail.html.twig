@@ -119,14 +119,26 @@
                             </sw-container>
 
                             <div class="jv-option-template-group__palette">
-                                <sw-entity-single-select
-                                    v-model:value="group.paletteMediaId"
-                                    entity="media"
-                                    :label="$t('jv-option-template.detail.labelGroupPaletteMedia')"
-                                    :placeholder="$t('jv-option-template.detail.placeholderGroupPaletteMedia')"
-                                    :help-text="$t('jv-option-template.detail.helpGroupPaletteMedia')"
-                                    show-clearable-button
+                                <label class="jv-option-template-media-field__label">
+                                    {{ $t('jv-option-template.detail.labelGroupPaletteMedia') }}
+                                </label>
+                                <sw-media-upload-v2
+                                    variant="regular"
+                                    :upload-tag="mediaUploadTag('group', group.id)"
+                                    :source="mediaPreviewSource(group.paletteMediaId)"
+                                    :allow-multi-select="false"
+                                    :caption="$t('jv-option-template.detail.captionGroupPaletteMedia')"
+                                    @media-upload-sidebar-open="openGroupPaletteMediaModal(group.id)"
+                                    @media-upload-remove-image="onGroupPaletteMediaRemove(group)"
                                 />
+                                <sw-upload-listener
+                                    :upload-tag="mediaUploadTag('group', group.id)"
+                                    auto-upload
+                                    @media-upload-finish="onGroupPaletteMediaUpload(group, $event)"
+                                />
+                                <p class="jv-option-template-media-field__help">
+                                    {{ $t('jv-option-template.detail.helpGroupPaletteMedia') }}
+                                </p>
                             </div>
 
                             <div class="jv-option-template-group__values">
@@ -190,13 +202,28 @@
                                             :alpha="false"
                                         />
 
-                                        <sw-entity-single-select
-                                            v-model:value="val.mediaId"
-                                            entity="media"
-                                            :label="$t('jv-option-template.detail.labelValueMedia')"
-                                            :placeholder="$t('jv-option-template.detail.placeholderValueMedia')"
-                                            show-clearable-button
-                                        />
+                                        <div class="jv-option-template-media-field">
+                                            <label class="jv-option-template-media-field__label">
+                                                {{ $t('jv-option-template.detail.labelValueMedia') }}
+                                            </label>
+                                            <sw-media-upload-v2
+                                                variant="regular"
+                                                :upload-tag="mediaUploadTag('value', group.id, val.id)"
+                                                :source="mediaPreviewSource(val.mediaId)"
+                                                :allow-multi-select="false"
+                                                :caption="$t('jv-option-template.detail.captionValueMedia')"
+                                                @media-upload-sidebar-open="openValueMediaModal(group.id, val.id)"
+                                                @media-upload-remove-image="onValueMediaRemove(val)"
+                                            />
+                                            <sw-upload-listener
+                                                :upload-tag="mediaUploadTag('value', group.id, val.id)"
+                                                auto-upload
+                                                @media-upload-finish="onValueMediaUpload(val, $event)"
+                                            />
+                                            <p class="jv-option-template-media-field__help">
+                                                {{ $t('jv-option-template.detail.helpValueMedia') }}
+                                            </p>
+                                        </div>
                                     </sw-container>
 
                                     <div class="jv-option-template-value__surcharge">
@@ -239,4 +266,11 @@
             </sw-card>
         </sw-card-view>
     </template>
+
+    <sw-media-modal-v2
+        v-if="mediaModalIsOpen"
+        :allow-multi-select="false"
+        @media-modal-selection-change="onMediaSelectionChanges"
+        @media-modal-close="closeMediaModal"
+    />
 </sw-page>

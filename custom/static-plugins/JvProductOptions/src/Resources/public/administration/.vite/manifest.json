@@ -1,6 +1,6 @@
 {
   "main.js": {
-    "file": "assets/jv-product-options-fJ32t6Qa.js",
+    "file": "assets/jv-product-options-DXDuFZZZ.js",
     "name": "jv-product-options",
     "src": "main.js",
     "isEntry": true,
@@ -10,12 +10,12 @@
     ]
   },
   "module/jv-option-template/page/jv-option-template-detail/index.js": {
-    "file": "assets/index-DRkcO4gO.js",
+    "file": "assets/index-BNYPrelU.js",
     "name": "index",
     "src": "module/jv-option-template/page/jv-option-template-detail/index.js",
     "isDynamicEntry": true,
     "css": [
-      "assets/index-DhpQO1Bm.css"
+      "assets/index-FIktP4aN.css"
     ]
   },
   "module/jv-option-template/page/jv-option-template-list/index.js": {

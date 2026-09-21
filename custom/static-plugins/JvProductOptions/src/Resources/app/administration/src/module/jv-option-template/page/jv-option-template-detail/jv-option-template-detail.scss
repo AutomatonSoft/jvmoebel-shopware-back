@@ -18,6 +18,20 @@
     background: #fff;
 }
 
+.jv-option-template-media-field__label {
+    display: block;
+    margin-bottom: 8px;
+    color: #52667a;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.jv-option-template-media-field__help {
+    margin: 8px 0 0;
+    color: #758ca3;
+    font-size: 13px;
+}
+
 .jv-option-template-group__values {
     padding-top: 20px;
     border-top: 1px solid #e1e4e8;

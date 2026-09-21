@@ -25,6 +25,8 @@ export default {
             originalGroups: [],
             currencyName: null,
             currencyIsoCode: null,
+            activeMediaTarget: null,
+            mediaModalIsOpen: false,
         };
     },
 
@@ -49,6 +51,10 @@ export default {
 
         valueRepository() {
             return this.repositoryFactory.create('jv_option_template_value');
+        },
+
+        mediaRepository() {
+            return this.repositoryFactory.create('media');
         },
 
         currencyRepository() {
@@ -269,6 +275,82 @@ export default {
             if (group.defaultValueId === removed.id) {
                 group.defaultValueId = group.values.length > 0 ? group.values[0].id : null;
             }
+        },
+
+        mediaUploadTag(scope, groupId, valueId = '') {
+            return `jv-option-template-${scope}-${groupId}-${valueId}`;
+        },
+
+        mediaPreviewSource(mediaId) {
+            return mediaId || null;
+        },
+
+        openGroupPaletteMediaModal(groupId) {
+            this.activeMediaTarget = {
+                type: 'group',
+                groupId,
+            };
+            this.mediaModalIsOpen = true;
+        },
+
+        openValueMediaModal(groupId, valueId) {
+            this.activeMediaTarget = {
+                type: 'value',
+                groupId,
+                valueId,
+            };
+            this.mediaModalIsOpen = true;
+        },
+
+        closeMediaModal() {
+            this.mediaModalIsOpen = false;
+            this.activeMediaTarget = null;
+        },
+
+        async onGroupPaletteMediaUpload(group, { targetId }) {
+            const mediaEntity = await this.mediaRepository.get(targetId, Shopware.Context.api);
+            group.paletteMediaId = mediaEntity.id;
+        },
+
+        onGroupPaletteMediaRemove(group) {
+            group.paletteMediaId = null;
+        },
+
+        async onValueMediaUpload(value, { targetId }) {
+            const mediaEntity = await this.mediaRepository.get(targetId, Shopware.Context.api);
+            value.mediaId = mediaEntity.id;
+        },
+
+        onValueMediaRemove(value) {
+            value.mediaId = null;
+        },
+
+        onMediaSelectionChanges(mediaEntities) {
+            if (!this.activeMediaTarget) {
+                return;
+            }
+
+            const media = mediaEntities[0];
+            if (!media) {
+                return;
+            }
+
+            const group = this.groups.find((item) => item.id === this.activeMediaTarget.groupId);
+            if (!group) {
+                this.closeMediaModal();
+                return;
+            }
+
+            if (this.activeMediaTarget.type === 'group') {
+                group.paletteMediaId = media.id;
+            } else {
+                const value = group.values.find((item) => item.id === this.activeMediaTarget.valueId);
+                if (value) {
+                    value.mediaId = media.id;
+                }
+            }
+
+            this.closeMediaModal();
         },
 
         async onSave() {
