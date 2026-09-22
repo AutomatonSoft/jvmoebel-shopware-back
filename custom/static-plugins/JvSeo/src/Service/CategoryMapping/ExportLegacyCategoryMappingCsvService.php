@@ -575,8 +575,13 @@ final readonly class ExportLegacyCategoryMappingCsvService
 
     private function safeCell(int|string|null $value): int|string
     {
-        if (!is_string($value) || '' === $value || !in_array($value[0], ['=', '+', '-', '@'], true)) {
+        if (!is_string($value)) {
             return $value ?? '';
+        }
+
+        $value = trim($value);
+        if ('' === $value || !in_array($value[0], ['=', '+', '-', '@'], true)) {
+            return $value;
         }
 
         return "'".$value;
