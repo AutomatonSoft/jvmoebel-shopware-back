@@ -13,6 +13,7 @@ final class PrepareCosmoShopProductMediaRecordServiceTest extends TestCase
         $productId = Uuid::randomHex();
         $firstMediaId = Uuid::randomHex();
         $secondMediaId = Uuid::randomHex();
+        $languageId = Uuid::randomHex();
 
         $record = (new PrepareCosmoShopProductMediaRecordService())->execute([
             'id' => $productId,
@@ -22,19 +23,28 @@ final class PrepareCosmoShopProductMediaRecordServiceTest extends TestCase
                 ['media' => ['id' => $firstMediaId]],
             ],
         ], [
+            'name' => 'Product name',
             'media' => 'https://images.example/first.jpg|https://images.example/second.jpg|https://images.example/first.jpg',
             'cover' => 'https://images.example/second.jpg',
-        ]);
+        ], $languageId);
 
         self::assertSame([
             [
                 'id' => Uuid::fromStringToHex('jvmoebel.product-media.'.$productId.$firstMediaId),
-                'media' => ['id' => $firstMediaId, 'url' => 'https://images.example/first.jpg'],
+                'media' => [
+                    'id' => $firstMediaId,
+                    'url' => 'https://images.example/first.jpg',
+                    'translations' => [$languageId => ['alt' => 'Product name']],
+                ],
                 'position' => 0,
             ],
             [
                 'id' => Uuid::fromStringToHex('jvmoebel.product-media.'.$productId.$secondMediaId),
-                'media' => ['id' => $secondMediaId, 'url' => 'https://images.example/second.jpg'],
+                'media' => [
+                    'id' => $secondMediaId,
+                    'url' => 'https://images.example/second.jpg',
+                    'translations' => [$languageId => ['alt' => 'Product name']],
+                ],
                 'position' => 1,
             ],
         ], $record['media']);

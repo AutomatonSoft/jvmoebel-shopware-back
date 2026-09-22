@@ -288,6 +288,12 @@
         <service id="Jv\Import\Command\BackfillCatalogAttributeCategoryRelationsCommand"/>
         <service id="Jv\Import\Command\CleanupLegacyCatalogPropertyGroupsCommand"/>
         <service id="Jv\Import\Command\BackfillCatalogPropertyTranslationsCommand"/>
+        <service id="Jv\Import\Command\CollectOkbSchemaSnapshotCommand">
+            <argument type="service" id="Jv\Import\Service\Catalog\CollectOkbSchemaSnapshotService"/>
+            <argument type="service" id="logger"/>
+            <argument key="$environment">%kernel.environment%</argument>
+            <argument key="$projectDir">%kernel.project_dir%</argument>
+        </service>
 
         <service id="Jv\Import\Integration\Csv\SemicolonCsvReader"/>
         <service id="Jv\Import\Service\ProductImport\Seo\ImportCosmoShopProductRedirectsService">
@@ -349,6 +355,10 @@
             <argument type="service" id="Doctrine\DBAL\Connection"/>
         </service>
         <service id="Jv\Import\Integration\Okb\OkbCatalogSchemaSnapshotReader"/>
+        <service id="Jv\Import\Integration\Okb\OkbCatalogSchemaApiClient">
+            <argument type="service" id="http_client"/>
+            <argument key="$baseUri">https://okb.automatonsoft.de</argument>
+        </service>
         <service id="Jv\Import\Integration\Okb\OkbProductResponseNormalizer"/>
         <service id="Jv\Import\Integration\Okb\OkbProductApiClient">
             <argument type="service" id="http_client"/>
@@ -363,6 +373,9 @@
             <argument type="service" id="Jv\Import\Service\Catalog\CatalogAttributeMappingSynchronizer"/>
             <argument type="service" id="Doctrine\DBAL\Connection"/>
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry"/>
+        </service>
+        <service id="Jv\Import\Service\Catalog\CollectOkbSchemaSnapshotService">
+            <argument type="service" id="Jv\Import\Integration\Okb\OkbCatalogSchemaApiClient"/>
         </service>
         <service id="Jv\Import\Service\ProductImport\Catalog\CatalogVariantFamilyPlanner"/>
         <service id="Jv\Import\Service\ProductImport\ListPriceResolver"/>
