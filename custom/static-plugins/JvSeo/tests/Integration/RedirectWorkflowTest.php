@@ -2,6 +2,8 @@
 
 namespace Jv\Seo\Tests\Integration;
 
+use Jv\Seo\Contract\ImportImageRedirectData;
+use Jv\Seo\Contract\ImportImageRedirectsInterface;
 use Jv\Seo\Contract\ImportProductRedirectData;
 use Jv\Seo\Contract\ImportProductRedirectsInterface;
 use Jv\Seo\Service\Redirect\CategoryTargetUrlResolver;
@@ -467,6 +469,34 @@ final class RedirectWorkflowTest extends TestCase
         self::assertSame($mediaId, $response['data']['mediaId']);
     }
 
+    public function testImportedImageRedirectIsIdempotentAndResolvesToCurrentPublicMediaUrl(): void
+    {
+        $mediaId = $this->createImage('imported-legacy-image');
+        $sourceUrl = 'https://www.jvmoebel.de/cosmoshop/default/pix/a/n/1742011895-159847-1.3.jpg';
+        $context = Context::createDefaultContext();
+        $data = new ImportImageRedirectData(
+            'cosmoshop',
+            'jvmoebel.de',
+            hash('sha256', 'SKU-1\0main:1742011895-159847.3.jpg\0'.$sourceUrl),
+            $mediaId,
+            $this->salesChannelId,
+            $sourceUrl,
+        );
+
+        $first = $this->imageImporter()->import([$data], $context);
+        $second = $this->imageImporter()->import([$data], $context);
+
+        self::assertSame(1, $first->created);
+        self::assertSame(0, $first->conflicts);
+        self::assertSame(1, $second->unchanged);
+
+        $decision = $this->lookup()->lookup($sourceUrl, $this->salesChannelId, $context);
+        self::assertNotNull($decision);
+        self::assertSame('image', $decision['type']);
+        self::assertSame($mediaId, $decision['mediaId']);
+        self::assertSame($this->imageTargetResolver()->resolve($mediaId, $context), $decision['targetUrl']);
+    }
+
     private function createProduct(string $key, string $salesChannelId): string
     {
         $builder = (new ProductBuilder($this->ids, $key))
@@ -591,6 +621,11 @@ final class RedirectWorkflowTest extends TestCase
     private function importer(): ImportProductRedirectsInterface
     {
         return static::getContainer()->get(ImportProductRedirectsInterface::class);
+    }
+
+    private function imageImporter(): ImportImageRedirectsInterface
+    {
+        return static::getContainer()->get(ImportImageRedirectsInterface::class);
     }
 
     private function save(): SaveRedirectService
