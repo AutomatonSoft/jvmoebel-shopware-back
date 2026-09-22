@@ -18,6 +18,8 @@
 
 - реестр общих, товарных, категорийных, Landing Page и image `301`-редиректов;
 - импорт старых URL товаров из исходного CosmoShop product CSV;
+- read-only CSV-отчёт с кандидатами сопоставления старых категорий CosmoShop
+  с новыми Shopware categories для ручного решения;
 - Administration-раздел SEO с подпунктом «Редиректы», списком, фильтрами,
   поиском, созданием и редактированием;
 - таблицы legacy redirects в SEO-разделах карточек товара, категории и Landing
@@ -57,6 +59,77 @@ ADR-007. Общесистемный
 когда его нет. `urlkey` не декодируется, не slugify-ится, не меняет регистр и
 сохраняет `+`. Пустой `urlkey` пропускается. Абсолютный `legacy_url` имеет
 приоритет и обязан принадлежать домену выбранного рынка или его `www`-варианту.
+
+### Отчёт сопоставления legacy category
+
+`jv:seo:export-legacy-category-mapping <output-file>` выполняет read-only
+сопоставление категорий из указанной CosmoShop database с category subtrees
+импортированных Shopware products. Прямая relation товара с leaf category
+распространяется на её Shopware ancestors начиная с уровня 2, поэтому target
+может быть как внутренней OKB category, так и подходящей navigation/category
+group. Первая конфигурация использует
+`old_mebel`, `https://www.jvmoebel.de` и Sales Channel domain
+`https://jvmoebel.de`; параметры `--legacy-database`, `--legacy-domain` и
+`--sales-channel-domain` позволяют явно выбрать другой источник и рынок.
+
+Команда принимает `--delimiter`, по умолчанию `;`, и `--limit`. Значения limit
+`0`, пустое значение и отсутствие параметра обрабатывают все старые категории;
+положительное значение выбирает первые category ID в стабильном порядке
+возрастания. Команда не пишет Shopware entities и не создаёт redirect.
+
+Основной `<output-file>` — UTF-8 BOM CSV. В нём блок для каждой старой category
+с хотя бы одним кандидатом: первая строка содержит старую category, следующие
+строки — новые category в порядке `mapping_score` по убыванию. Для пары старой
+и новой category отчёт добавляет исходные количества и все нормализованные
+компоненты score, чтобы результат был проверяемым:
+
+```text
+legacy_coverage           = 100 × matched_products / legacy_eligible_products
+target_purity             = 100 × matched_products / new_category_subtree_products
+
+mapping_score = round(
+    0.45 × legacy_coverage
+  + 0.10 × target_purity
+  + 0.25 × semantic_similarity
+  + 0.15 × hierarchy_consistency
+  + 0.05 × google_taxonomy_similarity
+)
+```
+
+`matched_products` — число разных Shopware products, найденных по точному
+`old_mebel.shopartikel.artikelnr = product.product_number` и связанных с обеими
+categories с учётом target subtree. EAN не участвует.
+`legacy_eligible_products` — число разных товаров старой category, найденных по
+этому SKU в live Shopware version. `new_category_subtree_products` — число
+разных live Shopware products в target category и всех её descendants.
+
+Все компоненты и итоговый score округляются до целого диапазона `0..100`.
+`semantic_similarity` использует Unicode-normalized category name, meta title,
+meta description/category description и URL path; точное совпадение name даёт
+`100`, umlaut не приравнивается к соответствующей ASCII-букве.
+`hierarchy_consistency` сравнивает пути имён ancestors старой и новой category,
+исключая текущий leaf и технические roots `Home`/`JVMöbel`.
+`google_taxonomy_similarity` — взвешенное числом legacy products сходство
+заполненных `shopartikel.google_category` с полным target category path. Если
+для компонента нет данных, он равен `0`; веса не перенормируются. Кандидат с
+итоговым score ниже `2` не попадает в основной CSV. Confidence и автоматическое
+принятие кандидата не рассчитываются.
+
+CSV не поддерживает листы. Поэтому рядом с основным файлом команда формирует
+`<name>-legacy-without-matches.csv` и `<name>-new-without-matches.csv`: в первом
+старые categories без совпавшего товара, во втором все Shopware categories без
+совпавшего товара среди обработанных старых categories. При ограниченном
+`--limit` второй список относится только к выбранной части источника. Legacy URL
+в отчёте строится из `shoprubrikencontent.urlkey` (`shoprubriken.ruburlkey` как
+fallback) с суффиксом `.htm`; canonical target URL берётся из
+`seo_url` выбранного Sales Channel и языка его domain. Поля target category
+сначала читаются на языке Sales Channel, затем используют system-language
+translation как fallback. Значения, которые Excel может интерпретировать как
+формулы, экранируются в CSV.
+
+Отчёт — подсказка для оператора. Он не является импортным контрактом:
+оператор вручную создаёт или отклоняет category redirect в Administration, в том
+числе выбирая landing page или отсутствие релевантной замены.
 
 ### Ручное управление
 
@@ -245,6 +318,13 @@ Message delivery безопасна для повтора. Для одного s
 - ручной image redirect получает актуальный публичный media URL, находится через
   Store API только в своём Sales Channel, а media quick-info получает только
   свой redirect aggregate.
+- category mapping CSV распространяет product relations на ancestors, сортирует
+  candidates по многокомпонентному score, включает score `2`, выводит все
+  компоненты и помещает legacy/new categories без совпадений в отдельные CSV
+  reports;
+- category mapping score проверяет двустороннее покрытие, Unicode semantic
+  similarity, согласованность hierarchy и Google taxonomy, не рассчитывая
+  confidence.
 
 Обязательные project checks выполняются в контейнере `web`: `composer lint`,
 `composer analyse`, `composer test`, затем `bin/build-administration.sh`.
