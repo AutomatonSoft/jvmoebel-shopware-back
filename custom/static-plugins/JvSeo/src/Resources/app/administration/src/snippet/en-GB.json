@@ -1,5 +1,22 @@
 {
     "jv-seo": {
+        "sitemap": {
+            "title": "Sitemap publication",
+            "description": "Generate canonical Shopware sitemap artifacts and publish them to the storefront.",
+            "salesChannel": "Sales channel",
+            "allEligible": "All eligible sales channels",
+            "sitemapUrl": "Sitemap",
+            "publishedAt": "Last published",
+            "artifactCount": "Files",
+            "notPublished": "No sitemap published",
+            "generateAndPublish": "Generate and publish",
+            "status": "Status: {status}",
+            "publishedFiles": "{count} published file | {count} published files",
+            "channelsError": "Eligible sales channels could not be loaded.",
+            "publicationsError": "Published sitemaps could not be loaded.",
+            "startError": "Sitemap export could not be started.",
+            "runError": "Sitemap export status could not be loaded."
+        },
         "general": {
             "title": "SEO",
             "description": "Manage SEO and redirects"

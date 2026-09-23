@@ -6,6 +6,8 @@
 /.uniqueid.txt
 /custom/plugins/
 /vendor
+/tmp
+
 ###> shopware/core ###
 .env.local
 .env.local.php

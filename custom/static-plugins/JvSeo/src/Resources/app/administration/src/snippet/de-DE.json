@@ -1,5 +1,22 @@
 {
     "jv-seo": {
+        "sitemap": {
+            "title": "Sitemap-Veröffentlichung",
+            "description": "Erzeugt kanonische Shopware-Sitemap-Artefakte und veröffentlicht sie im Storefront.",
+            "salesChannel": "Verkaufskanal",
+            "allEligible": "Alle geeigneten Verkaufskanäle",
+            "sitemapUrl": "Sitemap",
+            "publishedAt": "Zuletzt veröffentlicht",
+            "artifactCount": "Dateien",
+            "notPublished": "Keine Sitemap veröffentlicht",
+            "generateAndPublish": "Generieren und veröffentlichen",
+            "status": "Status: {status}",
+            "publishedFiles": "{count} veröffentlichte Datei | {count} veröffentlichte Dateien",
+            "channelsError": "Geeignete Verkaufskanäle konnten nicht geladen werden.",
+            "publicationsError": "Veröffentlichte Sitemaps konnten nicht geladen werden.",
+            "startError": "Der Sitemap-Export konnte nicht gestartet werden.",
+            "runError": "Der Sitemap-Exportstatus konnte nicht geladen werden."
+        },
         "general": {
             "title": "SEO",
             "description": "SEO und Weiterleitungen verwalten"

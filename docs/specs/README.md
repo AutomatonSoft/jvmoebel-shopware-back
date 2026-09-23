@@ -118,3 +118,4 @@ SPEC-NNN-short-name.md
 | [SPEC-049-cms-text-custom-tables](SPEC-049-cms-text-custom-tables.md) | Backend CMS element/block `jv-text-custom-tables` (rich text и секции с двухколоночными таблицами); frontend contract отсутствует |
 | [SPEC-050-cms-shop-the-look](SPEC-050-cms-shop-the-look.md) | Backend CMS element/block `jv-shop-the-look` (интерьерное изображение, товары и hotspot-точки); контракт — platform SPEC-045 |
 | [SPEC-053-product-legacy-redirects](SPEC-053-product-legacy-redirects.md) | Реестр общих, товарных, категорийных и image legacy redirects, импорт CosmoShop product URL и Store API lookup для Next.js; доставка HTTP `301` — platform SPEC-049 |
+| [SPEC-054-sitemap-publication](SPEC-054-sitemap-publication.md) | Генерация canonical Shopware sitemap и publication из JvSeo в Next-managed artifact storage; контракт — platform SPEC-050 |

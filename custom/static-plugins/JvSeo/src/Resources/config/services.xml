@@ -15,6 +15,9 @@
         <service id="Jv\Seo\Core\Content\RedirectSource\RedirectSourceDefinition">
             <tag name="shopware.entity.definition" entity="jv_seo_redirect_source"/>
         </service>
+        <service id="Jv\Seo\Core\Content\SitemapExportRun\SitemapExportRunDefinition">
+            <tag name="shopware.entity.definition" entity="jv_seo_sitemap_export_run"/>
+        </service>
 
         <service id="Jv\Seo\Service\Redirect\UrlNormalizer"/>
         <service id="Jv\Seo\Service\Redirect\ProductTargetUrlResolver">
@@ -69,8 +72,65 @@
             <argument type="service" id="Jv\Seo\Service\Redirect\LandingPageTargetUrlResolver"/>
             <argument type="service" id="Jv\Seo\Service\Redirect\ImageTargetUrlResolver"/>
         </service>
+        <service id="Jv\Seo\Service\Sitemap\LegacyRedirectCustomUrlProvider" decorates="Shopware\Core\Content\Sitemap\Provider\CustomUrlProvider">
+            <argument type="service" id="Jv\Seo\Service\Sitemap\LegacyRedirectCustomUrlProvider.inner"/>
+            <argument type="service" id="Jv\Seo\Service\Redirect\LookupRedirectService"/>
+        </service>
+        <service id="Jv\Seo\Service\Sitemap\SitemapArtifactCollector">
+            <argument type="service" id="Shopware\Core\Content\Sitemap\Service\SitemapLister"/>
+            <argument type="service" id="shopware.filesystem.sitemap"/>
+        </service>
+        <service id="Jv\Seo\Service\Sitemap\EligibleSitemapSalesChannels">
+            <argument type="service" id="sales_channel.repository"/>
+        </service>
+        <service id="Jv\Seo\Service\Sitemap\SitemapExportRunStore">
+            <argument type="service" id="jv_seo_sitemap_export_run.repository"/>
+        </service>
+        <service id="Jv\Seo\Integration\NextSitemap\NextSitemapPublisher">
+            <argument type="service" id="http_client"/>
+            <argument type="service" id="shopware.filesystem.sitemap"/>
+            <argument>%env(string:JV_SITEMAP_INGESTION_ENDPOINT)%</argument>
+            <argument>%env(string:JV_SITEMAP_INGESTION_SECRET)%</argument>
+            <argument>%env(float:JV_SITEMAP_INGESTION_TIMEOUT)%</argument>
+            <argument>%env(string:JV_SITEMAP_PUBLICATION_ENVIRONMENT)%</argument>
+        </service>
+        <service id="Jv\Seo\Service\Sitemap\Contract\SitemapPublisherInterface" alias="Jv\Seo\Integration\NextSitemap\NextSitemapPublisher"/>
+        <service id="Jv\Seo\Service\Sitemap\SitemapGenerationLock">
+            <argument type="service" id="lock.factory"/>
+        </service>
+        <service id="Jv\Seo\Service\Sitemap\CoordinatedSitemapExporter" decorates="Shopware\Core\Content\Sitemap\Service\SitemapExporter">
+            <argument type="service" id="Jv\Seo\Service\Sitemap\CoordinatedSitemapExporter.inner"/>
+            <argument type="service" id="Jv\Seo\Service\Sitemap\SitemapGenerationLock"/>
+        </service>
+        <service id="Jv\Seo\Service\Sitemap\GenerateAndPublishSitemapService">
+            <argument type="service" id="Jv\Seo\Service\Sitemap\EligibleSitemapSalesChannels"/>
+            <argument type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory"/>
+            <argument type="service" id="Jv\Seo\Service\Sitemap\CoordinatedSitemapExporter.inner"/>
+            <argument type="service" id="Jv\Seo\Service\Sitemap\SitemapArtifactCollector"/>
+            <argument type="service" id="Jv\Seo\Service\Sitemap\Contract\SitemapPublisherInterface"/>
+            <argument type="service" id="Jv\Seo\Service\Sitemap\SitemapGenerationLock"/>
+            <argument type="service" id="Jv\Seo\Service\Sitemap\SitemapExportRunStore"/>
+            <argument type="service" id="Psr\Clock\ClockInterface"/>
+        </service>
+        <service id="Jv\Seo\Service\Sitemap\StartSitemapExportService">
+            <argument type="service" id="Jv\Seo\Service\Sitemap\EligibleSitemapSalesChannels"/>
+            <argument type="service" id="Jv\Seo\Service\Sitemap\SitemapExportRunStore"/>
+            <argument type="service" id="messenger.default_bus"/>
+        </service>
+        <service id="Jv\Seo\MessageHandler\SitemapExportMessageHandler">
+            <argument type="service" id="Jv\Seo\Service\Sitemap\SitemapExportRunStore"/>
+            <argument type="service" id="Jv\Seo\Service\Sitemap\GenerateAndPublishSitemapService"/>
+            <argument type="service" id="lock.factory"/>
+            <argument type="service" id="logger"/>
+        </service>
 
         <service id="Jv\Seo\Controller\RedirectController" public="true">
+            <tag name="controller.service_arguments"/>
+        </service>
+        <service id="Jv\Seo\Controller\SitemapExportController" public="true">
+            <argument type="service" id="Jv\Seo\Service\Sitemap\StartSitemapExportService"/>
+            <argument type="service" id="Jv\Seo\Service\Sitemap\EligibleSitemapSalesChannels"/>
+            <argument type="service" id="jv_seo_sitemap_export_run.repository"/>
             <tag name="controller.service_arguments"/>
         </service>
         <service id="Jv\Seo\StoreApi\Route\RedirectLookupRoute" public="true">
