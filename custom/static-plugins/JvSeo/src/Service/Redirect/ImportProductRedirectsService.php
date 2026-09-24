@@ -30,6 +30,7 @@ final readonly class ImportProductRedirectsService implements ImportProductRedir
         private EntityRepository $channelRepository,
         private EntityRepository $sourceRepository,
         private UrlNormalizer $urlNormalizer,
+        private ProductTargetUrlResolver $targetUrlResolver,
     ) {
     }
 
@@ -103,6 +104,8 @@ final readonly class ImportProductRedirectsService implements ImportProductRedir
         }
 
         $sourceHash = $this->urlNormalizer->hash($sourceUrl);
+        $targetUrl = $this->targetUrlResolver->resolve($data->productId, $data->salesChannelId, $sourceUrl);
+        $isSelfRedirect = null !== $targetUrl && $this->urlNormalizer->hash($targetUrl) === $sourceHash;
         $importKeyHash = hash('sha256', implode("\0", [
             trim($data->sourceSystem),
             $data->salesChannelId,
@@ -118,9 +121,16 @@ final readonly class ImportProductRedirectsService implements ImportProductRedir
             if (!$existingTarget instanceof RedirectEntity || $existingTarget->getProductId() !== $data->productId || $existingChannel->getSalesChannelId() !== $data->salesChannelId) {
                 return 'conflict';
             }
-            if ($byImportKey->isActive() && $byImportKey->getSourceUrlHash() === $sourceHash) {
-                return 'unchanged';
-            }
+        }
+
+        if ($isSelfRedirect) {
+            throw new \InvalidArgumentException('Source and target URL must be different.');
+        }
+
+        if ($byImportKey instanceof RedirectSourceEntity
+            && $byImportKey->isActive()
+            && $byImportKey->getSourceUrlHash() === $sourceHash) {
+            return 'unchanged';
         }
 
         $collision = $this->findSource('activeSourceUrlHash', $sourceHash, $context);

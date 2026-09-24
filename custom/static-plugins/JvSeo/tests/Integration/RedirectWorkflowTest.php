@@ -85,6 +85,37 @@ final class RedirectWorkflowTest extends TestCase
         self::assertSame($decision['targetUrl'], $response['data']['targetUrl']);
     }
 
+    public function testImportedProductRedirectRejectsSourceMatchingCanonicalTarget(): void
+    {
+        $productId = $this->createProduct('imported-self-redirect', $this->salesChannelId);
+        $this->writeCanonicalSeoUrl($productId, $this->salesChannelId, 'sofa/imported-self-redirect');
+        $sourceUrl = $this->targetResolver()->resolve($productId, $this->salesChannelId);
+        self::assertNotNull($sourceUrl);
+        $sourceHost = parse_url($sourceUrl, \PHP_URL_HOST);
+        self::assertIsString($sourceHost);
+        $sourceMarket = str_starts_with(strtolower($sourceHost), 'www.') ? substr($sourceHost, 4) : $sourceHost;
+
+        $result = $this->importer()->import([
+            new ImportProductRedirectData(
+                'cosmoshop',
+                $sourceMarket,
+                'self-redirect',
+                $productId,
+                $this->salesChannelId,
+                $sourceUrl,
+            ),
+        ], Context::createDefaultContext());
+
+        self::assertSame(0, $result->created);
+        self::assertSame(1, $result->invalid);
+        self::assertSame('invalid_redirect', $result->issues[0]['code']);
+        self::assertSame('Source and target URL must be different.', $result->issues[0]['message']);
+        self::assertNull(static::getContainer()->get('jv_seo_redirect.repository')->searchIds(
+            (new Criteria())->addFilter(new EqualsFilter('productId', $productId)),
+            Context::createDefaultContext(),
+        )->firstId());
+    }
+
     public function testSameCosmoShopArticleIdFromDifferentMarketsDoesNotMixRedirects(): void
     {
         $austrianChannel = $this->createSalesChannel([

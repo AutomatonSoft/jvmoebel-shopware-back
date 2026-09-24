@@ -64,7 +64,9 @@ HTTP response согласно ADR-007. Общесистемный
    фактически импортированной product-media relation. Host, prefix, кодировка
    и version suffix исходного URL сохраняются; отдельный image CSV не нужен.
 6. `JvSeo` создаёт или обновляет импортированные source URL, сохраняя рынок,
-   Sales Channel, исходный ID и источник. Коллизии не меняют существующую цель.
+   Sales Channel, исходный ID и источник. Коллизии не меняют существующую цель. Если
+   canonical product target уже доступен и его lookup hash совпадает с
+   source URL, импорт отклоняет запись как `invalid` до создания aggregate.
 
 Если `legacy_url` отсутствует, URL восстанавливается как
 `https://www.<market-domain>/<urlkey>.htm`. Суффикс `.htm` добавляется только
@@ -291,8 +293,10 @@ Image redirect используется для явно подтверждённ
 Одинаковый source URL для того же товара считается уже обработанным. Одинаковый
 source URL для разных товаров — `conflict`; существующее правило не
 перезаписывается и ни один товар не считается выбранным случайно. Пустые,
-невалидные, отсутствующие продукты и коллизии попадают в структурированный
-результат batch и в application log, не откатывая основной product import.
+невалидные, self-redirect, отсутствующие продукты и коллизии попадают в
+структурированный результат batch и в application log, не откатывая основной
+product import. Self-redirect имеет код `invalid_redirect` и не создаёт
+пустой product redirect aggregate.
 
 Message delivery безопасна для повтора. Для одного source import log создаётся
 стабильный lock; сами source rows дополнительно защищены unique hashes.
@@ -321,6 +325,8 @@ Message delivery безопасна для повтора. Для одного s
 - dynamic canonical target нужного Sales Channel/language;
 - Store API lookup не смешивает Sales Channels;
 - повтор импорта без дублей;
+- импорт product source, совпадающего с доступным canonical target,
+  возвращает `invalid_redirect` и не создаёт aggregate;
 - одинаковый source ID в разных рынках;
 - существующий product с недетерминированным UUID разрешается по SKU;
 - одинаковый URL для разных product даёт conflict;
