@@ -80,6 +80,14 @@ final readonly class SaveRedirectService
 
         $type = RedirectType::tryFrom(is_string($payload['type'] ?? null) ? $payload['type'] : '');
         $violations = [];
+        $importLocked = $existing?->isImportLocked() ?? false;
+        if (array_key_exists('importLocked', $payload)) {
+            if (!is_bool($payload['importLocked'])) {
+                $violations[] = ['field' => 'importLocked', 'message' => 'Import lock must be a boolean.'];
+            } else {
+                $importLocked = $payload['importLocked'];
+            }
+        }
         if (!$type instanceof RedirectType) {
             $violations[] = ['field' => 'type', 'message' => 'Redirect type must be general, product, category, pages, or image.'];
         }
@@ -213,10 +221,11 @@ final readonly class SaveRedirectService
             RedirectType::General => Uuid::randomHex(),
         };
 
-        $this->connection->transactional(function () use ($redirectId, $type, $productId, $categoryId, $landingPageId, $mediaId, $preparedChannels, $existing, $context): void {
+        $this->connection->transactional(function () use ($redirectId, $type, $productId, $categoryId, $landingPageId, $mediaId, $importLocked, $preparedChannels, $existing, $context): void {
             $rootPayload = [[
                 'id' => $redirectId,
                 'type' => $type->value,
+                'importLocked' => $importLocked,
                 'productId' => $productId,
                 'productVersionId' => null === $productId ? null : Defaults::LIVE_VERSION,
                 'categoryId' => $categoryId,

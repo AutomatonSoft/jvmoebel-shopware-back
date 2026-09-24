@@ -87,6 +87,9 @@ final readonly class ImportImageRedirectsService implements ImportImageRedirects
         $rootId = Uuid::fromStringToHex('jv-seo.redirect.image.'.$data->mediaId);
         $root = $this->findImageRedirect($data->mediaId, $context);
         if ($root instanceof RedirectEntity) {
+            if ($root->isImportLocked()) {
+                return 'manual_preserved';
+            }
             $rootId = $root->getId();
         } elseif (null === $this->imageTargetResolver->resolve($data->mediaId, $context)) {
             throw new \InvalidArgumentException('Selected media must be a public image with a file and an HTTP(S) URL.');
@@ -139,6 +142,7 @@ final readonly class ImportImageRedirectsService implements ImportImageRedirects
             $this->redirectRepository->create([[
                 'id' => $rootId,
                 'type' => RedirectType::Image->value,
+                'importLocked' => false,
                 'mediaId' => $data->mediaId,
             ]], $context);
         }

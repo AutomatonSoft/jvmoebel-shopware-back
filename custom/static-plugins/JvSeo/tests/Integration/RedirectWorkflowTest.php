@@ -130,6 +130,49 @@ final class RedirectWorkflowTest extends TestCase
         );
     }
 
+    public function testImportLockedProductAggregateIsPreservedOnSubsequentImport(): void
+    {
+        $context = Context::createDefaultContext();
+        $productId = $this->createProduct('import-locked-product', $this->salesChannelId);
+        $sourceUrl = 'https://www.jvmoebel.de/Import+Locked+Product.htm';
+        $this->importer()->import([
+            new ImportProductRedirectData('cosmoshop', 'jvmoebel.de', 'import-locked-product', $productId, $this->salesChannelId, $sourceUrl),
+        ], $context);
+
+        $redirect = $this->query()->list('product', '', $productId, null, null, null, 1, 25, $context)['data'][0];
+        self::assertFalse($redirect['importLocked']);
+        $channel = $redirect['channels'][0];
+        $source = $channel['sources'][0];
+        $this->save()->update($redirect['id'], [
+            'type' => 'product',
+            'productId' => $productId,
+            'importLocked' => true,
+            'channels' => [[
+                'salesChannelId' => $this->salesChannelId,
+                'enabled' => true,
+                'sources' => [['id' => $source['id'], 'url' => $source['url']]],
+            ]],
+        ], $context);
+
+        $result = $this->importer()->import([
+            new ImportProductRedirectData(
+                'cosmoshop',
+                'jvmoebel.de',
+                'new-product-source',
+                $productId,
+                $this->salesChannelId,
+                'https://www.jvmoebel.de/Should+Not+Be+Added.htm',
+            ),
+        ], $context);
+
+        self::assertSame(1, $result->manualPreserved);
+        self::assertSame(0, $result->created);
+        $detail = $this->query()->detail($redirect['id'], $context);
+        self::assertIsArray($detail);
+        self::assertTrue($detail['importLocked']);
+        self::assertCount(1, $detail['channels'][0]['sources']);
+    }
+
     public function testManualProductRedirectEditIsPreservedOnTheNextImport(): void
     {
         $productId = $this->createProduct('manual', $this->salesChannelId);
@@ -495,6 +538,49 @@ final class RedirectWorkflowTest extends TestCase
         self::assertSame('image', $decision['type']);
         self::assertSame($mediaId, $decision['mediaId']);
         self::assertSame($this->imageTargetResolver()->resolve($mediaId, $context), $decision['targetUrl']);
+    }
+
+    public function testImportLockedImageAggregateIsPreservedOnSubsequentImport(): void
+    {
+        $context = Context::createDefaultContext();
+        $mediaId = $this->createImage('import-locked-image');
+        $sourceUrl = 'https://www.jvmoebel.de/legacy/import-locked-image.jpg';
+        $this->imageImporter()->import([
+            new ImportImageRedirectData('cosmoshop', 'jvmoebel.de', 'import-locked-image', $mediaId, $this->salesChannelId, $sourceUrl),
+        ], $context);
+
+        $redirect = $this->query()->list('image', '', null, null, null, $mediaId, 1, 25, $context)['data'][0];
+        self::assertFalse($redirect['importLocked']);
+        $channel = $redirect['channels'][0];
+        $source = $channel['sources'][0];
+        $this->save()->update($redirect['id'], [
+            'type' => 'image',
+            'mediaId' => $mediaId,
+            'importLocked' => true,
+            'channels' => [[
+                'salesChannelId' => $this->salesChannelId,
+                'enabled' => true,
+                'sources' => [['id' => $source['id'], 'url' => $source['url']]],
+            ]],
+        ], $context);
+
+        $result = $this->imageImporter()->import([
+            new ImportImageRedirectData(
+                'cosmoshop',
+                'jvmoebel.de',
+                'new-image-source',
+                $mediaId,
+                $this->salesChannelId,
+                'https://www.jvmoebel.de/legacy/should-not-be-added.jpg',
+            ),
+        ], $context);
+
+        self::assertSame(1, $result->manualPreserved);
+        self::assertSame(0, $result->created);
+        $detail = $this->query()->detail($redirect['id'], $context);
+        self::assertIsArray($detail);
+        self::assertTrue($detail['importLocked']);
+        self::assertCount(1, $detail['channels'][0]['sources']);
     }
 
     private function createProduct(string $key, string $salesChannelId): string

@@ -19,6 +19,7 @@ export default {
             validationMessages: [],
             draft: {
                 type: 'general',
+                importLocked: false,
                 productId: null,
                 categoryId: null,
                 landingPageId: null,
@@ -99,6 +100,7 @@ export default {
             const existing = new Map(redirect.channels.map((channel) => [channel.salesChannelId, channel]));
             this.draft = {
                 type: redirect.type,
+                importLocked: redirect.importLocked ?? false,
                 productId: redirect.productId,
                 categoryId: redirect.categoryId,
                 landingPageId: redirect.landingPageId,
@@ -280,6 +282,7 @@ export default {
         payload() {
             return {
                 type: this.draft.type,
+                importLocked: this.draft.importLocked,
                 productId: this.draft.type === 'product' ? this.draft.productId : null,
                 categoryId: this.draft.type === 'category' ? this.draft.categoryId : null,
                 landingPageId: this.draft.type === 'pages' ? this.draft.landingPageId : null,

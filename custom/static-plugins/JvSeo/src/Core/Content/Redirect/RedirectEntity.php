@@ -15,6 +15,7 @@ final class RedirectEntity extends Entity
     use EntityIdTrait;
 
     protected string $type;
+    protected bool $importLocked = false;
     protected ?string $productId = null;
     protected ?string $productVersionId = null;
     protected ?ProductEntity $product = null;
@@ -31,6 +32,11 @@ final class RedirectEntity extends Entity
     public function getType(): string
     {
         return $this->type;
+    }
+
+    public function isImportLocked(): bool
+    {
+        return $this->importLocked;
     }
 
     public function getProductId(): ?string

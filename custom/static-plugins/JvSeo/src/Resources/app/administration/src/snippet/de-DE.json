@@ -58,6 +58,8 @@
             "landingPagePlaceholder": "Landingpage suchen",
             "image": "Bild",
             "imagePlaceholder": "Bild suchen",
+            "importLocked": "Vor Änderungen durch Importe schützen",
+            "importLockedHelp": "Wenn aktiviert, lassen JvSeo-Importe diese Weiterleitung und ihre Quell-URLs unverändert.",
             "enableChannel": "Für diesen Verkaufskanal konfigurieren",
             "targetUrl": "Ziel-URL",
             "targetPreview": "Beispiel der aktuellen kanonischen Ziel-URL",

@@ -87,6 +87,9 @@ final readonly class ImportProductRedirectsService implements ImportProductRedir
         $rootId = Uuid::fromStringToHex('jv-seo.redirect.product.'.$data->productId);
         $root = $this->findProductRedirect($data->productId, $context);
         if ($root instanceof RedirectEntity) {
+            if ($root->isImportLocked()) {
+                return 'manual_preserved';
+            }
             $rootId = $root->getId();
         }
 
@@ -137,6 +140,7 @@ final readonly class ImportProductRedirectsService implements ImportProductRedir
             $this->redirectRepository->create([[
                 'id' => $rootId,
                 'type' => RedirectType::Product->value,
+                'importLocked' => false,
                 'productId' => $data->productId,
                 'productVersionId' => Defaults::LIVE_VERSION,
             ]], $context);
