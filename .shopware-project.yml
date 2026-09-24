@@ -27,3 +27,6 @@ deployment:
         script: bin/console scheduled-task:register --no-interaction
       - title: Sync Administration bundle assets
         script: bin/console assets:install --force --no-interaction
+  one-time-tasks:
+    - id: opensearch-initial-index
+      script: bin/console es:index --no-interaction

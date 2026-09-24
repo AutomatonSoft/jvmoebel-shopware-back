@@ -14,8 +14,11 @@ x-shopware-runtime: &shopware-runtime
   MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN:?MESSENGER_TRANSPORT_DSN is required}
   MESSENGER_TRANSPORT_LOW_PRIORITY_DSN: ${MESSENGER_TRANSPORT_LOW_PRIORITY_DSN:?MESSENGER_TRANSPORT_LOW_PRIORITY_DSN is required}
   MESSENGER_TRANSPORT_FAILURE_DSN: ${MESSENGER_TRANSPORT_FAILURE_DSN:?MESSENGER_TRANSPORT_FAILURE_DSN is required}
-  SHOPWARE_ES_ENABLED: "0"
-  SHOPWARE_ES_INDEXING_ENABLED: "0"
+  SHOPWARE_ES_ENABLED: "1"
+  SHOPWARE_ES_INDEXING_ENABLED: "1"
+  SHOPWARE_ES_THROW_EXCEPTION: "0"
+  SHOPWARE_ES_NUMBER_OF_REPLICAS: "0"
+  OPENSEARCH_URL: http://opensearch:9200
   SHOPWARE_HTTP_CACHE_ENABLED: "1"
   TRUSTED_PROXIES: REMOTE_ADDR
   SYMFONY_TRUSTED_PROXIES: REMOTE_ADDR
@@ -76,8 +79,29 @@ services:
       INSTALL_ADMIN_PASSWORD: ${INSTALL_ADMIN_PASSWORD:?INSTALL_ADMIN_PASSWORD is required}
       INSTALL_ADMIN_EMAIL: ${INSTALL_ADMIN_EMAIL:?INSTALL_ADMIN_EMAIL is required}
       SALES_CHANNEL_URL: ${SALES_CHANNEL_URL:?SALES_CHANNEL_URL is required}
+    depends_on: { opensearch: { condition: service_healthy } }
     volumes: *shopware-storage
-    networks: [database, application]
+    networks: [database, application, search]
+
+  opensearch:
+    image: opensearchproject/opensearch:2.19.6
+    restart: unless-stopped
+    mem_limit: ${OPENSEARCH_MEMORY_LIMIT:-1280m}
+    cpus: ${OPENSEARCH_CPU_LIMIT:-1.0}
+    environment:
+      discovery.type: single-node
+      DISABLE_SECURITY_PLUGIN: "true"
+      DISABLE_INSTALL_DEMO_CONFIG: "true"
+      OPENSEARCH_JAVA_OPTS: ${OPENSEARCH_JAVA_OPTS:--Xms512m -Xmx512m}
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    networks: [search]
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s' > /dev/null"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 30s
 
   web:
     build: { context: ., dockerfile: Dockerfile.deploy }
@@ -93,6 +117,7 @@ services:
     volumes: *shopware-storage
     networks:
       database: {}
+      search: {}
       application:
         aliases:
           - ${SHOPWARE_NETWORK_ALIAS:?SHOPWARE_NETWORK_ALIAS is required}
@@ -117,7 +142,7 @@ services:
       <<: [*shopware-runtime, *aftercool-runtime, *sitemap-publication-runtime]
     depends_on: { bootstrap: { condition: service_completed_successfully } }
     volumes: *shopware-storage
-    networks: [database, application]
+    networks: [database, application, search]
 
   scheduler:
     user: "33:33"
@@ -132,7 +157,7 @@ services:
     environment: *shopware-runtime
     depends_on: { bootstrap: { condition: service_completed_successfully } }
     volumes: *shopware-storage
-    networks: [database, application]
+    networks: [database, application, search]
 
 networks:
   database:
@@ -141,3 +166,8 @@ networks:
   application:
     external: true
     name: ${APP_NETWORK:?APP_NETWORK is required}
+  search:
+    internal: true
+
+volumes:
+  opensearch-data:
