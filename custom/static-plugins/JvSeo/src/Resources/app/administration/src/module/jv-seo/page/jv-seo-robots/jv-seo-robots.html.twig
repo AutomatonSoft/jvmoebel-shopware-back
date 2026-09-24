@@ -1,0 +1,79 @@
+{% block jv_seo_robots %}
+<div class="jv-seo-robots">
+    <mt-card
+        position-identifier="jv-seo-robots-editor"
+        :title="$t('jv-seo.robots.title')"
+        :is-loading="isLoading || isPublishing"
+    >
+        <p>{{ $t('jv-seo.robots.description') }}</p>
+
+        <sw-single-select
+            v-model:value="salesChannelId"
+            :label="$t('jv-seo.robots.salesChannel')"
+            :options="channelOptions"
+            :disabled="isLoading || isPublishing"
+            @update:value="onSalesChannelChange"
+        />
+
+        <mt-textarea
+            :model-value="content"
+            :label="$t('jv-seo.robots.editorLabel')"
+            :placeholder="$t('jv-seo.robots.placeholder')"
+            :disabled="isLoading || isPublishing || runInProgress || !salesChannelId"
+            :rows="18"
+            @update:model-value="onContentInput"
+        />
+
+        <p class="jv-seo-robots__size">
+            {{ $t('jv-seo.robots.size', { size: contentSize, max: 32768 }) }}
+        </p>
+
+        <mt-button
+            v-if="acl.can('jv_seo_robots:write')"
+            variant="primary"
+            :disabled="!canPublish"
+            @click="publish"
+        >
+            {{ $t('jv-seo.robots.publish') }}
+        </mt-button>
+
+        <div v-if="run" class="jv-seo-robots__status">
+            <p>{{ $t('jv-seo.robots.status', { status: run.status }) }}</p>
+            <p v-if="run.status === 'failed'">{{ run.safeFailureMessage }}</p>
+            <ul v-if="run.status === 'published'">
+                <li v-for="publication in publicRobotsUrls" :key="publication.publicationId">
+                    <a :href="publication.publicRobotsUrl" target="_blank" rel="noopener noreferrer">
+                        {{ publication.publicRobotsUrl }}
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <p v-else-if="channels.length === 0" class="mt-card__empty-state">
+            {{ $t('jv-seo.robots.noChannels') }}
+        </p>
+    </mt-card>
+
+    <mt-card
+        v-if="acl.can('jv_seo_robots:read') && channels.length > 0"
+        position-identifier="jv-seo-robots-publications"
+        :title="$t('jv-seo.robots.publicationsTitle')"
+        :is-loading="publicationLoading"
+    >
+        <sw-data-grid
+            v-if="publicationRows.length"
+            :data-source="publicationRows"
+            :columns="publicationColumns"
+            :show-selection="false"
+            :show-settings="false"
+            :show-actions="false"
+        >
+            <template #column-publicRobotsUrl="{ item }">
+                <a v-if="item.publicRobotsUrl" :href="item.publicRobotsUrl" target="_blank" rel="noopener noreferrer">
+                    {{ item.publicRobotsUrl }}
+                </a>
+                <span v-else>{{ $t('jv-seo.robots.notPublished') }}</span>
+            </template>
+        </sw-data-grid>
+    </mt-card>
+</div>
+{% endblock %}
