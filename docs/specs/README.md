@@ -118,3 +118,6 @@ SPEC-NNN-short-name.md
 | [SPEC-049-cms-text-custom-tables](SPEC-049-cms-text-custom-tables.md) | Backend CMS element/block `jv-text-custom-tables` (rich text и секции с двухколоночными таблицами); frontend contract отсутствует |
 | [SPEC-050-cms-shop-the-look](SPEC-050-cms-shop-the-look.md) | Backend CMS element/block `jv-shop-the-look` (интерьерное изображение, товары и hotspot-точки); контракт — platform SPEC-045 |
 | [SPEC-053-product-legacy-redirects](SPEC-053-product-legacy-redirects.md) | Реестр общих, товарных, категорийных и image legacy redirects, импорт CosmoShop product URL и Store API lookup для Next.js; доставка HTTP `301` — platform SPEC-049 |
+| [SPEC-054-sitemap-publication](SPEC-054-sitemap-publication.md) | Генерация canonical Shopware sitemap и publication из JvSeo в Next-managed artifact storage; контракт — platform SPEC-050 |
+| [SPEC-055-robots-publication](SPEC-055-robots-publication.md) | Редактирование per-sales-channel robots.txt и publication из JvSeo в Next-managed artifact storage; контракт — platform SPEC-050 |
+| [SPEC-056-promotion-management](SPEC-056-promotion-management.md) | Управление акциями AfterCool поверх Shopware Promotions: таргетинг, max %, Store API и cart; контракт — platform SPEC-045 |

@@ -1,0 +1,30 @@
+{
+    "name": "jvmoebel/promotion",
+    "description": "JVMöbel promotion management on top of Shopware Promotions",
+    "type": "shopware-platform-plugin",
+    "license": "proprietary",
+    "version": "0.1.0",
+    "require": {
+        "php": "^8.5",
+        "jvmoebel/import": "^0.1",
+        "jvmoebel/market-configuration": "^0.1",
+        "shopware/core": "~6.7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Jv\\Promotion\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Jv\\Promotion\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "shopware-plugin-class": "Jv\\Promotion\\JvPromotion",
+        "label": {
+            "de-DE": "JVMöbel Promotions",
+            "en-GB": "JVMöbel Promotions"
+        }
+    }
+}

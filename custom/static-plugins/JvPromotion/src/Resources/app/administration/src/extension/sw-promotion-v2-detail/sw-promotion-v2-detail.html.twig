@@ -1,0 +1,13 @@
+{% block sw_promotion_v2_detail_content_tabs_discounts %}
+    {% parent %}
+
+    {% block sw_promotion_v2_detail_content_tabs_aftercool %}
+    <sw-tabs-item
+        :route="{ name: 'sw.promotion.v2.detail.aftercool', params: { id: $route.params.id } }"
+        :title="$t('jv-promotion.aftercool.tabTitle')"
+        :disabled="!promotionId || undefined"
+    >
+        {{ $t('jv-promotion.aftercool.tabTitle') }}
+    </sw-tabs-item>
+    {% endblock %}
+{% endblock %}

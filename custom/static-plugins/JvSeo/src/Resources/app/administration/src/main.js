@@ -5,13 +5,31 @@ import './extension/sw-product-detail-seo';
 import './extension/sw-category-detail-seo';
 import './extension/sw-landing-page-detail-base';
 import './extension/sw-media-quickinfo';
+import './extension/sw-settings-sitemap';
+import './extension/sw-settings-index';
 import JvSeoRedirectApiService from './service/jv-seo-redirect.api.service';
+import JvSeoSitemapExportApiService from './service/jv-seo-sitemap-export.api.service';
+import JvSeoRobotsApiService from './service/jv-seo-robots.api.service';
 
 Shopware.Locale.extend('de-DE', deDE);
 Shopware.Locale.extend('en-GB', enGB);
 
 Shopware.Application.addServiceProvider('jvSeoRedirectApiService', () => {
     return new JvSeoRedirectApiService(
+        Shopware.Application.getContainer('init').httpClient,
+        Shopware.Service('loginService'),
+    );
+});
+
+Shopware.Application.addServiceProvider('jvSeoSitemapExportApiService', () => {
+    return new JvSeoSitemapExportApiService(
+        Shopware.Application.getContainer('init').httpClient,
+        Shopware.Service('loginService'),
+    );
+});
+
+Shopware.Application.addServiceProvider('jvSeoRobotsApiService', () => {
+    return new JvSeoRobotsApiService(
         Shopware.Application.getContainer('init').httpClient,
         Shopware.Service('loginService'),
     );

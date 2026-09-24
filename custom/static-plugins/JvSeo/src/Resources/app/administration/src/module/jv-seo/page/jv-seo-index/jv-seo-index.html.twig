@@ -14,7 +14,7 @@
 
     <template #smart-bar-actions>
         <mt-button
-            v-if="acl.can('jv_seo_redirect:create')"
+            v-if="acl.can('jv_seo_redirect:create') && $route.name !== 'jv.seo.index.robots'"
             variant="primary"
             @click="$router.push({ name: 'jv.seo.create' })"
         >
@@ -25,8 +25,11 @@
     <template #content>
         <sw-card-view>
             <sw-tabs position-identifier="jv-seo-tabs">
-                <sw-tabs-item :route="{ name: 'jv.seo.index.redirects' }">
+                <sw-tabs-item v-if="acl.can('jv_seo_redirect:read')" :route="{ name: 'jv.seo.index.redirects' }">
                     {{ $t('jv-seo.redirects.title') }}
+                </sw-tabs-item>
+                <sw-tabs-item v-if="acl.can('jv_seo_robots:read')" :route="{ name: 'jv.seo.index.robots' }">
+                    {{ $t('jv-seo.robots.title') }}
                 </sw-tabs-item>
             </sw-tabs>
 

@@ -65,7 +65,7 @@ final readonly class AfterCoolPageCheckpointService
                 static fn (AfterCoolPreparedProduct $prepared): bool => isset($successful[$prepared->product->sourceProductId]),
             );
 
-            $this->upsertSourceLinks($successfulProducts, $context);
+            $this->upsertSourceLinks($run, $successfulProducts, $context);
             $this->upsertRunProducts($run, $successfulProducts, $context);
             $this->stageMedia($run, $offset, $successfulProducts);
             $this->recordIssues($run, $offset, $issues, $context);
@@ -139,7 +139,7 @@ final readonly class AfterCoolPageCheckpointService
     }
 
     /** @param array<string, AfterCoolPreparedProduct> $products */
-    private function upsertSourceLinks(array $products, Context $context): void
+    private function upsertSourceLinks(AfterCoolImportRunEntity $run, array $products, Context $context): void
     {
         if ([] === $products) {
             return;
@@ -151,11 +151,17 @@ final readonly class AfterCoolPageCheckpointService
                 'account' => $prepared->product->account,
                 'dataset' => $prepared->product->dataset,
                 'factoryId' => $prepared->product->factoryId,
+                'factoryName' => $run->getFactoryName(),
                 'sourceProductId' => $prepared->product->sourceProductId,
                 'productId' => $prepared->productId,
                 'productVersionId' => Defaults::LIVE_VERSION,
                 'sourceArtikelnummer' => $prepared->product->sourceArtikelnummer,
                 'sourceEan' => $prepared->product->ean,
+                'stammartikelId' => $prepared->product->stammartikelId,
+                'collectionName' => $prepared->product->collectionName,
+                'sourceFile' => $prepared->product->sourceFile,
+                'sourceFilePrefix' => $prepared->product->sourceFilePrefix,
+                'sourceRegion' => $prepared->product->sourceRegion,
                 'lastSeenAt' => $now,
             ],
             $products,

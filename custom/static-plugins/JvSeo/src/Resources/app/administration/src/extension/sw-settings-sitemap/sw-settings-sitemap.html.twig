@@ -1,0 +1,38 @@
+{% block sw_settings_sitemap_content %}
+<template #content>
+    <sw-card-view>
+        <sw-skeleton v-if="isLoading" />
+        <sw-system-config v-show="!isLoading" ref="systemConfig" sales-channel-switchable domain="core.sitemap" @loading-changed="onLoadingChanged" />
+        <sw-card v-if="acl.can('jv_seo_sitemap_export:read')" :title="$t('jv-seo.sitemap.title')" :is-loading="sitemapExportLoading || sitemapPublicationLoading">
+            <p>{{ $t('jv-seo.sitemap.description') }}</p>
+            <sw-single-select v-model:value="sitemapExportSalesChannelId" :label="$t('jv-seo.sitemap.salesChannel')" :options="sitemapExportChannelOptions" :disabled="sitemapExportLoading" />
+            <mt-button v-if="canGenerateAndPublishSitemap" variant="primary" @click="createSitemapExport">{{ $t('jv-seo.sitemap.generateAndPublish') }}</mt-button>
+            <div v-if="sitemapExportRun" class="jv-seo-sitemap-export__result">
+                <p>{{ $t('jv-seo.sitemap.status', { status: sitemapExportRun.status }) }}</p>
+                <p v-if="sitemapExportRun.status === 'failed'">{{ sitemapExportRun.safeFailureMessage }}</p>
+                <ul v-if="sitemapExportRun.status === 'published'">
+                    <li v-for="publication in sitemapExportPublications" :key="publication.publicationId">
+                        <a :href="publication.publicSitemapUrl" target="_blank" rel="noopener noreferrer">{{ publication.publicSitemapUrl }}</a>
+                        — {{ $tc('jv-seo.sitemap.publishedFiles', publication.artifactCount, { count: publication.artifactCount }) }}
+                    </li>
+                </ul>
+            </div>
+            <sw-data-grid
+                v-if="sitemapPublicationRows.length"
+                :data-source="sitemapPublicationRows"
+                :columns="sitemapPublicationColumns"
+                :show-selection="false"
+                :show-settings="false"
+                :show-actions="false"
+            >
+                <template #column-publicSitemapUrl="{ item }">
+                    <a v-if="item.publicSitemapUrl" :href="item.publicSitemapUrl" target="_blank" rel="noopener noreferrer">
+                        {{ item.publicSitemapUrl }}
+                    </a>
+                    <span v-else>{{ $t('jv-seo.sitemap.notPublished') }}</span>
+                </template>
+            </sw-data-grid>
+        </sw-card>
+    </sw-card-view>
+</template>
+{% endblock %}

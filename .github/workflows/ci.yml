@@ -82,6 +82,12 @@ jobs:
           AFTERCOOL_USERNAME: ci-user
           AFTERCOOL_PASSWORD: ci-not-a-production-secret
           AFTERCOOL_TIMEOUT: "20"
+          JV_SITEMAP_INGESTION_ENDPOINT: https://example.invalid/api/internal/sitemap-ingestion
+          JV_SITEMAP_INGESTION_SECRET: ci-not-a-production-secret
+          JV_SITEMAP_PUBLICATION_ENVIRONMENT: stage
+          JV_SITEMAP_INGESTION_TIMEOUT: "20"
+          # Only Compose validation consumes these placeholders.
+          COMPOSE_DISABLE_ENV_FILE: "1"
         run: docker compose -f compose.deploy.yml config --quiet
 
       - name: Validate bootstrap network attachments
@@ -100,12 +106,24 @@ jobs:
           AFTERCOOL_USERNAME: ci-user
           AFTERCOOL_PASSWORD: ci-not-a-production-secret
           AFTERCOOL_TIMEOUT: "20"
+          JV_SITEMAP_INGESTION_ENDPOINT: https://example.invalid/api/internal/sitemap-ingestion
+          JV_SITEMAP_INGESTION_SECRET: ci-not-a-production-secret
+          JV_SITEMAP_PUBLICATION_ENVIRONMENT: stage
+          JV_SITEMAP_INGESTION_TIMEOUT: "20"
+          # Only Compose validation consumes these placeholders.
+          COMPOSE_DISABLE_ENV_FILE: "1"
         shell: bash
         run: |
           set -Eeuo pipefail
 
           docker compose -f compose.deploy.yml config --format json |
             jq -e '.services.bootstrap.networks | has("database") and has("application")' >/dev/null
+          docker compose -f compose.deploy.yml config --format json |
+            jq -e '.services.bootstrap.depends_on == null' >/dev/null
+          ! docker compose -f compose.deploy.yml config --services |
+            grep -Fxq sitemap-storage-init
+          docker compose --profile sitemap-maintenance -f compose.deploy.yml config --services |
+            grep -Fxq sitemap-storage-init
 
       - name: Validate setup script syntax
         run: bash -n bin/setup-local

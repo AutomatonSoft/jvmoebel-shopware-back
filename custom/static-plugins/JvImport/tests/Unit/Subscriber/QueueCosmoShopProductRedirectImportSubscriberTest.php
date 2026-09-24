@@ -4,6 +4,8 @@ namespace Jv\Import\Tests\Unit\Subscriber;
 
 use Jv\Import\Message\CosmoShopProductRedirectImportMessage;
 use Jv\Import\Subscriber\QueueCosmoShopProductRedirectImportSubscriber;
+use Jv\Seo\Contract\ImportImageRedirectsInterface;
+use Jv\Seo\Contract\ImportProductRedirectsInterface;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogEntity;
 use Shopware\Core\Content\ImportExport\ImportExportProfileEntity;
@@ -26,7 +28,12 @@ final class QueueCosmoShopProductRedirectImportSubscriberTest extends TestCase
                 && $message->sourceImportLogId === $log->getId(),
         ))->willReturn(new Envelope(new \stdClass()));
 
-        (new QueueCosmoShopProductRedirectImportSubscriber($messageBus, $this->importExport($log)))
+        (new QueueCosmoShopProductRedirectImportSubscriber(
+            $messageBus,
+            $this->importExport($log),
+            $this->createMock(ImportProductRedirectsInterface::class),
+            $this->createMock(ImportImageRedirectsInterface::class),
+        ))
             ->queue($this->written($log->getId(), Progress::STATE_SUCCEEDED));
     }
 
@@ -40,7 +47,12 @@ final class QueueCosmoShopProductRedirectImportSubscriberTest extends TestCase
             static fn (object $message): bool => $message instanceof CosmoShopProductRedirectImportMessage
                 && $message->sourceImportLogId === $withRecords->getId(),
         ))->willReturn(new Envelope(new \stdClass()));
-        $subscriber = new QueueCosmoShopProductRedirectImportSubscriber($messageBus, $this->importExport($withoutRecords, $withRecords));
+        $subscriber = new QueueCosmoShopProductRedirectImportSubscriber(
+            $messageBus,
+            $this->importExport($withoutRecords, $withRecords),
+            $this->createMock(ImportProductRedirectsInterface::class),
+            $this->createMock(ImportImageRedirectsInterface::class),
+        );
 
         $subscriber->queue($this->written($withoutRecords->getId(), Progress::STATE_FAILED));
         $subscriber->queue($this->written($withRecords->getId(), Progress::STATE_FAILED));
@@ -55,12 +67,29 @@ final class QueueCosmoShopProductRedirectImportSubscriberTest extends TestCase
         $other = $this->log('default_product', '019fe6386ca771b29f5a8412a8cc3d97');
         $messageBus = $this->createMock(MessageBusInterface::class);
         $messageBus->expects(self::never())->method('dispatch');
-        $subscriber = new QueueCosmoShopProductRedirectImportSubscriber($messageBus, $this->importExport($export, $dryRun, $other));
+        $subscriber = new QueueCosmoShopProductRedirectImportSubscriber(
+            $messageBus,
+            $this->importExport($export, $dryRun, $other),
+            $this->createMock(ImportProductRedirectsInterface::class),
+            $this->createMock(ImportImageRedirectsInterface::class),
+        );
 
         $subscriber->queue($this->written($export->getId(), Progress::STATE_SUCCEEDED));
         $subscriber->queue($this->written($dryRun->getId(), Progress::STATE_SUCCEEDED));
         $subscriber->queue($this->written($other->getId(), Progress::STATE_SUCCEEDED));
         $subscriber->queue($this->written($other->getId(), Progress::STATE_PROGRESS));
+    }
+
+    public function testItDoesNotQueueWhenJvSeoImportContractsAreUnavailable(): void
+    {
+        $log = $this->log('jv_cosmoshop_product_jvmoebel_de');
+        $messageBus = $this->createMock(MessageBusInterface::class);
+        $messageBus->expects(self::never())->method('dispatch');
+        $importExport = $this->createMock(ImportExportService::class);
+        $importExport->expects(self::never())->method('findLog');
+        $subscriber = new QueueCosmoShopProductRedirectImportSubscriber($messageBus, $importExport, null, null);
+
+        $subscriber->queue($this->written($log->getId(), Progress::STATE_SUCCEEDED));
     }
 
     private function importExport(ImportExportLogEntity ...$logs): ImportExportService

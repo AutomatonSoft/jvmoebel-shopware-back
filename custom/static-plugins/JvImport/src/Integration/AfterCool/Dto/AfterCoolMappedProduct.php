@@ -28,6 +28,10 @@ final readonly class AfterCoolMappedProduct
         public ?string $updatedAt = null,
         public ?string $sourceFile = null,
         public ?string $sourceKind = null,
+        public ?string $stammartikelId = null,
+        public ?string $collectionName = null,
+        public ?string $sourceFilePrefix = null,
+        public ?string $sourceRegion = null,
     ) {
     }
 }
