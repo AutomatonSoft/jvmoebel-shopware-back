@@ -21,6 +21,7 @@ use Shopware\Core\Checkout\Cart\Price\Struct\QuantityPriceDefinition;
 use Shopware\Core\Checkout\CheckoutPermissions;
 use Shopware\Core\Content\Product\Cart\ProductCartProcessor;
 use Shopware\Core\Framework\Struct\ArrayStruct;
+use Shopware\Core\System\Currency\CurrencyFormatter;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 final readonly class OptionCartProcessor implements CartProcessorInterface, CartDataCollectorInterface
@@ -34,6 +35,7 @@ final readonly class OptionCartProcessor implements CartProcessorInterface, Cart
         private OptionSelectionResolver $selectionResolver,
         private OptionValueSurchargeResolver $surchargeResolver,
         private QuantityPriceCalculator $quantityPriceCalculator,
+        private CurrencyFormatter $currencyFormatter,
     ) {
     }
 
@@ -99,18 +101,49 @@ final readonly class OptionCartProcessor implements CartProcessorInterface, Cart
             }
 
             $selectionsSnapshot = [];
+            $payloadOptions = $item->getPayload()['options'] ?? [];
+            $displayOptions = [];
+            if (is_array($payloadOptions)) {
+                foreach ($payloadOptions as $payloadOption) {
+                    if (!is_array($payloadOption) || isset($payloadOption['jvProductOption'])) {
+                        continue;
+                    }
+
+                    $displayOptions[] = $payloadOption;
+                }
+            }
+
             foreach ($resolvedValues as $value) {
                 $group = $value->getGroup() ?? $template->getGroups()?->get($value->getGroupId());
                 $resolved = $amountByValueId[$value->getId()];
+                $groupName = $group?->getTranslation('name') ?? $group?->getName() ?? '';
+                $valueName = $value->getTranslation('name') ?? $value->getName() ?? '';
+                $formattedAmount = $this->currencyFormatter->formatCurrencyByLanguage(
+                    $resolved->unitAmount,
+                    $context->getCurrency()->getIsoCode(),
+                    $context->getLanguageId(),
+                    $context->getContext(),
+                );
+                $surchargeDescription = 'percentage' === $resolved->type
+                    ? sprintf(' (+%s%% / +%s)', $this->formatPercentage((float) $resolved->percentage), $formattedAmount)
+                    : sprintf(' (+%s)', $formattedAmount);
 
                 $selectionsSnapshot[] = [
                     'groupId' => $value->getGroupId(),
-                    'groupName' => $group?->getTranslation('name') ?? $group?->getName() ?? '',
+                    'groupName' => $groupName,
                     'valueId' => $value->getId(),
-                    'valueName' => $value->getTranslation('name') ?? $value->getName() ?? '',
+                    'valueName' => $valueName,
                     'surchargeType' => $resolved->type,
                     'surchargePercentage' => $resolved->percentage,
                     'surchargeUnitAmount' => $resolved->unitAmount,
+                ];
+
+                $displayOptions[] = [
+                    'group' => $groupName,
+                    'option' => $valueName.$surchargeDescription,
+                    'groupId' => $value->getGroupId(),
+                    'optionId' => $value->getId(),
+                    'jvProductOption' => true,
                 ];
             }
 
@@ -134,7 +167,13 @@ final readonly class OptionCartProcessor implements CartProcessorInterface, Cart
                 'surchargeUnitPrice' => $surcharges->totalUnitAmount,
                 'selections' => $selectionsSnapshot,
             ]);
+            $item->setPayloadValue('options', $displayOptions);
         }
+    }
+
+    private function formatPercentage(float $percentage): string
+    {
+        return rtrim(rtrim(number_format($percentage, 2, '.', ''), '0'), '.');
     }
 
     private function resolveBaseUnitPrice(LineItem $item, CartBehavior $behavior): float

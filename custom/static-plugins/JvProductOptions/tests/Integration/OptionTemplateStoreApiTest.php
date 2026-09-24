@@ -8,6 +8,7 @@ use Shopware\Core\Content\Product\DataAbstractionLayer\ProductIndexer;
 use Shopware\Core\Content\Product\DataAbstractionLayer\ProductIndexingMessage;
 use Shopware\Core\Content\Test\Product\ProductBuilder;
 use Shopware\Core\Defaults;
+use Shopware\Core\Framework\Api\ApiDefinition\DefinitionService;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -114,6 +115,47 @@ final class OptionTemplateStoreApiTest extends TestCase
 
         self::assertSame(404, $this->browser->getResponse()->getStatusCode());
         self::assertSame('CONTENT__PRODUCT_NOT_FOUND', $this->json()['errors'][0]['code'] ?? null);
+    }
+
+    public function testCustomStoreApiRouteIsIncludedInStoplightOpenApiUnderProduct(): void
+    {
+        $schema = static::getContainer()->get(DefinitionService::class)->generate(
+            'openapi-3',
+            DefinitionService::STORE_API,
+            DefinitionService::TYPE_JSON_API,
+        );
+
+        self::assertArrayHasKey('/jv-product-options/{productId}', $schema['paths']);
+        self::assertContains('Product', $schema['paths']['/jv-product-options/{productId}']['post']['tags']);
+        self::assertSame(
+            '#/components/schemas/JvProductOptionsResponse',
+            $schema['paths']['/jv-product-options/{productId}']['post']['responses']['200']['content']['application/json']['schema']['$ref'],
+        );
+    }
+
+    public function testCartPayloadExposesOptionsInShopwareOrderDisplayFormat(): void
+    {
+        $cart = $this->addToCart('sofa', 1, ['material' => 'leather']);
+        $lineItem = $cart['lineItems'][0];
+
+        self::assertSame('Leder', $lineItem['payload']['jvProductOptions']['selections'][0]['valueName']);
+        self::assertNotEmpty($lineItem['payload']['options']);
+
+        $material = array_values(array_filter(
+            $lineItem['payload']['options'],
+            static fn (array $option): bool => ($option['group'] ?? null) === 'Material',
+        ))[0] ?? null;
+
+        self::assertNotNull($material);
+        self::assertStringContainsString('Leder', $material['option']);
+        self::assertStringContainsString('20%', $material['option']);
+        self::assertStringContainsString('+', $material['option']);
+        self::assertStringContainsString('200', $material['option']);
+
+        $this->browser->request('GET', '/store-api/checkout/cart');
+        self::assertSame(200, $this->browser->getResponse()->getStatusCode());
+        $recalculatedLineItem = $this->json()['lineItems'][0];
+        self::assertCount(count($lineItem['payload']['options']), $recalculatedLineItem['payload']['options']);
     }
 
     public function testManualAssignmentToInactiveTemplateFallsBackToStream(): void
@@ -232,6 +274,26 @@ final class OptionTemplateStoreApiTest extends TestCase
         $this->browser->request('POST', '/store-api/checkout/order');
         self::assertSame(200, $this->browser->getResponse()->getStatusCode(), (string) $this->browser->getResponse()->getContent());
         $order = $this->json();
+
+        $responseLineItem = $order['lineItems'][0];
+        self::assertSame('Leder', $responseLineItem['payload']['jvProductOptions']['selections'][0]['valueName']);
+        self::assertStringContainsString('20%', $responseLineItem['payload']['options'][0]['option']);
+        self::assertStringContainsString('+', $responseLineItem['payload']['options'][0]['option']);
+        self::assertStringContainsString('200', $responseLineItem['payload']['options'][0]['option']);
+
+        $this->browser->request(
+            'POST',
+            '/store-api/order',
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/json'],
+            json_encode(['associations' => ['lineItems' => []]], \JSON_THROW_ON_ERROR),
+        );
+        self::assertSame(200, $this->browser->getResponse()->getStatusCode(), (string) $this->browser->getResponse()->getContent());
+        $orders = $this->json();
+        $readLineItem = $orders['orders']['elements'][0]['lineItems'][0];
+        self::assertSame('Leder', $readLineItem['payload']['jvProductOptions']['selections'][0]['valueName']);
+        self::assertStringContainsString('20%', $readLineItem['payload']['options'][0]['option']);
 
         $this->valueRepository()->update([[
             'id' => $this->ids->get('leather'),

@@ -1,0 +1,257 @@
+{
+  "openapi": "3.1.0",
+  "info": [],
+  "paths": {
+    "/jv-product-options/{productId}": {
+      "post": {
+        "tags": [
+          "Product"
+        ],
+        "summary": "Load option template for a product",
+        "description": "Returns the active option template resolved for the product in the current sales-channel context, including translated labels, defaults, swatch media, base unit price and per-value surcharge amounts. The surcharge amounts use the current currency and tax state. A product without a template returns an empty groups array.",
+        "operationId": "loadProductOptions",
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "description": "Sales-channel-visible product or variant ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{32}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product option groups and calculated per-unit surcharges",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JvProductOptionsResponse"
+                },
+                "example": {
+                  "apiAlias": "jv_product_options",
+                  "productId": "018f2e2c8b3e7a1b9c8d0e1f2a3b4c5d",
+                  "templateId": "018f2e2c8b3e7a1b9c8d0e1f2a3b4c5e",
+                  "baseUnitPrice": 1000,
+                  "groups": [
+                    {
+                      "id": "018f2e2c8b3e7a1b9c8d0e1f2a3b4c5f",
+                      "name": "Material",
+                      "position": 1,
+                      "defaultValueId": "018f2e2c8b3e7a1b9c8d0e1f2a3b4c60",
+                      "paletteMedia": {
+                        "url": "https://shop.example/media/material-palette.jpg",
+                        "alt": "Material palette"
+                      },
+                      "values": [
+                        {
+                          "id": "018f2e2c8b3e7a1b9c8d0e1f2a3b4c60",
+                          "name": "Leder",
+                          "position": 1,
+                          "media": null,
+                          "colorHex": null,
+                          "surcharge": {
+                            "type": "percentage",
+                            "percentage": 20,
+                            "unitAmount": 200
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Product is not visible in the current sales channel, or the product ID does not exist"
+          }
+        },
+        "security": [
+          {
+            "ApiKey": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "JvProductOptionsResponse": {
+        "type": "object",
+        "required": [
+          "apiAlias",
+          "productId",
+          "templateId",
+          "baseUnitPrice",
+          "groups"
+        ],
+        "properties": {
+          "apiAlias": {
+            "type": "string",
+            "const": "jv_product_options"
+          },
+          "productId": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$"
+          },
+          "templateId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-f]{32}$"
+          },
+          "baseUnitPrice": {
+            "type": "number",
+            "description": "Base unit price for quantity one in the current currency and tax state"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JvProductOptionGroup"
+            }
+          }
+        }
+      },
+      "JvProductOptionGroup": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "position",
+          "defaultValueId",
+          "paletteMedia",
+          "values"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "position": {
+            "type": "integer"
+          },
+          "defaultValueId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9a-f]{32}$"
+          },
+          "paletteMedia": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JvProductOptionMedia"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JvProductOptionValue"
+            }
+          }
+        }
+      },
+      "JvProductOptionValue": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "position",
+          "media",
+          "colorHex",
+          "surcharge"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "position": {
+            "type": "integer"
+          },
+          "media": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JvProductOptionMedia"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "colorHex": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^#[0-9A-Fa-f]{6}$"
+          },
+          "surcharge": {
+            "$ref": "#/components/schemas/JvProductOptionSurcharge"
+          }
+        }
+      },
+      "JvProductOptionSurcharge": {
+        "type": "object",
+        "required": [
+          "type",
+          "percentage",
+          "unitAmount"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "fixed",
+              "percentage"
+            ]
+          },
+          "percentage": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Percentage surcharge; null for fixed surcharges"
+          },
+          "unitAmount": {
+            "type": "number",
+            "description": "Calculated surcharge per unit in the current currency and tax state"
+          }
+        }
+      },
+      "JvProductOptionMedia": {
+        "type": "object",
+        "required": [
+          "url",
+          "alt"
+        ],
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "alt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
