@@ -8,6 +8,7 @@ export default {
 
     inject: [
         'repositoryFactory',
+        'syncService',
     ],
 
     mixins: [
@@ -24,14 +25,17 @@ export default {
     data() {
         return {
             isLoading: false,
-            selectedTemplateId: null,
-            assignmentRecordId: null,
+            assignment: null,
         };
     },
 
     computed: {
         templateProductRepository() {
             return this.repositoryFactory.create('jv_option_template_product');
+        },
+
+        selectedTemplateId() {
+            return this.assignment?.templateId ?? null;
         },
     },
 
@@ -42,8 +46,7 @@ export default {
                 if (productId) {
                     this.loadAssignment(productId);
                 } else {
-                    this.selectedTemplateId = null;
-                    this.assignmentRecordId = null;
+                    this.assignment = null;
                 }
             },
         },
@@ -59,14 +62,7 @@ export default {
 
             try {
                 const results = await this.templateProductRepository.search(criteria, Shopware.Context.api);
-                if (results.total > 0) {
-                    const record = results.first();
-                    this.assignmentRecordId = record.id;
-                    this.selectedTemplateId = record.templateId;
-                } else {
-                    this.assignmentRecordId = null;
-                    this.selectedTemplateId = null;
-                }
+                this.assignment = results.total > 0 ? results.first() : null;
             } catch (error) {
                 this.createNotificationError({
                     message: error.message || this.$t('global.notification.unspecifiedSaveErrorMessage'),
@@ -85,25 +81,13 @@ export default {
 
             try {
                 if (!newTemplateId) {
-                    if (this.assignmentRecordId) {
-                        await this.templateProductRepository.delete(this.assignmentRecordId, Shopware.Context.api);
-                        this.assignmentRecordId = null;
-                        this.selectedTemplateId = null;
+                    if (this.assignment) {
+                        await this.deleteAssignment(this.assignment);
+                        this.assignment = null;
                     }
-                } else if (this.assignmentRecordId) {
-                    await this.templateProductRepository.save({
-                        id: this.assignmentRecordId,
-                        productId: this.product.id,
-                        templateId: newTemplateId,
-                    }, Shopware.Context.api);
-                    this.selectedTemplateId = newTemplateId;
                 } else {
-                    const newRecord = this.templateProductRepository.create(Shopware.Context.api);
-                    newRecord.productId = this.product.id;
-                    newRecord.templateId = newTemplateId;
-                    await this.templateProductRepository.save(newRecord, Shopware.Context.api);
-                    this.assignmentRecordId = newRecord.id;
-                    this.selectedTemplateId = newTemplateId;
+                    await this.upsertAssignment(newTemplateId);
+                    await this.loadAssignment(this.product.id);
                 }
 
                 this.createNotificationSuccess({
@@ -116,6 +100,33 @@ export default {
             } finally {
                 this.isLoading = false;
             }
+        },
+
+        upsertAssignment(templateId) {
+            return this.syncService.sync({
+                'jv-option-template-product-upsert': {
+                    entity: 'jv_option_template_product',
+                    action: 'upsert',
+                    payload: [{
+                        productId: this.product.id,
+                        productVersionId: this.product.versionId,
+                        templateId,
+                    }],
+                },
+            });
+        },
+
+        deleteAssignment(assignment) {
+            return this.syncService.sync({
+                'jv-option-template-product-delete': {
+                    entity: 'jv_option_template_product',
+                    action: 'delete',
+                    payload: [{
+                        productId: assignment.productId,
+                        productVersionId: assignment.productVersionId,
+                    }],
+                },
+            });
         },
     },
 };

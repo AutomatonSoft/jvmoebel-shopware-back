@@ -58,7 +58,8 @@
       "systemCurrency": "System currency",
       "buttonDeleteValue": "Delete",
       "saveSuccess": "Option template saved successfully",
-      "saveError": "Failed to save option template"
+      "saveError": "Failed to save option template",
+      "systemLanguageRequired": "A new option template must be saved in the system language first"
     },
     "product": {
       "cardTitle": "Option template",

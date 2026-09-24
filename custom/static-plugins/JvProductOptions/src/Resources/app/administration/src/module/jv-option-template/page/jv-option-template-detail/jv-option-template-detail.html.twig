@@ -20,8 +20,18 @@
         </sw-button>
     </template>
 
+    <template #language-switch>
+        <sw-language-switch
+            :save-changes-function="saveOnLanguageChange"
+            :abort-change-function="abortOnLanguageChange"
+            @on-change="onChangeLanguage"
+        />
+    </template>
+
     <template #content>
         <sw-card-view v-if="templateEntity">
+            <sw-language-info :entity-description="identifier" />
+
             <sw-card
                 position-identifier="jv-option-template-general"
                 :title="$t('jv-option-template.detail.cardGeneral')"
@@ -29,7 +39,8 @@
             >
                 <sw-container columns="2fr 1fr 1fr" gap="16px">
                     <sw-text-field
-                        v-model:value="templateEntity.name"
+                        :value="displayName(templateEntity)"
+                        @update:value="setEntityName(templateEntity, $event)"
                         required
                         :label="$t('jv-option-template.detail.labelName')"
                         :placeholder="$t('jv-option-template.detail.placeholderName')"
@@ -51,7 +62,8 @@
                 <sw-container columns="1fr" gap="16px" style="margin-top: 16px;">
                     <sw-entity-many-to-many-select
                         v-if="templateEntity.productStreams"
-                        :entity-collection="templateEntity.productStreams"
+                        v-model:entity-collection="templateEntity.productStreams"
+                        :local-mode="templateEntity.isNew()"
                         label-property="name"
                         :label="$t('jv-option-template.detail.labelProductStreams')"
                         :placeholder="$t('jv-option-template.detail.placeholderProductStreams')"
@@ -76,18 +88,19 @@
                             {{ $t('jv-option-template.detail.buttonAddGroup') }}
                         </sw-button>
 
-                        <div v-if="groups.length === 0" style="color: #999; font-style: italic; padding: 16px 0;">
+                        <div v-if="templateEntity.groups.length === 0" style="color: #999; font-style: italic; padding: 16px 0;">
                             {{ $t('jv-option-template.detail.emptyGroups') }}
                         </div>
 
                         <div
-                            v-for="(group, groupIndex) in groups"
+                            v-for="(group, groupIndex) in templateEntity.groups"
                             :key="group.id"
                             class="jv-option-template-group"
                         >
                             <sw-container class="jv-option-template-group__header" columns="minmax(220px, 2fr) 120px minmax(220px, 2fr) 44px" gap="16px" align="end">
                                 <sw-text-field
-                                    v-model:value="group.name"
+                                    :value="displayName(group)"
+                                    @update:value="setEntityName(group, $event)"
                                     required
                                     :label="$t('jv-option-template.detail.labelGroupName')"
                                     :placeholder="$t('jv-option-template.detail.placeholderGroupName')"
@@ -102,7 +115,7 @@
 
                                 <sw-single-select
                                     v-model:value="group.defaultValueId"
-                                    :options="group.values.map((v) => ({ value: v.id, label: v.name || v.id }))"
+                                    :options="defaultValueOptions(group)"
                                     :label="$t('jv-option-template.detail.labelDefaultValue')"
                                     :placeholder="$t('jv-option-template.detail.placeholderDefaultValue')"
                                     show-clearable-button
@@ -173,7 +186,8 @@
                                         />
 
                                         <sw-text-field
-                                            v-model:value="val.name"
+                                            :value="displayName(val)"
+                                            @update:value="setEntityName(val, $event)"
                                             required
                                             :label="$t('jv-option-template.detail.labelValueName')"
                                             :placeholder="$t('jv-option-template.detail.placeholderValueName')"
@@ -181,7 +195,8 @@
                                         />
 
                                         <sw-single-select
-                                            v-model:value="val.surchargeType"
+                                            :value="val.surchargeType"
+                                            @update:value="setValueSurchargeType(val, $event)"
                                             :options="surchargeTypeOptions"
                                             :label="$t('jv-option-template.detail.labelValueSurchargeType')"
                                         />
@@ -198,7 +213,8 @@
 
                                     <sw-container class="jv-option-template-value__visuals" columns="minmax(220px, 1fr) minmax(280px, 1.4fr)" gap="16px">
                                         <mt-colorpicker
-                                            v-model="val.colorHex"
+                                            :model-value="valueColorHex(val)"
+                                            @update:model-value="setValueColorHex(val, $event)"
                                             :label="$t('jv-option-template.detail.labelValueColorHex')"
                                             :alpha="false"
                                         />
@@ -236,14 +252,16 @@
 
                                         <sw-container v-if="val.surchargeType === 'fixed'" columns="minmax(180px, 240px) minmax(180px, 240px)" gap="16px">
                                             <mt-number-field
-                                                v-model="val.grossPrice"
+                                                :model-value="valueGrossPrice(val)"
+                                                @update:model-value="setValueGrossPrice(val, $event)"
                                                 :label="$t('jv-option-template.detail.labelValueSurchargeGross')"
                                                 :step="0.01"
                                                 :digits="2"
                                                 :min="0"
                                             />
                                             <mt-number-field
-                                                v-model="val.netPrice"
+                                                :model-value="valueNetPrice(val)"
+                                                @update:model-value="setValueNetPrice(val, $event)"
                                                 :label="$t('jv-option-template.detail.labelValueSurchargeNet')"
                                                 :step="0.01"
                                                 :digits="2"

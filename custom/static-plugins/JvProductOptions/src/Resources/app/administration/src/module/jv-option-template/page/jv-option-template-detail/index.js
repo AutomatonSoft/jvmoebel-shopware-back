@@ -20,13 +20,15 @@ export default {
             templateEntity: null,
             isLoading: false,
             isSaveSuccessful: false,
-            groups: [],
             currencyId: Shopware.Context.app.systemCurrencyId,
-            originalGroups: [],
             currencyName: null,
             currencyIsoCode: null,
             activeMediaTarget: null,
             mediaModalIsOpen: false,
+            originalGroupIds: [],
+            originalValueIdsByGroup: {},
+            templateNameEdited: false,
+            editedNameIds: new Set(),
         };
     },
 
@@ -38,7 +40,7 @@ export default {
 
     computed: {
         identifier() {
-            return this.templateEntity?.name || this.$t('jv-option-template.detail.titleNew');
+            return (this.templateEntity && this.displayName(this.templateEntity)) || this.$t('jv-option-template.detail.titleNew');
         },
 
         templateRepository() {
@@ -91,9 +93,14 @@ export default {
         async createdComponent() {
             this.isLoading = true;
 
-            const templateId = this.$route.params.id;
-
             await this.loadSystemCurrency();
+            await this.loadEntityData();
+
+            this.isLoading = false;
+        },
+
+        async loadEntityData() {
+            const templateId = this.$route.params.id;
 
             if (templateId) {
                 await this.loadTemplate(templateId);
@@ -102,17 +109,11 @@ export default {
                 this.templateEntity.active = true;
                 this.templateEntity.priority = 0;
                 this.templateEntity.name = '';
-                this.templateEntity.productStreams = new EntityCollection(
-                    `${this.templateRepository.route}/${this.templateEntity.id}/product-streams`,
-                    'product_stream',
-                    Shopware.Context.api,
-                    new Criteria(1, 25)
-                );
-                this.groups = [];
-                this.originalGroups = [];
+                this.originalGroupIds = [];
+                this.originalValueIdsByGroup = {};
+                this.templateNameEdited = false;
+                this.editedNameIds = new Set();
             }
-
-            this.isLoading = false;
         },
 
         async loadTemplate(id) {
@@ -128,57 +129,29 @@ export default {
 
             try {
                 this.templateEntity = await this.templateRepository.get(id, Shopware.Context.api, criteria);
-
-                const rawGroups = this.templateEntity.groups ? this.templateEntity.groups.slice() : [];
-                rawGroups.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-                this.originalGroups = rawGroups.map((group) => ({
-                    id: group.id,
-                    valueIds: group.values ? group.values.map((value) => value.id) : [],
-                    defaultValueId: group.defaultValueId || null,
-                }));
-
-                this.groups = rawGroups.map((group) => {
-                    const rawValues = group.values ? group.values.slice() : [];
-                    rawValues.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-
-                    const values = rawValues.map((val) => {
-                        let grossPrice = 0;
-                        let netPrice = 0;
-
-                        if (Array.isArray(val.surchargePrice)) {
-                            const defaultCurr = val.surchargePrice.find((p) => p.currencyId === this.currencyId) || val.surchargePrice[0];
-                            if (defaultCurr) {
-                                grossPrice = defaultCurr.gross ?? 0;
-                                netPrice = defaultCurr.net ?? 0;
-                            }
-                        }
-
-                        return {
-                            entity: val,
-                            id: val.id,
-                            name: val.name || '',
-                            position: val.position ?? 0,
-                            colorHex: val.colorHex || '',
-                            mediaId: val.mediaId || null,
-                            surchargeType: val.surchargeType || 'fixed',
-                            grossPrice,
-                            netPrice,
-                            surchargePercentage: val.surchargePercentage ?? 0,
-                            isNew: false,
-                        };
-                    });
-
-                    return {
-                        entity: group,
-                        id: group.id,
-                        name: group.name || '',
-                        position: group.position ?? 0,
-                        paletteMediaId: group.paletteMediaId || null,
-                        defaultValueId: group.defaultValueId || null,
-                        values,
-                        isNew: false,
+                if (this.templateEntity.productStreams) {
+                    const productStreams = this.templateEntity.productStreams;
+                    const systemLanguageContext = {
+                        ...Shopware.Context.api,
+                        languageId: Shopware.Context.api.systemLanguageId,
                     };
-                });
+                    const systemLanguageProductStreams = new EntityCollection(
+                        productStreams.source,
+                        productStreams.entity,
+                        systemLanguageContext,
+                        productStreams.criteria
+                    );
+
+                    productStreams.forEach((productStream) => systemLanguageProductStreams.push(productStream));
+                    this.templateEntity.productStreams = systemLanguageProductStreams;
+                }
+                this.originalGroupIds = this.templateEntity.groups.map((group) => group.id);
+                this.originalValueIdsByGroup = Object.fromEntries(this.templateEntity.groups.map((group) => [
+                    group.id,
+                    group.values.map((value) => value.id),
+                ]));
+                this.templateNameEdited = false;
+                this.editedNameIds = new Set();
             } catch (error) {
                 this.createNotificationError({
                     message: error.message || this.$t('jv-option-template.detail.saveError'),
@@ -197,76 +170,64 @@ export default {
             }
         },
 
-        addGroup() {
-            const entity = this.groupRepository.create(Shopware.Context.api);
-            const newGroup = {
-                entity,
-                id: entity.id,
-                name: '',
-                position: this.groups.length + 1,
-                paletteMediaId: null,
-                defaultValueId: null,
-                values: [],
-                isNew: true,
-            };
+        defaultValueOptions(group) {
+            return group.values.map((value) => ({ value: value.id, label: this.displayName(value) || value.id }));
+        },
 
-            this.groups.push(newGroup);
+        displayName(entity) {
+            const systemLanguageId = Shopware.Context.api.systemLanguageId;
+            const translations = entity.translations;
+            const systemTranslation = translations?.find?.((translation) => translation.languageId === systemLanguageId);
+
+            return entity.name || entity.translated?.name || systemTranslation?.name || '';
+        },
+
+        setEntityName(entity, name) {
+            entity.name = name;
+
+            if (entity === this.templateEntity) {
+                this.templateNameEdited = true;
+                return;
+            }
+
+            this.editedNameIds.add(entity.id);
+        },
+
+        addGroup() {
+            const group = this.groupRepository.create(Shopware.Context.api);
+            group.templateId = this.templateEntity.id;
+            group.name = '';
+            group.position = this.templateEntity.groups.length + 1;
+            group.paletteMediaId = null;
+            group.defaultValueId = null;
+
+            this.templateEntity.groups.push(group);
         },
 
         removeGroup(groupIndex) {
-            this.groups.splice(groupIndex, 1);
-        },
-
-        setSystemTranslations(entity, entityRepository, translationEntityName, parentField, name) {
-            const systemLanguageId = Shopware.Context.api.systemLanguageId;
-            const languageIds = [
-                systemLanguageId,
-                Shopware.Context.api.languageId,
-            ].filter((languageId, index, ids) => languageId && ids.indexOf(languageId) === index);
-
-            if (!entity.translations) {
-                entity.translations = new EntityCollection(
-                    `${entityRepository.route}/${entity.id}/translations`,
-                    translationEntityName,
-                    Shopware.Context.api,
-                    new Criteria(1, 25)
-                );
-            }
-
-            languageIds.forEach((languageId) => {
-                let translation = entity.translations.find((item) => item.languageId === languageId);
-                if (!translation) {
-                    const translationRepository = this.repositoryFactory.create(translationEntityName);
-                    translation = translationRepository.create(Shopware.Context.api);
-                    entity.translations.add(translation);
-                }
-
-                translation[parentField] = entity.id;
-                translation.languageId = languageId;
-                translation.name = name;
-            });
+            this.templateEntity.groups.splice(groupIndex, 1);
         },
 
         addValue(group) {
-            const entity = this.valueRepository.create(Shopware.Context.api);
-            const newValue = {
-                entity,
-                id: entity.id,
-                name: '',
-                position: group.values.length + 1,
-                colorHex: '',
-                mediaId: null,
-                surchargeType: 'fixed',
-                grossPrice: 0,
-                netPrice: 0,
-                surchargePercentage: 0,
-                isNew: true,
-            };
+            const value = this.valueRepository.create(Shopware.Context.api);
+            value.groupId = group.id;
+            value.name = '';
+            value.position = group.values.length + 1;
+            value.colorHex = null;
+            value.mediaId = null;
+            value.surchargeType = 'fixed';
+            value.surchargePrice = [{
+                currencyId: this.currencyId,
+                gross: 0,
+                net: 0,
+                linked: false,
+            }];
+            value.surchargePercentage = null;
 
-            group.values.push(newValue);
+            group.values.push(value);
 
             if (!group.defaultValueId) {
-                group.defaultValueId = newValue.id;
+                group.defaultValueId = value.id;
             }
         },
 
@@ -275,6 +236,65 @@ export default {
             if (group.defaultValueId === removed.id) {
                 group.defaultValueId = group.values.length > 0 ? group.values[0].id : null;
             }
+        },
+
+        findDefaultCurrencyPrice(value) {
+            if (!Array.isArray(value.surchargePrice)) {
+                return null;
+            }
+
+            return value.surchargePrice.find((price) => price.currencyId === this.currencyId) || value.surchargePrice[0] || null;
+        },
+
+        valueGrossPrice(value) {
+            return this.findDefaultCurrencyPrice(value)?.gross ?? 0;
+        },
+
+        valueNetPrice(value) {
+            return this.findDefaultCurrencyPrice(value)?.net ?? 0;
+        },
+
+        setValueGrossPrice(value, gross) {
+            value.surchargePrice = [{
+                currencyId: this.currencyId,
+                gross: Number(gross) || 0,
+                net: this.valueNetPrice(value),
+                linked: false,
+            }];
+        },
+
+        setValueNetPrice(value, net) {
+            value.surchargePrice = [{
+                currencyId: this.currencyId,
+                gross: this.valueGrossPrice(value),
+                net: Number(net) || 0,
+                linked: false,
+            }];
+        },
+
+        setValueSurchargeType(value, surchargeType) {
+            value.surchargeType = surchargeType;
+
+            if (surchargeType === 'percentage') {
+                value.surchargePrice = null;
+                value.surchargePercentage = Number(value.surchargePercentage) || 0;
+            } else {
+                value.surchargePercentage = null;
+                value.surchargePrice = [{
+                    currencyId: this.currencyId,
+                    gross: this.valueGrossPrice(value),
+                    net: this.valueNetPrice(value),
+                    linked: false,
+                }];
+            }
+        },
+
+        valueColorHex(value) {
+            return value.colorHex || '';
+        },
+
+        setValueColorHex(value, colorHex) {
+            value.colorHex = colorHex && colorHex.trim() !== '' ? colorHex.trim() : null;
         },
 
         mediaUploadTag(scope, groupId, valueId = '') {
@@ -335,7 +355,7 @@ export default {
                 return;
             }
 
-            const group = this.groups.find((item) => item.id === this.activeMediaTarget.groupId);
+            const group = this.templateEntity.groups.find((item) => item.id === this.activeMediaTarget.groupId);
             if (!group) {
                 this.closeMediaModal();
                 return;
@@ -353,109 +373,160 @@ export default {
             this.closeMediaModal();
         },
 
+        blockedByLanguage() {
+            const systemLanguageId = Shopware.Context.api.systemLanguageId;
+            const languageId = Shopware.Context.api.languageId;
+
+            return this.templateEntity.isNew() && languageId !== systemLanguageId;
+        },
+
+        saveOnLanguageChange() {
+            return this.onSave();
+        },
+
+        abortOnLanguageChange() {
+            return this.templateRepository.hasChanges(this.templateEntity);
+        },
+
+        onChangeLanguage() {
+            this.loadEntityData();
+        },
+
+        ensureSystemTranslation(entity, entityRepository, translationEntityName, parentField, name) {
+            const systemLanguageId = Shopware.Context.api.systemLanguageId;
+            let translations = entity.translations;
+
+            if (!translations) {
+                translations = new EntityCollection(
+                    `${entityRepository.route}/${entity.id}/translations`,
+                    translationEntityName,
+                    Shopware.Context.api,
+                    new Criteria(1, 25)
+                );
+                entity.translations = translations;
+            }
+
+            const systemTranslation = translations.find((translation) => translation.languageId === systemLanguageId);
+            if (systemTranslation) {
+                return;
+            }
+
+            const translationRepository = this.repositoryFactory.create(translationEntityName);
+            const translation = translationRepository.create(Shopware.Context.api);
+            translation[parentField] = entity.id;
+            translation.languageId = systemLanguageId;
+            translation.name = name;
+            translations.add(translation);
+        },
+
         async onSave() {
+            const isSystemLanguage = Shopware.Context.api.languageId === Shopware.Context.api.systemLanguageId;
+            const apiContext = Shopware.Context.api;
+            const systemLanguageContext = {
+                ...apiContext,
+                languageId: apiContext.systemLanguageId,
+            };
+
+            if (isSystemLanguage && (!this.templateEntity.name || this.templateEntity.name.trim() === '')) {
+                this.createNotificationError({
+                    message: this.$t('jv-option-template.detail.placeholderName'),
+                });
+                return;
+            }
+
+            if (this.blockedByLanguage()) {
+                this.createNotificationError({
+                    message: this.$t('jv-option-template.detail.systemLanguageRequired'),
+                });
+                return;
+            }
+
             this.isLoading = true;
 
             try {
-                if (!this.templateEntity.name || this.templateEntity.name.trim() === '') {
-                    this.createNotificationError({
-                        message: this.$t('jv-option-template.detail.placeholderName'),
-                    });
-                    this.isLoading = false;
-                    return;
+                const isNewTemplate = this.templateEntity.isNew();
+                const templateId = this.templateEntity.id;
+                const groups = this.templateEntity.groups.slice();
+                const templateContext = isNewTemplate || this.templateNameEdited ? apiContext : systemLanguageContext;
+                const templateEntity = isNewTemplate
+                    ? this.templateRepository.create(templateContext, templateId)
+                    : await this.templateRepository.get(templateId, templateContext, new Criteria([templateId]));
+
+                templateEntity.active = !!this.templateEntity.active;
+                templateEntity.priority = parseInt(this.templateEntity.priority, 10) || 0;
+
+                if (isNewTemplate || this.templateNameEdited) {
+                    templateEntity.name = this.templateEntity.name;
                 }
 
-                this.setSystemTranslations(
-                    this.templateEntity,
-                    this.templateRepository,
-                    'jv_option_template_translation',
-                    'jvOptionTemplateId',
-                    this.templateEntity.name
-                );
-                await this.templateRepository.save(this.templateEntity, Shopware.Context.api);
+                await this.templateRepository.save(templateEntity, templateContext);
 
-                for (const group of this.groups) {
-                    let groupEntity = group.entity || this.groupRepository.create(Shopware.Context.api, group.id);
-                    const originalGroup = this.originalGroups.find((item) => item.id === group.id);
-                    const currentValueIds = new Set(group.values.map((value) => value.id));
-                    const preservedDefaultValueId = originalGroup?.defaultValueId && currentValueIds.has(originalGroup.defaultValueId)
-                        ? originalGroup.defaultValueId
-                        : null;
-                    const defaultValueId = group.defaultValueId || preservedDefaultValueId || group.values[0]?.id || null;
+                for (const group of groups) {
+                    const isNewGroup = group.isNew();
+                    const groupName = group.name;
+                    const groupContext = isNewGroup || this.editedNameIds.has(group.id) ? apiContext : systemLanguageContext;
+                    const groupEntity = isNewGroup
+                        ? this.groupRepository.create(groupContext, group.id)
+                        : await this.groupRepository.get(group.id, groupContext);
 
-                    if (originalGroup) {
-                        for (const originalValueId of originalGroup.valueIds) {
-                            if (!currentValueIds.has(originalValueId)) {
-                                await this.valueRepository.delete(originalValueId, Shopware.Context.api);
-                            }
-                        }
-                    }
-
-                    groupEntity.templateId = this.templateEntity.id;
-                    groupEntity.name = group.name;
+                    groupEntity.templateId = templateId;
                     groupEntity.position = parseInt(group.position, 10) || 0;
                     groupEntity.paletteMediaId = group.paletteMediaId || null;
-                    groupEntity.defaultValueId = null;
-                    this.setSystemTranslations(
-                        groupEntity,
-                        this.groupRepository,
-                        'jv_option_template_group_translation',
-                        'jvOptionTemplateGroupId',
-                        group.name
-                    );
 
-                    const values = new EntityCollection(
-                        `${this.groupRepository.route}/${groupEntity.id}/values`,
-                        'jv_option_template_value',
-                        Shopware.Context.api,
-                        new Criteria(1, 25)
-                    );
+                    if (isNewGroup || this.editedNameIds.has(group.id)) {
+                        groupEntity.name = groupName;
+                    }
 
-                    group.values.forEach((value) => {
-                        const valueEntity = value.entity || this.valueRepository.create(Shopware.Context.api, value.id);
-                        valueEntity.groupId = groupEntity.id;
-                        valueEntity.name = value.name;
+                    if (isNewGroup) {
+                        this.ensureSystemTranslation(
+                            groupEntity,
+                            this.groupRepository,
+                            'jv_option_template_group_translation',
+                            'jvOptionTemplateGroupId',
+                            groupName
+                        );
+                    }
+
+                    await this.groupRepository.save(groupEntity, groupContext);
+
+                    for (const value of group.values) {
+                        const isNewValue = value.isNew();
+                        const valueName = value.name;
+                        const valueContext = isNewValue || this.editedNameIds.has(value.id) ? apiContext : systemLanguageContext;
+                        const valueEntity = isNewValue
+                            ? this.valueRepository.create(valueContext, value.id)
+                            : await this.valueRepository.get(value.id, valueContext);
+
+                        valueEntity.groupId = group.id;
                         valueEntity.position = parseInt(value.position, 10) || 0;
                         valueEntity.colorHex = value.colorHex && value.colorHex.trim() !== '' ? value.colorHex.trim() : null;
                         valueEntity.mediaId = value.mediaId || null;
                         valueEntity.surchargeType = value.surchargeType;
-                        valueEntity.surchargePrice = value.surchargeType === 'fixed' ? [{
-                            currencyId: this.currencyId,
-                            gross: Number(value.grossPrice) || 0,
-                            net: Number(value.netPrice) || 0,
-                            linked: false,
-                        }] : null;
+                        valueEntity.surchargePrice = value.surchargeType === 'fixed' ? value.surchargePrice : null;
                         valueEntity.surchargePercentage = value.surchargeType === 'percentage'
                             ? Number(value.surchargePercentage) || 0
                             : null;
-                        this.setSystemTranslations(
-                            valueEntity,
-                            this.valueRepository,
-                            'jv_option_template_value_translation',
-                            'jvOptionTemplateValueId',
-                            value.name
-                        );
-                        values.add(valueEntity);
-                    });
 
-                    groupEntity.values = values;
-                    await this.groupRepository.save(groupEntity, Shopware.Context.api);
+                        if (isNewValue || this.editedNameIds.has(value.id)) {
+                            valueEntity.name = valueName;
+                        }
 
-                    for (const valueEntity of values) {
-                        await this.valueRepository.save(valueEntity, Shopware.Context.api);
+                        if (isNewValue) {
+                            this.ensureSystemTranslation(
+                                valueEntity,
+                                this.valueRepository,
+                                'jv_option_template_value_translation',
+                                'jvOptionTemplateValueId',
+                                valueName
+                            );
+                        }
+
+                        await this.valueRepository.save(valueEntity, valueContext);
                     }
 
-                    groupEntity = await this.groupRepository.get(groupEntity.id, Shopware.Context.api);
-                    group.entity = groupEntity;
-                    groupEntity.defaultValueId = defaultValueId;
-                    await this.groupRepository.save(groupEntity, Shopware.Context.api);
-                }
-
-                const currentGroupIds = new Set(this.groups.map((group) => group.id));
-                for (const originalGroup of this.originalGroups) {
-                    if (!currentGroupIds.has(originalGroup.id)) {
-                        await this.groupRepository.delete(originalGroup.id, Shopware.Context.api);
-                    }
+                    const persistedGroup = await this.groupRepository.get(group.id, systemLanguageContext);
+                    persistedGroup.defaultValueId = group.defaultValueId || null;
+                    await this.groupRepository.save(persistedGroup, systemLanguageContext);
                 }
 
                 this.isSaveSuccessful = true;
@@ -464,13 +535,14 @@ export default {
                 });
 
                 if (!this.$route.params.id) {
-                    this.$router.push({
+                    await this.$router.push({
                         name: 'jv.option.template.detail',
-                        params: { id: this.templateEntity.id },
+                        params: { id: templateId },
                     });
-                } else {
-                    await this.loadTemplate(this.templateEntity.id);
                 }
+
+                await this.deleteRemovedAssociations();
+                await this.loadTemplate(templateId);
             } catch (error) {
                 this.createNotificationError({
                     message: error.message || this.$t('jv-option-template.detail.saveError'),
@@ -478,6 +550,31 @@ export default {
             } finally {
                 this.isLoading = false;
             }
+        },
+
+        async deleteRemovedAssociations() {
+            const groups = this.templateEntity.groups;
+            const currentGroupIds = new Set(groups.map((group) => group.id));
+            const removedGroupIds = this.originalGroupIds.filter((id) => !currentGroupIds.has(id));
+
+            for (const id of removedGroupIds) {
+                await this.groupRepository.delete(id, Shopware.Context.api);
+            }
+
+            for (const group of groups) {
+                const originalValueIds = this.originalValueIdsByGroup[group.id] || [];
+                const currentValueIds = new Set(group.values.map((value) => value.id));
+
+                for (const id of originalValueIds.filter((valueId) => !currentValueIds.has(valueId))) {
+                    await this.valueRepository.delete(id, Shopware.Context.api);
+                }
+            }
+
+            this.originalGroupIds = groups.map((group) => group.id);
+            this.originalValueIdsByGroup = Object.fromEntries(groups.map((group) => [
+                group.id,
+                group.values.map((value) => value.id),
+            ]));
         },
 
         onCancel() {

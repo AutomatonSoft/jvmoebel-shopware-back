@@ -58,7 +58,8 @@
       "systemCurrency": "Systemwährung",
       "buttonDeleteValue": "Löschen",
       "saveSuccess": "Optionsvorlage wurde erfolgreich gespeichert",
-      "saveError": "Fehler beim Speichern der Optionsvorlage"
+      "saveError": "Fehler beim Speichern der Optionsvorlage",
+      "systemLanguageRequired": "Eine neue Optionsvorlage muss zuerst in der Systemsprache gespeichert werden"
     },
     "product": {
       "cardTitle": "Optionsvorlage",

@@ -1,6 +1,6 @@
 {
   "main.js": {
-    "file": "assets/jv-product-options-BJvNXln4.js",
+    "file": "assets/jv-product-options-BZ3ZjVOU.js",
     "name": "jv-product-options",
     "src": "main.js",
     "isEntry": true,
@@ -10,7 +10,7 @@
     ]
   },
   "module/jv-option-template/page/jv-option-template-detail/index.js": {
-    "file": "assets/index-Cq6Lkcfr.js",
+    "file": "assets/index-DCbhSdP9.js",
     "name": "index",
     "src": "module/jv-option-template/page/jv-option-template-detail/index.js",
     "isDynamicEntry": true,
