@@ -2,10 +2,13 @@
 
 namespace Jv\Import\Service\ProductImport\Seo;
 
+use Jv\Import\Integration\CosmoShop\Media\CosmoShopLegacyProductImageUrlExpander;
 use Jv\Import\Integration\CosmoShop\Profile\MarketImportProfile;
 use Jv\Import\Integration\Csv\SemicolonCsvReader;
 use Jv\Import\Service\ProductImport\Seo\Dto\CosmoShopProductRedirectImportResult;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
+use Jv\Seo\Contract\ImportImageRedirectData;
+use Jv\Seo\Contract\ImportImageRedirectsInterface;
 use Jv\Seo\Contract\ImportProductRedirectData;
 use Jv\Seo\Contract\ImportProductRedirectsInterface;
 use League\Flysystem\FilesystemOperator;
@@ -17,6 +20,8 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Component\Lock\LockFactory;
 
 final readonly class ImportCosmoShopProductRedirectsService
@@ -28,6 +33,8 @@ final readonly class ImportCosmoShopProductRedirectsService
         private SemicolonCsvReader $csvReader,
         private EntityRepository $productRepository,
         private ?ImportProductRedirectsInterface $redirectImporter,
+        private ?ImportImageRedirectsInterface $imageRedirectImporter,
+        private CosmoShopLegacyProductImageUrlExpander $imageUrlExpander,
         private LockFactory $lockFactory,
         private string $projectDir,
     ) {
@@ -49,8 +56,8 @@ final readonly class ImportCosmoShopProductRedirectsService
 
     private function import(string $sourceImportLogId, Context $context, \Closure $refreshLock): CosmoShopProductRedirectImportResult
     {
-        if (null === $this->redirectImporter) {
-            throw new \RuntimeException('JvSeo must be active before product legacy redirects can be imported.');
+        if (null === $this->redirectImporter || null === $this->imageRedirectImporter) {
+            throw new \RuntimeException('JvSeo must be active before CosmoShop legacy redirects can be imported.');
         }
 
         $sourceLog = $this->importExportService->findLog($context, $sourceImportLogId);
@@ -80,16 +87,21 @@ final readonly class ImportCosmoShopProductRedirectsService
             foreach (array_chunk($sourceRows, 500, true) as $rows) {
                 $refreshLock();
                 $products = $this->products(array_keys($rows), $context);
-                $batch = [];
+                $productRedirects = [];
+                $imageRedirects = [];
                 foreach ($rows as $productNumber => $row) {
                     $sourceIdentifier = trim($row['source_article_id'] ?? '');
                     $legacyUrl = $this->legacyUrl($market, $row);
+                    $product = $products[$productNumber] ?? null;
                     if ('' === $sourceIdentifier) {
                         ++$missingSourceIdentity;
                         $this->appendIssue($issues, $sourceIdentifier, $legacyUrl, 'missing_source_identity', sprintf('Product "%s" has no source_article_id.', $productNumber));
+                        if ($product instanceof ProductEntity) {
+                            array_push($imageRedirects, ...$this->imageRedirects($productNumber, $product, $market, $row));
+                        }
+
                         continue;
                     }
-                    $product = $products[$productNumber] ?? null;
                     if (!$product instanceof ProductEntity) {
                         ++$missingProduct;
                         $this->appendIssue($issues, $sourceIdentifier, $legacyUrl, 'missing_product', sprintf('Shopware product "%s" was not found.', $productNumber));
@@ -98,31 +110,43 @@ final readonly class ImportCosmoShopProductRedirectsService
                     if ('' === $legacyUrl) {
                         ++$invalid;
                         $this->appendIssue($issues, $sourceIdentifier, '', 'missing_legacy_url', sprintf('Product "%s" has neither legacy_url nor urlkey.', $productNumber));
-                        continue;
                     }
-
-                    $batch[] = new ImportProductRedirectData(
-                        'cosmoshop',
-                        $market->domain(),
-                        $sourceIdentifier,
-                        $product->getId(),
-                        $market->salesChannelId(),
-                        $legacyUrl,
-                    );
+                    if ('' !== $legacyUrl) {
+                        $productRedirects[] = new ImportProductRedirectData(
+                            'cosmoshop',
+                            $market->domain(),
+                            $sourceIdentifier,
+                            $product->getId(),
+                            $market->salesChannelId(),
+                            $legacyUrl,
+                        );
+                    }
+                    array_push($imageRedirects, ...$this->imageRedirects($productNumber, $product, $market, $row));
                 }
 
-                if ([] === $batch) {
-                    continue;
+                if ([] !== $productRedirects) {
+                    $result = $this->redirectImporter->import($productRedirects, $context);
+                    $created += $result->created;
+                    $updated += $result->updated;
+                    $unchanged += $result->unchanged;
+                    $manualPreserved += $result->manualPreserved;
+                    $conflicts += $result->conflicts;
+                    $invalid += $result->invalid;
+                    foreach ($result->issues as $issue) {
+                        $this->appendIssue($issues, $issue['sourceIdentifier'], $issue['sourceUrl'], $issue['code'], $issue['message']);
+                    }
                 }
-                $result = $this->redirectImporter->import($batch, $context);
-                $created += $result->created;
-                $updated += $result->updated;
-                $unchanged += $result->unchanged;
-                $manualPreserved += $result->manualPreserved;
-                $conflicts += $result->conflicts;
-                $invalid += $result->invalid;
-                foreach ($result->issues as $issue) {
-                    $this->appendIssue($issues, $issue['sourceIdentifier'], $issue['sourceUrl'], $issue['code'], $issue['message']);
+                if ([] !== $imageRedirects) {
+                    $result = $this->imageRedirectImporter->import($imageRedirects, $context);
+                    $created += $result->created;
+                    $updated += $result->updated;
+                    $unchanged += $result->unchanged;
+                    $manualPreserved += $result->manualPreserved;
+                    $conflicts += $result->conflicts;
+                    $invalid += $result->invalid;
+                    foreach ($result->issues as $issue) {
+                        $this->appendIssue($issues, $issue['sourceIdentifier'], $issue['sourceUrl'], $issue['code'], $issue['message']);
+                    }
                 }
             }
 
@@ -168,12 +192,72 @@ final readonly class ImportCosmoShopProductRedirectsService
         $criteria = (new Criteria())
             ->addFilter(new EqualsAnyFilter('productNumber', $productNumbers))
             ->setLimit(count($productNumbers));
+        $criteria->addAssociation('cover.media');
+        $criteria->addAssociation('media.media');
+        $criteria->getAssociation('media')->addSorting(new FieldSorting('position'));
         $products = [];
         foreach ($this->productRepository->search($criteria, $context) as $product) {
             $products[$product->getProductNumber()] = $product;
         }
 
         return $products;
+    }
+
+    /**
+     * @param array<string, string> $row
+     *
+     * @return list<ImportImageRedirectData>
+     */
+    private function imageRedirects(string $productNumber, ProductEntity $product, Market $market, array $row): array
+    {
+        $sourceMediaUrls = array_map(static fn (string $url): string => trim($url), explode('|', $row['media'] ?? ''));
+        if ([''] === $sourceMediaUrls) {
+            return [];
+        }
+
+        $mediaIdsByPosition = [];
+        foreach ($product->getMedia() ?? [] as $productMedia) {
+            if (Uuid::isValid($productMedia->getMediaId())) {
+                $mediaIdsByPosition[$productMedia->getPosition()] = $productMedia->getMediaId();
+            }
+        }
+        ksort($mediaIdsByPosition);
+        $mediaIds = array_values($mediaIdsByPosition);
+
+        $nextMediaIndex = 0;
+        $mediaIdsBySourceUrl = [];
+        $mediaIdsByTargetKey = [];
+        $redirects = [];
+        foreach ($sourceMediaUrls as $sourceUrl) {
+            if ('' === $sourceUrl) {
+                continue;
+            }
+            if (!array_key_exists($sourceUrl, $mediaIdsBySourceUrl)) {
+                $mediaIdsBySourceUrl[$sourceUrl] = $mediaIds[$nextMediaIndex] ?? null;
+                ++$nextMediaIndex;
+            }
+
+            $imageUrls = $this->imageUrlExpander->expand($sourceUrl);
+            $sourceMediaId = $mediaIdsBySourceUrl[$sourceUrl];
+            if (null === $imageUrls || !is_string($sourceMediaId) || !Uuid::isValid($sourceMediaId)) {
+                continue;
+            }
+
+            $mediaId = $mediaIdsByTargetKey[$imageUrls->targetKey] ?? $sourceMediaId;
+            $mediaIdsByTargetKey[$imageUrls->targetKey] = $mediaId;
+            foreach ($imageUrls->urls as $legacyUrl) {
+                $redirects[] = new ImportImageRedirectData(
+                    'cosmoshop',
+                    $market->domain(),
+                    hash('sha256', $productNumber."\0".$imageUrls->targetKey."\0".$legacyUrl),
+                    $mediaId,
+                    $market->salesChannelId(),
+                    $legacyUrl,
+                );
+            }
+        }
+
+        return $redirects;
     }
 
     /** @param array<string, string> $row */

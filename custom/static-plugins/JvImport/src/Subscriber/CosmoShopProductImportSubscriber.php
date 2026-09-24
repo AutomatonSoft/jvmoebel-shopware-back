@@ -52,6 +52,6 @@ final readonly class CosmoShopProductImportSubscriber implements EventSubscriber
             $market->languageId(),
             $event->getContext(),
         );
-        $event->setRecord($this->prepareMedia->execute($record, $event->getRow()));
+        $event->setRecord($this->prepareMedia->execute($record, $event->getRow(), $market->languageId()));
     }
 }

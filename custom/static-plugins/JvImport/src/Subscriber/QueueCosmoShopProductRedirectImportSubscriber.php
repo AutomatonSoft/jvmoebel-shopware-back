@@ -4,6 +4,8 @@ namespace Jv\Import\Subscriber;
 
 use Jv\Import\Integration\CosmoShop\Profile\MarketImportProfile;
 use Jv\Import\Message\CosmoShopProductRedirectImportMessage;
+use Jv\Seo\Contract\ImportImageRedirectsInterface;
+use Jv\Seo\Contract\ImportProductRedirectsInterface;
 use Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogEntity;
 use Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogEvents;
 use Shopware\Core\Content\ImportExport\Service\ImportExportService;
@@ -17,6 +19,8 @@ final readonly class QueueCosmoShopProductRedirectImportSubscriber implements Ev
     public function __construct(
         private MessageBusInterface $messageBus,
         private ImportExportService $importExportService,
+        private ?ImportProductRedirectsInterface $redirectImporter,
+        private ?ImportImageRedirectsInterface $imageRedirectImporter,
     ) {
     }
 
@@ -27,6 +31,10 @@ final readonly class QueueCosmoShopProductRedirectImportSubscriber implements Ev
 
     public function queue(EntityWrittenEvent $event): void
     {
+        if (null === $this->redirectImporter || null === $this->imageRedirectImporter) {
+            return;
+        }
+
         foreach ($event->getWriteResults() as $result) {
             $state = $result->getProperty('state');
             if (!in_array($state, [Progress::STATE_SUCCEEDED, Progress::STATE_FAILED], true)) {

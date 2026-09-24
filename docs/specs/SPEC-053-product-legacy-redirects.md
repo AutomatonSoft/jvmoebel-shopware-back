@@ -6,8 +6,9 @@
 каждого рынка и предоставить Next.js однозначное решение `301` на актуальный
 канонический URL Shopware. Редиректы управляются плагином `JvSeo`; `JvImport`
 только извлекает URL товаров из завершённого импорта и передаёт через публичный
-контракт владельца. Категорийные, Landing Page и image redirects создаются и
-редактируются вручную.
+контракт владельца. Категорийные и Landing Page redirects создаются и
+редактируются вручную; JvImport также импортирует известные CosmoShop product
+image redirects.
 
 Первая проверяемая миграция — `jvmoebel.de`. Та же реализация применяется к
 остальным Sales Channels без смешивания доменов и исходных идентификаторов.
@@ -20,6 +21,8 @@
 - импорт старых URL товаров из исходного CosmoShop product CSV;
 - read-only CSV-отчёт с кандидатами сопоставления старых категорий CosmoShop
   с новыми Shopware categories для ручного решения;
+- импорт старых URL товаров и известных ресайзов изображений из исходного
+  CosmoShop product CSV;
 - Administration-раздел SEO с подпунктом «Редиректы», списком, фильтрами,
   поиском, созданием и редактированием;
 - таблицы legacy redirects в SEO-разделах карточек товара, категории и Landing
@@ -48,11 +51,19 @@ HTTP response согласно ADR-007. Общесистемный
 2. Штатный Shopware Import/Export импортирует товары. Дополнительные SEO-колонки
    не маппятся в product и не могут сделать товарную строку невалидной.
 3. После завершения настоящего import (не dry-run) `JvImport` ставит отдельное
-   Messenger message с ID source import log.
+   Messenger message с ID source import log, только если доступны оба публичных
+   batch-контракта `JvSeo` для product и image redirects. Если `JvSeo` не активен,
+   сообщение не ставится в очередь.
 4. Handler читает исходный CSV, исключает SKU из invalid-records, разрешает
-   фактический Shopware product только по `product_number` и передаёт записи в
-   batch-контракт `JvSeo`.
-5. `JvSeo` создаёт или обновляет импортированные source URL, сохраняя рынок,
+   фактический Shopware product только по `product_number` и передаёт товарные
+   URL в batch-контракт `JvSeo`.
+5. Для URL из `media` handler распознаёт только CosmoShop пути под `/pix/a/`.
+   Он разворачивает ресайзы главного изображения `v`/`n`/`g`, а для одной
+   позиции gallery — `z/<SKU>/<file>`, `z/<SKU>/g/<file>` и исторический
+   `zg/<SKU>/<file>`. Все URL одной такой группы получают target той же
+   фактически импортированной product-media relation. Host, prefix, кодировка
+   и version suffix исходного URL сохраняются; отдельный image CSV не нужен.
+6. `JvSeo` создаёт или обновляет импортированные source URL, сохраняя рынок,
    Sales Channel, исходный ID и источник. Коллизии не меняют существующую цель.
 
 Если `legacy_url` отсутствует, URL восстанавливается как
@@ -241,9 +252,10 @@ Administration показывает target как недоступный.
 Image target читается из актуального runtime-поля `media.url`. Это сохраняет
 редирект после переименования или переноса файла средствами Shopware. Private,
 не имеющее файла или не относящееся к MIME `image/*` media не может быть целью.
-Image redirect используется для явно подтверждённых замен старого изображения;
-сохранение существующего индексируемого пути с `200` остаётся предпочтительным
-вариантом согласно общей стратегии SEO-миграции.
+Image redirect используется для явно подтверждённых замен старого изображения:
+они могут быть созданы вручную либо автоматически для известных CosmoShop
+ресайзов из product CSV. Сохранение существующего индексируемого пути с `200`
+остаётся предпочтительным вариантом согласно общей стратегии SEO-миграции.
 
 При нескольких доменах Sales Channel сначала выбирается domain языка канала,
 затем стабильная сортировка по URL. Product/category/Landing Page source с
@@ -284,13 +296,18 @@ source URL для разных товаров — `conflict`; существую
 
 Message delivery безопасна для повтора. Для одного source import log создаётся
 стабильный lock; сами source rows дополнительно защищены unique hashes.
+Проверка доступности `JvSeo` выполняется до постановки сообщения; post-import
+сервис сохраняет такую же проверку как защиту от отключения плагина между
+постановкой и обработкой сообщения.
 
 ## Изменения Shopware
 
 - плагин `JvSeo`, его migrations, DAL definitions, application services,
-  Admin API controller, Store API route и Administration module;
+  Admin API controller, Store API route, Administration module и публичный
+  batch-контракт импорта image redirects;
 - односторонняя Composer dependency `JvImport -> JvSeo`;
-- новое JvImport message + handler + post-import service;
+- существующие JvImport message + handler + post-import service расширяются
+  импортом image redirects без отдельного source file;
 - дополнительные raw CSV fields не добавляются в Shopware product mapping;
 - `bin/setup-local` устанавливает `JvSeo` до `JvImport`.
 
@@ -326,6 +343,9 @@ Message delivery безопасна для повтора. Для одного s
 - category mapping score проверяет двустороннее покрытие, Unicode semantic
   similarity, согласованность hierarchy и Google taxonomy, не рассчитывая
   confidence.
+- автоматический import исходного `/pix/a/` URL создаёт `image` redirect на
+  соответствующий импортированный media, разворачивает `v`/`n`/`g` и
+  `z`/`zg` без дублей, а повторный запуск остаётся идемпотентным.
 
 Обязательные project checks выполняются в контейнере `web`: `composer lint`,
 `composer analyse`, `composer test`, затем `bin/build-administration.sh`.
