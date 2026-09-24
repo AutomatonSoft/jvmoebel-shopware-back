@@ -29,4 +29,10 @@ deployment:
         script: bin/console assets:install --force --no-interaction
   one-time-tasks:
     - id: opensearch-initial-index
-      script: bin/console es:index --no-interaction
+      script: |-
+        [ "${SHOPWARE_ES_INDEXING_ENABLED:-0}" = "1" ] || exit 0
+        for attempt in $(seq 60); do
+          php -r 'exit(@file_get_contents(getenv("OPENSEARCH_URL") . "/_cluster/health?wait_for_status=yellow&timeout=5s") === false ? 1 : 0);' && exec bin/console es:index --no-interaction --no-progress
+          sleep 5
+        done
+        exit 1

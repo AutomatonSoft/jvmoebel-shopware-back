@@ -79,7 +79,6 @@ services:
       INSTALL_ADMIN_PASSWORD: ${INSTALL_ADMIN_PASSWORD:?INSTALL_ADMIN_PASSWORD is required}
       INSTALL_ADMIN_EMAIL: ${INSTALL_ADMIN_EMAIL:?INSTALL_ADMIN_EMAIL is required}
       SALES_CHANNEL_URL: ${SALES_CHANNEL_URL:?SALES_CHANNEL_URL is required}
-    depends_on: { opensearch: { condition: service_healthy } }
     volumes: *shopware-storage
     networks: [database, application, search]
 
