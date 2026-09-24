@@ -45,6 +45,12 @@ final class AfterCoolProductSourceDefinition extends EntityDefinition
             (new ReferenceVersionField(ProductDefinition::class))->addFlags(new Required()),
             (new StringField('source_artikelnummer', 'sourceArtikelnummer'))->addFlags(new Required()),
             (new StringField('source_ean', 'sourceEan'))->addFlags(new Required()),
+            new StringField('factory_name', 'factoryName'),
+            new StringField('stammartikel_id', 'stammartikelId'),
+            new StringField('collection_name', 'collectionName'),
+            new StringField('source_file', 'sourceFile'),
+            new StringField('source_file_prefix', 'sourceFilePrefix'),
+            new StringField('source_region', 'sourceRegion'),
             (new DateTimeField('last_seen_at', 'lastSeenAt'))->addFlags(new Required()),
         ]);
     }

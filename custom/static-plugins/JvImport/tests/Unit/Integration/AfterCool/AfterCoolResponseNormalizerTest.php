@@ -6,6 +6,7 @@ use Jv\Import\Integration\AfterCool\AfterCoolResponseNormalizer;
 use Jv\Import\Integration\AfterCool\Exception\AfterCoolResponseContractException;
 use Jv\Import\Integration\AfterCool\Mapper\AfterCoolListerProductMapper;
 use Jv\Import\Integration\AfterCool\Mapper\AfterCoolProductPageMapper;
+use Jv\Import\Service\AfterCool\Parser\AfterCoolSourceFileParser;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -133,7 +134,7 @@ final class AfterCoolResponseNormalizerTest extends TestCase
 
         $page = (new AfterCoolResponseNormalizer())->normalizeProductPage($payload, 'JV', 'lister', 504034, 0);
 
-        $result = (new AfterCoolProductPageMapper(new AfterCoolListerProductMapper()))->map($page);
+        $result = (new AfterCoolProductPageMapper(new AfterCoolListerProductMapper(new AfterCoolSourceFileParser())))->map($page);
 
         self::assertSame(['900001'], array_column($result->products, 'sourceProductId'));
         self::assertCount(1, $result->issues);

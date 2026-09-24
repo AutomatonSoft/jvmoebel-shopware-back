@@ -8,6 +8,7 @@
         "composer-runtime-api": "^2.0",
         "jvmoebel/cms": "^0.1.0",
         "jvmoebel/import": "^0.1",
+        "jvmoebel/promotion": "^0.1",
         "jvmoebel/market-configuration": "^0.1",
         "jvmoebel/seo": "^0.1",
         "jvmoebel/storefront": "^0.1.0",

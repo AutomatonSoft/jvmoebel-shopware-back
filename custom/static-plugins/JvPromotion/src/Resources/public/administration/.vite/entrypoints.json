@@ -1,0 +1,25 @@
+{
+  "base": "/bundles/jvpromotion/administration/",
+  "entryPoints": {
+    "jv-promotion": {
+      "css": [
+        "/bundles/jvpromotion/administration/assets/jv-promotion-DWWrmRmN.css"
+      ],
+      "dynamic": [],
+      "js": [
+        "/bundles/jvpromotion/administration/assets/jv-promotion-BjbtCWBj.js"
+      ],
+      "legacy": false,
+      "preload": []
+    }
+  },
+  "legacy": false,
+  "metadatas": {},
+  "version": [
+    "7.1.0",
+    7,
+    1,
+    0
+  ],
+  "viteServer": null
+}
