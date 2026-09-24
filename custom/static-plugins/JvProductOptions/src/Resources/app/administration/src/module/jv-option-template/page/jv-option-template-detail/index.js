@@ -9,6 +9,7 @@ export default {
 
     inject: [
         'repositoryFactory',
+        'syncService',
     ],
 
     mixins: [
@@ -27,8 +28,7 @@ export default {
             mediaModalIsOpen: false,
             originalGroupIds: [],
             originalValueIdsByGroup: {},
-            templateNameEdited: false,
-            editedNameIds: new Set(),
+            originalProductStreamIds: [],
         };
     },
 
@@ -111,8 +111,7 @@ export default {
                 this.templateEntity.name = '';
                 this.originalGroupIds = [];
                 this.originalValueIdsByGroup = {};
-                this.templateNameEdited = false;
-                this.editedNameIds = new Set();
+                this.originalProductStreamIds = [];
             }
         },
 
@@ -146,12 +145,11 @@ export default {
                     this.templateEntity.productStreams = systemLanguageProductStreams;
                 }
                 this.originalGroupIds = this.templateEntity.groups.map((group) => group.id);
+                this.originalProductStreamIds = (this.templateEntity.productStreams || []).map((stream) => stream.id);
                 this.originalValueIdsByGroup = Object.fromEntries(this.templateEntity.groups.map((group) => [
                     group.id,
                     group.values.map((value) => value.id),
                 ]));
-                this.templateNameEdited = false;
-                this.editedNameIds = new Set();
             } catch (error) {
                 this.createNotificationError({
                     message: error.message || this.$t('jv-option-template.detail.saveError'),
@@ -184,13 +182,10 @@ export default {
 
         setEntityName(entity, name) {
             entity.name = name;
+        },
 
-            if (entity === this.templateEntity) {
-                this.templateNameEdited = true;
-                return;
-            }
-
-            this.editedNameIds.add(entity.id);
+        setNumericField(entity, field, value) {
+            entity[field] = value === null || value === undefined ? 0 : Number(value);
         },
 
         addGroup() {
@@ -243,7 +238,7 @@ export default {
                 return null;
             }
 
-            return value.surchargePrice.find((price) => price.currencyId === this.currencyId) || value.surchargePrice[0] || null;
+            return value.surchargePrice.find((price) => price.currencyId === this.currencyId) || null;
         },
 
         valueGrossPrice(value) {
@@ -255,21 +250,36 @@ export default {
         },
 
         setValueGrossPrice(value, gross) {
-            value.surchargePrice = [{
-                currencyId: this.currencyId,
+            this.updateCurrencyPrice(value, {
                 gross: Number(gross) || 0,
                 net: this.valueNetPrice(value),
-                linked: false,
-            }];
+            });
         },
 
         setValueNetPrice(value, net) {
-            value.surchargePrice = [{
-                currencyId: this.currencyId,
+            this.updateCurrencyPrice(value, {
                 gross: this.valueGrossPrice(value),
                 net: Number(net) || 0,
+            });
+        },
+
+        updateCurrencyPrice(value, amounts) {
+            const prices = Array.isArray(value.surchargePrice) ? [...value.surchargePrice] : [];
+            const priceIndex = prices.findIndex((price) => price.currencyId === this.currencyId);
+            const price = {
+                currencyId: this.currencyId,
+                gross: amounts.gross,
+                net: amounts.net,
                 linked: false,
-            }];
+            };
+
+            if (priceIndex === -1) {
+                prices.push(price);
+            } else {
+                prices.splice(priceIndex, 1, price);
+            }
+
+            value.surchargePrice = prices;
         },
 
         setValueSurchargeType(value, surchargeType) {
@@ -280,12 +290,10 @@ export default {
                 value.surchargePercentage = Number(value.surchargePercentage) || 0;
             } else {
                 value.surchargePercentage = null;
-                value.surchargePrice = [{
-                    currencyId: this.currencyId,
+                this.updateCurrencyPrice(value, {
                     gross: this.valueGrossPrice(value),
                     net: this.valueNetPrice(value),
-                    linked: false,
-                }];
+                });
             }
         },
 
@@ -392,40 +400,17 @@ export default {
             this.loadEntityData();
         },
 
-        ensureSystemTranslation(entity, entityRepository, translationEntityName, parentField, name) {
-            const systemLanguageId = Shopware.Context.api.systemLanguageId;
-            let translations = entity.translations;
-
-            if (!translations) {
-                translations = new EntityCollection(
-                    `${entityRepository.route}/${entity.id}/translations`,
-                    translationEntityName,
-                    Shopware.Context.api,
-                    new Criteria(1, 25)
-                );
-                entity.translations = translations;
-            }
-
-            const systemTranslation = translations.find((translation) => translation.languageId === systemLanguageId);
-            if (systemTranslation) {
+        addSyncOperation(operations, key, entity, action, payload) {
+            if (payload.length === 0) {
                 return;
             }
 
-            const translationRepository = this.repositoryFactory.create(translationEntityName);
-            const translation = translationRepository.create(Shopware.Context.api);
-            translation[parentField] = entity.id;
-            translation.languageId = systemLanguageId;
-            translation.name = name;
-            translations.add(translation);
+            operations[key] = { entity, action, payload };
         },
 
         async onSave() {
             const isSystemLanguage = Shopware.Context.api.languageId === Shopware.Context.api.systemLanguageId;
             const apiContext = Shopware.Context.api;
-            const systemLanguageContext = {
-                ...apiContext,
-                languageId: apiContext.systemLanguageId,
-            };
 
             if (isSystemLanguage && (!this.templateEntity.name || this.templateEntity.name.trim() === '')) {
                 this.createNotificationError({
@@ -447,92 +432,105 @@ export default {
                 const isNewTemplate = this.templateEntity.isNew();
                 const templateId = this.templateEntity.id;
                 const groups = this.templateEntity.groups.slice();
-                const templateContext = isNewTemplate || this.templateNameEdited ? apiContext : systemLanguageContext;
-                const templateEntity = isNewTemplate
-                    ? this.templateRepository.create(templateContext, templateId)
-                    : await this.templateRepository.get(templateId, templateContext, new Criteria([templateId]));
+                const operations = {};
+                const templatePayload = {
+                    id: templateId,
+                    name: this.displayName(this.templateEntity),
+                    active: !!this.templateEntity.active,
+                    priority: parseInt(this.templateEntity.priority, 10) || 0,
+                };
 
-                templateEntity.active = !!this.templateEntity.active;
-                templateEntity.priority = parseInt(this.templateEntity.priority, 10) || 0;
+                this.addSyncOperation(operations, 'jv-option-template-upsert', 'jv_option_template', 'upsert', [templatePayload]);
 
-                if (isNewTemplate || this.templateNameEdited) {
-                    templateEntity.name = this.templateEntity.name;
-                }
-
-                await this.templateRepository.save(templateEntity, templateContext);
+                const groupPayload = [];
+                const valuePayload = [];
+                const groupTranslationPayload = [];
+                const valueTranslationPayload = [];
 
                 for (const group of groups) {
                     const isNewGroup = group.isNew();
-                    const groupName = group.name;
-                    const groupContext = isNewGroup || this.editedNameIds.has(group.id) ? apiContext : systemLanguageContext;
-                    const groupEntity = isNewGroup
-                        ? this.groupRepository.create(groupContext, group.id)
-                        : await this.groupRepository.get(group.id, groupContext);
+                    const groupPayloadItem = {
+                        id: group.id,
+                        templateId,
+                        name: this.displayName(group),
+                        position: parseInt(group.position, 10) || 0,
+                        paletteMediaId: group.paletteMediaId || null,
+                    };
 
-                    groupEntity.templateId = templateId;
-                    groupEntity.position = parseInt(group.position, 10) || 0;
-                    groupEntity.paletteMediaId = group.paletteMediaId || null;
-
-                    if (isNewGroup || this.editedNameIds.has(group.id)) {
-                        groupEntity.name = groupName;
+                    if (isNewGroup && apiContext.languageId !== apiContext.systemLanguageId) {
+                        groupTranslationPayload.push({
+                            jvOptionTemplateGroupId: group.id,
+                            languageId: apiContext.systemLanguageId,
+                            name: group.name,
+                        });
                     }
 
-                    if (isNewGroup) {
-                        this.ensureSystemTranslation(
-                            groupEntity,
-                            this.groupRepository,
-                            'jv_option_template_group_translation',
-                            'jvOptionTemplateGroupId',
-                            groupName
-                        );
-                    }
-
-                    await this.groupRepository.save(groupEntity, groupContext);
+                    groupPayload.push(groupPayloadItem);
 
                     for (const value of group.values) {
                         const isNewValue = value.isNew();
-                        const valueName = value.name;
-                        const valueContext = isNewValue || this.editedNameIds.has(value.id) ? apiContext : systemLanguageContext;
-                        const valueEntity = isNewValue
-                            ? this.valueRepository.create(valueContext, value.id)
-                            : await this.valueRepository.get(value.id, valueContext);
+                        const valuePayloadItem = {
+                            id: value.id,
+                            groupId: group.id,
+                            name: this.displayName(value),
+                            position: parseInt(value.position, 10) || 0,
+                            colorHex: value.colorHex && value.colorHex.trim() !== '' ? value.colorHex.trim() : null,
+                            mediaId: value.mediaId || null,
+                            surchargeType: value.surchargeType,
+                            surchargePrice: value.surchargeType === 'fixed' ? value.surchargePrice : null,
+                            surchargePercentage: value.surchargeType === 'percentage'
+                                ? Number(value.surchargePercentage) || 0
+                                : null,
+                        };
 
-                        valueEntity.groupId = group.id;
-                        valueEntity.position = parseInt(value.position, 10) || 0;
-                        valueEntity.colorHex = value.colorHex && value.colorHex.trim() !== '' ? value.colorHex.trim() : null;
-                        valueEntity.mediaId = value.mediaId || null;
-                        valueEntity.surchargeType = value.surchargeType;
-                        valueEntity.surchargePrice = value.surchargeType === 'fixed' ? value.surchargePrice : null;
-                        valueEntity.surchargePercentage = value.surchargeType === 'percentage'
-                            ? Number(value.surchargePercentage) || 0
-                            : null;
-
-                        if (isNewValue || this.editedNameIds.has(value.id)) {
-                            valueEntity.name = valueName;
+                        if (isNewValue && apiContext.languageId !== apiContext.systemLanguageId) {
+                            valueTranslationPayload.push({
+                                jvOptionTemplateValueId: value.id,
+                                languageId: apiContext.systemLanguageId,
+                                name: value.name,
+                            });
                         }
 
-                        if (isNewValue) {
-                            this.ensureSystemTranslation(
-                                valueEntity,
-                                this.valueRepository,
-                                'jv_option_template_value_translation',
-                                'jvOptionTemplateValueId',
-                                valueName
-                            );
-                        }
-
-                        await this.valueRepository.save(valueEntity, valueContext);
+                        valuePayload.push(valuePayloadItem);
                     }
-
-                    const persistedGroup = await this.groupRepository.get(group.id, systemLanguageContext);
-                    persistedGroup.defaultValueId = group.defaultValueId || null;
-                    await this.groupRepository.save(persistedGroup, systemLanguageContext);
                 }
 
-                this.isSaveSuccessful = true;
-                this.createNotificationSuccess({
-                    message: this.$t('jv-option-template.detail.saveSuccess'),
-                });
+                this.addSyncOperation(operations, 'jv-option-template-group-upsert', 'jv_option_template_group', 'upsert', groupPayload);
+                this.addSyncOperation(operations, 'jv-option-template-value-upsert', 'jv_option_template_value', 'upsert', valuePayload);
+                this.addSyncOperation(operations, 'jv-option-template-group-translation-upsert', 'jv_option_template_group_translation', 'upsert', groupTranslationPayload);
+                this.addSyncOperation(operations, 'jv-option-template-value-translation-upsert', 'jv_option_template_value_translation', 'upsert', valueTranslationPayload);
+
+                const groupDefaults = groups.map((group) => ({
+                    id: group.id,
+                    defaultValueId: group.defaultValueId || null,
+                }));
+                this.addSyncOperation(operations, 'jv-option-template-group-default-upsert', 'jv_option_template_group', 'upsert', groupDefaults);
+
+                const currentGroupIds = new Set(groups.map((group) => group.id));
+                const removedGroupIds = this.originalGroupIds.filter((id) => !currentGroupIds.has(id));
+                const removedValuePayload = [];
+                for (const group of groups) {
+                    const originalValueIds = this.originalValueIdsByGroup[group.id] || [];
+                    const currentValueIds = new Set(group.values.map((value) => value.id));
+                    originalValueIds
+                        .filter((id) => !currentValueIds.has(id))
+                        .forEach((id) => removedValuePayload.push({ id }));
+                }
+
+                this.addSyncOperation(operations, 'jv-option-template-value-delete', 'jv_option_template_value', 'delete', removedValuePayload);
+                this.addSyncOperation(operations, 'jv-option-template-group-delete', 'jv_option_template_group', 'delete', removedGroupIds.map((id) => ({ id })));
+
+                const currentProductStreamIds = new Set((this.templateEntity.productStreams || []).map((stream) => stream.id));
+                const productStreamUpserts = [...currentProductStreamIds]
+                    .filter((id) => !this.originalProductStreamIds.includes(id))
+                    .map((productStreamId) => ({ templateId, productStreamId }));
+                const productStreamDeletes = this.originalProductStreamIds
+                    .filter((id) => !currentProductStreamIds.has(id))
+                    .map((productStreamId) => ({ templateId, productStreamId }));
+                this.addSyncOperation(operations, 'jv-option-template-stream-upsert', 'jv_option_template_product_stream', 'upsert', productStreamUpserts);
+                this.addSyncOperation(operations, 'jv-option-template-stream-delete', 'jv_option_template_product_stream', 'delete', productStreamDeletes);
+
+                await this.syncService.sync(operations);
 
                 if (!this.$route.params.id) {
                     await this.$router.push({
@@ -541,8 +539,11 @@ export default {
                     });
                 }
 
-                await this.deleteRemovedAssociations();
                 await this.loadTemplate(templateId);
+                this.isSaveSuccessful = true;
+                this.createNotificationSuccess({
+                    message: this.$t('jv-option-template.detail.saveSuccess'),
+                });
             } catch (error) {
                 this.createNotificationError({
                     message: error.message || this.$t('jv-option-template.detail.saveError'),
@@ -550,31 +551,6 @@ export default {
             } finally {
                 this.isLoading = false;
             }
-        },
-
-        async deleteRemovedAssociations() {
-            const groups = this.templateEntity.groups;
-            const currentGroupIds = new Set(groups.map((group) => group.id));
-            const removedGroupIds = this.originalGroupIds.filter((id) => !currentGroupIds.has(id));
-
-            for (const id of removedGroupIds) {
-                await this.groupRepository.delete(id, Shopware.Context.api);
-            }
-
-            for (const group of groups) {
-                const originalValueIds = this.originalValueIdsByGroup[group.id] || [];
-                const currentValueIds = new Set(group.values.map((value) => value.id));
-
-                for (const id of originalValueIds.filter((valueId) => !currentValueIds.has(valueId))) {
-                    await this.valueRepository.delete(id, Shopware.Context.api);
-                }
-            }
-
-            this.originalGroupIds = groups.map((group) => group.id);
-            this.originalValueIdsByGroup = Object.fromEntries(groups.map((group) => [
-                group.id,
-                group.values.map((value) => value.id),
-            ]));
         },
 
         onCancel() {

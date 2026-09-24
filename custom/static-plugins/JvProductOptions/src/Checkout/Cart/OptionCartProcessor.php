@@ -74,10 +74,12 @@ final readonly class OptionCartProcessor implements CartProcessorInterface, Cart
             /** @var OptionTemplateEntity|null $template */
             $template = $data->get($key);
 
-            $rawSelections = $item->getPayload()['jvOptionSelections'] ?? null;
+            $payload = $item->getPayload();
+            $hasSelections = \array_key_exists('jvOptionSelections', $payload);
+            $rawSelections = $payload['jvOptionSelections'] ?? null;
 
             if (null === $template) {
-                if (null !== $rawSelections && [] !== $rawSelections) {
+                if ($hasSelections) {
                     $this->rejectLineItem($toCalculate, $original, $item->getId());
                 }
 

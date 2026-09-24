@@ -85,6 +85,52 @@ final class OptionTemplateWriteValidationTest extends TestCase
         }
     }
 
+    public function testPartialUpdateCannotLeaveFixedPriceOnPercentageValue(): void
+    {
+        $valueId = $this->createValue('fixed', $this->price(20.0));
+
+        $this->assertUpdateRejected([
+            'id' => $valueId,
+            'surchargeType' => 'percentage',
+            'surchargePercentage' => 10.0,
+        ], 'surchargePrice');
+    }
+
+    public function testPartialUpdateCannotLeavePercentageOnFixedValue(): void
+    {
+        $valueId = $this->createValue('percentage', null, 10.0);
+
+        $this->assertUpdateRejected([
+            'id' => $valueId,
+            'surchargeType' => 'fixed',
+            'surchargePrice' => $this->price(20.0),
+        ], 'surchargePercentage');
+    }
+
+    public function testNegativePriceInNonDefaultCurrencyIsRejectedOnUpdate(): void
+    {
+        $valueId = $this->createValue('fixed', $this->price(20.0));
+        $currencies = static::getContainer()->get('currency.repository')
+            ->search((new Criteria())->setLimit(100), Context::createDefaultContext())
+            ->getEntities();
+        $foreignCurrency = null;
+        foreach ($currencies as $currency) {
+            if (Defaults::CURRENCY !== $currency->getId()) {
+                $foreignCurrency = $currency;
+                break;
+            }
+        }
+        self::assertNotNull($foreignCurrency, 'A non-default currency is needed for this validation test.');
+
+        $this->assertUpdateRejected([
+            'id' => $valueId,
+            'surchargePrice' => [
+                ...$this->price(20.0),
+                ['currencyId' => $foreignCurrency->getId(), 'gross' => -1.0, 'net' => -1.0, 'linked' => false],
+            ],
+        ], 'surchargePrice');
+    }
+
     /**
      * @param array<string, mixed> $value
      *
@@ -109,6 +155,40 @@ final class OptionTemplateWriteValidationTest extends TestCase
     private function price(float $gross): array
     {
         return [['currencyId' => Defaults::CURRENCY, 'gross' => $gross, 'net' => round($gross / 1.19, 2), 'linked' => false]];
+    }
+
+    /** @param list<array<string, mixed>>|null $price */
+    private function createValue(string $type, ?array $price, ?float $percentage = null): string
+    {
+        $context = Context::createDefaultContext();
+        $templateId = Uuid::randomHex();
+        $groupId = Uuid::randomHex();
+        $valueId = Uuid::randomHex();
+        $value = [
+            'id' => $valueId,
+            'name' => 'Value',
+            'position' => 1,
+            'surchargeType' => $type,
+            'surchargePrice' => $price,
+            'surchargePercentage' => $percentage,
+        ];
+        $template = $this->template($templateId, $value);
+        $template['groups'][0]['id'] = $groupId;
+        $template['groups'][0]['values'][0]['id'] = $valueId;
+        $this->repository()->create([$template], $context);
+
+        return $valueId;
+    }
+
+    /** @param array<string, mixed> $payload */
+    private function assertUpdateRejected(array $payload, string $field): void
+    {
+        try {
+            static::getContainer()->get('jv_option_template_value.repository')->update([$payload], Context::createDefaultContext());
+            self::fail('Invalid partial option value update was written.');
+        } catch (WriteException|WriteConstraintViolationException $exception) {
+            self::assertStringContainsString($field, $exception->getMessage().json_encode($exception->getErrors()));
+        }
     }
 
     /**

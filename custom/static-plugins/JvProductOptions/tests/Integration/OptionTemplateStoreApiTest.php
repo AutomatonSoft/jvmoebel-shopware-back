@@ -103,6 +103,14 @@ final class OptionTemplateStoreApiTest extends TestCase
         self::assertEqualsWithDelta(300.0, $payload['baseUnitPrice'], 0.001);
     }
 
+    public function testEmptySelectionsAreRejectedWhenProductHasNoTemplate(): void
+    {
+        $cart = $this->addToCart('chair', 1, []);
+
+        self::assertSame([], $cart['lineItems']);
+        self::assertContains(self::INVALID_SELECTION, $this->errorKeys($cart));
+    }
+
     public function testManualAssignmentWinsOverStreamAndIsInheritedByVariant(): void
     {
         self::assertSame($this->ids->get('manual-template'), $this->options('bed')['templateId']);
@@ -111,7 +119,7 @@ final class OptionTemplateStoreApiTest extends TestCase
 
     public function testUnknownProductIsNotFound(): void
     {
-        $this->browser->request('POST', '/store-api/jv-product-options/'.Uuid::randomHex());
+        $this->browser->request('GET', '/store-api/jv-product-options/'.Uuid::randomHex());
 
         self::assertSame(404, $this->browser->getResponse()->getStatusCode());
         self::assertSame('CONTENT__PRODUCT_NOT_FOUND', $this->json()['errors'][0]['code'] ?? null);
@@ -126,10 +134,12 @@ final class OptionTemplateStoreApiTest extends TestCase
         );
 
         self::assertArrayHasKey('/jv-product-options/{productId}', $schema['paths']);
-        self::assertContains('Product', $schema['paths']['/jv-product-options/{productId}']['post']['tags']);
+        self::assertArrayHasKey('get', $schema['paths']['/jv-product-options/{productId}']);
+        self::assertArrayNotHasKey('post', $schema['paths']['/jv-product-options/{productId}']);
+        self::assertContains('Product', $schema['paths']['/jv-product-options/{productId}']['get']['tags']);
         self::assertSame(
             '#/components/schemas/JvProductOptionsResponse',
-            $schema['paths']['/jv-product-options/{productId}']['post']['responses']['200']['content']['application/json']['schema']['$ref'],
+            $schema['paths']['/jv-product-options/{productId}']['get']['responses']['200']['content']['application/json']['schema']['$ref'],
         );
     }
 
@@ -316,7 +326,7 @@ final class OptionTemplateStoreApiTest extends TestCase
      */
     private function options(string $productKey): array
     {
-        $this->browser->request('POST', '/store-api/jv-product-options/'.$this->ids->get($productKey));
+        $this->browser->request('GET', '/store-api/jv-product-options/'.$this->ids->get($productKey));
         self::assertSame(200, $this->browser->getResponse()->getStatusCode(), (string) $this->browser->getResponse()->getContent());
 
         return $this->json();

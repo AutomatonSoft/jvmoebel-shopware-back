@@ -191,7 +191,8 @@ Store API корзины, ответа оформления заказа и чт
   без значения по умолчанию значение не выбрано.
 - У товара с шаблоном без `jvOptionSelections` применяются значения по
   умолчанию; если у какой-либо группы его нет, выбор недействителен.
-- `jvOptionSelections` у товара без шаблона делает выбор недействительным.
+- Наличие ключа `jvOptionSelections` у товара без шаблона делает выбор
+  недействительным, в том числе если значение — пустой объект или `null`.
 - Позиция с недействительным выбором удаляется из корзины, и в корзину
   добавляется ошибка `jv-product-options-invalid-selection` (уровень error,
   параметр `lineItemId`). То же происходит при пересчёте, если шаблон или его
@@ -209,7 +210,7 @@ Store API корзины, ответа оформления заказа и чт
 При любой DAL-записи (Admin API, Administration, импорт):
 
 - `fixed` требует `surchargePrice` с ценой для валюты по умолчанию, `gross` и
-  `net` ≥ 0, и не допускает `surchargePercentage`;
+  `net` ≥ 0 для каждой сохранённой валюты, и не допускает `surchargePercentage`;
 - `percentage` требует `surchargePercentage` в диапазоне `0…1000` и не
   допускает `surchargePrice`;
 - `colorHex` соответствует `^#[0-9A-Fa-f]{6}$`;
@@ -219,7 +220,7 @@ Store API корзины, ответа оформления заказа и чт
 
 ## Store API
 
-`POST /store-api/jv-product-options/{productId}`
+`GET /store-api/jv-product-options/{productId}` (без request body)
 
 Возвращает опции действующего шаблона для товара в текущем sales channel
 context. Товар должен быть доступен в sales channel, иначе штатная ошибка

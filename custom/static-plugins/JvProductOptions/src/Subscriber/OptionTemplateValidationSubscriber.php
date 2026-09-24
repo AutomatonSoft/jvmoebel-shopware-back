@@ -9,7 +9,6 @@ use Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateValue\
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\DataAbstractionLayer\Write\Command\InsertCommand;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\Command\UpdateCommand;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\Command\WriteCommand;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\Validation\PreWriteValidationEvent;
@@ -38,23 +37,32 @@ final readonly class OptionTemplateValidationSubscriber implements EventSubscrib
 
     public function validate(PreWriteValidationEvent $event): void
     {
+        $existingValues = $this->loadUpdatedValues($event);
+
         foreach ($event->getCommands() as $command) {
             $entityName = $command->getEntityName();
 
             if (OptionTemplateValueDefinition::ENTITY_NAME === $entityName) {
-                $this->validateValue($command, $event);
+                $this->validateValue($command, $existingValues, $event);
             } elseif (OptionTemplateGroupDefinition::ENTITY_NAME === $entityName) {
                 $this->validateGroup($command, $event);
             }
         }
     }
 
-    private function validateValue(WriteCommand $command, PreWriteValidationEvent $event): void
+    /**
+     * @param array<string, OptionTemplateValueEntity> $existingValues
+     */
+    private function validateValue(WriteCommand $command, array $existingValues, PreWriteValidationEvent $event): void
     {
         $payload = $command->getPayload();
         $violations = new ConstraintViolationList();
+        $id = $this->extractId($command->getPrimaryKey()['id'] ?? null);
+        $existing = null === $id ? null : ($existingValues[$id] ?? null);
 
-        $surchargeType = $payload['surcharge_type'] ?? $this->existingSurchargeType($command, $event);
+        $surchargeType = \array_key_exists('surcharge_type', $payload)
+            ? $payload['surcharge_type']
+            : $existing?->getSurchargeType();
 
         if (null !== $surchargeType && !\in_array($surchargeType, ['fixed', 'percentage'], true)) {
             $this->addViolation($violations, \sprintf('Invalid surcharge type "%s"', $surchargeType), 'surchargeType', $surchargeType);
@@ -66,9 +74,21 @@ final readonly class OptionTemplateValidationSubscriber implements EventSubscrib
         }
 
         if ('fixed' === $surchargeType) {
-            $this->validateFixedSurcharge($command, $payload, $violations);
+            $price = \array_key_exists('surcharge_price', $payload)
+                ? $payload['surcharge_price']
+                : $this->serializePriceCollection($existing?->getSurchargePrice());
+            $percentage = \array_key_exists('surcharge_percentage', $payload)
+                ? $payload['surcharge_percentage']
+                : $existing?->getSurchargePercentage();
+            $this->validateFixedSurcharge($price, $percentage, $violations);
         } elseif ('percentage' === $surchargeType) {
-            $this->validatePercentageSurcharge($command, $payload, $violations);
+            $percentage = \array_key_exists('surcharge_percentage', $payload)
+                ? $payload['surcharge_percentage']
+                : $existing?->getSurchargePercentage();
+            $price = \array_key_exists('surcharge_price', $payload)
+                ? $payload['surcharge_price']
+                : $this->serializePriceCollection($existing?->getSurchargePrice());
+            $this->validatePercentageSurcharge($percentage, $price, $violations);
         }
 
         if ($violations->count() > 0) {
@@ -76,22 +96,11 @@ final readonly class OptionTemplateValidationSubscriber implements EventSubscrib
         }
     }
 
-    /**
-     * @param array<string, mixed> $payload
-     */
-    private function validateFixedSurcharge(WriteCommand $command, array $payload, ConstraintViolationList $violations): void
+    private function validateFixedSurcharge(mixed $rawPrice, mixed $percentage, ConstraintViolationList $violations): void
     {
-        $hasPriceKey = \array_key_exists('surcharge_price', $payload);
-        $rawPrice = $payload['surcharge_price'] ?? null;
+        $this->validateFixedSurchargePrice($rawPrice, $violations);
 
-        if ($command instanceof InsertCommand && !$hasPriceKey) {
-            $this->addViolation($violations, 'Fixed surcharge requires surchargePrice', 'surchargePrice', null);
-        } elseif ($hasPriceKey) {
-            $this->validateFixedSurchargePrice($rawPrice, $violations);
-        }
-
-        $percentage = $payload['surcharge_percentage'] ?? null;
-        if (\array_key_exists('surcharge_percentage', $payload) && null !== $percentage) {
+        if (null !== $percentage) {
             $this->addViolation($violations, 'Percentage surcharge cannot be set when surcharge type is fixed', 'surchargePercentage', $percentage);
         }
     }
@@ -107,62 +116,90 @@ final readonly class OptionTemplateValidationSubscriber implements EventSubscrib
         }
 
         $defaultCurrencyPrice = null;
+        $hasDefaultCurrency = false;
         foreach ($priceArray as $item) {
-            if (\is_array($item) && Defaults::CURRENCY === ($item['currencyId'] ?? null)) {
-                $defaultCurrencyPrice = $item;
+            if (!\is_array($item)) {
+                $this->addViolation($violations, 'Fixed surchargePrice contains an invalid currency price', 'surchargePrice', $item);
 
-                break;
+                continue;
+            }
+
+            if (Defaults::CURRENCY === ($item['currencyId'] ?? null)) {
+                $defaultCurrencyPrice = $item;
+                $hasDefaultCurrency = true;
+            }
+
+            $net = $item['net'] ?? null;
+            $gross = $item['gross'] ?? null;
+            if (!\is_numeric($net) || !\is_numeric($gross) || (float) $net < 0 || (float) $gross < 0) {
+                $this->addViolation($violations, 'Fixed surchargePrice amounts cannot be negative', 'surchargePrice', $item);
             }
         }
 
-        if (null === $defaultCurrencyPrice) {
+        if (!$hasDefaultCurrency || null === $defaultCurrencyPrice) {
             $this->addViolation($violations, 'Fixed surchargePrice must contain price for default currency', 'surchargePrice', $rawPrice);
 
             return;
         }
-
-        $net = $defaultCurrencyPrice['net'] ?? null;
-        $gross = $defaultCurrencyPrice['gross'] ?? null;
-        if (!\is_numeric($net) || !\is_numeric($gross) || (float) $net < 0 || (float) $gross < 0) {
-            $this->addViolation($violations, 'Fixed surchargePrice amounts cannot be negative', 'surchargePrice', $rawPrice);
-        }
     }
 
-    /**
-     * @param array<string, mixed> $payload
-     */
-    private function validatePercentageSurcharge(WriteCommand $command, array $payload, ConstraintViolationList $violations): void
+    private function validatePercentageSurcharge(mixed $percentage, mixed $rawPrice, ConstraintViolationList $violations): void
     {
-        $hasPercentageKey = \array_key_exists('surcharge_percentage', $payload);
-        $percentage = $payload['surcharge_percentage'] ?? null;
-
-        if ($command instanceof InsertCommand && !$hasPercentageKey) {
+        if (!\is_numeric($percentage) || (float) $percentage < 0 || (float) $percentage > 1000) {
             $this->addViolation($violations, 'Percentage surcharge requires surchargePercentage', 'surchargePercentage', null);
-        } elseif ($hasPercentageKey && (!\is_numeric($percentage) || (float) $percentage < 0 || (float) $percentage > 1000)) {
-            $this->addViolation($violations, 'Percentage surcharge must be between 0 and 1000', 'surchargePercentage', $percentage);
         }
 
-        $rawPrice = $payload['surcharge_price'] ?? null;
-        if (\array_key_exists('surcharge_price', $payload) && null !== $rawPrice) {
+        if (null !== $rawPrice) {
             $this->addViolation($violations, 'Price surcharge cannot be set when surcharge type is percentage', 'surchargePrice', $rawPrice);
         }
     }
 
-    private function existingSurchargeType(WriteCommand $command, PreWriteValidationEvent $event): ?string
+    /** @return array<string, OptionTemplateValueEntity> */
+    private function loadUpdatedValues(PreWriteValidationEvent $event): array
     {
-        if (!$command instanceof UpdateCommand) {
+        $ids = [];
+        foreach ($event->getCommands() as $command) {
+            if (!$command instanceof UpdateCommand || OptionTemplateValueDefinition::ENTITY_NAME !== $command->getEntityName()) {
+                continue;
+            }
+
+            $id = $this->extractId($command->getPrimaryKey()['id'] ?? null);
+            if (null !== $id) {
+                $ids[] = $id;
+            }
+        }
+
+        if ([] === $ids) {
+            return [];
+        }
+
+        /** @var iterable<OptionTemplateValueEntity> $values */
+        $values = $this->valueRepository->search(new Criteria($ids), $event->getContext())->getEntities();
+        $existing = [];
+        foreach ($values as $value) {
+            $existing[$value->getId()] = $value;
+        }
+
+        return $existing;
+    }
+
+    /** @return list<array{currencyId: string, gross: float, net: float}>|null */
+    private function serializePriceCollection(?\Shopware\Core\Framework\DataAbstractionLayer\Pricing\PriceCollection $prices): ?array
+    {
+        if (null === $prices) {
             return null;
         }
 
-        $pk = $this->extractId($command->getPrimaryKey()['id'] ?? null);
-        if (null === $pk) {
-            return null;
+        $result = [];
+        foreach ($prices as $price) {
+            $result[] = [
+                'currencyId' => $price->getCurrencyId(),
+                'gross' => $price->getGross(),
+                'net' => $price->getNet(),
+            ];
         }
 
-        /** @var OptionTemplateValueEntity|null $existing */
-        $existing = $this->valueRepository->search(new Criteria([$pk]), $event->getContext())->get($pk);
-
-        return $existing?->getSurchargeType();
+        return $result;
     }
 
     private function validateGroup(WriteCommand $command, PreWriteValidationEvent $event): void

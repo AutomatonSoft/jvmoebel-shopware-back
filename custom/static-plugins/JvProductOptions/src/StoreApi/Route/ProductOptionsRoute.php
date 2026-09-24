@@ -12,7 +12,6 @@ use Shopware\Core\Framework\Routing\StoreApiRouteScope;
 use Shopware\Core\PlatformRequest;
 use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepository;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route(defaults: [PlatformRequest::ATTRIBUTE_ROUTE_SCOPE => [StoreApiRouteScope::ID]])]
@@ -35,9 +34,9 @@ final class ProductOptionsRoute
     #[Route(
         path: '/store-api/jv-product-options/{productId}',
         name: 'store-api.jv-product-options',
-        methods: ['POST']
+        methods: ['GET']
     )]
-    public function load(string $productId, Request $request, SalesChannelContext $context): ProductOptionsRouteResponse
+    public function load(string $productId, SalesChannelContext $context): ProductOptionsRouteResponse
     {
         $criteria = new Criteria([$productId]);
         /** @var SalesChannelProductEntity|null $product */

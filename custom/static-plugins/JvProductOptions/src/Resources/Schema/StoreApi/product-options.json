@@ -3,7 +3,7 @@
   "info": [],
   "paths": {
     "/jv-product-options/{productId}": {
-      "post": {
+      "get": {
         "tags": [
           "Product"
         ],

@@ -47,7 +47,8 @@
                     />
 
                     <mt-number-field
-                        v-model="templateEntity.priority"
+                        :model-value="templateEntity.priority"
+                        @input-change="setNumericField(templateEntity, 'priority', $event)"
                         :label="$t('jv-option-template.detail.labelPriority')"
                         number-type="int"
                         :step="1"
@@ -63,7 +64,7 @@
                     <sw-entity-many-to-many-select
                         v-if="templateEntity.productStreams"
                         v-model:entity-collection="templateEntity.productStreams"
-                        :local-mode="templateEntity.isNew()"
+                        :local-mode="true"
                         label-property="name"
                         :label="$t('jv-option-template.detail.labelProductStreams')"
                         :placeholder="$t('jv-option-template.detail.placeholderProductStreams')"
@@ -107,7 +108,8 @@
                                 />
 
                                 <mt-number-field
-                                    v-model="group.position"
+                                    :model-value="group.position"
+                                    @input-change="setNumericField(group, 'position', $event)"
                                     :label="$t('jv-option-template.detail.labelGroupPosition')"
                                     number-type="int"
                                     :step="1"
@@ -179,7 +181,8 @@
                                 >
                                     <sw-container class="jv-option-template-value__header" columns="100px minmax(240px, 2fr) minmax(220px, 1fr) 44px" gap="16px" align="end">
                                         <mt-number-field
-                                            v-model="val.position"
+                                            :model-value="val.position"
+                                            @input-change="setNumericField(val, 'position', $event)"
                                             :label="$t('jv-option-template.detail.labelValuePosition')"
                                             size="small"
                                             number-type="int"
@@ -253,7 +256,7 @@
                                         <sw-container v-if="val.surchargeType === 'fixed'" columns="minmax(180px, 240px) minmax(180px, 240px)" gap="16px">
                                             <mt-number-field
                                                 :model-value="valueGrossPrice(val)"
-                                                @update:model-value="setValueGrossPrice(val, $event)"
+                                                @input-change="setValueGrossPrice(val, $event)"
                                                 :label="$t('jv-option-template.detail.labelValueSurchargeGross')"
                                                 :step="0.01"
                                                 :digits="2"
@@ -261,7 +264,7 @@
                                             />
                                             <mt-number-field
                                                 :model-value="valueNetPrice(val)"
-                                                @update:model-value="setValueNetPrice(val, $event)"
+                                                @input-change="setValueNetPrice(val, $event)"
                                                 :label="$t('jv-option-template.detail.labelValueSurchargeNet')"
                                                 :step="0.01"
                                                 :digits="2"
@@ -271,7 +274,8 @@
 
                                         <mt-number-field
                                             v-else
-                                            v-model="val.surchargePercentage"
+                                            :model-value="val.surchargePercentage"
+                                            @input-change="setNumericField(val, 'surchargePercentage', $event)"
                                             :label="$t('jv-option-template.detail.labelValueSurchargePercentage')"
                                             :step="0.1"
                                             :min="0"
