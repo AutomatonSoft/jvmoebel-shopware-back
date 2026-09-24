@@ -29,6 +29,7 @@ export default {
             originalGroupIds: [],
             originalValueIdsByGroup: {},
             originalProductStreamIds: [],
+            originalNamesById: {},
         };
     },
 
@@ -112,6 +113,7 @@ export default {
                 this.originalGroupIds = [];
                 this.originalValueIdsByGroup = {};
                 this.originalProductStreamIds = [];
+                this.originalNamesById = {};
             }
         },
 
@@ -150,6 +152,15 @@ export default {
                     group.id,
                     group.values.map((value) => value.id),
                 ]));
+                this.originalNamesById = {
+                    [this.templateEntity.id]: this.displayName(this.templateEntity),
+                };
+                for (const group of this.templateEntity.groups) {
+                    this.originalNamesById[group.id] = this.displayName(group);
+                    for (const value of group.values) {
+                        this.originalNamesById[value.id] = this.displayName(value);
+                    }
+                }
             } catch (error) {
                 this.createNotificationError({
                     message: error.message || this.$t('jv-option-template.detail.saveError'),
@@ -182,6 +193,22 @@ export default {
 
         setEntityName(entity, name) {
             entity.name = name;
+        },
+
+        systemName(entity) {
+            const systemLanguageId = Shopware.Context.api.systemLanguageId;
+            if (Shopware.Context.api.languageId === systemLanguageId) {
+                return this.displayName(entity);
+            }
+
+            const systemTranslation = entity.translations?.find?.((translation) => translation.languageId === systemLanguageId);
+            return systemTranslation?.name || this.displayName(entity);
+        },
+
+        shouldWriteActiveTranslation(entity) {
+            const languageId = Shopware.Context.api.languageId;
+            return languageId !== Shopware.Context.api.systemLanguageId
+                && (entity.isNew() || this.originalNamesById[entity.id] !== this.displayName(entity));
         },
 
         setNumericField(entity, field, value) {
@@ -429,13 +456,12 @@ export default {
             this.isLoading = true;
 
             try {
-                const isNewTemplate = this.templateEntity.isNew();
                 const templateId = this.templateEntity.id;
                 const groups = this.templateEntity.groups.slice();
                 const operations = {};
                 const templatePayload = {
                     id: templateId,
-                    name: this.displayName(this.templateEntity),
+                    name: this.systemName(this.templateEntity),
                     active: !!this.templateEntity.active,
                     priority: parseInt(this.templateEntity.priority, 10) || 0,
                 };
@@ -444,35 +470,42 @@ export default {
 
                 const groupPayload = [];
                 const valuePayload = [];
+                const templateTranslationPayload = [];
                 const groupTranslationPayload = [];
                 const valueTranslationPayload = [];
 
+                if (this.shouldWriteActiveTranslation(this.templateEntity)) {
+                    templateTranslationPayload.push({
+                        jvOptionTemplateId: templateId,
+                        languageId: apiContext.languageId,
+                        name: this.displayName(this.templateEntity),
+                    });
+                }
+
                 for (const group of groups) {
-                    const isNewGroup = group.isNew();
                     const groupPayloadItem = {
                         id: group.id,
                         templateId,
-                        name: this.displayName(group),
+                        name: this.systemName(group),
                         position: parseInt(group.position, 10) || 0,
                         paletteMediaId: group.paletteMediaId || null,
                     };
 
-                    if (isNewGroup && apiContext.languageId !== apiContext.systemLanguageId) {
+                    if (this.shouldWriteActiveTranslation(group)) {
                         groupTranslationPayload.push({
                             jvOptionTemplateGroupId: group.id,
-                            languageId: apiContext.systemLanguageId,
-                            name: group.name,
+                            languageId: apiContext.languageId,
+                            name: this.displayName(group),
                         });
                     }
 
                     groupPayload.push(groupPayloadItem);
 
                     for (const value of group.values) {
-                        const isNewValue = value.isNew();
                         const valuePayloadItem = {
                             id: value.id,
                             groupId: group.id,
-                            name: this.displayName(value),
+                            name: this.systemName(value),
                             position: parseInt(value.position, 10) || 0,
                             colorHex: value.colorHex && value.colorHex.trim() !== '' ? value.colorHex.trim() : null,
                             mediaId: value.mediaId || null,
@@ -483,11 +516,11 @@ export default {
                                 : null,
                         };
 
-                        if (isNewValue && apiContext.languageId !== apiContext.systemLanguageId) {
+                        if (this.shouldWriteActiveTranslation(value)) {
                             valueTranslationPayload.push({
                                 jvOptionTemplateValueId: value.id,
-                                languageId: apiContext.systemLanguageId,
-                                name: value.name,
+                                languageId: apiContext.languageId,
+                                name: this.displayName(value),
                             });
                         }
 
@@ -497,6 +530,7 @@ export default {
 
                 this.addSyncOperation(operations, 'jv-option-template-group-upsert', 'jv_option_template_group', 'upsert', groupPayload);
                 this.addSyncOperation(operations, 'jv-option-template-value-upsert', 'jv_option_template_value', 'upsert', valuePayload);
+                this.addSyncOperation(operations, 'jv-option-template-translation-upsert', 'jv_option_template_translation', 'upsert', templateTranslationPayload);
                 this.addSyncOperation(operations, 'jv-option-template-group-translation-upsert', 'jv_option_template_group_translation', 'upsert', groupTranslationPayload);
                 this.addSyncOperation(operations, 'jv-option-template-value-translation-upsert', 'jv_option_template_value_translation', 'upsert', valueTranslationPayload);
 
@@ -530,7 +564,7 @@ export default {
                 this.addSyncOperation(operations, 'jv-option-template-stream-upsert', 'jv_option_template_product_stream', 'upsert', productStreamUpserts);
                 this.addSyncOperation(operations, 'jv-option-template-stream-delete', 'jv_option_template_product_stream', 'delete', productStreamDeletes);
 
-                await this.syncService.sync(operations);
+                await this.syncService.sync(operations, {}, { 'sw-language-id': apiContext.systemLanguageId });
 
                 if (!this.$route.params.id) {
                     await this.$router.push({

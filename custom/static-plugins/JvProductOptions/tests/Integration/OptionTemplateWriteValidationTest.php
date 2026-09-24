@@ -6,6 +6,9 @@ use Jv\ProductOptions\Core\Content\OptionTemplate\OptionTemplateCollection;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Defaults;
+use Shopware\Core\Framework\Api\Sync\SyncBehavior;
+use Shopware\Core\Framework\Api\Sync\SyncOperation;
+use Shopware\Core\Framework\Api\Sync\SyncService;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -83,6 +86,34 @@ final class OptionTemplateWriteValidationTest extends TestCase
         } catch (WriteException|WriteConstraintViolationException $exception) {
             self::assertStringContainsString('defaultValueId', $exception->getMessage().json_encode($exception->getErrors()));
         }
+    }
+
+    public function testPartialValueUpdateAndGroupDefaultCanBeSyncedTogether(): void
+    {
+        $context = Context::createDefaultContext();
+        $groupId = Uuid::randomHex();
+        $valueId = Uuid::randomHex();
+        $template = $this->template(Uuid::randomHex(), [
+            'id' => $valueId,
+            'surchargeType' => 'fixed',
+            'surchargePrice' => $this->price(20.0),
+        ]);
+        $template['groups'][0]['id'] = $groupId;
+        $this->repository()->create([$template], $context);
+
+        static::getContainer()->get(SyncService::class)->sync([
+            new SyncOperation('value-update', 'jv_option_template_value', SyncOperation::ACTION_UPSERT, [
+                ['id' => $valueId, 'position' => 2],
+            ]),
+            new SyncOperation('group-default', 'jv_option_template_group', SyncOperation::ACTION_UPSERT, [
+                ['id' => $groupId, 'defaultValueId' => $valueId],
+            ]),
+        ], $context, new SyncBehavior());
+
+        $group = static::getContainer()->get('jv_option_template_group.repository')->search(new Criteria([$groupId]), $context)->get($groupId);
+        $value = static::getContainer()->get('jv_option_template_value.repository')->search(new Criteria([$valueId]), $context)->get($valueId);
+        self::assertSame($valueId, $group?->getDefaultValueId());
+        self::assertSame(2, $value?->getPosition());
     }
 
     public function testPartialUpdateCannotLeaveFixedPriceOnPercentageValue(): void

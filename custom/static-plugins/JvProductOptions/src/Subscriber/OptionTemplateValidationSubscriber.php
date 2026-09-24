@@ -241,8 +241,9 @@ final readonly class OptionTemplateValidationSubscriber implements EventSubscrib
                 continue;
             }
 
-            if ($this->extractId($command->getPrimaryKey()['id'] ?? null) === $defaultValueId) {
-                return $this->extractId($command->getPayload()['group_id'] ?? null);
+            if ($this->extractId($command->getPrimaryKey()['id'] ?? null) === $defaultValueId
+                && \array_key_exists('group_id', $command->getPayload())) {
+                return $this->extractId($command->getPayload()['group_id']);
             }
         }
 
