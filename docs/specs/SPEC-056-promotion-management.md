@@ -1,4 +1,4 @@
-# SPEC-054 — Управление акциями (backend)
+# SPEC-056 — Управление акциями (backend)
 
 ## Цель
 
@@ -405,7 +405,7 @@ Snippets: `de-DE`, `en-GB` в `JvPromotion`.
 
 ### SPEC-013 amendment
 
-Добавить в mapping table SPEC-013 (отдельный commit/PR note): новые поля source link — не blocking для merge SPEC-054, но import PR должен идти **до** или **вместе** с promotion preview.
+Добавить в mapping table SPEC-013 (отдельный commit/PR note): новые поля source link — не blocking для merge SPEC-056, но import PR должен идти **до** или **вместе** с promotion preview.
 
 ---
 
