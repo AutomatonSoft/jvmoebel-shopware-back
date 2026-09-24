@@ -2,10 +2,14 @@
 
 namespace Jv\Import\Tests\Unit\Service\ProductImport\Seo;
 
+use Jv\Import\Integration\CosmoShop\Media\CosmoShopLegacyProductImageUrlExpander;
 use Jv\Import\Integration\CosmoShop\Profile\MarketImportProfile;
 use Jv\Import\Integration\Csv\SemicolonCsvReader;
 use Jv\Import\Service\ProductImport\Seo\ImportCosmoShopProductRedirectsService;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
+use Jv\Seo\Contract\ImageRedirectImportResult;
+use Jv\Seo\Contract\ImportImageRedirectData;
+use Jv\Seo\Contract\ImportImageRedirectsInterface;
 use Jv\Seo\Contract\ImportProductRedirectData;
 use Jv\Seo\Contract\ImportProductRedirectsInterface;
 use Jv\Seo\Contract\ProductRedirectImportResult;
@@ -15,6 +19,8 @@ use Shopware\Core\Content\ImportExport\Aggregate\ImportExportFile\ImportExportFi
 use Shopware\Core\Content\ImportExport\Aggregate\ImportExportLog\ImportExportLogEntity;
 use Shopware\Core\Content\ImportExport\ImportExportProfileEntity;
 use Shopware\Core\Content\ImportExport\Service\ImportExportService;
+use Shopware\Core\Content\Product\Aggregate\ProductMedia\ProductMediaCollection;
+use Shopware\Core\Content\Product\Aggregate\ProductMedia\ProductMediaEntity;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Framework\Context;
@@ -87,6 +93,8 @@ final class ImportCosmoShopProductRedirectsServiceTest extends TestCase
                 new SemicolonCsvReader(),
                 $products,
                 $redirectImporter,
+                $this->createMock(ImportImageRedirectsInterface::class),
+                new CosmoShopLegacyProductImageUrlExpander(),
                 new LockFactory(new InMemoryStore()),
                 $projectDirectory,
             ))->execute($log->getId(), $context);
@@ -140,9 +148,93 @@ final class ImportCosmoShopProductRedirectsServiceTest extends TestCase
                 new SemicolonCsvReader(),
                 $products,
                 $redirectImporter,
+                $this->createMock(ImportImageRedirectsInterface::class),
+                new CosmoShopLegacyProductImageUrlExpander(),
                 new LockFactory(new InMemoryStore()),
                 $projectDirectory,
             ))->execute($log->getId(), $context);
+        } finally {
+            rmdir($projectDirectory.'/var/import/seo-redirects');
+            rmdir($projectDirectory.'/var/import');
+            rmdir($projectDirectory.'/var');
+            rmdir($projectDirectory);
+        }
+    }
+
+    public function testItImportsKnownImageResizesForTheImportedProductMedia(): void
+    {
+        $context = Context::createDefaultContext();
+        $log = $this->sourceLog();
+        $importExport = $this->createMock(ImportExportService::class);
+        $importExport->method('findLog')->willReturn($log);
+        $mainUrl = 'https://www.jvmoebel.de/cosmoshop/default/pix/a/n/1742011895-159847-1.3.jpg';
+        $galleryUrl = 'https://www.jvmoebel.de/cosmoshop/default/pix/a/z/SKU-1/gallery.2.jpg';
+        $filesystem = $this->createMock(FilesystemOperator::class);
+        $filesystem->method('readStream')->willReturn($this->stream(<<<CSV
+            product_number;source_article_id;urlkey;legacy_url;media;cover
+            SKU-1;17952;Legacy;https://www.jvmoebel.de/Legacy.htm;{$mainUrl}|{$galleryUrl};{$mainUrl}
+            CSV));
+
+        $mainMediaId = Uuid::randomHex();
+        $galleryMediaId = Uuid::randomHex();
+        $product = new ProductEntity();
+        $product->setId(Uuid::randomHex());
+        $product->setProductNumber('SKU-1');
+        $product->setMedia(new ProductMediaCollection([
+            $this->productMedia($mainMediaId, 0),
+            $this->productMedia($galleryMediaId, 1),
+        ]));
+        $products = $this->createMock(EntityRepository::class);
+        $products->expects(self::once())->method('search')->willReturnCallback(
+            static fn (Criteria $criteria, Context $searchContext): EntitySearchResult => new EntitySearchResult(
+                'product', 1, new ProductCollection([$product]), null, $criteria, $searchContext,
+            ),
+        );
+
+        $productRedirectImporter = $this->createMock(ImportProductRedirectsInterface::class);
+        $productRedirectImporter->expects(self::once())->method('import')->willReturn(new ProductRedirectImportResult(1, 0, 0, 0, 0, 0, []));
+        $imageRedirectImporter = $this->createMock(ImportImageRedirectsInterface::class);
+        $imageRedirectImporter->expects(self::once())->method('import')->with(
+            self::callback(static function (iterable $records) use ($mainMediaId, $galleryMediaId): bool {
+                $records = is_array($records) ? $records : iterator_to_array($records);
+                $targets = [];
+                foreach ($records as $record) {
+                    if (!$record instanceof ImportImageRedirectData) {
+                        return false;
+                    }
+                    $targets[$record->sourceUrl] = $record->mediaId;
+                }
+
+                return [
+                    'https://www.jvmoebel.de/cosmoshop/default/pix/a/v/1742011895-159847-0.3.jpg' => $mainMediaId,
+                    'https://www.jvmoebel.de/cosmoshop/default/pix/a/n/1742011895-159847-1.3.jpg' => $mainMediaId,
+                    'https://www.jvmoebel.de/cosmoshop/default/pix/a/g/1742011895-159847-2.3.jpg' => $mainMediaId,
+                    'https://www.jvmoebel.de/cosmoshop/default/pix/a/z/SKU-1/gallery.2.jpg' => $galleryMediaId,
+                    'https://www.jvmoebel.de/cosmoshop/default/pix/a/z/SKU-1/g/gallery.2.jpg' => $galleryMediaId,
+                    'https://www.jvmoebel.de/cosmoshop/default/pix/a/zg/SKU-1/gallery.2.jpg' => $galleryMediaId,
+                ] === $targets;
+            }),
+            $context,
+        )->willReturn(new ImageRedirectImportResult(6, 0, 0, 0, 0, 0, []));
+
+        $projectDirectory = sys_get_temp_dir().'/jv-seo-import-test-'.bin2hex(random_bytes(8));
+        mkdir($projectDirectory);
+        try {
+            $result = (new ImportCosmoShopProductRedirectsService(
+                $importExport,
+                $filesystem,
+                new SemicolonCsvReader(),
+                $products,
+                $productRedirectImporter,
+                $imageRedirectImporter,
+                new CosmoShopLegacyProductImageUrlExpander(),
+                new LockFactory(new InMemoryStore()),
+                $projectDirectory,
+            ))->execute($log->getId(), $context);
+
+            self::assertSame(7, $result->created);
+            self::assertSame(0, $result->invalid);
+            self::assertSame([], $result->issues);
         } finally {
             rmdir($projectDirectory.'/var/import/seo-redirects');
             rmdir($projectDirectory.'/var/import');
@@ -164,6 +256,16 @@ final class ImportCosmoShopProductRedirectsServiceTest extends TestCase
         $log->setFile($file);
 
         return $log;
+    }
+
+    private function productMedia(string $mediaId, int $position): ProductMediaEntity
+    {
+        $productMedia = new ProductMediaEntity();
+        $productMedia->setId(Uuid::randomHex());
+        $productMedia->setMediaId($mediaId);
+        $productMedia->setPosition($position);
+
+        return $productMedia;
     }
 
     /** @return resource */

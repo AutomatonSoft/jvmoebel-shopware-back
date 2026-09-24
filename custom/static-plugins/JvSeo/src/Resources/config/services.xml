@@ -43,6 +43,14 @@
             <argument type="service" id="Jv\Seo\Service\Redirect\UrlNormalizer"/>
         </service>
         <service id="Jv\Seo\Contract\ImportProductRedirectsInterface" alias="Jv\Seo\Service\Redirect\ImportProductRedirectsService"/>
+        <service id="Jv\Seo\Service\Redirect\ImportImageRedirectsService">
+            <argument type="service" id="jv_seo_redirect.repository"/>
+            <argument type="service" id="jv_seo_redirect_channel.repository"/>
+            <argument type="service" id="jv_seo_redirect_source.repository"/>
+            <argument type="service" id="Jv\Seo\Service\Redirect\UrlNormalizer"/>
+            <argument type="service" id="Jv\Seo\Service\Redirect\ImageTargetUrlResolver"/>
+        </service>
+        <service id="Jv\Seo\Contract\ImportImageRedirectsInterface" alias="Jv\Seo\Service\Redirect\ImportImageRedirectsService"/>
         <service id="Jv\Seo\Service\Redirect\SaveRedirectService">
             <argument type="service" id="jv_seo_redirect.repository"/>
             <argument type="service" id="jv_seo_redirect_channel.repository"/>

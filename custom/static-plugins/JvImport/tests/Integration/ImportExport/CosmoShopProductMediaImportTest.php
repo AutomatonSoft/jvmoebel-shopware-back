@@ -5,6 +5,7 @@ namespace Jv\Import\Tests\Integration\ImportExport;
 require_once __DIR__.'/AbstractCosmoShopImportExportTestCase.php';
 
 use Jv\Import\Service\ProductImport\ProductImportIdentity;
+use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use League\Flysystem\FilesystemOperator;
 use Shopware\Core\Content\ImportExport\Struct\Progress;
 use Shopware\Core\Content\Media\MediaEntity;
@@ -43,6 +44,7 @@ final class CosmoShopProductMediaImportTest extends AbstractCosmoShopImportExpor
         try {
             $csv = $this->csv(
                 productNumber: $productNumber,
+                name: 'German gallery product',
                 media: $firstUrl.'|'.$secondUrl,
                 cover: $secondUrl,
             );
@@ -54,18 +56,26 @@ final class CosmoShopProductMediaImportTest extends AbstractCosmoShopImportExpor
             self::assertSame(Progress::STATE_SUCCEEDED, $secondImport->getState(), $this->importResult($secondImport));
 
             $product = $this->productWithMedia($productId, $context);
-            self::assertCount(2, $product->getMedia());
+            $media = $product->getMedia();
+            self::assertNotNull($media);
+            self::assertCount(2, $media);
             self::assertSame(
                 [$firstFileName, $secondFileName],
                 array_map(
                     static fn (ProductMediaEntity $productMedia): string => $productMedia->getMedia()?->getFileName().'.'.$productMedia->getMedia()?->getFileExtension(),
-                    array_values($product->getMedia()->getElements()),
+                    array_values($media->getElements()),
                 ),
             );
             self::assertSame(
                 $secondFileName,
                 $product->getCover()?->getMedia()?->getFileName().'.'.$product->getCover()?->getMedia()?->getFileExtension(),
             );
+            foreach ($media as $productMedia) {
+                self::assertSame(
+                    'German gallery product',
+                    $productMedia->getMedia()?->getTranslations()?->filterByLanguageId(Market::Germany->languageId())->first()?->getAlt(),
+                );
+            }
         } finally {
             if (is_file($firstPath)) {
                 unlink($firstPath);
@@ -251,6 +261,9 @@ final class CosmoShopProductMediaImportTest extends AbstractCosmoShopImportExpor
         $criteria = (new Criteria([$productId]))->addAssociation('cover.media');
         $criteria->getAssociation('media')
             ->addAssociation('media')
+            ->getAssociation('media')
+            ->addAssociation('translations');
+        $criteria->getAssociation('media')
             ->addSorting(new FieldSorting('position'));
 
         return $repository->search($criteria, $context)->first();

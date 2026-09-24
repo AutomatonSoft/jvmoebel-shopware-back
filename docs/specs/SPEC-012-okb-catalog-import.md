@@ -11,6 +11,18 @@ OKB, её схему атрибутов и сопоставление товар
 постоянная синхронизация с OKB. Новый снимок может быть импортирован повторно
 явной командой после проверки изменений.
 
+Команда `jv:catalog:collect-okb-schema` собирает API-производимую часть
+снимка в `data/import/okb_new`. Она предназначена для восстановления данных,
+нужных EAN-обогащению и для последующей ручной проверки нового snapshot, и не
+изменяет Shopware. Команда атомарно заменяет только пять файлов, которые API
+может предоставить: `okb-category-groups.csv`, `okb-categories.csv`,
+`okb-attributes.csv`, `okb-attribute-allowed-values.csv` и
+`okb-attribute-fetch-failures.csv`. Она не создаёт
+`navigation-categories.csv` и `category-group-parent-mapping.csv`: внешний API
+не предоставляет два верхних уровня navigation и связь group с navigation
+category. Эти два файла остаются отдельным проверяемым входом при сборке
+полного snapshot для `jv:catalog:import-okb-schema`.
+
 ## Границы
 
 Входят:
@@ -47,6 +59,15 @@ OKB, её схему атрибутов и сопоставление товар
   `navigation_key`, nullable `parent_navigation_key`, `navigation_name`;
 - `category-group-parent-mapping.csv` — ровно одна строка на OKB group:
   `category_group_id`, `navigation_key`, где navigation category — уровня 2.
+
+Collector читает постраничный `/extermal/categories` и выбирает первую
+полученную category каждой group как `attribute_source_category_id`. Для неё
+он запрашивает `/extermal/attributes?categoryId=…`; attribute failures
+сохраняются отдельными строками в `okb-attribute-fetch-failures.csv`, а не
+скрываются. Во все API-производимые CSV записывается UTF-8 BOM и разделитель
+`;`. Категория без обязательных id/name, повторяющийся category ID либо
+неуникальное category name делают сборку ошибочной и не публикуют частичный
+набор файлов.
 
 `attribute_source_category_id` используется только при сборе снимка. Он не
 является parent Shopware category и не записывается на товар.
