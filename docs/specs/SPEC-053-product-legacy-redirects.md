@@ -29,10 +29,11 @@
 - Store API lookup-контракт для Next.js.
 
 Импорт URL категорий, Landing Pages и изображений, другие CMS/служебные
-страницы, `410`, sitemap и
-реализация доставки редиректа во frontend или Nginx не входят в backend-
-изменение. Next.js остаётся владельцем публичного HTTP response согласно
-ADR-007. Общесистемный
+страницы, `410` и реализация доставки редиректа во frontend или Nginx не входят
+в backend-изменение. Sitemap publication реализуется отдельно в
+[SPEC-054](SPEC-054-sitemap-publication.md): source URL active legacy `301` не
+входит в canonical sitemap, а Next.js остаётся владельцем публичного sitemap и
+HTTP response согласно ADR-007. Общесистемный
 контракт доставки описан в
 `jvmoebel-shopware-docs/docs/specs/SPEC-049-legacy-redirect-delivery.md`, а
 реализация frontend — в
