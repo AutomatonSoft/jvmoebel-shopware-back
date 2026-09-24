@@ -6,6 +6,7 @@ use Jv\Import\Integration\AfterCool\AfterCoolResponseNormalizer;
 use Jv\Import\Integration\AfterCool\Exception\AfterCoolProductMappingException;
 use Jv\Import\Integration\AfterCool\Mapper\AfterCoolListerProductMapper;
 use Jv\Import\Integration\AfterCool\Mapper\AfterCoolProductPageMapper;
+use Jv\Import\Service\AfterCool\Parser\AfterCoolSourceFileParser;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -15,7 +16,7 @@ final class AfterCoolListerProductMapperTest extends TestCase
     {
         $page = $this->page();
 
-        $product = (new AfterCoolListerProductMapper())->map($page->items[0]);
+        $product = $this->mapper()->map($page->items[0]);
 
         self::assertSame('JV', $product->account);
         self::assertSame('lister', $product->dataset);
@@ -37,13 +38,43 @@ final class AfterCoolListerProductMapperTest extends TestCase
 
     public function testItKeepsARealHtmlDescriptionAndSupportsAnArrayOfPictureUrls(): void
     {
-        $product = (new AfterCoolListerProductMapper())->map($this->page()->items[1]);
+        $product = $this->mapper()->map($this->page()->items[1]);
 
         self::assertSame('<p>Usable description</p>', $product->description);
         self::assertSame([
             'https://images.example.test/900002-cover.jpg',
             'https://images.example.test/900002-side.jpg',
         ], $product->mediaUrls);
+    }
+
+    public function testItMapsPromotionIndexFieldsFromListerAndLinkedProduct(): void
+    {
+        $payload = $this->fixture();
+        foreach ($payload['items'] as &$item) {
+            $item['factory_id'] = 498371;
+        }
+        unset($item);
+        $payload['items'][0]['source_file'] = 'UK-GANASI_498371.csv';
+        $payload['items'][0]['row']['I_stammartikel'] = '175220799';
+        $page = $this->normalizer()->normalizeProductPage($payload, 'JV', 'lister', 498371, 0);
+        $linked = $this->normalizer()->normalizeLinkedProduct([
+            'items' => [[
+                'account' => 'JV', 'dataset' => 'product', 'factory_id' => '2290896',
+                'product_id' => '175220799', 'ean' => '', 'artikelnummer' => '0', 'name' => 'Sofa L6004B',
+                'row_no' => 1, 'source_file' => 'UK-ALL-IMPORT_2290896.csv', 'source_kind' => 'csv',
+                'updated_at' => '2026-09-01T10:00:00+00:00',
+                'row' => ['ID' => '175220799', 'Beschreibung' => ''],
+            ]],
+            'total' => 1, 'limit' => 1, 'offset' => 0, 'has_more' => false,
+        ], 'JV', '175220799');
+        self::assertNotNull($linked);
+
+        $product = $this->mapper()->map($page->items[0], $linked);
+
+        self::assertSame('175220799', $product->stammartikelId);
+        self::assertSame('Sofa L6004B', $product->collectionName);
+        self::assertSame('UK-GANASI', $product->sourceFilePrefix);
+        self::assertNull($product->sourceRegion);
     }
 
     public function testLinkedProductProvidesTheNameAndDecodedHtmlDescription(): void
@@ -53,7 +84,7 @@ final class AfterCoolListerProductMapperTest extends TestCase
         $linked = $this->normalizer()->normalizeLinkedProduct($this->linkedProductPayload('183975801', $encodedHtml), 'JV', '183975801');
         self::assertNotNull($linked);
 
-        $product = (new AfterCoolListerProductMapper())->map($lister, $linked);
+        $product = $this->mapper()->map($lister, $linked);
 
         self::assertSame('Sanitised Aftercool sofa', $product->name, 'The canonical Lister name must not be replaced by internal linked-product naming.');
         self::assertSame("<section data-source=\"aftercool\">\n<h2>Full description</h2>\n<table><tr><td>Details</td></tr></table>\r</section>", $product->description);
@@ -67,7 +98,7 @@ final class AfterCoolListerProductMapperTest extends TestCase
         $linked = $this->normalizer()->normalizeLinkedProduct($this->linkedProductPayload('183975801', '   '), 'JV', '183975801');
         self::assertNotNull($linked);
 
-        self::assertNull((new AfterCoolListerProductMapper())->map($lister, $linked)->description);
+        self::assertNull($this->mapper()->map($lister, $linked)->description);
     }
 
     public function testItSeparatesSemicolonDelimitedListerPictureUrls(): void
@@ -76,7 +107,7 @@ final class AfterCoolListerProductMapperTest extends TestCase
         $payload['items'][0]['row']['GalleryURL'] = '';
         $payload['items'][0]['row']['pictureurls'] = 'https://images.example.test/first.jpg;https://images.example.test/second.jpg';
         $page = $this->normalizer()->normalizeProductPage($payload, 'JV', 'lister', 504034, 0);
-        $product = (new AfterCoolListerProductMapper())->map($page->items[0]);
+        $product = $this->mapper()->map($page->items[0]);
 
         self::assertSame(['https://images.example.test/first.jpg', 'https://images.example.test/second.jpg'], $product->mediaUrls);
     }
@@ -91,7 +122,7 @@ final class AfterCoolListerProductMapperTest extends TestCase
         ];
         $page = $this->normalizer()->normalizeProductPage($payload, 'JV', 'lister', 504034, 0);
 
-        $product = (new AfterCoolListerProductMapper())->map($page->items[0]);
+        $product = $this->mapper()->map($page->items[0]);
 
         self::assertSame(['https://images.example.test/safe.jpg'], $product->mediaUrls);
         self::assertSame(['invalid_media_url', 'invalid_media_url'], array_column($product->mediaIssues, 'code'));
@@ -109,7 +140,7 @@ final class AfterCoolListerProductMapperTest extends TestCase
         $item = $this->normalizer()->normalizeProductPage($payload, 'JV', 'lister', 504034, 0)->items[0];
 
         try {
-            (new AfterCoolListerProductMapper())->map($item);
+            $this->mapper()->map($item);
             self::fail(sprintf('Invalid field "%s" must reject only this product.', $field));
         } catch (AfterCoolProductMappingException $exception) {
             self::assertSame($safeCode, $exception->safeCode());
@@ -138,7 +169,7 @@ final class AfterCoolListerProductMapperTest extends TestCase
         $payload['items'][] = $duplicate;
         $page = $this->normalizer()->normalizeProductPage($payload, 'JV', 'lister', 504034, 0);
 
-        $result = (new AfterCoolProductPageMapper(new AfterCoolListerProductMapper()))->map($page);
+        $result = (new AfterCoolProductPageMapper($this->mapper()))->map($page);
 
         self::assertCount(1, $result->products);
         self::assertSame('900001', $result->products[0]->sourceProductId);
@@ -155,6 +186,11 @@ final class AfterCoolListerProductMapperTest extends TestCase
     private function page(): object
     {
         return $this->normalizer()->normalizeProductPage($this->fixture(), 'JV', 'lister', 504034, 0);
+    }
+
+    private function mapper(): AfterCoolListerProductMapper
+    {
+        return new AfterCoolListerProductMapper(new AfterCoolSourceFileParser());
     }
 
     private function normalizer(): AfterCoolResponseNormalizer

@@ -6,9 +6,14 @@ use Jv\Import\Integration\AfterCool\Dto\AfterCoolMappedProduct;
 use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductIssue;
 use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductItem;
 use Jv\Import\Integration\AfterCool\Exception\AfterCoolProductMappingException;
+use Jv\Import\Service\AfterCool\Parser\AfterCoolSourceFileParser;
 
 final class AfterCoolListerProductMapper
 {
+    public function __construct(private readonly AfterCoolSourceFileParser $sourceFileParser)
+    {
+    }
+
     public function map(AfterCoolProductItem $item, ?AfterCoolProductItem $linkedProduct = null, bool $importing = false): AfterCoolMappedProduct
     {
         if (!$this->isValidEan($item->ean)) {
@@ -17,6 +22,7 @@ final class AfterCoolListerProductMapper
         $price = $this->price($item);
         $stock = $this->stock($item);
         [$mediaUrls, $mediaIssues] = $this->media($item);
+        [$stammartikelId, $collectionName, $sourceFilePrefix, $sourceRegion] = $this->promotionIndex($item, $linkedProduct);
 
         return new AfterCoolMappedProduct(
             $item->account,
@@ -39,6 +45,10 @@ final class AfterCoolListerProductMapper
             $item->updatedAt,
             $item->sourceFile,
             $item->sourceKind,
+            $stammartikelId,
+            $collectionName,
+            $sourceFilePrefix,
+            $sourceRegion,
         );
     }
 
@@ -48,6 +58,7 @@ final class AfterCoolListerProductMapper
             throw new AfterCoolProductMappingException($item->productId, 'invalid_ean');
         }
         [$mediaUrls, $mediaIssues] = $this->media($item);
+        [$stammartikelId, $collectionName, $sourceFilePrefix, $sourceRegion] = $this->promotionIndex($item, $linkedProduct);
 
         return new AfterCoolMappedProduct(
             $item->account,
@@ -70,7 +81,33 @@ final class AfterCoolListerProductMapper
             $item->updatedAt,
             $item->sourceFile,
             $item->sourceKind,
+            $stammartikelId,
+            $collectionName,
+            $sourceFilePrefix,
+            $sourceRegion,
         );
+    }
+
+    /** @return array{0: ?string, 1: ?string, 2: ?string, 3: ?string} */
+    private function promotionIndex(AfterCoolProductItem $item, ?AfterCoolProductItem $linkedProduct): array
+    {
+        $stammartikel = $item->row['I_stammartikel'] ?? null;
+        $stammartikelId = is_string($stammartikel) && '' !== trim($stammartikel) ? trim($stammartikel) : null;
+        $metadata = $this->sourceFileParser->parse($item->sourceFile);
+        $collectionName = null;
+        if (null !== $linkedProduct && null !== $stammartikelId) {
+            $linkedIdentity = trim((string) ($linkedProduct->row['ID'] ?? $linkedProduct->productId));
+            if ($linkedIdentity === $stammartikelId && '' !== trim($linkedProduct->name)) {
+                $collectionName = trim($linkedProduct->name);
+            }
+        }
+
+        return [
+            $stammartikelId,
+            $collectionName,
+            $metadata?->prefix,
+            $metadata?->region,
+        ];
     }
 
     private function isValidEan(string $ean): bool

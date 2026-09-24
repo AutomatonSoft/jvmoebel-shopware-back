@@ -19,6 +19,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopware\Core\Framework\Struct\ArrayStruct;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
@@ -34,6 +35,9 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 final class ProductGridCmsElementResolver extends AbstractCmsElementResolver
 {
     public const string TYPE = 'jv-product-grid';
+
+    /** @see \Jv\Promotion\JvPromotionConstants::EXTENSION_BASE_PRICE */
+    private const string PROMOTION_BASE_PRICE_EXTENSION = 'jvPromotionBasePrice';
 
     public function getType(): string
     {
@@ -305,6 +309,15 @@ final class ProductGridCmsElementResolver extends AbstractCmsElementResolver
 
     private function resolvePreviousPrice(SalesChannelProductEntity $product, float $unitPrice): ?float
     {
+        $promotionBasePrice = $this->resolvePromotionBasePrice($product);
+        if (null !== $promotionBasePrice) {
+            if (!is_finite($promotionBasePrice) || $promotionBasePrice <= $unitPrice) {
+                return null;
+            }
+
+            return $promotionBasePrice;
+        }
+
         $listPrice = $product->getCalculatedPrice()->getListPrice();
         if (!$listPrice instanceof ListPrice) {
             return null;
@@ -316,6 +329,23 @@ final class ProductGridCmsElementResolver extends AbstractCmsElementResolver
         }
 
         return $price;
+    }
+
+    private function resolvePromotionBasePrice(SalesChannelProductEntity $product): ?float
+    {
+        $extension = $product->getExtension(self::PROMOTION_BASE_PRICE_EXTENSION);
+        if (!$extension instanceof ArrayStruct) {
+            return null;
+        }
+
+        $gross = $extension->get('gross');
+        if (!\is_float($gross) && !\is_int($gross)) {
+            return null;
+        }
+
+        $price = (float) $gross;
+
+        return is_finite($price) ? $price : null;
     }
 
     private function resolveRating(SalesChannelProductEntity $product): ?float

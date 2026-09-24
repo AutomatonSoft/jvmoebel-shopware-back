@@ -1,0 +1,41 @@
+{
+    "jv-promotion": {
+        "aftercool": {
+            "tabTitle": "AfterCool-Targeting",
+            "cardTitle": "AfterCool-Zielgruppe",
+            "cardSubtitle": "Fabrik, Kollektion oder EAN für JVMöbel-Aktionen auswählen.",
+            "factoryLabel": "Fabrik",
+            "factoryPlaceholder": "Fabrik suchen…",
+            "noResults": "Keine Treffer.",
+            "loading": "Wird geladen…",
+            "collectionLabel": "Kollektion",
+            "collectionPlaceholder": "Kollektion suchen…",
+            "eanLabel": "EAN / Produkt",
+            "eanPlaceholder": "EAN hinzufügen…",
+            "prefixLabel": "Fabrik-Präfix",
+            "prefixPlaceholder": "z. B. GANASI",
+            "discountLabel": "Rabatt in %",
+            "targetsTitle": "Aktive Ziele",
+            "previewTitle": "Vorschau betroffener Produkte",
+            "previewEmpty": "Noch keine Produkte für die aktuelle Auswahl.",
+            "addFactoryTarget": "Fabrik-Ziel hinzufügen",
+            "addCollectionTarget": "Kollektion-Ziel hinzufügen",
+            "addEanTarget": "EAN-Ziel hinzufügen",
+            "addPrefixTarget": "Präfix-Ziel hinzufügen",
+            "saveTargeting": "AfterCool-Targeting speichern",
+            "refreshPreview": "Vorschau aktualisieren",
+            "saveSuccess": "AfterCool-Targeting wurde gespeichert.",
+            "saveError": "AfterCool-Targeting konnte nicht gespeichert werden.",
+            "loadError": "AfterCool-Daten konnten nicht geladen werden.",
+            "alreadyAdded": "Dieses Ziel ist bereits in der Liste.",
+            "needsSavedPromotion": "Bitte speichern Sie die Aktion zuerst auf dem Tab „Allgemein“, bevor Sie AfterCool-Targeting konfigurieren.",
+            "columns": {
+                "name": "Produkt",
+                "ean": "EAN",
+                "factory": "Fabrik",
+                "collection": "Kollektion",
+                "basePrice": "Basispreis"
+            }
+        }
+    }
+}

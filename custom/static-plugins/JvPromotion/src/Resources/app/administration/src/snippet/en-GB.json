@@ -1,0 +1,41 @@
+{
+    "jv-promotion": {
+        "aftercool": {
+            "tabTitle": "AfterCool targeting",
+            "cardTitle": "AfterCool targeting",
+            "cardSubtitle": "Select factory, collection, or EAN for JVMöbel promotions.",
+            "factoryLabel": "Factory",
+            "factoryPlaceholder": "Search factory…",
+            "noResults": "No matches.",
+            "loading": "Loading…",
+            "collectionLabel": "Collection",
+            "collectionPlaceholder": "Search collection…",
+            "eanLabel": "EAN / product",
+            "eanPlaceholder": "Add EAN…",
+            "prefixLabel": "Factory prefix",
+            "prefixPlaceholder": "e.g. GANASI",
+            "discountLabel": "Discount %",
+            "targetsTitle": "Active targets",
+            "previewTitle": "Affected products preview",
+            "previewEmpty": "No products match the current selection yet.",
+            "addFactoryTarget": "Add factory target",
+            "addCollectionTarget": "Add collection target",
+            "addEanTarget": "Add EAN target",
+            "addPrefixTarget": "Add prefix target",
+            "saveTargeting": "Save AfterCool targeting",
+            "refreshPreview": "Refresh preview",
+            "saveSuccess": "AfterCool targeting saved.",
+            "saveError": "AfterCool targeting could not be saved.",
+            "loadError": "AfterCool data could not be loaded.",
+            "alreadyAdded": "This target is already in the list.",
+            "needsSavedPromotion": "Save the promotion on the General tab before configuring AfterCool targeting.",
+            "columns": {
+                "name": "Product",
+                "ean": "EAN",
+                "factory": "Factory",
+                "collection": "Collection",
+                "basePrice": "Base price"
+            }
+        }
+    }
+}

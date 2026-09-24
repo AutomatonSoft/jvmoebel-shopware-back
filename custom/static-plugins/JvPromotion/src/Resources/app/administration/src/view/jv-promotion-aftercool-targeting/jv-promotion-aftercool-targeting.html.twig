@@ -1,0 +1,273 @@
+{% block jv_promotion_aftercool_targeting %}
+<div class="jv-promotion-aftercool-targeting">
+    <sw-card
+        v-if="isCreateMode"
+        position-identifier="jv-promotion-aftercool-create-hint"
+    >
+        <sw-alert variant="info">
+            {{ $t('jv-promotion.aftercool.needsSavedPromotion') }}
+        </sw-alert>
+    </sw-card>
+
+    <template v-else>
+        <sw-card
+            position-identifier="jv-promotion-aftercool-targeting"
+            :title="$t('jv-promotion.aftercool.cardTitle')"
+            :subtitle="$t('jv-promotion.aftercool.cardSubtitle')"
+            :is-loading="isLoading"
+        >
+            <sw-container
+                columns="1fr 1fr"
+                gap="16px"
+                class="jv-promotion-aftercool-targeting__pickers"
+                :class="{ 'is--open': factoryListOpen || collectionListOpen }"
+            >
+                <div class="jv-promotion-aftercool-targeting__picker">
+                    <sw-block-field :label="$t('jv-promotion.aftercool.factoryLabel')">
+                        <template #sw-field-input="{ identification }">
+                            <input
+                                :id="identification"
+                                :name="identification"
+                                class="jv-promotion-aftercool-targeting__picker-input"
+                                type="search"
+                                autocomplete="off"
+                                :placeholder="$t('jv-promotion.aftercool.factoryPlaceholder')"
+                                :value="factoryQuery"
+                                @input="onFactoryQueryInput"
+                                @focus="openFactoryList"
+                                @blur="closeFactoryList"
+                            >
+                        </template>
+                    </sw-block-field>
+                    <ul
+                        v-if="factoryListOpen"
+                        class="jv-promotion-aftercool-targeting__picker-list"
+                        role="listbox"
+                    >
+                        <li
+                            v-if="!visibleFactoryOptions.length"
+                            class="jv-promotion-aftercool-targeting__picker-empty"
+                        >
+                            {{ $t('jv-promotion.aftercool.noResults') }}
+                        </li>
+                        <li
+                            v-for="option in visibleFactoryOptions"
+                            :key="`factory-${option.id}`"
+                            role="option"
+                            @mousedown.prevent="selectFactory(option)"
+                        >
+                            {{ option.name }}
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="jv-promotion-aftercool-targeting__picker">
+                    <sw-block-field
+                        :label="$t('jv-promotion.aftercool.collectionLabel')"
+                        :disabled="!factoryId"
+                    >
+                        <template #sw-field-input="{ identification }">
+                            <input
+                                :id="identification"
+                                :name="identification"
+                                class="jv-promotion-aftercool-targeting__picker-input"
+                                type="search"
+                                autocomplete="off"
+                                :placeholder="$t('jv-promotion.aftercool.collectionPlaceholder')"
+                                :value="collectionQuery"
+                                :disabled="!factoryId"
+                                @input="onCollectionQueryInput"
+                                @focus="openCollectionList"
+                                @blur="closeCollectionList"
+                            >
+                        </template>
+                    </sw-block-field>
+                    <ul
+                        v-if="collectionListOpen && factoryId"
+                        class="jv-promotion-aftercool-targeting__picker-list"
+                        role="listbox"
+                    >
+                        <li
+                            v-if="collectionsLoading && !visibleCollectionOptions.length"
+                            class="jv-promotion-aftercool-targeting__picker-empty"
+                        >
+                            {{ $t('jv-promotion.aftercool.loading') }}
+                        </li>
+                        <li
+                            v-else-if="!visibleCollectionOptions.length"
+                            class="jv-promotion-aftercool-targeting__picker-empty"
+                        >
+                            {{ $t('jv-promotion.aftercool.noResults') }}
+                        </li>
+                        <li
+                            v-for="option in visibleCollectionOptions"
+                            :key="`collection-${option.id}`"
+                            role="option"
+                            @mousedown.prevent="selectCollection(option)"
+                        >
+                            {{ option.name }}
+                        </li>
+                    </ul>
+                </div>
+            </sw-container>
+
+            <sw-container columns="1fr 1fr 1fr" gap="16px" class="jv-promotion-aftercool-targeting__row">
+                <sw-text-field
+                    v-model:value="eanInput"
+                    :label="$t('jv-promotion.aftercool.eanLabel')"
+                    :placeholder="$t('jv-promotion.aftercool.eanPlaceholder')"
+                />
+
+                <sw-text-field
+                    v-model:value="prefixInput"
+                    :label="$t('jv-promotion.aftercool.prefixLabel')"
+                    :placeholder="$t('jv-promotion.aftercool.prefixPlaceholder')"
+                />
+
+                <sw-number-field
+                    v-model:value="discountPercent"
+                    :label="$t('jv-promotion.aftercool.discountLabel')"
+                    :min="0.01"
+                    :max="100"
+                    :step="0.01"
+                    number-type="float"
+                />
+            </sw-container>
+
+            <div class="jv-promotion-aftercool-targeting__actions">
+                <mt-button
+                    variant="secondary"
+                    size="small"
+                    :disabled="!factoryId"
+                    @click="addFactoryTarget"
+                >
+                    {{ $t('jv-promotion.aftercool.addFactoryTarget') }}
+                </mt-button>
+
+                <mt-button
+                    variant="secondary"
+                    size="small"
+                    :disabled="!factoryId || !collectionId"
+                    @click="addCollectionTarget"
+                >
+                    {{ $t('jv-promotion.aftercool.addCollectionTarget') }}
+                </mt-button>
+
+                <mt-button
+                    variant="secondary"
+                    size="small"
+                    :disabled="!eanInput"
+                    @click="addEanTarget"
+                >
+                    {{ $t('jv-promotion.aftercool.addEanTarget') }}
+                </mt-button>
+
+                <mt-button
+                    variant="secondary"
+                    size="small"
+                    :disabled="!prefixInput"
+                    @click="addFactoryPrefixTarget"
+                >
+                    {{ $t('jv-promotion.aftercool.addPrefixTarget') }}
+                </mt-button>
+            </div>
+
+            <sw-alert
+                v-if="warnings.length"
+                variant="warning"
+                class="jv-promotion-aftercool-targeting__warnings"
+            >
+                <ul>
+                    <li v-for="(warning, index) in warnings" :key="`warning-${index}`">
+                        {{ warning }}
+                    </li>
+                </ul>
+            </sw-alert>
+
+            <div
+                v-if="targets.length"
+                class="jv-promotion-aftercool-targeting__targets"
+            >
+            <sw-card
+                position-identifier="jv-promotion-aftercool-target-list"
+                :title="$t('jv-promotion.aftercool.targetsTitle')"
+            >
+                <ul class="jv-promotion-aftercool-targeting__target-list">
+                    <li
+                        v-for="(target, index) in targets"
+                        :key="targetKey(target, index)"
+                        class="jv-promotion-aftercool-targeting__target-item"
+                    >
+                        <span>{{ formatTarget(target) }}</span>
+                        <mt-button
+                            variant="critical"
+                            size="small"
+                            @click="removeTarget(index)"
+                        >
+                            {{ $t('global.default.delete') }}
+                        </mt-button>
+                    </li>
+                </ul>
+            </sw-card>
+            </div>
+
+            <div class="jv-promotion-aftercool-targeting__actions">
+                <mt-button
+                    variant="secondary"
+                    size="default"
+                    :disabled="!targets.length || previewLoading"
+                    @click="loadPreview"
+                >
+                    {{ $t('jv-promotion.aftercool.refreshPreview') }}
+                </mt-button>
+
+                <sw-button-process
+                    variant="primary"
+                    :is-loading="isSaving"
+                    :process-success="isSaveSuccessful"
+                    :disabled="!canSave"
+                    @click="saveTargeting"
+                    @update:process-success="onSaveSuccessful"
+                >
+                    {{ $t('jv-promotion.aftercool.saveTargeting') }}
+                </sw-button-process>
+            </div>
+        </sw-card>
+
+        <sw-card
+            position-identifier="jv-promotion-aftercool-preview"
+            :title="$t('jv-promotion.aftercool.previewTitle')"
+            :is-loading="previewLoading"
+        >
+            <p
+                v-if="!previewItems.length && !previewLoading"
+                class="jv-promotion-aftercool-targeting__preview-empty"
+            >
+                {{ $t('jv-promotion.aftercool.previewEmpty') }}
+            </p>
+
+            <sw-data-grid
+                v-else-if="previewItems.length"
+                :data-source="previewItems"
+                :columns="previewColumns"
+                :show-selection="false"
+                :show-actions="false"
+                plain-appearance
+            >
+                <template #column-basePrice="{ item }">
+                    <span v-if="item.basePrice !== null">{{ formatPrice(item.basePrice) }}</span>
+                    <span v-else>—</span>
+                </template>
+            </sw-data-grid>
+
+            <sw-pagination
+                v-if="previewTotal > previewLimit"
+                :page="previewPage"
+                :limit="previewLimit"
+                :total="previewTotal"
+                @page-change="onPreviewPageChange"
+            />
+        </sw-card>
+    </template>
+</div>
+{% endblock %}

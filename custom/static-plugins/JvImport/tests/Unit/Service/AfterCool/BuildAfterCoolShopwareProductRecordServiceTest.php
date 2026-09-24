@@ -7,6 +7,7 @@ use Jv\Import\Integration\AfterCool\Mapper\AfterCoolListerProductMapper;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolMappedProduct;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolProductWriteValidationException;
 use Jv\Import\Service\AfterCool\Import\BuildAfterCoolShopwareProductRecordService;
+use Jv\Import\Service\AfterCool\Parser\AfterCoolSourceFileParser;
 use Jv\Import\Service\ProductImport\ProductImportIdentity;
 use Jv\MarketConfiguration\Service\MarketConfiguration\Market;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -185,7 +186,7 @@ final class BuildAfterCoolShopwareProductRecordServiceTest extends TestCase
         }
         $page = (new AfterCoolResponseNormalizer())->normalizeProductPage($payload, 'JV', 'lister', 504034, 0);
 
-        $mapped = (new AfterCoolListerProductMapper())->map($page->items[$index]);
+        $mapped = $this->productMapper()->map($page->items[$index]);
 
         return new AfterCoolMappedProduct(
             $mapped->account,
@@ -203,5 +204,10 @@ final class BuildAfterCoolShopwareProductRecordServiceTest extends TestCase
             $mapped->mediaUrls,
             [],
         );
+    }
+
+    private function productMapper(): AfterCoolListerProductMapper
+    {
+        return new AfterCoolListerProductMapper(new AfterCoolSourceFileParser());
     }
 }

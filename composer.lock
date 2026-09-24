@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "65bc67d6c5536054512def36d4571547",
+    "content-hash": "27135d64625e67e0235dbb6ec5964b3b",
     "packages": [
         {
             "name": "async-aws/core",
@@ -2799,6 +2799,47 @@
                 "proprietary"
             ],
             "description": "JVMöbel market and sales channel configuration",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "jvmoebel/promotion",
+            "version": "0.1.0",
+            "dist": {
+                "type": "path",
+                "url": "custom/static-plugins/JvPromotion",
+                "reference": "ff2ccdc76eb6d027f35107af704ed625e4a2da17"
+            },
+            "require": {
+                "jvmoebel/import": "^0.1",
+                "jvmoebel/market-configuration": "^0.1",
+                "php": "^8.5",
+                "shopware/core": "~6.7.0"
+            },
+            "type": "shopware-platform-plugin",
+            "extra": {
+                "shopware-plugin-class": "Jv\\Promotion\\JvPromotion",
+                "label": {
+                    "de-DE": "JVMöbel Promotions",
+                    "en-GB": "JVMöbel Promotions"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Jv\\Promotion\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Jv\\Promotion\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "description": "JVMöbel promotion management on top of Shopware Promotions",
             "transport-options": {
                 "symlink": true,
                 "relative": true

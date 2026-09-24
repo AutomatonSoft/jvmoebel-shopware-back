@@ -10,6 +10,7 @@ use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductItem;
 use Jv\Import\Integration\AfterCool\Dto\AfterCoolProductPage;
 use Jv\Import\Integration\AfterCool\Mapper\AfterCoolListerProductMapper;
 use Jv\Import\Integration\AfterCool\Mapper\AfterCoolProductPageMapper;
+use Jv\Import\Service\AfterCool\Parser\AfterCoolSourceFileParser;
 use PHPUnit\Framework\TestCase;
 
 final class AfterCoolProductSourceTest extends TestCase
@@ -51,7 +52,7 @@ final class AfterCoolProductSourceTest extends TestCase
                 return $this->linked;
             }
         };
-        $source = new AfterCoolProductSource($reader, new AfterCoolProductPageMapper(new AfterCoolListerProductMapper()));
+        $source = new AfterCoolProductSource($reader, new AfterCoolProductPageMapper(new AfterCoolListerProductMapper(new AfterCoolSourceFileParser())));
 
         $source->getProductPage(504034, 0, 25);
         self::assertSame([], $reader->linkedIds, 'Administration preview must not fan out into product-detail requests.');
@@ -99,7 +100,7 @@ final class AfterCoolProductSourceTest extends TestCase
             }
         };
 
-        $result = (new AfterCoolProductSource($reader, new AfterCoolProductPageMapper(new AfterCoolListerProductMapper())))
+        $result = (new AfterCoolProductSource($reader, new AfterCoolProductPageMapper(new AfterCoolListerProductMapper(new AfterCoolSourceFileParser()))))
             ->getImportProductPage(504034, 0);
 
         self::assertCount(1, $result->products);
@@ -144,7 +145,7 @@ final class AfterCoolProductSourceTest extends TestCase
             }
         };
 
-        $result = (new AfterCoolProductSource($reader, new AfterCoolProductPageMapper(new AfterCoolListerProductMapper())))
+        $result = (new AfterCoolProductSource($reader, new AfterCoolProductPageMapper(new AfterCoolListerProductMapper(new AfterCoolSourceFileParser()))))
             ->getImportProductPage(504034, 0);
 
         self::assertCount(3, $result->products, 'Missing detail data must not reject otherwise valid Lister products.');
