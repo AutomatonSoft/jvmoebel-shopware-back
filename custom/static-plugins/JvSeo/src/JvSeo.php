@@ -29,6 +29,8 @@ final class JvSeo extends Plugin
             'jv_seo_redirect_source:delete',
         ];
         $sitemapWrite = ['jv_seo_sitemap_export:read', 'jv_seo_sitemap_export:write'];
+        $robotsRead = ['jv_seo_robots:read'];
+        $robotsWrite = [...$robotsRead, 'jv_seo_robots:write'];
 
         return [
             'product.viewer' => $read,
@@ -39,7 +41,7 @@ final class JvSeo extends Plugin
             'landing_page.editor' => $write,
             'media.viewer' => $read,
             'media.editor' => $write,
-            'system.system_config' => $sitemapWrite,
+            'system.system_config' => [...$sitemapWrite, ...$robotsWrite],
         ];
     }
 }

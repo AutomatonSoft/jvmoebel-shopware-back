@@ -18,6 +18,9 @@
         <service id="Jv\Seo\Core\Content\SitemapExportRun\SitemapExportRunDefinition">
             <tag name="shopware.entity.definition" entity="jv_seo_sitemap_export_run"/>
         </service>
+        <service id="Jv\Seo\Core\Content\RobotsPublicationRun\RobotsPublicationRunDefinition">
+            <tag name="shopware.entity.definition" entity="jv_seo_robots_publication_run"/>
+        </service>
 
         <service id="Jv\Seo\Service\Redirect\UrlNormalizer"/>
         <service id="Jv\Seo\Service\Redirect\ProductTargetUrlResolver">
@@ -86,6 +89,40 @@
         <service id="Jv\Seo\Service\Sitemap\SitemapExportRunStore">
             <argument type="service" id="jv_seo_sitemap_export_run.repository"/>
         </service>
+        <service id="Jv\Seo\Service\Robots\RobotsPublicationRunStore">
+            <argument type="service" id="jv_seo_robots_publication_run.repository"/>
+        </service>
+        <service id="Jv\Seo\Service\Robots\RobotsTextValidator"/>
+        <service id="Jv\Seo\Service\Robots\StartRobotsPublicationService">
+            <argument type="service" id="Jv\Seo\Service\Sitemap\EligibleSitemapSalesChannels"/>
+            <argument type="service" id="Jv\Seo\Service\Robots\RobotsTextValidator"/>
+            <argument type="service" id="Jv\Seo\Service\Robots\RobotsPublicationRunStore"/>
+            <argument type="service" id="messenger.default_bus"/>
+            <argument type="service" id="lock.factory"/>
+        </service>
+        <service id="Jv\Seo\Integration\NextRobots\NextRobotsPublisher">
+            <argument type="service" id="http_client"/>
+            <argument type="service" id="shopware.filesystem.sitemap"/>
+            <argument>%env(string:JV_SITEMAP_INGESTION_ENDPOINT)%</argument>
+            <argument>%env(string:JV_SITEMAP_INGESTION_SECRET)%</argument>
+            <argument>%env(float:JV_SITEMAP_INGESTION_TIMEOUT)%</argument>
+            <argument>%env(string:JV_SITEMAP_PUBLICATION_ENVIRONMENT)%</argument>
+        </service>
+        <service id="Jv\Seo\Service\Robots\Contract\RobotsPublisherInterface" alias="Jv\Seo\Integration\NextRobots\NextRobotsPublisher"/>
+        <service id="Jv\Seo\Service\Robots\GenerateAndPublishRobotsService">
+            <argument type="service" id="Jv\Seo\Service\Sitemap\EligibleSitemapSalesChannels"/>
+            <argument type="service" id="shopware.filesystem.sitemap"/>
+            <argument type="service" id="Jv\Seo\Service\Robots\RobotsPublicationRunStore"/>
+            <argument type="service" id="Jv\Seo\Service\Robots\Contract\RobotsPublisherInterface"/>
+            <argument type="service" id="Jv\Seo\Service\Robots\RobotsTextValidator"/>
+            <argument type="service" id="Psr\Clock\ClockInterface"/>
+        </service>
+        <service id="Jv\Seo\MessageHandler\RobotsPublicationMessageHandler">
+            <argument type="service" id="Jv\Seo\Service\Robots\RobotsPublicationRunStore"/>
+            <argument type="service" id="Jv\Seo\Service\Robots\GenerateAndPublishRobotsService"/>
+            <argument type="service" id="lock.factory"/>
+            <argument type="service" id="logger"/>
+        </service>
         <service id="Jv\Seo\Integration\NextSitemap\NextSitemapPublisher">
             <argument type="service" id="http_client"/>
             <argument type="service" id="shopware.filesystem.sitemap"/>
@@ -131,6 +168,13 @@
             <argument type="service" id="Jv\Seo\Service\Sitemap\StartSitemapExportService"/>
             <argument type="service" id="Jv\Seo\Service\Sitemap\EligibleSitemapSalesChannels"/>
             <argument type="service" id="jv_seo_sitemap_export_run.repository"/>
+            <tag name="controller.service_arguments"/>
+        </service>
+        <service id="Jv\Seo\Controller\RobotsPublicationController" public="true">
+            <argument type="service" id="Jv\Seo\Service\Robots\StartRobotsPublicationService"/>
+            <argument type="service" id="Jv\Seo\Service\Sitemap\EligibleSitemapSalesChannels"/>
+            <argument type="service" id="Jv\Seo\Service\Robots\RobotsPublicationRunStore"/>
+            <argument type="service" id="jv_seo_robots_publication_run.repository"/>
             <tag name="controller.service_arguments"/>
         </service>
         <service id="Jv\Seo\StoreApi\Route\RedirectLookupRoute" public="true">

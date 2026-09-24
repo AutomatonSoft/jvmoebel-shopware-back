@@ -12,7 +12,7 @@ Next.js сохраняет владение public `sitemap.xml`, routes и HTTP
 Входят штатные providers Shopware: home, product, category, Landing Page и
 configured custom URLs; execution из Administration через Messenger; статус
 export run; публикация через заменяемую границу publisher и Admin extension
-Settings → Sitemap.
+Settings → Sitemap, доступное также ссылкой в Shop → SEO после Robots.txt.
 
 Не входят scheduled task, `robots.txt`, image sitemap, Next-only URLs и S3
 adapter. S3 позднее реализуется как отдельный `SitemapPublisherInterface`

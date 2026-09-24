@@ -19,7 +19,7 @@
         },
         "general": {
             "title": "SEO",
-            "description": "Manage SEO and redirects"
+            "description": "Manage robots.txt, SEO and redirects"
         },
         "redirects": {
             "title": "Redirects"
@@ -94,6 +94,26 @@
         "imageCard": {
             "title": "Legacy redirects by Sales Channel",
             "empty": "No legacy redirects are configured for this image."
+        },
+        "robots": {
+            "title": "Robots.txt",
+            "description": "Edit and publish robots.txt per sales channel. UTF-8 text, tabs and line breaks are allowed; maximum 32 KiB.",
+            "salesChannel": "Sales channel",
+            "editorLabel": "Robots.txt content",
+            "placeholder": "User-agent: *\\nDisallow:",
+            "size": "{size} of {max} bytes",
+            "publish": "Publish robots.txt",
+            "publicationsTitle": "Robots.txt publication",
+            "file": "File",
+            "publishedAt": "Last published",
+            "notPublished": "Not published",
+            "publicationsError": "Robots.txt publication history could not be loaded.",
+            "status": "Status: {status}",
+            "channelsError": "Eligible sales channels could not be loaded.",
+            "loadError": "Robots.txt could not be loaded.",
+            "publishError": "Robots.txt could not be published.",
+            "statusError": "Publication status could not be loaded.",
+            "noChannels": "No eligible sales channels were found."
         }
     },
     "sw-settings": {

@@ -19,7 +19,7 @@
         },
         "general": {
             "title": "SEO",
-            "description": "SEO und Weiterleitungen verwalten"
+            "description": "Robots.txt, SEO and redirects verwalten"
         },
         "redirects": {
             "title": "Weiterleitungen"
@@ -94,6 +94,26 @@
         "imageCard": {
             "title": "Legacy-Weiterleitungen nach Verkaufskanal",
             "empty": "Für dieses Bild sind keine Legacy-Weiterleitungen konfiguriert."
+        },
+        "robots": {
+            "title": "Robots.txt",
+            "description": "Robots.txt pro Verkaufskanal bearbeiten und veröffentlichen. Nur UTF-8-Text, Tabulatoren und Zeilenumbrüche sind erlaubt; maximal 32 KiB.",
+            "salesChannel": "Verkaufskanal",
+            "editorLabel": "Robots.txt-Inhalt",
+            "placeholder": "User-agent: *\\nDisallow:",
+            "size": "{size} von {max} Bytes",
+            "publish": "Robots.txt veröffentlichen",
+            "publicationsTitle": "Robots.txt-Veröffentlichung",
+            "file": "Datei",
+            "publishedAt": "Zuletzt veröffentlicht",
+            "notPublished": "Nicht veröffentlicht",
+            "publicationsError": "Der Veröffentlichungsverlauf von Robots.txt konnte nicht geladen werden.",
+            "status": "Status: {status}",
+            "channelsError": "Verkaufskanäle konnten nicht geladen werden.",
+            "loadError": "Robots.txt konnte nicht geladen werden.",
+            "publishError": "Robots.txt konnte nicht veröffentlicht werden.",
+            "statusError": "Der Veröffentlichungsstatus konnte nicht geladen werden.",
+            "noChannels": "Es wurden keine geeigneten Verkaufskanäle gefunden."
         }
     },
     "sw-settings": {
