@@ -83,6 +83,17 @@
             <argument type="service" id="Jv\Seo\Service\Redirect\LandingPageTargetUrlResolver"/>
             <argument type="service" id="Jv\Seo\Service\Redirect\ImageTargetUrlResolver"/>
         </service>
+        <service id="Jv\Seo\Service\CategoryMapping\CategoryMappingScoreCalculator"/>
+        <service id="Jv\Seo\Service\CategoryMapping\ExportLegacyCategoryMappingCsvService">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="Jv\Seo\Service\CategoryMapping\CategoryMappingScoreCalculator"/>
+        </service>
+        <service id="Jv\Seo\Command\ExportLegacyCategoryMappingCommand">
+            <argument type="service" id="Jv\Seo\Service\CategoryMapping\ExportLegacyCategoryMappingCsvService"/>
+            <argument type="service" id="logger"/>
+            <argument key="$environment">%kernel.environment%</argument>
+        </service>
+
         <service id="Jv\Seo\Service\Sitemap\LegacyRedirectCustomUrlProvider" decorates="Shopware\Core\Content\Sitemap\Provider\CustomUrlProvider">
             <argument type="service" id="Jv\Seo\Service\Sitemap\LegacyRedirectCustomUrlProvider.inner"/>
             <argument type="service" id="Jv\Seo\Service\Redirect\LookupRedirectService"/>
