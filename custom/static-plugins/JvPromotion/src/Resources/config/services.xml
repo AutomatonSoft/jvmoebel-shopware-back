@@ -1,0 +1,81 @@
+<?xml version="1.0" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services https://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <defaults autowire="true" autoconfigure="true" public="false"/>
+
+        <prototype namespace="Jv\Promotion\"
+                   resource="../../*"
+                   exclude="../../{DependencyInjection,Migration,JvPromotion.php,JvPromotionConstants.php,Core/Content/JvPromotionTarget/JvPromotionTargetCollection.php,Core/Content/JvPromotionTarget/JvPromotionTargetEntity.php}"/>
+
+        <service id="Jv\Promotion\Core\Content\JvPromotionTarget\JvPromotionTargetDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+
+        <service id="Jv\Promotion\Core\Content\Product\ProductJvPromotionPriceExtension">
+            <tag name="shopware.entity.extension"/>
+        </service>
+
+        <service id="Jv\Promotion\Rule\Condition\JvAfterCoolFactoryRule">
+            <tag name="shopware.rule.definition"/>
+        </service>
+
+        <service id="Jv\Promotion\Rule\Condition\JvAfterCoolCollectionRule">
+            <tag name="shopware.rule.definition"/>
+        </service>
+
+        <service id="Jv\Promotion\Rule\Condition\JvAfterCoolFactoryPrefixRule">
+            <tag name="shopware.rule.definition"/>
+        </service>
+
+        <service id="Jv\Promotion\Rule\Condition\JvAfterCoolProductRule">
+            <tag name="shopware.rule.definition"/>
+        </service>
+
+        <service id="Jv\Promotion\Checkout\Promotion\JvPromotionProductPriceCalculator"
+                 decorates="Shopware\Core\Content\Product\SalesChannel\Price\ProductPriceCalculator">
+            <argument type="service" id="Jv\Promotion\Checkout\Promotion\JvPromotionProductPriceCalculator.inner"/>
+        </service>
+
+        <service id="Jv\Promotion\Checkout\Promotion\JvManagedPromotionCollectorDecorator"
+                 decorates="Shopware\Core\Checkout\Promotion\Cart\PromotionCollector">
+            <argument type="service" id="Jv\Promotion\Checkout\Promotion\JvManagedPromotionCollectorDecorator.inner"/>
+        </service>
+
+        <service id="Jv\Promotion\Checkout\Cart\JvAfterCoolLineItemMetadataCollector">
+            <tag name="shopware.cart.collector" priority="4500"/>
+        </service>
+
+        <service id="Jv\Promotion\Service\Query\ListPromotionCollectionsService">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface"/>
+        </service>
+
+        <service id="Jv\Promotion\Service\Query\ListPromotionFactoriesService">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface"/>
+            <argument type="service" id="cache.app"/>
+            <argument type="service" id="logger"/>
+            <argument>%env(AFTERCOOL_USERNAME)%</argument>
+        </service>
+
+        <service id="Jv\Promotion\Service\Query\GetPromotionTargetsService">
+            <argument type="service" id="jv_promotion_target.repository"/>
+        </service>
+
+        <service id="Jv\Promotion\Service\Write\SyncJvPromotionService">
+            <argument type="service" id="promotion.repository"/>
+            <argument type="service" id="rule.repository"/>
+            <argument type="service" id="jv_promotion_target.repository"/>
+        </service>
+
+        <service id="Jv\Promotion\Controller\Admin\PromotionTargetingController" public="true">
+            <tag name="controller.service_arguments"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+        </service>
+    </services>
+</container>

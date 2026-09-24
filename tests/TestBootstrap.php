@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Composer\Autoload\ClassLoader;
 use Shopware\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
 use Shopware\Core\TestBootstrapper;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
@@ -34,11 +35,50 @@ function clearTestMessengerStreams(): void
     }
 }
 
+/**
+ * Composer does not install autoload-dev of path packages into the root project.
+ * Plugin integration tests still need those PSR-4 prefixes, including traits used across plugins.
+ */
+function registerPluginTestNamespaces(): void
+{
+    $loader = require dirname(__DIR__).'/vendor/autoload.php';
+    if (!$loader instanceof ClassLoader) {
+        return;
+    }
+
+    $pluginDirectories = glob(dirname(__DIR__).'/custom/static-plugins/*', \GLOB_ONLYDIR) ?: [];
+    foreach ($pluginDirectories as $pluginDirectory) {
+        $composerFile = $pluginDirectory.'/composer.json';
+        if (!is_file($composerFile)) {
+            continue;
+        }
+
+        $package = json_decode((string) file_get_contents($composerFile), true);
+        if (!\is_array($package)) {
+            continue;
+        }
+
+        $prefixes = $package['autoload-dev']['psr-4'] ?? [];
+        if (!\is_array($prefixes)) {
+            continue;
+        }
+
+        foreach ($prefixes as $namespace => $path) {
+            if (!\is_string($namespace) || !\is_string($path)) {
+                continue;
+            }
+
+            $loader->addPsr4($namespace, $pluginDirectory.'/'.trim($path, '/').'/');
+        }
+    }
+}
+
 clearTestMessengerStreams();
+registerPluginTestNamespaces();
 
 $bootstrapper = (new TestBootstrapper())
     ->setPlatformEmbedded(false)
-    ->addActivePlugins('JvMarketConfiguration', 'JvCms', 'JvSeo', 'JvImport', 'JvStorefront');
+    ->addActivePlugins('JvMarketConfiguration', 'JvCms', 'JvSeo', 'JvImport', 'JvStorefront', 'JvPromotion');
 
 $bootstrapper->bootstrap();
 

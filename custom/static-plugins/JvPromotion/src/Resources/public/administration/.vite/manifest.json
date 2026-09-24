@@ -1,0 +1,11 @@
+{
+  "main.js": {
+    "file": "assets/jv-promotion-BjbtCWBj.js",
+    "name": "jv-promotion",
+    "src": "main.js",
+    "isEntry": true,
+    "css": [
+      "assets/jv-promotion-DWWrmRmN.css"
+    ]
+  }
+}

@@ -25,6 +25,7 @@ use Shopware\Core\Content\Seo\SeoUrl\SeoUrlEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
+use Shopware\Core\Framework\Struct\ArrayStruct;
 use Shopware\Core\Framework\Struct\Struct;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\Currency\CurrencyEntity;
@@ -298,6 +299,46 @@ final class ProductGridCmsElementResolverTest extends TestCase
         $data = $slot->getData();
         self::assertInstanceOf(ProductGridStruct::class, $data);
         self::assertNull($data->getProducts()[0]->getCalculatedPrice()->getListPrice());
+    }
+
+    public function testPreviousPriceUsesPromotionBaseInsteadOfUvp(): void
+    {
+        $slot = $this->slot([
+            'title' => 'Title',
+            'products' => [[
+                'productId' => self::PRODUCT_ID,
+            ]],
+        ]);
+
+        $product = $this->product(self::PRODUCT_ID, 'Product', '/product/p', 2831.2, 4200.0);
+        $product->addExtension('jvPromotionBasePrice', new ArrayStruct(['gross' => 3539.0]));
+
+        $result = $this->resultForSlot($slot, [$product]);
+        (new ProductGridCmsElementResolver())->enrich($slot, $this->resolverContext(), $result);
+
+        $data = $slot->getData();
+        self::assertInstanceOf(ProductGridStruct::class, $data);
+        self::assertSame(3539.0, $data->getProducts()[0]->getCalculatedPrice()->getListPrice()?->getPrice());
+    }
+
+    public function testPreviousPriceIgnoresInvalidPromotionBaseExtension(): void
+    {
+        $slot = $this->slot([
+            'title' => 'Title',
+            'products' => [[
+                'productId' => self::PRODUCT_ID,
+            ]],
+        ]);
+
+        $product = $this->product(self::PRODUCT_ID, 'Product', '/product/p', 100.0, 120.0);
+        $product->addExtension('jvPromotionBasePrice', new ArrayStruct(['gross' => 'invalid']));
+
+        $result = $this->resultForSlot($slot, [$product]);
+        (new ProductGridCmsElementResolver())->enrich($slot, $this->resolverContext(), $result);
+
+        $data = $slot->getData();
+        self::assertInstanceOf(ProductGridStruct::class, $data);
+        self::assertSame(120.0, $data->getProducts()[0]->getCalculatedPrice()->getListPrice()?->getPrice());
     }
 
     public function testPartialViewAllYieldsNull(): void

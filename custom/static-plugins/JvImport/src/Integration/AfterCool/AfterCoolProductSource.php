@@ -114,6 +114,10 @@ final readonly class AfterCoolProductSource implements AfterCoolImportProductSou
             $product->updatedAt,
             $product->sourceFile,
             $product->sourceKind,
+            $product->stammartikelId,
+            $product->collectionName,
+            $product->sourceFilePrefix,
+            $product->sourceRegion,
         );
     }
 
