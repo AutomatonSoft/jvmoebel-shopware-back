@@ -126,9 +126,11 @@ final readonly class OptionCartProcessor implements CartProcessorInterface, Cart
                     $context->getLanguageId(),
                     $context->getContext(),
                 );
-                $surchargeDescription = 'percentage' === $resolved->type
-                    ? sprintf(' (+%s%% / +%s)', $this->formatPercentage((float) $resolved->percentage), $formattedAmount)
-                    : sprintf(' (+%s)', $formattedAmount);
+                $surchargeDescription = 0.0 === $resolved->unitAmount
+                    ? ''
+                    : ('percentage' === $resolved->type
+                        ? sprintf(' (+%s%% / +%s)', $this->formatPercentage((float) $resolved->percentage), $formattedAmount)
+                        : sprintf(' (+%s)', $formattedAmount));
 
                 $selectionsSnapshot[] = [
                     'groupId' => $value->getGroupId(),

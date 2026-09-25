@@ -223,6 +223,14 @@ final class OptionTemplateStoreApiTest extends TestCase
         self::assertStringContainsString('+', $material['option']);
         self::assertStringContainsString('200', $material['option']);
 
+        $color = array_values(array_filter(
+            $lineItem['payload']['options'],
+            static fn (array $option): bool => ($option['group'] ?? null) === 'Farbe',
+        ))[0] ?? null;
+
+        self::assertNotNull($color);
+        self::assertSame('Grau', $color['option']);
+
         $this->browser->request('GET', '/store-api/checkout/cart');
         self::assertSame(200, $this->browser->getResponse()->getStatusCode());
         $recalculatedLineItem = $this->json()['lineItems'][0];
@@ -303,6 +311,10 @@ final class OptionTemplateStoreApiTest extends TestCase
         self::assertSame(
             [$this->ids->get('fabric'), $this->ids->get('grey')],
             array_column($cart['lineItems'][0]['payload']['jvProductOptions']['selections'], 'valueId'),
+        );
+        self::assertSame(
+            ['Stoff', 'Grau'],
+            array_column($cart['lineItems'][0]['payload']['options'], 'option'),
         );
     }
 
