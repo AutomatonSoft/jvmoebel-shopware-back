@@ -4,6 +4,12 @@
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://symfony.com/schema/dic/services https://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
+        <service id="Jv\Import\Elasticsearch\FactoryAwareProductDefinition" decorates="Shopware\Elasticsearch\Product\ElasticsearchProductDefinition">
+            <argument type="service" id="Jv\Import\Elasticsearch\FactoryAwareProductDefinition.inner"/>
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <tag name="shopware.es.definition"/>
+        </service>
+
         <defaults autowire="true" autoconfigure="true" public="false"/>
 
         <service id="Jv\Import\Subscriber\CosmoShopProductImportSubscriber">

@@ -3,15 +3,21 @@
 namespace Jv\Import\Tests\Integration\AfterCool;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DriverManager;
+use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunCollection;
 use Jv\Import\Service\AfterCool\Backfill\BackfillProductFactoriesService;
 use Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolFactory;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolMappedProduct;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolPreparedProduct;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolProductPageMappingResult;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolResolvedProduct;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolFactoryImportAlreadyRunningException;
 use Jv\Import\Service\AfterCool\Import\StartAfterCoolImportService;
 use Jv\Import\Service\AfterCool\Persistence\AfterCoolImportRunStore;
+use Jv\Import\Service\AfterCool\Persistence\AfterCoolPageCheckpointService;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Product\DataAbstractionLayer\ProductIndexer;
 use Shopware\Core\Content\Product\ProductCollection;
@@ -256,7 +262,9 @@ final class AfterCoolImportPersistenceTest extends TestCase
             self::assertSame([], $first['missingNames']);
             $factoryCount = static::getContainer()->get('jv_factory.repository')->searchIds(new Criteria(), $context)->getTotal();
             $second = $service->execute($context);
-            self::assertSame($first, $second);
+            self::assertSame(0, $second['assigned'], 'A second run must not rewrite or reindex unchanged product factory links.');
+            self::assertSame($first['conflicts'], $second['conflicts']);
+            self::assertSame($first['missingNames'], $second['missingNames']);
             self::assertSame($factoryCount, static::getContainer()->get('jv_factory.repository')->searchIds(new Criteria(), $context)->getTotal());
             self::assertNull(static::getContainer()->get(Connection::class)->fetchOne('SELECT jv_factory_id FROM product WHERE id = ?', [Uuid::fromHexToBytes($productId)]));
             self::assertSame(Uuid::fromHexToBytes(static::getContainer()->get('jv_factory_source.repository')->search((new Criteria())
@@ -266,6 +274,48 @@ final class AfterCoolImportPersistenceTest extends TestCase
             $sourceRepository->delete([['id' => $sourceOne], ['id' => $sourceTwo], ['id' => $sourceThree]], $context);
             $runRepository->delete([['id' => $runA], ['id' => $runB]], $context);
             $productRepository->delete([['id' => $productId], ['id' => $uniqueProductId]], $context);
+        }
+    }
+
+    public function testFactoryConflictCheckLocksProductRowsAgainstConcurrentImports(): void
+    {
+        $context = Context::createDefaultContext();
+        $productId = Uuid::randomHex();
+        $products = $this->productRepository();
+        $products->create([$this->product($productId, 'FACTORY-LOCK-TEST')], $context);
+
+        $connection = static::getContainer()->get(Connection::class);
+        $competitor = DriverManager::getConnection($connection->getParams());
+        $mapped = new AfterCoolMappedProduct('JV', 'lister', 504034, 'lock-source', 'LOCK-1', '4260174423463', 'FACTORY-LOCK-TEST', 'Lock test', 1, null, 1, null, [], []);
+        $resolved = new AfterCoolResolvedProduct($mapped, $productId, Uuid::randomHex(), [], false);
+        $prepared = new AfterCoolPreparedProduct($mapped, $resolved, $productId, []);
+        $checkpoint = static::getContainer()->get(AfterCoolPageCheckpointService::class);
+        $lockMethod = new \ReflectionMethod($checkpoint, 'lockProductsForFactoryCheck');
+
+        try {
+            $connection->beginTransaction();
+            $lockMethod->invoke($checkpoint, [$prepared]);
+            $competitor->executeStatement('SET SESSION innodb_lock_wait_timeout = 1');
+            $competitor->beginTransaction();
+            try {
+                $competitor->fetchFirstColumn(
+                    'SELECT id FROM product WHERE id = ? AND version_id = ? FOR UPDATE',
+                    [Uuid::fromHexToBytes($productId), Uuid::fromHexToBytes(Defaults::LIVE_VERSION)],
+                );
+                self::fail('A competing import must wait while the first page owns the product lock.');
+            } catch (LockWaitTimeoutException) {
+                self::addToAssertionCount(1);
+            } finally {
+                if ($competitor->isTransactionActive()) {
+                    $competitor->rollBack();
+                }
+            }
+        } finally {
+            if ($connection->isTransactionActive()) {
+                $connection->rollBack();
+            }
+            $competitor->close();
+            $products->delete([['id' => $productId]], $context);
         }
     }
 

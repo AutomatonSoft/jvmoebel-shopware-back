@@ -66,6 +66,7 @@ final readonly class AfterCoolPageCheckpointService
         Context $context,
     ): void {
         $this->connection->transactional(function () use ($run, $offset, $total, $hasMore, $records, $products, $issues, $context): void {
+            $this->lockProductsForFactoryCheck($products);
             $conflictingIds = $this->conflictingFactoryProductIds($run, $products, $context);
             foreach ($conflictingIds as $sourceProductId) {
                 $product = $products[$sourceProductId]->product;
@@ -134,6 +135,25 @@ final readonly class AfterCoolPageCheckpointService
             }
             $this->runRepository->update([$payload], $context);
         });
+    }
+
+    /** @param array<string, AfterCoolPreparedProduct> $products */
+    private function lockProductsForFactoryCheck(array $products): void
+    {
+        $ids = array_values(array_unique(array_map(
+            static fn (AfterCoolPreparedProduct $product): string => $product->productId,
+            $products,
+        )));
+        if ([] === $ids) {
+            return;
+        }
+
+        sort($ids, SORT_STRING);
+        $this->connection->fetchFirstColumn(
+            'SELECT id FROM product WHERE id IN (?) AND version_id = ? ORDER BY id FOR UPDATE',
+            [array_map(Uuid::fromHexToBytes(...), $ids), Uuid::fromHexToBytes(Defaults::LIVE_VERSION)],
+            [\Doctrine\DBAL\ArrayParameterType::BINARY, \Doctrine\DBAL\ParameterType::BINARY],
+        );
     }
 
     /** @param array<string, AfterCoolPreparedProduct> $products
