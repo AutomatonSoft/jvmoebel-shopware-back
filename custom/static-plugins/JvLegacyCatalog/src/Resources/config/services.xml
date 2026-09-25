@@ -1,0 +1,37 @@
+<?xml version="1.0" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services https://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <defaults autowire="true" autoconfigure="true" public="false"/>
+
+        <service id="Jv\LegacyCatalog\Core\Content\Source\LegacyCatalogSourceDefinition">
+            <tag name="shopware.entity.definition" entity="jv_legacy_catalog_source"/>
+        </service>
+        <service id="Jv\LegacyCatalog\Core\Content\Category\LegacyCategoryDefinition">
+            <tag name="shopware.entity.definition" entity="jv_legacy_category"/>
+        </service>
+        <service id="Jv\LegacyCatalog\Core\Content\CategoryContent\LegacyCategoryContentDefinition">
+            <tag name="shopware.entity.definition" entity="jv_legacy_category_content"/>
+        </service>
+
+        <service id="Jv\LegacyCatalog\Integration\LegacyCatalog\LegacyCategoryJsonlReader"/>
+        <service id="Jv\LegacyCatalog\Service\LegacyCatalog\ImportLegacyCategoriesService">
+            <argument type="service" id="Jv\LegacyCatalog\Integration\LegacyCatalog\LegacyCategoryJsonlReader"/>
+            <argument type="service" id="sales_channel.repository"/>
+            <argument type="service" id="jv_legacy_catalog_source.repository"/>
+            <argument type="service" id="jv_legacy_category.repository"/>
+            <argument type="service" id="jv_legacy_category_content.repository"/>
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+        </service>
+        <service id="Jv\LegacyCatalog\Command\ImportLegacyCategoriesCommand">
+            <argument type="service" id="Jv\LegacyCatalog\Service\LegacyCatalog\ImportLegacyCategoriesService"/>
+        </service>
+        <service id="Jv\LegacyCatalog\Controller\LegacyCatalogController" public="true">
+            <argument type="service" id="sales_channel.repository"/>
+            <argument type="service" id="jv_legacy_catalog_source.repository"/>
+            <argument type="service" id="jv_legacy_category.repository"/>
+            <tag name="controller.service_arguments"/>
+        </service>
+    </services>
+</container>

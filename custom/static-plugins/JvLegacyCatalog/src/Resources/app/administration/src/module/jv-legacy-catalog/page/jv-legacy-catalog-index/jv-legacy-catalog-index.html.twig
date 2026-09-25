@@ -1,0 +1,158 @@
+{% block jv_legacy_catalog_index %}
+<div class="jv-legacy-catalog">
+    <mt-card
+        class="jv-legacy-catalog__card"
+        position-identifier="jv-legacy-catalog-browser"
+        :title="$t('jv-legacy-catalog.general.title')"
+        :is-loading="isLoading"
+    >
+        <p>{{ $t('jv-legacy-catalog.general.description') }}</p>
+
+        <div class="jv-legacy-catalog__selectors">
+            <sw-single-select
+                v-model:value="salesChannelId"
+                :label="$t('jv-legacy-catalog.general.salesChannel')"
+                :options="channelOptions"
+                :disabled="isLoading"
+                @update:value="onSalesChannelChange"
+            />
+            <sw-single-select
+                v-model:value="sourceId"
+                :label="$t('jv-legacy-catalog.general.sourceProject')"
+                :options="sourceOptions"
+                :disabled="isLoading || !salesChannelId || sources.length === 0"
+                @update:value="onSourceChange"
+            />
+        </div>
+
+        <div v-if="sourceId" class="jv-legacy-catalog__search">
+            <sw-text-field
+                v-model:value="searchTerm"
+                :label="$t('jv-legacy-catalog.general.search')"
+                :placeholder="$t('jv-legacy-catalog.general.searchPlaceholder')"
+                @keyup.enter="search"
+            />
+            <mt-button class="jv-legacy-catalog__search-action" variant="primary" :is-loading="isSearching" @click="search">
+                {{ $t('jv-legacy-catalog.general.searchAction') }}
+            </mt-button>
+        </div>
+
+        <p v-if="channels.length === 0 && !isLoading" class="mt-card__empty-state">
+            {{ $t('jv-legacy-catalog.general.noChannels') }}
+        </p>
+        <p v-else-if="salesChannelId && sources.length === 0 && !isLoading" class="mt-card__empty-state">
+            {{ $t('jv-legacy-catalog.general.noSources') }}
+        </p>
+        <div v-else-if="sourceId" class="jv-legacy-catalog__content">
+            <div v-if="selectedSource" class="jv-legacy-catalog__summary">
+                <span>{{ selectedSource.categoryCount }} {{ $t('jv-legacy-catalog.general.categories') }}</span>
+                <span>{{ selectedSource.contentCount }} {{ $t('jv-legacy-catalog.general.contentRows') }}</span>
+                <span>{{ selectedSource.seoCount }} {{ $t('jv-legacy-catalog.general.seoRows') }}</span>
+                <span class="jv-legacy-catalog__checksum">SHA-256: {{ selectedSource.categoriesSha256 }}</span>
+            </div>
+            <div class="jv-legacy-catalog__layout">
+                <div class="jv-legacy-catalog__primary">
+                    <div class="jv-legacy-catalog__tabs" role="tablist" :aria-label="$t('jv-legacy-catalog.general.categoryViews')">
+                        <button
+                            id="jv-legacy-catalog-tree-tab"
+                            class="jv-legacy-catalog__tab"
+                            :class="{ 'jv-legacy-catalog__tab--active': activeTab === 'tree' }"
+                            type="button"
+                            role="tab"
+                            :aria-selected="activeTab === 'tree'"
+                            aria-controls="jv-legacy-catalog-tree-panel"
+                            :tabindex="activeTab === 'tree' ? 0 : -1"
+                            @click="activeTab = 'tree'"
+                            @keydown="onTabKeydown($event, 'tree')"
+                        >{{ $t('jv-legacy-catalog.general.tree') }}</button>
+                        <button
+                            id="jv-legacy-catalog-search-tab"
+                            class="jv-legacy-catalog__tab"
+                            :class="{ 'jv-legacy-catalog__tab--active': activeTab === 'search' }"
+                            type="button"
+                            role="tab"
+                            :aria-selected="activeTab === 'search'"
+                            aria-controls="jv-legacy-catalog-search-panel"
+                            :tabindex="activeTab === 'search' ? 0 : -1"
+                            @click="activeTab = 'search'"
+                            @keydown="onTabKeydown($event, 'search')"
+                        >{{ $t('jv-legacy-catalog.general.searchResults') }}</button>
+                    </div>
+
+                    <section
+                        id="jv-legacy-catalog-tree-panel"
+                        v-show="activeTab === 'tree'"
+                        class="jv-legacy-catalog__tree"
+                        role="tabpanel"
+                        aria-labelledby="jv-legacy-catalog-tree-tab"
+                        tabindex="0"
+                    >
+                        <p v-if="rows.length === 0 && !isLoading">{{ $t('jv-legacy-catalog.general.noCategories') }}</p>
+                        <ul v-else>
+                            <li v-for="item in visibleRows" :key="item.id" :style="{ paddingLeft: (item.depth * 20 + 4) + 'px' }">
+                                <button
+                                    v-if="item.hasChildren"
+                                    class="jv-legacy-catalog__toggle"
+                                    type="button"
+                                    :aria-expanded="expandedIds.includes(item.id)"
+                                    :aria-label="$t(expandedIds.includes(item.id) ? 'jv-legacy-catalog.general.collapse' : 'jv-legacy-catalog.general.expand')"
+                                    @click="toggle(item)"
+                                >{{ expandedIds.includes(item.id) ? '−' : '+' }}</button>
+                                <span v-else class="jv-legacy-catalog__toggle-placeholder"></span>
+                                <button class="jv-legacy-catalog__node" type="button" @click="selectCategory(item)">
+                                    {{ item.displayName }}
+                                    <small>#{{ item.sourceCategoryId }}</small>
+                                </button>
+                                <a
+                                    class="jv-legacy-catalog__open-category"
+                                    :href="categoryDetailUrl(item)"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    :aria-label="$t('jv-legacy-catalog.general.openCategoryInNewTab')"
+                                    :title="$t('jv-legacy-catalog.general.openCategoryInNewTab')"
+                                >↗</a>
+                            </li>
+                        </ul>
+                    </section>
+
+                    <section
+                        id="jv-legacy-catalog-search-panel"
+                        v-show="activeTab === 'search'"
+                        class="jv-legacy-catalog__search-results"
+                        role="tabpanel"
+                        aria-labelledby="jv-legacy-catalog-search-tab"
+                        tabindex="0"
+                    >
+                        <p v-if="isSearching" class="jv-legacy-catalog__empty">{{ $t('jv-legacy-catalog.general.loading') }}</p>
+                        <ul v-else-if="searchResults.length > 0">
+                            <li v-for="result in searchResults" :key="result.id">
+                                <button type="button" @click="selectSearchResult(result)">
+                                    {{ result.displayName }} <small>#{{ result.sourceCategoryId }}</small>
+                                </button>
+                                <a
+                                    class="jv-legacy-catalog__open-category"
+                                    :href="categoryDetailUrl(result)"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    :aria-label="$t('jv-legacy-catalog.general.openCategoryInNewTab')"
+                                    :title="$t('jv-legacy-catalog.general.openCategoryInNewTab')"
+                                >↗</a>
+                            </li>
+                        </ul>
+                        <p v-else-if="hasSearched" class="jv-legacy-catalog__empty">
+                            {{ $t('jv-legacy-catalog.general.noSearchResults') }}
+                        </p>
+                        <p v-else class="jv-legacy-catalog__empty">
+                            {{ $t('jv-legacy-catalog.general.searchPrompt') }}
+                        </p>
+                    </section>
+                </div>
+
+                <aside class="jv-legacy-catalog__sidebar" :aria-label="$t('jv-legacy-catalog.general.details')">
+                    <jv-legacy-catalog-details :detail="detail" :is-loading="isLoadingDetail" />
+                </aside>
+            </div>
+        </div>
+    </mt-card>
+</div>
+{% endblock %}

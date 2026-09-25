@@ -1,0 +1,46 @@
+.jv-legacy-catalog-details {
+    min-width: 0;
+    overflow-wrap: anywhere;
+
+    &__path {
+        color: #52667a;
+    }
+
+    &__copy-url {
+        margin-right: 6px;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: var(--color-icon-primary-default);
+        cursor: pointer;
+        vertical-align: middle;
+    }
+
+    dl {
+        display: grid;
+        grid-template-columns: minmax(100px, 0.5fr) minmax(0, 1.5fr);
+        gap: 8px 16px;
+    }
+
+    dt {
+        font-weight: 600;
+    }
+
+    dd {
+        min-width: 0;
+        margin: 0;
+        overflow-wrap: anywhere;
+    }
+
+    pre {
+        max-width: 100%;
+        padding: 12px;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        background: #f3f5f7;
+    }
+
+    &__language {
+        margin-bottom: 24px;
+    }
+}

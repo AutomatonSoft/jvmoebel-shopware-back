@@ -1,0 +1,59 @@
+{% block jv_legacy_catalog_details %}
+<div class="jv-legacy-catalog-details">
+    <h3>{{ $t('jv-legacy-catalog.general.details') }}</h3>
+    <p v-if="isLoading">{{ $t('jv-legacy-catalog.general.loading') }}</p>
+    <p v-else-if="!detail">{{ $t('jv-legacy-catalog.general.selectCategory') }}</p>
+    <template v-else>
+        <p class="jv-legacy-catalog-details__path">
+            <span v-for="(item, index) in detail.path" :key="item.id">
+                <span v-if="index > 0"> / </span>{{ item.displayName }}
+            </span>
+        </p>
+        <dl>
+            <dt>{{ $t('jv-legacy-catalog.general.name') }}</dt>
+            <dd>{{ valueLabel(detail.displayName) }}</dd>
+            <dt>
+                <button
+                    v-if="fullUrl"
+                    class="jv-legacy-catalog-details__copy-url"
+                    type="button"
+                    :aria-label="$t('jv-legacy-catalog.general.copyFullUrl')"
+                    :title="$t('jv-legacy-catalog.general.copyFullUrl')"
+                    @click="copyFullUrl"
+                ><mt-icon name="regular-copy-s" size="14px" /></button>
+                {{ $t('jv-legacy-catalog.general.fullUrl') }}
+            </dt>
+            <dd v-if="fullUrl">
+                <a :href="fullUrl" target="_blank" rel="noopener noreferrer">{{ fullUrl }}</a>
+            </dd>
+            <dd v-else>—</dd>
+            <dt>{{ $t('jv-legacy-catalog.general.categoryId') }}</dt>
+            <dd>{{ detail.sourceCategoryId }}</dd>
+            <dt>{{ $t('jv-legacy-catalog.general.parentId') }}</dt>
+            <dd>{{ detail.sourceParentId }}</dd>
+            <dt>{{ $t('jv-legacy-catalog.general.rubricOrder') }}</dt>
+            <dd>{{ valueLabel(detail.rubric.ruborder) }}</dd>
+        </dl>
+
+        <h4>{{ $t('jv-legacy-catalog.general.languages') }}</h4>
+        <p v-if="detail.contents.length === 0">{{ $t('jv-legacy-catalog.general.noLanguageData') }}</p>
+        <div v-for="content in detail.contents" :key="content.sourceLanguage" class="jv-legacy-catalog-details__language">
+            <h5>{{ content.sourceLanguage }}</h5>
+            <dl>
+                <dt>rubnam</dt><dd>{{ valueLabel(content.rubnam) }}</dd>
+                <dt>rubtext</dt><dd><pre>{{ valueLabel(content.rubtext) }}</pre></dd>
+                <dt>rubtext_kurz</dt><dd><pre>{{ valueLabel(content.rubtextKurz) }}</pre></dd>
+                <dt>urlkey</dt><dd>{{ valueLabel(content.urlkey) }}</dd>
+                <dt>page_title</dt><dd>{{ valueLabel(content.pageTitle) }}</dd>
+                <dt>meta_description</dt><dd>{{ valueLabel(content.metaDescription) }}</dd>
+                <dt>meta_keywords</dt><dd>{{ valueLabel(content.metaKeywords) }}</dd>
+            </dl>
+            <h5>{{ $t('jv-legacy-catalog.general.rawLanguageData') }}</h5>
+            <pre>{{ stringify(content.raw) }}</pre>
+        </div>
+
+        <h4>{{ $t('jv-legacy-catalog.general.rawRubric') }}</h4>
+        <pre>{{ stringify(detail.rubric) }}</pre>
+    </template>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+.jv-legacy-catalog-category-detail {
+    width: 100%;
+    min-width: 0;
+
+    & > .mt-card__wrapper,
+    & .mt-card.jv-legacy-catalog-category-detail__card {
+        width: 100%;
+        max-width: none;
+        box-sizing: border-box;
+    }
+
+    &__error {
+        color: var(--color-text-critical-default);
+    }
+}
