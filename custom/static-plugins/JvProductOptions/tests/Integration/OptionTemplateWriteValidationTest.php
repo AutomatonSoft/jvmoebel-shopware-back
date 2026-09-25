@@ -64,6 +64,38 @@ final class OptionTemplateWriteValidationTest extends TestCase
         yield 'bad color' => [['surchargeType' => 'percentage', 'surchargePercentage' => 10.0, 'colorHex' => 'red'], 'colorHex'];
     }
 
+    public function testMissingPercentageSurchargeReportsRequiresMessage(): void
+    {
+        try {
+            $this->repository()->create([$this->template(Uuid::randomHex(), ['surchargeType' => 'percentage'])], Context::createDefaultContext());
+            self::fail('Invalid option value was written.');
+        } catch (WriteException|WriteConstraintViolationException $exception) {
+            $message = $exception->getMessage().json_encode($exception->getErrors());
+            self::assertStringContainsString('requires surchargePercentage', $message);
+            self::assertStringNotContainsString('must be between 0 and 1000', $message);
+        }
+    }
+
+    #[DataProvider('outOfRangePercentageProvider')]
+    public function testOutOfRangePercentageSurchargeReportsRangeMessage(float $percentage): void
+    {
+        try {
+            $this->repository()->create([$this->template(Uuid::randomHex(), ['surchargeType' => 'percentage', 'surchargePercentage' => $percentage])], Context::createDefaultContext());
+            self::fail('Invalid option value was written.');
+        } catch (WriteException|WriteConstraintViolationException $exception) {
+            $message = $exception->getMessage().json_encode($exception->getErrors());
+            self::assertStringContainsString('must be between 0 and 1000', $message);
+            self::assertStringNotContainsString('requires surchargePercentage', $message);
+        }
+    }
+
+    /** @return iterable<string, array{0: float}> */
+    public static function outOfRangePercentageProvider(): iterable
+    {
+        yield 'below zero' => [-1.0];
+        yield 'above limit' => [1000.01];
+    }
+
     public function testDefaultValueMustBelongToSameGroup(): void
     {
         $context = Context::createDefaultContext();

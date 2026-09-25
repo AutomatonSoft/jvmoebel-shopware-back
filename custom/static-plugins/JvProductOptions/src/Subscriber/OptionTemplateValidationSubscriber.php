@@ -8,6 +8,7 @@ use Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateValue\
 use Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateValue\OptionTemplateValueEntity;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Pricing\PriceCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\Command\UpdateCommand;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\Command\WriteCommand;
@@ -145,8 +146,10 @@ final readonly class OptionTemplateValidationSubscriber implements EventSubscrib
 
     private function validatePercentageSurcharge(mixed $percentage, mixed $rawPrice, ConstraintViolationList $violations): void
     {
-        if (!\is_numeric($percentage) || (float) $percentage < 0 || (float) $percentage > 1000) {
+        if (!\is_numeric($percentage)) {
             $this->addViolation($violations, 'Percentage surcharge requires surchargePercentage', 'surchargePercentage', null);
+        } elseif ((float) $percentage < 0 || (float) $percentage > 1000) {
+            $this->addViolation($violations, 'Percentage surcharge must be between 0 and 1000', 'surchargePercentage', $percentage);
         }
 
         if (null !== $rawPrice) {
@@ -184,7 +187,7 @@ final readonly class OptionTemplateValidationSubscriber implements EventSubscrib
     }
 
     /** @return list<array{currencyId: string, gross: float, net: float}>|null */
-    private function serializePriceCollection(?\Shopware\Core\Framework\DataAbstractionLayer\Pricing\PriceCollection $prices): ?array
+    private function serializePriceCollection(?PriceCollection $prices): ?array
     {
         if (null === $prices) {
             return null;
