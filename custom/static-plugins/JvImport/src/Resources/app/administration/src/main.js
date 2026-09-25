@@ -11,6 +11,8 @@ import AfterCoolImportApiService from './service/aftercool-import.api.service';
 Shopware.Locale.extend('de-DE', deDE);
 Shopware.Locale.extend('en-GB', enGB);
 
+Shopware.Service('conditionDataProviderService').addToEntityAllowList('product', 'jvFactory');
+
 const importExportRequestPaths = [
     '/_action/import-export/prepare',
     '/_action/import-export/process',

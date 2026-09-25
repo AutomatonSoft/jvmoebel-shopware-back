@@ -76,6 +76,15 @@
         <service id="Jv\Import\Core\Content\ProductSalesChannelDeliveryTime\ProductDeliveryTimeExtension">
             <tag name="shopware.entity.extension"/>
         </service>
+        <service id="Jv\Import\Core\Content\Factory\FactoryDefinition">
+            <tag name="shopware.entity.definition" entity="jv_factory"/>
+        </service>
+        <service id="Jv\Import\Core\Content\FactorySource\FactorySourceDefinition">
+            <tag name="shopware.entity.definition" entity="jv_factory_source"/>
+        </service>
+        <service id="Jv\Import\Core\Content\ProductFactory\ProductFactoryExtension">
+            <tag name="shopware.entity.extension"/>
+        </service>
         <service id="Jv\Import\Core\Content\CatalogCategoryAttribute\CatalogCategoryAttributeDefinition">
             <tag name="shopware.entity.definition" entity="jv_catalog_category_attribute"/>
         </service>
@@ -141,6 +150,16 @@
             <argument type="service" id="jv_aftercool_import_run_product.repository"/>
             <argument type="service" id="jv_aftercool_import_error.repository"/>
             <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="jv_factory.repository"/>
+            <argument type="service" id="jv_factory_source.repository"/>
+            <argument type="service" id="product.repository"/>
+        </service>
+        <service id="Jv\Import\Service\AfterCool\Backfill\BackfillProductFactoriesService">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="jv_factory.repository"/>
+            <argument type="service" id="jv_factory_source.repository"/>
+            <argument type="service" id="product.repository"/>
+            <argument type="service" id="Shopware\Core\Content\Product\DataAbstractionLayer\ProductIndexer"/>
         </service>
         <service id="Jv\Import\Service\AfterCool\Import\BuildAfterCoolShopwareProductRecordService"/>
         <service id="Jv\Import\Service\AfterCool\Query\PreviewAfterCoolProductsService"/>
@@ -301,6 +320,7 @@
             <argument key="$environment">%kernel.environment%</argument>
             <argument key="$projectDir">%kernel.project_dir%</argument>
         </service>
+        <service id="Jv\Import\Command\BackfillAfterCoolProductFactoriesCommand"/>
 
         <service id="Jv\Import\Integration\Csv\SemicolonCsvReader"/>
         <service id="Jv\Import\Integration\CosmoShop\Media\CosmoShopLegacyProductImageUrlExpander"/>

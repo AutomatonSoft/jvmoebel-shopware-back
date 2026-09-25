@@ -2,6 +2,7 @@
 
 namespace Jv\ProductOptions\Tests\Integration;
 
+use Doctrine\DBAL\Connection;
 use Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateValue\OptionTemplateValueCollection;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Product\DataAbstractionLayer\ProductIndexer;
@@ -158,6 +159,11 @@ final class OptionTemplateStoreApiTest extends TestCase
         ]], $context);
 
         $this->indexProducts();
+
+        self::assertSame(1, (int) static::getContainer()->get(Connection::class)->fetchOne(
+            'SELECT COUNT(*) FROM product_stream_mapping WHERE product_id = :productId AND product_stream_id = :streamId',
+            ['productId' => Uuid::fromHexToBytes($this->ids->get('bed-variant')), 'streamId' => Uuid::fromHexToBytes($streamId)],
+        ), 'A variant inherits the parent factory and joins its factory stream.');
 
         self::assertSame($templateId, $this->options('sofa')['templateId']);
         self::assertSame($this->ids->get('factory-template'), $this->options('table')['templateId'], 'Same manufacturer must not imply same production factory.');

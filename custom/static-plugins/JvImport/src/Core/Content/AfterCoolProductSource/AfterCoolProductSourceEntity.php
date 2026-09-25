@@ -10,6 +10,7 @@ final class AfterCoolProductSourceEntity extends Entity
     use EntityIdTrait;
 
     protected string $productId;
+    protected int $factoryId;
     protected string $sourceProductId;
     protected string $sourceArtikelnummer;
     protected string $sourceEan;
@@ -17,6 +18,11 @@ final class AfterCoolProductSourceEntity extends Entity
     public function getProductId(): string
     {
         return $this->productId;
+    }
+
+    public function getFactoryId(): int
+    {
+        return $this->factoryId;
     }
 
     public function getSourceProductId(): string

@@ -1,4 +1,11 @@
 {
+    "sw-product-stream": {
+        "filter": {
+            "values": {
+                "jvFactory": "Factory"
+            }
+        }
+    },
     "jv-import": {
         "general": {
             "title": "Import",

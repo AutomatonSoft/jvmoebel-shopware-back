@@ -81,6 +81,8 @@ final class AfterCoolImportWorkflowTest extends TestCase
 
     private string $factoryName = 'Workflow factory';
 
+    private int $activeFactoryId = self::FACTORY_ID;
+
     #[Before(100)]
     public function bootIsolatedServiceContainer(): void
     {
@@ -816,6 +818,23 @@ final class AfterCoolImportWorkflowTest extends TestCase
         self::assertSame(0, $this->factoryCount($context));
     }
 
+    public function testPartialImportCreatesFactoryOnlyForTheSuccessfulProduct(): void
+    {
+        $context = $this->prepare([
+            $this->item(1),
+            $this->item(2, ['Startpreis' => 'invalid']),
+        ]);
+
+        $run = $this->loadRun($this->process($context), $context);
+
+        self::assertSame(1, $run->getCreated());
+        self::assertSame(1, $run->getFailed());
+        self::assertSame(1, $this->factoryCount($context));
+        self::assertSame(1, $this->sourceProductCount());
+        self::assertSame(1, $this->products()->searchIds((new Criteria())
+            ->addFilter(new EqualsFilter('jvFactory.id', $this->importedFactoryId($context))), $context)->getTotal());
+    }
+
     public function testRepeatedImportRenamesFactoryWithoutChangingIdentity(): void
     {
         $context = $this->prepare([$this->item(1)]);
@@ -834,12 +853,43 @@ final class AfterCoolImportWorkflowTest extends TestCase
         self::assertSame(1, $this->sourceProductCount());
     }
 
+    public function testProductLinkedToAnotherAftercoolFactoryIsSkippedWithoutPartialCatalogState(): void
+    {
+        $context = $this->prepare([$this->item(1)]);
+        $this->process($context);
+        $productId = ProductImportIdentity::fromProductNumber($this->ean(1));
+        $originalFactoryId = $this->importedFactoryId($context);
+        $this->activeFactoryId = self::FACTORY_ID + 1;
+        $runId = static::getContainer()->get(AfterCoolImportRunStore::class)->createQueued(
+            $this->activeFactoryId,
+            'Conflicting factory',
+            'JV:lister:'.$this->activeFactoryId,
+            $context,
+        );
+        $conflictingItem = $this->item(2, ['I_stammartikel' => 'stamm-2'], $this->activeFactoryId);
+        $conflictingItem['ean'] = $this->ean(1);
+        $conflictingItem['artikelnummer'] = 'article-from-other-factory';
+        $this->items = [$conflictingItem];
+
+        static::getContainer()->get(ImportAfterCoolPageService::class)->process($runId, 0, $context);
+
+        $run = $this->loadRun($runId, $context);
+        self::assertSame(1, $run->getSkipped());
+        self::assertSame(0, $run->getFailed());
+        self::assertSame(1, $this->factoryCount($context));
+        self::assertSame(1, $this->sourceProductCount());
+        self::assertSame('product_factory_conflict', static::getContainer()->get('jv_aftercool_import_error.repository')->search((new Criteria())
+            ->addFilter(new EqualsFilter('runId', $runId)), $context)->first()?->get('code'));
+        self::assertSame($originalFactoryId, $this->product($productId, $context)->get('jvFactoryId'));
+    }
+
     /** @param list<array<string, mixed>> $items */
     private function prepare(array $items): Context
     {
         self::assertSame('shopware_test', static::getContainer()->get(Connection::class)->getDatabase());
         $this->items = $items;
         $this->factoryName = 'Workflow factory';
+        $this->activeFactoryId = self::FACTORY_ID;
         $this->productRequests = 0;
         $this->linkedProductRequests = [];
         $http = new MockHttpClient(function (string $method, string $url): MockResponse {
@@ -850,7 +900,7 @@ final class AfterCoolImportWorkflowTest extends TestCase
                 return new MockResponse('{}', ['response_headers' => ['set-cookie: session=workflow-test; Path=/']]);
             }
             if ('/api/import/factories' === $path) {
-                return new MockResponse(json_encode(['items' => [['id' => (string) self::FACTORY_ID, 'name' => $this->factoryName]]], JSON_THROW_ON_ERROR));
+                return new MockResponse(json_encode(['items' => [['id' => (string) $this->activeFactoryId, 'name' => $this->factoryName]]], JSON_THROW_ON_ERROR));
             }
             self::assertSame('/api/products', $path);
             parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
@@ -869,7 +919,7 @@ final class AfterCoolImportWorkflowTest extends TestCase
             if (200 !== $this->productHttpStatus) {
                 return new MockResponse('{}', ['http_code' => $this->productHttpStatus]);
             }
-            self::assertSame((string) self::FACTORY_ID, $query['factory_id']);
+            self::assertSame((string) $this->activeFactoryId, $query['factory_id']);
             self::assertSame('lister', $query['dataset']);
             $limit = (int) $query['limit'];
             $offset = (int) $query['offset'];
@@ -897,10 +947,10 @@ final class AfterCoolImportWorkflowTest extends TestCase
 
     /** @param array<string, mixed> $row
      * @return array<string, mixed> */
-    private function item(int $number, array $row = []): array
+    private function item(int $number, array $row = [], int $factoryId = self::FACTORY_ID): array
     {
         return [
-            'account' => 'JV', 'dataset' => 'lister', 'factory_id' => (string) self::FACTORY_ID,
+            'account' => 'JV', 'dataset' => 'lister', 'factory_id' => (string) $factoryId,
             'product_id' => 'workflow-'.$number, 'ean' => $this->ean($number),
             'artikelnummer' => 'article-'.$number, 'name' => 'Workflow product '.$number,
             'row_no' => $number, 'source_file' => 'workflow.csv', 'source_kind' => 'csv',
