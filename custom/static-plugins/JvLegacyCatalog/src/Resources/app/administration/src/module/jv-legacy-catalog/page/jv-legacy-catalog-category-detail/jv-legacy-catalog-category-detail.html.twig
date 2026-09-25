@@ -1,0 +1,13 @@
+{% block jv_legacy_catalog_category_detail %}
+<div class="jv-legacy-catalog-category-detail">
+    <mt-card
+        class="jv-legacy-catalog-category-detail__card"
+        position-identifier="jv-legacy-catalog-category-detail"
+        :title="title"
+        :is-loading="isLoading"
+    >
+        <p v-if="loadError" class="jv-legacy-catalog-category-detail__error">{{ loadError }}</p>
+        <jv-legacy-catalog-details v-else :detail="detail" :is-loading="isLoading" />
+    </mt-card>
+</div>
+{% endblock %}

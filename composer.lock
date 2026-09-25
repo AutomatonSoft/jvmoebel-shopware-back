@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "256ee4ae58e4a44a26a3903c0dda42bc",
+    "content-hash": "c022525734e0a501f75c86f7a289bfdb",
     "packages": [
         {
             "name": "async-aws/core",
@@ -2760,6 +2760,45 @@
                 "proprietary"
             ],
             "description": "JVMöbel import integrations",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "jvmoebel/legacy-catalog",
+            "version": "0.1.0",
+            "dist": {
+                "type": "path",
+                "url": "custom/static-plugins/JvLegacyCatalog",
+                "reference": "579b30e6a864fd1b872c15ef66fda26b38c8c29b"
+            },
+            "require": {
+                "php": "^8.5",
+                "shopware/core": "~6.7.0"
+            },
+            "type": "shopware-platform-plugin",
+            "extra": {
+                "shopware-plugin-class": "Jv\\LegacyCatalog\\JvLegacyCatalog",
+                "label": {
+                    "de-DE": "JVMöbel Legacy-Katalog",
+                    "en-GB": "JVMöbel legacy catalog"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Jv\\LegacyCatalog\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Jv\\LegacyCatalog\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "description": "Archive and read-only browser for legacy CosmoShop categories",
             "transport-options": {
                 "symlink": true,
                 "relative": true

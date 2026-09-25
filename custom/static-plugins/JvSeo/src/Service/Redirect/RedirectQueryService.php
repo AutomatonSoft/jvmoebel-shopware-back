@@ -249,6 +249,7 @@ final readonly class RedirectQueryService
         return [
             'id' => $redirect->getId(),
             'type' => $redirect->getType(),
+            'importLocked' => $redirect->isImportLocked(),
             'productId' => $redirect->getProductId(),
             'productNumber' => $product instanceof ProductEntity ? $product->getProductNumber() : null,
             'productName' => $product instanceof ProductEntity ? $product->getTranslation('name') : null,

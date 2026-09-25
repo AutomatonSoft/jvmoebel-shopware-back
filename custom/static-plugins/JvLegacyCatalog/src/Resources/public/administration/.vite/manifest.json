@@ -1,0 +1,11 @@
+{
+  "main.js": {
+    "file": "assets/jv-legacy-catalog-CvAI4ty3.js",
+    "name": "jv-legacy-catalog",
+    "src": "main.js",
+    "isEntry": true,
+    "css": [
+      "assets/jv-legacy-catalog-BR9fczpC.css"
+    ]
+  }
+}

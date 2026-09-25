@@ -80,6 +80,13 @@
                     :disabled="isEditing || !canEdit"
                     @update:value="onImageChange"
                 />
+
+                <sw-switch-field
+                    v-model:value="draft.importLocked"
+                    :label="$t('jv-seo.detail.importLocked')"
+                    :help-text="$t('jv-seo.detail.importLockedHelp')"
+                    :disabled="!canEdit"
+                />
             </mt-card>
 
             <mt-card

@@ -1,0 +1,49 @@
+{
+    "jv-legacy-catalog": {
+        "general": {
+            "title": "Historische Kategorien",
+            "description": "Unveränderliches CosmoShop-Kategoriearchiv nach Verkaufskanal und Quellprojekt durchsuchen.",
+            "salesChannel": "Verkaufskanal",
+            "sourceProject": "Quellprojekt",
+            "categories": "Kategorien",
+            "contentRows": "Sprachzeilen",
+            "seoRows": "SEO-Zeilen",
+            "search": "Kategorien suchen",
+            "searchPlaceholder": "Name, rubid, rubnum oder URL-Schlüssel",
+            "searchAction": "Suchen",
+            "searchResults": "Suchergebnisse",
+            "noSearchResults": "Keine passenden Kategorien gefunden.",
+            "noChannels": "Keine Storefront-Verkaufskanäle gefunden.",
+            "noSources": "Für diesen Verkaufskanal wurde kein Kategoriearchiv importiert.",
+            "noCategories": "Dieses Quellprojekt enthält keine Kategorien.",
+            "tree": "Kategoriebaum",
+            "details": "Quelldaten",
+            "loading": "Laden …",
+            "selectCategory": "Kategorie auswählen, um alle gespeicherten Quelldaten zu sehen.",
+            "name": "Name",
+            "categoryId": "Ursprüngliche Kategorie-ID (rubid)",
+            "parentId": "Ursprüngliche Eltern-ID (parentid)",
+            "rubricOrder": "Reihenfolge (ruborder)",
+            "noLanguageData": "Keine Sprach- oder SEO-Datensätze gespeichert.",
+            "languages": "Sprachen und SEO",
+            "rawLanguageData": "Unveränderte Sprachdaten",
+            "rawRubric": "Unveränderte Rubrikdaten",
+            "expand": "Unterkategorien einblenden",
+            "collapse": "Unterkategorien ausblenden",
+            "openCategoryInNewTab": "Kategoriedaten in neuem Tab öffnen",
+            "categoryDetailPageTitle": "Daten der historischen Kategorie",
+            "fullUrl": "Vollständige URL",
+            "copyFullUrl": "Vollständige URL kopieren",
+            "categoryViews": "Kategorieansichten",
+            "searchPrompt": "Suchbegriff eingeben und Suchen auswählen, um Kategorien zu finden."
+        },
+        "errors": {
+            "request": "Das Legacy-Kategoriearchiv konnte nicht geladen werden.",
+            "invalidCategoryLink": "Der Link zur historischen Kategorie ist ungültig.",
+            "copyFullUrl": "Die vollständige URL konnte nicht kopiert werden."
+        },
+        "notifications": {
+            "fullUrlCopied": "Die vollständige URL wurde in die Zwischenablage kopiert."
+        }
+    }
+}

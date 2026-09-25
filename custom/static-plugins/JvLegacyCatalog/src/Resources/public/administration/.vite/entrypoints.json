@@ -1,0 +1,25 @@
+{
+  "base": "/bundles/jvlegacycatalog/administration/",
+  "entryPoints": {
+    "jv-legacy-catalog": {
+      "css": [
+        "/bundles/jvlegacycatalog/administration/assets/jv-legacy-catalog-BR9fczpC.css"
+      ],
+      "dynamic": [],
+      "js": [
+        "/bundles/jvlegacycatalog/administration/assets/jv-legacy-catalog-CvAI4ty3.js"
+      ],
+      "legacy": false,
+      "preload": []
+    }
+  },
+  "legacy": false,
+  "metadatas": {},
+  "version": [
+    "7.1.0",
+    7,
+    1,
+    0
+  ],
+  "viteServer": null
+}

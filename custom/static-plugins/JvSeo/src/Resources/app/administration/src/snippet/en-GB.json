@@ -58,6 +58,8 @@
             "landingPagePlaceholder": "Search for a landing page",
             "image": "Image",
             "imagePlaceholder": "Search for an image",
+            "importLocked": "Protect from import changes",
+            "importLockedHelp": "When enabled, JvSeo imports leave this redirect and its sources unchanged.",
             "enableChannel": "Configure for this Sales Channel",
             "targetUrl": "Target URL",
             "targetPreview": "Current canonical target URL example",

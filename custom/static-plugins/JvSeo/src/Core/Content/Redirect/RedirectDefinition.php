@@ -8,6 +8,7 @@ use Shopware\Core\Content\LandingPage\LandingPageDefinition;
 use Shopware\Core\Content\Media\MediaDefinition;
 use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\BoolField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\CreatedAtField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\FkField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\CascadeDelete;
@@ -45,6 +46,7 @@ final class RedirectDefinition extends EntityDefinition
         return new FieldCollection([
             (new IdField('id', 'id'))->addFlags(new Required(), new PrimaryKey()),
             (new StringField('type', 'type', 32))->addFlags(new Required()),
+            (new BoolField('import_locked', 'importLocked'))->addFlags(new Required()),
             new FkField('product_id', 'productId', ProductDefinition::class),
             new ReferenceVersionField(ProductDefinition::class),
             new FkField('category_id', 'categoryId', CategoryDefinition::class),

@@ -123,3 +123,4 @@ SPEC-NNN-short-name.md
 | [SPEC-056-promotion-management](SPEC-056-promotion-management.md) | Управление акциями AfterCool поверх Shopware Promotions: таргетинг, max %, Store API и cart; контракт — platform SPEC-045 |
 | [SPEC-057-product-option-templates](SPEC-057-product-option-templates.md) | Шаблоны опций товара (плагин `JvProductOptions`): назначение через product streams или вручную, надбавки `fixed`/`percentage`, Store API/OpenAPI, расчёт корзины и отображение снимка в заказе, письмах и документах |
 | [SPEC-058-product-factories](SPEC-058-product-factories.md) | Локальный каталог фабрик, связь с товаром при Aftercool-импорте и условие фабрики в динамических группах |
+| [SPEC-059-legacy-categories](SPEC-059-legacy-categories.md) | Изолированный архив категорий старых CosmoShop-проектов с привязкой к выбранному sales channel, загрузкой снимка и просмотром в Administration; внешний экспортёр описан отдельно |

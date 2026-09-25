@@ -1,0 +1,49 @@
+{
+    "jv-legacy-catalog": {
+        "general": {
+            "title": "Historical categories",
+            "description": "Browse the immutable CosmoShop category archive by sales channel and source project.",
+            "salesChannel": "Sales channel",
+            "sourceProject": "Source project",
+            "categories": "categories",
+            "contentRows": "language rows",
+            "seoRows": "SEO rows",
+            "search": "Search categories",
+            "searchPlaceholder": "Name, rubid, rubnum or URL key",
+            "searchAction": "Search",
+            "searchResults": "Search results",
+            "noSearchResults": "No matching categories found.",
+            "noChannels": "No Storefront sales channels found.",
+            "noSources": "No category archive has been imported for this sales channel.",
+            "noCategories": "This source project contains no categories.",
+            "tree": "Category tree",
+            "details": "Source data",
+            "loading": "Loading…",
+            "selectCategory": "Select a category to view all stored source data.",
+            "name": "Name",
+            "categoryId": "Source category ID (rubid)",
+            "parentId": "Source parent ID (parentid)",
+            "rubricOrder": "Order (ruborder)",
+            "noLanguageData": "No language or SEO records are stored.",
+            "languages": "Languages and SEO",
+            "rawLanguageData": "Unchanged language data",
+            "rawRubric": "Unchanged rubric data",
+            "expand": "Expand subcategories",
+            "collapse": "Collapse subcategories",
+            "openCategoryInNewTab": "Open category data in a new tab",
+            "categoryDetailPageTitle": "Historical category data",
+            "fullUrl": "Full URL",
+            "copyFullUrl": "Copy full URL",
+            "categoryViews": "Category views",
+            "searchPrompt": "Enter a search term and select Search to find categories."
+        },
+        "errors": {
+            "request": "The legacy category archive could not be loaded.",
+            "invalidCategoryLink": "The historical category link is invalid.",
+            "copyFullUrl": "Could not copy the full URL."
+        },
+        "notifications": {
+            "fullUrlCopied": "Full URL copied to clipboard."
+        }
+    }
+}
