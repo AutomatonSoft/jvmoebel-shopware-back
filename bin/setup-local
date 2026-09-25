@@ -219,7 +219,8 @@ docker compose run --rm web bin/console plugin:install \
     JvCms \
     JvSeo \
     JvImport \
-    JvStorefront
+    JvStorefront \
+    JvProductOptions
 
 mkdir -p var/bootstrap
 sales_channels_json_tmp="$(mktemp var/bootstrap/sales-channels.json.tmp.XXXXXX)"

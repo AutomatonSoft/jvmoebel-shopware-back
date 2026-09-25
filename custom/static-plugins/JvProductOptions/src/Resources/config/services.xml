@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services https://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <services>
+        <service id="Jv\ProductOptions\Core\Content\OptionTemplate\OptionTemplateDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+
+        <service id="Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateTranslation\OptionTemplateTranslationDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+
+        <service id="Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateGroup\OptionTemplateGroupDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+
+        <service id="Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateGroupTranslation\OptionTemplateGroupTranslationDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+
+        <service id="Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateValue\OptionTemplateValueDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+
+        <service id="Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateValueTranslation\OptionTemplateValueTranslationDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+
+        <service id="Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateProductStream\OptionTemplateProductStreamDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+
+        <service id="Jv\ProductOptions\Core\Content\OptionTemplate\Aggregate\OptionTemplateProduct\OptionTemplateProductDefinition">
+            <tag name="shopware.entity.definition"/>
+        </service>
+
+        <service id="Jv\ProductOptions\Core\Content\Product\ProductExtension">
+            <tag name="shopware.entity.extension"/>
+        </service>
+
+        <service id="Jv\ProductOptions\Core\Content\ProductStream\ProductStreamExtension">
+            <tag name="shopware.entity.extension"/>
+        </service>
+
+        <service id="Jv\ProductOptions\Subscriber\OptionTemplateValidationSubscriber">
+            <argument type="service" id="jv_option_template_value.repository"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <service id="Jv\ProductOptions\Service\OptionPricing\FixedSurchargeAmountResolver"/>
+
+        <service id="Jv\ProductOptions\Service\OptionPricing\OptionSurchargeCalculator">
+            <argument type="service" id="Shopware\Core\Checkout\Cart\Price\CashRounding"/>
+        </service>
+
+        <service id="Jv\ProductOptions\Service\OptionPricing\OptionValueSurchargeResolver">
+            <argument type="service" id="Jv\ProductOptions\Service\OptionPricing\FixedSurchargeAmountResolver"/>
+            <argument type="service" id="Jv\ProductOptions\Service\OptionPricing\OptionSurchargeCalculator"/>
+        </service>
+
+        <service id="Jv\ProductOptions\Service\OptionPricing\OptionLineItemIdGenerator"/>
+
+        <service id="Jv\ProductOptions\Service\OptionPricing\OptionSelectionResolver"/>
+
+        <service id="Jv\ProductOptions\Service\OptionPricing\OptionTemplateResolver">
+            <argument type="service" id="product.repository"/>
+            <argument type="service" id="jv_option_template.repository"/>
+            <argument type="service" id="jv_option_template_product.repository"/>
+        </service>
+
+        <service id="Jv\ProductOptions\Service\OptionPricing\ProductOptionsLoader">
+            <argument type="service" id="Jv\ProductOptions\Service\OptionPricing\OptionTemplateResolver"/>
+            <argument type="service" id="Jv\ProductOptions\Service\OptionPricing\OptionValueSurchargeResolver"/>
+        </service>
+
+        <service id="Jv\ProductOptions\Checkout\Cart\ProductLineItemFactoryDecorator"
+                 decorates="Shopware\Core\Checkout\Cart\LineItemFactoryHandler\ProductLineItemFactory">
+            <argument type="service" id="Jv\ProductOptions\Checkout\Cart\ProductLineItemFactoryDecorator.inner"/>
+            <argument type="service" id="Jv\ProductOptions\Service\OptionPricing\OptionTemplateResolver"/>
+            <argument type="service" id="Jv\ProductOptions\Service\OptionPricing\OptionSelectionResolver"/>
+            <argument type="service" id="Jv\ProductOptions\Service\OptionPricing\OptionLineItemIdGenerator"/>
+        </service>
+
+        <service id="Jv\ProductOptions\Checkout\Cart\OptionCartProcessor">
+            <argument type="service" id="Jv\ProductOptions\Service\OptionPricing\OptionTemplateResolver"/>
+            <argument type="service" id="Jv\ProductOptions\Service\OptionPricing\OptionSelectionResolver"/>
+            <argument type="service" id="Jv\ProductOptions\Service\OptionPricing\OptionValueSurchargeResolver"/>
+            <argument type="service" id="Shopware\Core\Checkout\Cart\Price\QuantityPriceCalculator"/>
+            <argument type="service" id="Shopware\Core\System\Currency\CurrencyFormatter"/>
+            <tag name="shopware.cart.processor" priority="4950"/>
+            <tag name="shopware.cart.collector" priority="4950"/>
+        </service>
+
+        <service id="Jv\ProductOptions\StoreApi\Route\ProductOptionsRoute" public="true">
+            <argument type="service" id="sales_channel.product.repository"/>
+            <argument type="service" id="Jv\ProductOptions\Service\OptionPricing\ProductOptionsLoader"/>
+            <tag name="controller.service_arguments"/>
+        </service>
+    </services>
+</container>

@@ -1,0 +1,8 @@
+{% block sw_product_detail_base_settings_card %}
+    {% parent %}
+
+    <jv-product-option-template-card
+        v-if="product"
+        :product="product"
+    />
+{% endblock %}

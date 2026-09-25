@@ -78,7 +78,7 @@ registerPluginTestNamespaces();
 
 $bootstrapper = (new TestBootstrapper())
     ->setPlatformEmbedded(false)
-    ->addActivePlugins('JvMarketConfiguration', 'JvCms', 'JvSeo', 'JvImport', 'JvStorefront', 'JvPromotion');
+    ->addActivePlugins('JvMarketConfiguration', 'JvCms', 'JvSeo', 'JvImport', 'JvStorefront', 'JvPromotion', 'JvProductOptions');
 
 $bootstrapper->bootstrap();
 

@@ -27,6 +27,8 @@ Aftercool остаётся внешним источником данных. П�
 - первичное сопоставление с чистыми CosmoShop-товарами, у которых текущий
   `productNumber` совпадает с EAN;
 - сохранение source identity Aftercool;
+- сохранение основной фабрики товара в локальном каталоге по SPEC-058 после
+  успешной записи товара; Shopware manufacturer остаётся `JVMOEBEL`;
 - пакетная запись через внутренний Shopware Sync;
 - единый Shopware manufacturer `JVMOEBEL`, рассчитанный UVP и visibility только
   для немецкого sales channel `jvmoebel.de`;
@@ -271,7 +273,8 @@ Aftercool-импорту. Отсутствующее, пустое или placeh
 
 - все Aftercool-товары получают единый существующий Shopware manufacturer
   `JVMOEBEL`; Lister-фабрика остаётся source identity и не становится
-  manufacturer;
+  manufacturer; дополнительно она связывается с товаром как локальная
+  `jv_factory` по SPEC-058;
 - `product.row.ProduktMarke` и `product.row.ManufacturerPartNumber` не определяют
   Shopware manufacturer и в этой итерации не записываются;
 - `product.row.Beschreibung` записывается в немецкий `description`
@@ -534,7 +537,8 @@ Start body содержит только `factoryId`. Factory name, account и d
 - application services импорта страницы, разрешения identity, mapping и Sync;
 - application service создания external media links через внутренний Shopware
   `MediaUploadService`;
-- три DAL entities и migrations для run, source link и report entry;
+- три исходные DAL entities и migrations для run, source link и report entry;
+  каталог фабрик и связь товара добавляются отдельно по SPEC-058;
 - Messenger message/handler и failure handling;
 - Administration API controller;
 - новая Administration route/component и extension tabs;
@@ -543,6 +547,11 @@ Start body содержит только `factoryId`. Factory name, account и d
 Большой raw payload не становится custom field Shopware product. Source link
 остаётся собственной entity `JvImport`, чтобы не смешивать идентификаторы
 интеграции с пользовательскими product fields.
+
+Локальный каталог фабрик, product association, условия product streams и
+перенос существующих source links определены [SPEC-058](SPEC-058-product-factories.md).
+Список фабрик Aftercool и постановка run не создают записи каталога;
+фабрика появляется только после первой успешной записи товара.
 
 ## Проверка
 

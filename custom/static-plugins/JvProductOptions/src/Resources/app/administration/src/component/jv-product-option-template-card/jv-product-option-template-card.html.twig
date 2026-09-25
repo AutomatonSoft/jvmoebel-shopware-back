@@ -1,0 +1,19 @@
+<sw-card
+    class="jv-product-option-template-card"
+    position-identifier="jv-product-option-template-card"
+    :title="$t('jv-option-template.product.cardTitle')"
+    :is-loading="isLoading"
+>
+    <sw-container columns="1fr" gap="16px">
+        <sw-entity-single-select
+            :value="selectedTemplateId"
+            entity="jv_option_template"
+            :label="$t('jv-option-template.product.labelTemplate')"
+            :placeholder="$t('jv-option-template.product.placeholderTemplate')"
+            show-clearable-button
+            :disabled="!product || !product.id"
+            :help-text="$t('jv-option-template.product.helpText')"
+            @update:value="onTemplateChange"
+        />
+    </sw-container>
+</sw-card>
