@@ -1,0 +1,303 @@
+<sw-page class="jv-option-template-detail">
+    <template #smart-bar-header>
+        <h2>{{ identifier }}</h2>
+    </template>
+
+    <template #smart-bar-actions>
+        <sw-button
+            :disabled="isLoading"
+            @click="onCancel"
+        >
+            {{ $t('jv-option-template.detail.buttonCancel') }}
+        </sw-button>
+
+        <sw-button
+            variant="primary"
+            :disabled="isLoading"
+            @click="onSave"
+        >
+            {{ $t('jv-option-template.detail.buttonSave') }}
+        </sw-button>
+    </template>
+
+    <template #language-switch>
+        <sw-language-switch
+            :save-changes-function="saveOnLanguageChange"
+            :abort-change-function="abortOnLanguageChange"
+            @on-change="onChangeLanguage"
+        />
+    </template>
+
+    <template #content>
+        <sw-card-view v-if="templateEntity">
+            <sw-language-info :entity-description="identifier" />
+
+            <sw-card
+                position-identifier="jv-option-template-general"
+                :title="$t('jv-option-template.detail.cardGeneral')"
+                :is-loading="isLoading"
+            >
+                <sw-container columns="2fr 1fr 1fr" gap="16px">
+                    <sw-text-field
+                        :value="displayName(templateEntity)"
+                        @update:value="setEntityName(templateEntity, $event)"
+                        required
+                        :label="$t('jv-option-template.detail.labelName')"
+                        :placeholder="$t('jv-option-template.detail.placeholderName')"
+                    />
+
+                    <mt-number-field
+                        :model-value="templateEntity.priority"
+                        @input-change="setNumericField(templateEntity, 'priority', $event)"
+                        :label="$t('jv-option-template.detail.labelPriority')"
+                        number-type="int"
+                        :step="1"
+                    />
+
+                    <sw-switch-field
+                        v-model:value="templateEntity.active"
+                        :label="$t('jv-option-template.detail.labelActive')"
+                    />
+                </sw-container>
+
+                <sw-container columns="1fr" gap="16px" style="margin-top: 16px;">
+                    <sw-entity-many-to-many-select
+                        v-if="templateEntity.productStreams"
+                        v-model:entity-collection="templateEntity.productStreams"
+                        :local-mode="true"
+                        label-property="name"
+                        :label="$t('jv-option-template.detail.labelProductStreams')"
+                        :placeholder="$t('jv-option-template.detail.placeholderProductStreams')"
+                    />
+                </sw-container>
+            </sw-card>
+
+            <sw-card
+                position-identifier="jv-option-template-groups"
+                :title="$t('jv-option-template.detail.cardGroups')"
+                :is-loading="isLoading"
+            >
+                <template #grid>
+                    <div style="padding: 16px;">
+                        <sw-button
+                            variant="ghost"
+                            size="small"
+                            style="margin-bottom: 16px;"
+                            @click="addGroup"
+                        >
+                            <sw-icon name="regular-plus-xs" size="12px" />
+                            {{ $t('jv-option-template.detail.buttonAddGroup') }}
+                        </sw-button>
+
+                        <div v-if="templateEntity.groups.length === 0" style="color: #999; font-style: italic; padding: 16px 0;">
+                            {{ $t('jv-option-template.detail.emptyGroups') }}
+                        </div>
+
+                        <div
+                            v-for="(group, groupIndex) in templateEntity.groups"
+                            :key="group.id"
+                            class="jv-option-template-group"
+                        >
+                            <sw-container class="jv-option-template-group__header" columns="minmax(220px, 2fr) 120px minmax(220px, 2fr) 44px" gap="16px" align="end">
+                                <sw-text-field
+                                    :value="displayName(group)"
+                                    @update:value="setEntityName(group, $event)"
+                                    required
+                                    :label="$t('jv-option-template.detail.labelGroupName')"
+                                    :placeholder="$t('jv-option-template.detail.placeholderGroupName')"
+                                />
+
+                                <mt-number-field
+                                    :model-value="group.position"
+                                    @input-change="setNumericField(group, 'position', $event)"
+                                    :label="$t('jv-option-template.detail.labelGroupPosition')"
+                                    number-type="int"
+                                    :step="1"
+                                />
+
+                                <sw-single-select
+                                    v-model:value="group.defaultValueId"
+                                    :options="defaultValueOptions(group)"
+                                    :label="$t('jv-option-template.detail.labelDefaultValue')"
+                                    :placeholder="$t('jv-option-template.detail.placeholderDefaultValue')"
+                                    show-clearable-button
+                                />
+
+                                <sw-button
+                                    variant="danger"
+                                    square
+                                    size="small"
+                                    @click="removeGroup(groupIndex)"
+                                >
+                                    <sw-icon name="regular-trash" size="16px" />
+                                </sw-button>
+                            </sw-container>
+
+                            <div class="jv-option-template-group__palette">
+                                <label class="jv-option-template-media-field__label">
+                                    {{ $t('jv-option-template.detail.labelGroupPaletteMedia') }}
+                                </label>
+                                <sw-media-upload-v2
+                                    variant="regular"
+                                    :upload-tag="mediaUploadTag('group', group.id)"
+                                    :source="mediaPreviewSource(group.paletteMediaId)"
+                                    :allow-multi-select="false"
+                                    :caption="$t('jv-option-template.detail.captionGroupPaletteMedia')"
+                                    :on-media-upload-sidebar-open="() => openGroupPaletteMediaModal(group.id)"
+                                    @media-upload-sidebar-open="openGroupPaletteMediaModal(group.id)"
+                                    @media-upload-remove-image="onGroupPaletteMediaRemove(group)"
+                                />
+                                <sw-upload-listener
+                                    :upload-tag="mediaUploadTag('group', group.id)"
+                                    auto-upload
+                                    @media-upload-finish="onGroupPaletteMediaUpload(group, $event)"
+                                />
+                                <p class="jv-option-template-media-field__help">
+                                    {{ $t('jv-option-template.detail.helpGroupPaletteMedia') }}
+                                </p>
+                            </div>
+
+                            <div class="jv-option-template-group__values">
+                                <div class="jv-option-template-group__values-header">
+                                    <h4>{{ $t('jv-option-template.detail.valuesTitle') }} ({{ group.values.length }})</h4>
+                                    <sw-button
+                                        size="x-small"
+                                        variant="ghost"
+                                        @click="addValue(group)"
+                                    >
+                                        <sw-icon name="regular-plus-xs" size="10px" />
+                                        {{ $t('jv-option-template.detail.buttonAddValue') }}
+                                    </sw-button>
+                                </div>
+
+                                <div v-if="group.values.length === 0" class="jv-option-template-group__empty-values">
+                                    {{ $t('jv-option-template.detail.emptyValues') }}
+                                </div>
+
+                                <div
+                                    v-for="(val, valIndex) in group.values"
+                                    :key="val.id"
+                                    class="jv-option-template-value"
+                                >
+                                    <sw-container class="jv-option-template-value__header" columns="100px minmax(240px, 2fr) minmax(220px, 1fr) 44px" gap="16px" align="end">
+                                        <mt-number-field
+                                            :model-value="val.position"
+                                            @input-change="setNumericField(val, 'position', $event)"
+                                            :label="$t('jv-option-template.detail.labelValuePosition')"
+                                            size="small"
+                                            number-type="int"
+                                        />
+
+                                        <sw-text-field
+                                            :value="displayName(val)"
+                                            @update:value="setEntityName(val, $event)"
+                                            required
+                                            :label="$t('jv-option-template.detail.labelValueName')"
+                                            :placeholder="$t('jv-option-template.detail.placeholderValueName')"
+                                            size="small"
+                                        />
+
+                                        <sw-single-select
+                                            :value="val.surchargeType"
+                                            @update:value="setValueSurchargeType(val, $event)"
+                                            :options="surchargeTypeOptions"
+                                            :label="$t('jv-option-template.detail.labelValueSurchargeType')"
+                                        />
+
+                                        <sw-button
+                                            variant="danger"
+                                            square
+                                            size="x-small"
+                                            @click="removeValue(group, valIndex)"
+                                        >
+                                            <sw-icon name="regular-trash" size="14px" />
+                                        </sw-button>
+                                    </sw-container>
+
+                                    <sw-container class="jv-option-template-value__visuals" columns="minmax(220px, 1fr) minmax(280px, 1.4fr)" gap="16px">
+                                        <mt-colorpicker
+                                            :model-value="valueColorHex(val)"
+                                            @update:model-value="setValueColorHex(val, $event)"
+                                            :label="$t('jv-option-template.detail.labelValueColorHex')"
+                                            :alpha="false"
+                                        />
+
+                                        <div class="jv-option-template-media-field">
+                                            <label class="jv-option-template-media-field__label">
+                                                {{ $t('jv-option-template.detail.labelValueMedia') }}
+                                            </label>
+                                            <sw-media-upload-v2
+                                                variant="regular"
+                                                :upload-tag="mediaUploadTag('value', group.id, val.id)"
+                                                :source="mediaPreviewSource(val.mediaId)"
+                                                :allow-multi-select="false"
+                                                :caption="$t('jv-option-template.detail.captionValueMedia')"
+                                                :on-media-upload-sidebar-open="() => openValueMediaModal(group.id, val.id)"
+                                                @media-upload-sidebar-open="openValueMediaModal(group.id, val.id)"
+                                                @media-upload-remove-image="onValueMediaRemove(val)"
+                                            />
+                                            <sw-upload-listener
+                                                :upload-tag="mediaUploadTag('value', group.id, val.id)"
+                                                auto-upload
+                                                @media-upload-finish="onValueMediaUpload(val, $event)"
+                                            />
+                                            <p class="jv-option-template-media-field__help">
+                                                {{ $t('jv-option-template.detail.helpValueMedia') }}
+                                            </p>
+                                        </div>
+                                    </sw-container>
+
+                                    <div class="jv-option-template-value__surcharge">
+                                        <div class="jv-option-template-value__surcharge-title">
+                                            {{ $t('jv-option-template.detail.labelValueSurchargePrice') }}
+                                            <span>{{ systemCurrencyLabel }}</span>
+                                        </div>
+
+                                        <sw-container v-if="val.surchargeType === 'fixed'" columns="minmax(180px, 240px) minmax(180px, 240px)" gap="16px">
+                                            <mt-number-field
+                                                :model-value="valueGrossPrice(val)"
+                                                @input-change="setValueGrossPrice(val, $event)"
+                                                :label="$t('jv-option-template.detail.labelValueSurchargeGross')"
+                                                :step="0.01"
+                                                :digits="2"
+                                                :min="0"
+                                            />
+                                            <mt-number-field
+                                                :model-value="valueNetPrice(val)"
+                                                @input-change="setValueNetPrice(val, $event)"
+                                                :label="$t('jv-option-template.detail.labelValueSurchargeNet')"
+                                                :step="0.01"
+                                                :digits="2"
+                                                :min="0"
+                                            />
+                                        </sw-container>
+
+                                        <mt-number-field
+                                            v-else
+                                            :model-value="val.surchargePercentage"
+                                            @input-change="setNumericField(val, 'surchargePercentage', $event)"
+                                            :label="$t('jv-option-template.detail.labelValueSurchargePercentage')"
+                                            :step="0.1"
+                                            :min="0"
+                                            :max="1000"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </sw-card>
+
+            <sw-media-modal-v2
+                v-if="mediaModalIsOpen"
+                variant="full"
+                :caption="$t('jv-option-template.detail.captionValueMedia')"
+                entity-context="media"
+                :allow-multi-select="false"
+                @media-modal-selection-change="onMediaSelectionChanges"
+                @modal-close="closeMediaModal"
+            />
+        </sw-card-view>
+    </template>
+</sw-page>

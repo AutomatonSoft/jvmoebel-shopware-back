@@ -7,13 +7,17 @@ use PHPUnit\Framework\TestCase;
 
 final class JvImportTest extends TestCase
 {
-    public function testItGrantsImportCategoryAttributePermissionsToCategoryEditors(): void
+    public function testItGrantsImportAndFactoryPermissionsToTheirIntendedRoles(): void
     {
         $plugin = new JvImport(true, dirname(__DIR__, 2));
 
         self::assertSame([
             'product.viewer' => [
                 'jv_import_product_sales_channel_delivery_time:read',
+                'jv_factory:read',
+            ],
+            'product_stream.viewer' => [
+                'jv_factory:read',
             ],
             'product.editor' => [
                 'jv_import_product_sales_channel_delivery_time:read',

@@ -2,20 +2,31 @@
 
 namespace Jv\Import\Tests\Integration\AfterCool;
 
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DriverManager;
+use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunCollection;
+use Jv\Import\Service\AfterCool\Backfill\BackfillProductFactoriesService;
 use Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolFactory;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolMappedProduct;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolPreparedProduct;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolProductPageMappingResult;
+use Jv\Import\Service\AfterCool\Dto\AfterCoolResolvedProduct;
 use Jv\Import\Service\AfterCool\Exception\AfterCoolFactoryImportAlreadyRunningException;
 use Jv\Import\Service\AfterCool\Import\StartAfterCoolImportService;
 use Jv\Import\Service\AfterCool\Persistence\AfterCoolImportRunStore;
+use Jv\Import\Service\AfterCool\Persistence\AfterCoolPageCheckpointService;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Content\Product\DataAbstractionLayer\ProductIndexer;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\Tax\TaxCollection;
@@ -55,7 +66,7 @@ final class AfterCoolImportPersistenceTest extends TestCase
                 'finishedAt' => new \DateTimeImmutable(),
             ]], $context);
             $repository->create([$this->runPayload($nextId, 504034, 'queued')], $context);
-            self::assertTrue($repository->searchIds(new \Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria([$nextId]), $context)->has($nextId));
+            self::assertTrue($repository->searchIds(new Criteria([$nextId]), $context)->has($nextId));
         } finally {
             $repository->delete([
                 ['id' => $firstId],
@@ -137,7 +148,7 @@ final class AfterCoolImportPersistenceTest extends TestCase
                 'sourceEan' => $ean,
                 'lastSeenAt' => new \DateTimeImmutable(),
             ]], $context);
-            self::assertCount(2, $sources->searchIds(new \Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria([$firstSourceId, $sameEanSourceId]), $context)->getIds());
+            self::assertCount(2, $sources->searchIds(new Criteria([$firstSourceId, $sameEanSourceId]), $context)->getIds());
 
             try {
                 $sources->create([[
@@ -158,6 +169,153 @@ final class AfterCoolImportPersistenceTest extends TestCase
         } finally {
             $sources->delete([['id' => $firstSourceId], ['id' => $sameEanSourceId]], $context);
             $products->delete([['id' => $firstProductId], ['id' => $secondProductId]], $context);
+        }
+    }
+
+    public function testFactoriesUseExternalIdentityRatherThanDisplayName(): void
+    {
+        $context = Context::createDefaultContext();
+        $firstId = Uuid::randomHex();
+        $secondId = Uuid::randomHex();
+        $firstSourceId = Uuid::randomHex();
+        $secondSourceId = Uuid::randomHex();
+        $factories = static::getContainer()->get('jv_factory.repository');
+        $sources = static::getContainer()->get('jv_factory_source.repository');
+
+        try {
+            $factories->create([
+                ['id' => $firstId, 'name' => 'Identical display name'],
+                ['id' => $secondId, 'name' => 'Identical display name'],
+            ], $context);
+            $sources->create([
+                ['id' => $firstSourceId, 'sourceNamespace' => 'aftercool:JV:lister', 'externalId' => '504034', 'factoryId' => $firstId],
+                ['id' => $secondSourceId, 'sourceNamespace' => 'aftercool:JV:lister', 'externalId' => '504000', 'factoryId' => $secondId],
+            ], $context);
+
+            self::assertCount(2, $factories->searchIds(new Criteria([$firstId, $secondId]), $context)->getIds());
+            try {
+                $sources->create([[
+                    'id' => Uuid::randomHex(),
+                    'sourceNamespace' => 'aftercool:JV:lister',
+                    'externalId' => '504034',
+                    'factoryId' => $secondId,
+                ]], $context);
+                self::fail('The same external factory identity must not map to two local factories.');
+            } catch (UniqueConstraintViolationException) {
+                self::addToAssertionCount(1);
+            }
+        } finally {
+            $sources->delete([['id' => $firstSourceId], ['id' => $secondSourceId]], $context);
+            $factories->delete([['id' => $firstId], ['id' => $secondId]], $context);
+        }
+    }
+
+    public function testFactoryBackfillIsRepeatableAndReportsProductsWithConflictingSourceFactories(): void
+    {
+        $context = Context::createDefaultContext();
+        $productId = Uuid::randomHex();
+        $uniqueProductId = Uuid::randomHex();
+        $sourceOne = Uuid::randomHex();
+        $sourceTwo = Uuid::randomHex();
+        $sourceThree = Uuid::randomHex();
+        $productRepository = $this->productRepository();
+        $sourceRepository = $this->sourceRepository();
+        $runRepository = $this->runRepository();
+        $productRepository->create([
+            $this->product($productId, 'FACTORY-BACKFILL-1'),
+            $this->product($uniqueProductId, 'FACTORY-BACKFILL-2'),
+        ], $context);
+        $runA = Uuid::randomHex();
+        $runB = Uuid::randomHex();
+        $payloadA = $this->runPayload($runA, 504034, 'completed');
+        $payloadA['factoryName'] = 'Backfill A';
+        $payloadA['activeFactoryKey'] = null;
+        $payloadB = $this->runPayload($runB, 504000, 'completed');
+        $payloadB['factoryName'] = 'Backfill B';
+        $payloadB['activeFactoryKey'] = null;
+        $runRepository->create([$payloadA, $payloadB], $context);
+        $sourceRepository->create([[
+            'id' => $sourceOne, 'account' => 'JV', 'dataset' => 'lister', 'factoryId' => 504034,
+            'sourceProductId' => 'backfill-1', 'productId' => $productId, 'sourceArtikelnummer' => 'BF-1',
+            'sourceEan' => '4260174423463', 'lastSeenAt' => new \DateTimeImmutable(),
+        ], [
+            'id' => $sourceTwo, 'account' => 'JV', 'dataset' => 'lister', 'factoryId' => 504000,
+            'sourceProductId' => 'backfill-2', 'productId' => $productId, 'sourceArtikelnummer' => 'BF-2',
+            'sourceEan' => '4260174423463', 'lastSeenAt' => new \DateTimeImmutable(),
+        ], [
+            'id' => $sourceThree, 'account' => 'JV', 'dataset' => 'lister', 'factoryId' => 504034,
+            'sourceProductId' => 'backfill-3', 'productId' => $uniqueProductId, 'sourceArtikelnummer' => 'BF-3',
+            'sourceEan' => '4260174423463', 'lastSeenAt' => new \DateTimeImmutable(),
+        ]], $context);
+
+        try {
+            $service = new BackfillProductFactoriesService(
+                static::getContainer()->get(Connection::class),
+                static::getContainer()->get('jv_factory.repository'),
+                static::getContainer()->get('jv_factory_source.repository'),
+                static::getContainer()->get('product.repository'),
+                static::getContainer()->get(ProductIndexer::class),
+            );
+            $first = $service->execute($context);
+            self::assertSame(1, $first['assigned']);
+            self::assertSame([$productId], $first['conflicts']);
+            self::assertSame([], $first['missingNames']);
+            $factoryCount = static::getContainer()->get('jv_factory.repository')->searchIds(new Criteria(), $context)->getTotal();
+            $second = $service->execute($context);
+            self::assertSame(0, $second['assigned'], 'A second run must not rewrite or reindex unchanged product factory links.');
+            self::assertSame($first['conflicts'], $second['conflicts']);
+            self::assertSame($first['missingNames'], $second['missingNames']);
+            self::assertSame($factoryCount, static::getContainer()->get('jv_factory.repository')->searchIds(new Criteria(), $context)->getTotal());
+            self::assertNull(static::getContainer()->get(Connection::class)->fetchOne('SELECT jv_factory_id FROM product WHERE id = ?', [Uuid::fromHexToBytes($productId)]));
+            self::assertSame(Uuid::fromHexToBytes(static::getContainer()->get('jv_factory_source.repository')->search((new Criteria())
+                ->addFilter(new EqualsFilter('sourceNamespace', 'aftercool:JV:lister'))
+                ->addFilter(new EqualsFilter('externalId', '504034')), $context)->first()->getFactoryId()), static::getContainer()->get(Connection::class)->fetchOne('SELECT jv_factory_id FROM product WHERE id = ?', [Uuid::fromHexToBytes($uniqueProductId)]));
+        } finally {
+            $sourceRepository->delete([['id' => $sourceOne], ['id' => $sourceTwo], ['id' => $sourceThree]], $context);
+            $runRepository->delete([['id' => $runA], ['id' => $runB]], $context);
+            $productRepository->delete([['id' => $productId], ['id' => $uniqueProductId]], $context);
+        }
+    }
+
+    public function testFactoryConflictCheckLocksProductRowsAgainstConcurrentImports(): void
+    {
+        $context = Context::createDefaultContext();
+        $productId = Uuid::randomHex();
+        $products = $this->productRepository();
+        $products->create([$this->product($productId, 'FACTORY-LOCK-TEST')], $context);
+
+        $connection = static::getContainer()->get(Connection::class);
+        $competitor = DriverManager::getConnection($connection->getParams());
+        $mapped = new AfterCoolMappedProduct('JV', 'lister', 504034, 'lock-source', 'LOCK-1', '4260174423463', 'FACTORY-LOCK-TEST', 'Lock test', 1, null, 1, null, [], []);
+        $resolved = new AfterCoolResolvedProduct($mapped, $productId, Uuid::randomHex(), [], false);
+        $prepared = new AfterCoolPreparedProduct($mapped, $resolved, $productId, []);
+        $checkpoint = static::getContainer()->get(AfterCoolPageCheckpointService::class);
+        $lockMethod = new \ReflectionMethod($checkpoint, 'lockProductsForFactoryCheck');
+
+        try {
+            $connection->beginTransaction();
+            $lockMethod->invoke($checkpoint, [$prepared]);
+            $competitor->executeStatement('SET SESSION innodb_lock_wait_timeout = 1');
+            $competitor->beginTransaction();
+            try {
+                $competitor->fetchFirstColumn(
+                    'SELECT id FROM product WHERE id = ? AND version_id = ? FOR UPDATE',
+                    [Uuid::fromHexToBytes($productId), Uuid::fromHexToBytes(Defaults::LIVE_VERSION)],
+                );
+                self::fail('A competing import must wait while the first page owns the product lock.');
+            } catch (LockWaitTimeoutException) {
+                self::addToAssertionCount(1);
+            } finally {
+                if ($competitor->isTransactionActive()) {
+                    $competitor->rollBack();
+                }
+            }
+        } finally {
+            if ($connection->isTransactionActive()) {
+                $connection->rollBack();
+            }
+            $competitor->close();
+            $products->delete([['id' => $productId]], $context);
         }
     }
 
@@ -188,7 +346,7 @@ final class AfterCoolImportPersistenceTest extends TestCase
     {
         /** @var EntityRepository<TaxCollection> $taxRepository */
         $taxRepository = static::getContainer()->get('tax.repository');
-        $taxId = $taxRepository->searchIds(new \Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria(), Context::createDefaultContext())->firstId();
+        $taxId = $taxRepository->searchIds(new Criteria(), Context::createDefaultContext())->firstId();
         self::assertNotNull($taxId);
 
         return [

@@ -8,6 +8,8 @@ use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunCollection;
 use Jv\Import\Core\Content\AfterCoolImportRun\AfterCoolImportRunEntity;
 use Jv\Import\Core\Content\AfterCoolImportRunProduct\AfterCoolImportRunProductCollection;
 use Jv\Import\Core\Content\AfterCoolProductSource\AfterCoolProductSourceCollection;
+use Jv\Import\Core\Content\Factory\FactoryCollection;
+use Jv\Import\Core\Content\FactorySource\FactorySourceCollection;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolPageOutcome;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolPreparedProduct;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolProductIssue;
@@ -15,6 +17,7 @@ use Jv\Import\Service\AfterCool\Dto\AfterCoolProductWriteRecord;
 use Jv\Import\Service\AfterCool\Dto\AfterCoolSyncWriteFailure;
 use Jv\Import\Service\AfterCool\Import\AfterCoolImportProgress;
 use Jv\Import\Service\AfterCool\Write\AfterCoolShopwareProductWriter;
+use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
@@ -29,6 +32,9 @@ final readonly class AfterCoolPageCheckpointService
      * @param EntityRepository<AfterCoolProductSourceCollection>    $sourceRepository
      * @param EntityRepository<AfterCoolImportRunProductCollection> $runProductRepository
      * @param EntityRepository<AfterCoolImportErrorCollection>      $errorRepository
+     * @param EntityRepository<FactoryCollection>                   $factoryRepository
+     * @param EntityRepository<FactorySourceCollection>             $factorySourceRepository
+     * @param EntityRepository<ProductCollection>                   $productRepository
      */
     public function __construct(
         private AfterCoolShopwareProductWriter $writer,
@@ -38,6 +44,9 @@ final readonly class AfterCoolPageCheckpointService
         private EntityRepository $runProductRepository,
         private EntityRepository $errorRepository,
         private Connection $connection,
+        private EntityRepository $factoryRepository,
+        private EntityRepository $factorySourceRepository,
+        private EntityRepository $productRepository,
     ) {
     }
 
@@ -57,6 +66,14 @@ final readonly class AfterCoolPageCheckpointService
         Context $context,
     ): void {
         $this->connection->transactional(function () use ($run, $offset, $total, $hasMore, $records, $products, $issues, $context): void {
+            $this->lockProductsForFactoryCheck($products);
+            $conflictingIds = $this->conflictingFactoryProductIds($run, $products, $context);
+            foreach ($conflictingIds as $sourceProductId) {
+                $product = $products[$sourceProductId]->product;
+                $issues[] = new AfterCoolProductIssue($sourceProductId, 'skipped', 'product_factory_conflict', 'Product is already linked to a different Aftercool factory.', $product->sourceArtikelnummer, $product->ean, $product->rowNo);
+                unset($products[$sourceProductId]);
+            }
+            $records = array_values(array_filter($records, static fn (AfterCoolProductWriteRecord $record): bool => isset($products[$record->sourceProductId])));
             $writeResult = $this->writer->write($records, $context);
             $issues = $this->appendWriteFailures($issues, $products, $writeResult->failures);
             $successful = array_fill_keys($writeResult->successfulSourceProductIds, true);
@@ -65,6 +82,13 @@ final readonly class AfterCoolPageCheckpointService
                 static fn (AfterCoolPreparedProduct $prepared): bool => isset($successful[$prepared->product->sourceProductId]),
             );
 
+            $factoryId = $this->persistFactory($run, $successfulProducts, $context);
+            if (null !== $factoryId) {
+                $this->productRepository->update(array_values(array_map(
+                    static fn (AfterCoolPreparedProduct $prepared): array => ['id' => $prepared->productId, 'jvFactoryId' => $factoryId],
+                    $successfulProducts,
+                )), $context);
+            }
             $this->upsertSourceLinks($run, $successfulProducts, $context);
             $this->upsertRunProducts($run, $successfulProducts, $context);
             $this->stageMedia($run, $offset, $successfulProducts);
@@ -111,6 +135,80 @@ final readonly class AfterCoolPageCheckpointService
             }
             $this->runRepository->update([$payload], $context);
         });
+    }
+
+    /** @param array<string, AfterCoolPreparedProduct> $products */
+    private function lockProductsForFactoryCheck(array $products): void
+    {
+        $ids = array_values(array_unique(array_map(
+            static fn (AfterCoolPreparedProduct $product): string => $product->productId,
+            $products,
+        )));
+        if ([] === $ids) {
+            return;
+        }
+
+        sort($ids, SORT_STRING);
+        $this->connection->fetchFirstColumn(
+            'SELECT id FROM product WHERE id IN (?) AND version_id = ? ORDER BY id FOR UPDATE',
+            [array_map(Uuid::fromHexToBytes(...), $ids), Uuid::fromHexToBytes(Defaults::LIVE_VERSION)],
+            [\Doctrine\DBAL\ArrayParameterType::BINARY, \Doctrine\DBAL\ParameterType::BINARY],
+        );
+    }
+
+    /** @param array<string, AfterCoolPreparedProduct> $products
+     * @return list<string> */
+    private function conflictingFactoryProductIds(AfterCoolImportRunEntity $run, array $products, Context $context): array
+    {
+        if ([] === $products) {
+            return [];
+        }
+        $ids = array_values(array_unique(array_map(static fn (AfterCoolPreparedProduct $product): string => $product->productId, $products)));
+        $criteria = (new Criteria())->addFilter(new \Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter('productId', $ids));
+        $conflictingProducts = [];
+        foreach ($this->sourceRepository->search($criteria, $context)->getEntities() as $source) {
+            if ($source->getFactoryId() !== $run->getFactoryId()) {
+                $conflictingProducts[$source->getProductId()] = true;
+            }
+        }
+
+        $conflicts = [];
+        foreach ($products as $sourceProductId => $prepared) {
+            if (isset($conflictingProducts[$prepared->productId])) {
+                $conflicts[] = $sourceProductId;
+            }
+        }
+
+        return $conflicts;
+    }
+
+    /** @param array<string, AfterCoolPreparedProduct> $products */
+    private function persistFactory(AfterCoolImportRunEntity $run, array $products, Context $context): ?string
+    {
+        if ([] === $products) {
+            return null;
+        }
+        $namespace = 'aftercool:'.$run->getAccount().':'.$run->getDataset();
+        $externalId = (string) $run->getFactoryId();
+        $criteria = (new Criteria())->addFilter(new EqualsFilter('sourceNamespace', $namespace))->addFilter(new EqualsFilter('externalId', $externalId));
+        $source = $this->factorySourceRepository->search($criteria, $context)->first();
+        if (null !== $source) {
+            $factoryId = $source->getFactoryId();
+            $this->factoryRepository->update([['id' => $factoryId, 'name' => $run->getFactoryName()]], $context);
+
+            return $factoryId;
+        }
+
+        $factoryId = Uuid::randomHex();
+        $this->factoryRepository->create([['id' => $factoryId, 'name' => $run->getFactoryName()]], $context);
+        $this->factorySourceRepository->create([[
+            'id' => Uuid::randomHex(),
+            'sourceNamespace' => $namespace,
+            'externalId' => $externalId,
+            'factoryId' => $factoryId,
+        ]], $context);
+
+        return $factoryId;
     }
 
     /**

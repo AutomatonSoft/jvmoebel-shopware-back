@@ -17,6 +17,7 @@ deployment:
       - JvSeo
       - JvImport
       - JvStorefront
+      - JvProductOptions
   hooks:
     post:
       - title: Configure JVMöbel sales channels

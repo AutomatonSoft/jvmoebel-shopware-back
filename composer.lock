@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "27135d64625e67e0235dbb6ec5964b3b",
+    "content-hash": "256ee4ae58e4a44a26a3903c0dda42bc",
     "packages": [
         {
             "name": "async-aws/core",
@@ -2799,6 +2799,45 @@
                 "proprietary"
             ],
             "description": "JVMöbel market and sales channel configuration",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "jvmoebel/product-options",
+            "version": "0.1.0",
+            "dist": {
+                "type": "path",
+                "url": "custom/static-plugins/JvProductOptions",
+                "reference": "243522c62d1401d266d7a37b291bc0856ad0d867"
+            },
+            "require": {
+                "php": "^8.5",
+                "shopware/core": "~6.7.0"
+            },
+            "type": "shopware-platform-plugin",
+            "extra": {
+                "shopware-plugin-class": "Jv\\ProductOptions\\JvProductOptions",
+                "label": {
+                    "de-DE": "JVMöbel Produktoptionen",
+                    "en-GB": "JVMöbel Product Options"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Jv\\ProductOptions\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Jv\\ProductOptions\\Tests\\": "tests/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "description": "JVMöbel product option templates with price surcharges",
             "transport-options": {
                 "symlink": true,
                 "relative": true

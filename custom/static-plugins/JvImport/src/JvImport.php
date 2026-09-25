@@ -12,6 +12,10 @@ final class JvImport extends Plugin
         return [
             'product.viewer' => [
                 'jv_import_product_sales_channel_delivery_time:read',
+                'jv_factory:read',
+            ],
+            'product_stream.viewer' => [
+                'jv_factory:read',
             ],
             'product.editor' => [
                 'jv_import_product_sales_channel_delivery_time:read',

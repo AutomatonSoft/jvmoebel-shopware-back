@@ -1,0 +1,27 @@
+{
+  "main.js": {
+    "file": "assets/jv-product-options-Cj2Ysznf.js",
+    "name": "jv-product-options",
+    "src": "main.js",
+    "isEntry": true,
+    "dynamicImports": [
+      "module/jv-option-template/page/jv-option-template-list/index.js",
+      "module/jv-option-template/page/jv-option-template-detail/index.js"
+    ]
+  },
+  "module/jv-option-template/page/jv-option-template-detail/index.js": {
+    "file": "assets/index-DmqIT85e.js",
+    "name": "index",
+    "src": "module/jv-option-template/page/jv-option-template-detail/index.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/index-FIktP4aN.css"
+    ]
+  },
+  "module/jv-option-template/page/jv-option-template-list/index.js": {
+    "file": "assets/index-BLz5AoNA.js",
+    "name": "index",
+    "src": "module/jv-option-template/page/jv-option-template-list/index.js",
+    "isDynamicEntry": true
+  }
+}
