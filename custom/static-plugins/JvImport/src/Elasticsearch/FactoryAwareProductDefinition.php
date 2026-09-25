@@ -13,7 +13,6 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Elasticsearch\Framework\AbstractElasticsearchDefinition;
 use Shopware\Elasticsearch\Framework\ElasticsearchFieldBuilder;
 
-/** Adds the locally owned factory foreign key to Shopware's product search documents. */
 final class FactoryAwareProductDefinition extends AbstractElasticsearchDefinition
 {
     public function __construct(
