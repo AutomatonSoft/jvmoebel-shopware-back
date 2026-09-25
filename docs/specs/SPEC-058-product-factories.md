@@ -84,12 +84,13 @@ Aftercool run, product source link и error не меняются. Отдель�
 сохранённым именем run. Миграция схемы не выполняет массовый перенос данных.
 После каждого пакета DAL-обновлений команда запускает штатный product
 indexer, включая обновление `product_stream_mapping`.
-Backfill scans source links in keyset batches of 100 distinct products; each
-batch has its own transaction. A product already linked to the resolved local
-factory is skipped, including its product indexing message. The `assigned`
-count reports changed product links, so a second run with no new changes reports
-zero assignments. Conflicting imports serialize their factory check by locking
-the target Shopware product rows in sorted ID order within the page transaction.
+Команда обходит source links пакетами по 100 разных товаров (keyset
+pagination), каждый пакет в своей транзакции. Товар, уже связанный с найденной
+локальной фабрикой, пропускается вместе с сообщением индексации. Счётчик
+`assigned` показывает только изменённые связи, поэтому повторный запуск без
+новых данных сообщает ноль назначений. Конкурирующие импорты сериализуют
+проверку фабрики блокировкой строк целевых товаров Shopware в порядке
+сортировки ID внутри транзакции страницы.
 
 ## Динамические группы
 
@@ -110,16 +111,15 @@ product stream с оператором `equals` и селектором `jv_fact
 lookup в Aftercool или обхода `product_stream_mapping` не вводится.
 Принадлежность stream варианту и приоритет ручного назначения шаблона остаются
 по SPEC-057.
-The indexed product document exposes both the `jvFactoryId` keyword and the
-nested `jvFactory.id` association shape used by the Elasticsearch criteria
-parser; both carry the same stable UUID.
-When Shopware uses OpenSearch, the project decorates the installed product
-Elasticsearch definition. Product documents contain the `jvFactoryId` keyword
-and nested `jvFactory.id`, with the same stable UUID in both fields. Variant
-documents inherit a factory ID from their parent when the variant has no direct
-value. Product stream viewers receive read
-access to the local factory repository; product editors do not receive write
-access to either factory or source mapping entities.
+
+При использовании OpenSearch проект декорирует штатное Elasticsearch-определение
+товара. Документ товара содержит keyword `jvFactoryId` и nested `jvFactory.id`
+(форма association для Elasticsearch criteria parser) с одним и тем же
+стабильным UUID. Документ варианта без собственного значения наследует
+фабрику родителя.
+
+Права: роль просмотра product streams получает чтение справочника фабрик;
+редакторы товаров не получают запись ни в фабрики, ни в source mappings.
 
 ## Ошибки и совместимость
 
