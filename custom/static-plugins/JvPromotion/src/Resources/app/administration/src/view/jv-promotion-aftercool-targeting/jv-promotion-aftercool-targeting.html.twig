@@ -45,7 +45,13 @@
                         role="listbox"
                     >
                         <li
-                            v-if="!visibleFactoryOptions.length"
+                            v-if="!visibleFactoryOptions.length && !factoryQuery && !factories.length"
+                            class="jv-promotion-aftercool-targeting__picker-empty"
+                        >
+                            {{ $t('jv-promotion.aftercool.factoriesEmptyHint') }}
+                        </li>
+                        <li
+                            v-else-if="!visibleFactoryOptions.length"
                             class="jv-promotion-aftercool-targeting__picker-empty"
                         >
                             {{ $t('jv-promotion.aftercool.noResults') }}

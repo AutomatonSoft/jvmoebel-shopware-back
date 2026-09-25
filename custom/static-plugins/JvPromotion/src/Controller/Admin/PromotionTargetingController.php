@@ -48,14 +48,9 @@ final class PromotionTargetingController extends AbstractController
     {
         $query = $request->query->getString('q');
         $limit = min(1000, max(1, $request->query->getInt('limit', 50)));
-        $data = $this->factories->execute('' === $query ? null : $query, $limit);
-        $payload = ['data' => $data];
-        $warning = $this->factories->catalogWarning();
-        if (null !== $warning) {
-            $payload['warning'] = $warning;
-        }
-
-        return new JsonResponse($payload);
+        return new JsonResponse([
+            'data' => $this->factories->execute('' === $query ? null : $query, $limit),
+        ]);
     }
 
     #[Route(path: '/api/_action/jv-promotion/factory-prefixes', name: 'api.action.jv_promotion.factory_prefixes', methods: ['GET'], defaults: ['_acl' => ['promotion.viewer', 'jv_promotion_aftercool:read']])]

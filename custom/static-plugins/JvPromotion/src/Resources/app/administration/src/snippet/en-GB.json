@@ -7,6 +7,7 @@
             "factoryLabel": "Factory",
             "factoryPlaceholder": "Search factory…",
             "noResults": "No matches.",
+            "factoriesEmptyHint": "No imported factories yet. Run an AfterCool import or jv:aftercool:backfill-product-factories first.",
             "loading": "Loading…",
             "collectionLabel": "Collection",
             "collectionPlaceholder": "Search collection…",

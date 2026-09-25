@@ -48,7 +48,6 @@ export default {
             factorySearchTimer: null,
             collectionSearchTimer: null,
             lastFactoryQuery: null,
-            factoryWarningShown: false,
             factoryQuery: '',
             collectionQuery: '',
             factoryListOpen: false,
@@ -280,10 +279,6 @@ export default {
             const response = await this.jvPromotionApiService.getFactories(params);
             this.lastFactoryQuery = term;
             this.factories = response.data.data ?? [];
-            if (response.data.warning && !this.factoryWarningShown) {
-                this.factoryWarningShown = true;
-                this.createNotificationWarning({ message: response.data.warning });
-            }
         },
 
         async loadFactoryPrefixes() {

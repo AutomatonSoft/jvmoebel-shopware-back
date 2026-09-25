@@ -50,15 +50,10 @@
 
         <service id="Jv\Promotion\Service\Query\ListPromotionCollectionsService">
             <argument type="service" id="Doctrine\DBAL\Connection"/>
-            <argument type="service" id="Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface"/>
         </service>
 
         <service id="Jv\Promotion\Service\Query\ListPromotionFactoriesService">
             <argument type="service" id="Doctrine\DBAL\Connection"/>
-            <argument type="service" id="Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface"/>
-            <argument type="service" id="cache.app"/>
-            <argument type="service" id="logger"/>
-            <argument>%env(AFTERCOOL_USERNAME)%</argument>
         </service>
 
         <service id="Jv\Promotion\Service\Query\GetPromotionTargetsService">
