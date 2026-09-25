@@ -1,4 +1,4 @@
-# SPEC-055 — Фабрики товаров и динамические группы
+# SPEC-058 — Фабрики товаров и динамические группы
 
 ## Цель
 
@@ -21,7 +21,7 @@ DAL; запрос к Aftercool при редактировании stream не �
 
 Это backend-local изменение `JvImport`: данные фабрики не принадлежат
 `JvProductOptions`. Плагин опций использует штатное сопоставление товара с
-product stream согласно SPEC-054 и не читает таблицы `JvImport` напрямую.
+product stream согласно SPEC-057 и не читает таблицы `JvImport` напрямую.
 
 ## Данные и идентичность
 
@@ -109,7 +109,7 @@ product stream с оператором `equals` и селектором `jv_fact
 шаблона опций может отражать предыдущее состояние; отдельного синхронного
 lookup в Aftercool или обхода `product_stream_mapping` не вводится.
 Принадлежность stream варианту и приоритет ручного назначения шаблона остаются
-по SPEC-054.
+по SPEC-057.
 The indexed product document exposes both the `jvFactoryId` keyword and the
 nested `jvFactory.id` association shape used by the Elasticsearch criteria
 parser; both carry the same stable UUID.
