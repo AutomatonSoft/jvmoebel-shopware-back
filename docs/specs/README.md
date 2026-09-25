@@ -122,3 +122,4 @@ SPEC-NNN-short-name.md
 | [SPEC-055-robots-publication](SPEC-055-robots-publication.md) | Редактирование per-sales-channel robots.txt и publication из JvSeo в Next-managed artifact storage; контракт — platform SPEC-050 |
 | [SPEC-056-promotion-management](SPEC-056-promotion-management.md) | Управление акциями AfterCool поверх Shopware Promotions: таргетинг, max %, Store API и cart; контракт — platform SPEC-045 |
 | [SPEC-054-product-option-templates](SPEC-054-product-option-templates.md) | Шаблоны опций товара (плагин `JvProductOptions`): назначение через product streams или вручную, надбавки `fixed`/`percentage`, Store API/OpenAPI, расчёт корзины и отображение снимка в заказе, письмах и документах |
+| [SPEC-055-product-factories](SPEC-055-product-factories.md) | Локальный каталог фабрик, связь с товаром при Aftercool-импорте и условие фабрики в динамических группах |

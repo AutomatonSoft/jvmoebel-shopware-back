@@ -161,6 +161,44 @@ final class AfterCoolImportPersistenceTest extends TestCase
         }
     }
 
+    public function testFactoriesUseExternalIdentityRatherThanDisplayName(): void
+    {
+        $context = Context::createDefaultContext();
+        $firstId = Uuid::randomHex();
+        $secondId = Uuid::randomHex();
+        $firstSourceId = Uuid::randomHex();
+        $secondSourceId = Uuid::randomHex();
+        $factories = static::getContainer()->get('jv_factory.repository');
+        $sources = static::getContainer()->get('jv_factory_source.repository');
+
+        try {
+            $factories->create([
+                ['id' => $firstId, 'name' => 'Identical display name'],
+                ['id' => $secondId, 'name' => 'Identical display name'],
+            ], $context);
+            $sources->create([
+                ['id' => $firstSourceId, 'sourceNamespace' => 'aftercool:JV:lister', 'externalId' => '504034', 'factoryId' => $firstId],
+                ['id' => $secondSourceId, 'sourceNamespace' => 'aftercool:JV:lister', 'externalId' => '504000', 'factoryId' => $secondId],
+            ], $context);
+
+            self::assertCount(2, $factories->searchIds(new \Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria([$firstId, $secondId]), $context)->getIds());
+            try {
+                $sources->create([[
+                    'id' => Uuid::randomHex(),
+                    'sourceNamespace' => 'aftercool:JV:lister',
+                    'externalId' => '504034',
+                    'factoryId' => $secondId,
+                ]], $context);
+                self::fail('The same external factory identity must not map to two local factories.');
+            } catch (UniqueConstraintViolationException) {
+                self::addToAssertionCount(1);
+            }
+        } finally {
+            $sources->delete([['id' => $firstSourceId], ['id' => $secondSourceId]], $context);
+            $factories->delete([['id' => $firstId], ['id' => $secondId]], $context);
+        }
+    }
+
     /** @return array<string, mixed> */
     private function runPayload(string $id, int $factoryId, string $status): array
     {

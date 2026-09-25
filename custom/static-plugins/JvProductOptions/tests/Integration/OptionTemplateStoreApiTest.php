@@ -117,6 +117,61 @@ final class OptionTemplateStoreApiTest extends TestCase
         self::assertSame($this->ids->get('manual-template'), $this->options('bed-variant')['templateId']);
     }
 
+    public function testFactoryEqualsStreamSelectsOnlyItsProductsAndManualAssignmentStillWins(): void
+    {
+        $context = Context::createDefaultContext();
+        $factoryA = $this->ids->create('production-factory-a');
+        $factoryB = $this->ids->create('production-factory-b');
+        static::getContainer()->get('jv_factory.repository')->create([
+            ['id' => $factoryA, 'name' => 'Werk A'],
+            ['id' => $factoryB, 'name' => 'Werk B'],
+        ], $context);
+        static::getContainer()->get('product.repository')->update([
+            ['id' => $this->ids->get('sofa'), 'jvFactoryId' => $factoryA],
+            ['id' => $this->ids->get('table'), 'jvFactoryId' => $factoryB],
+            ['id' => $this->ids->get('bed'), 'jvFactoryId' => $factoryA],
+        ], $context);
+
+        $streamId = $this->ids->create('production-factory-stream');
+        static::getContainer()->get('product_stream.repository')->create([[
+            'id' => $streamId,
+            'name' => 'Werk A products',
+            'filters' => [[
+                'type' => 'equals',
+                'field' => 'jvFactory.id',
+                'value' => $factoryA,
+            ]],
+        ]], $context);
+
+        $templateId = $this->ids->create('production-factory-template');
+        static::getContainer()->get('jv_option_template.repository')->create([[
+            'id' => $templateId,
+            'name' => 'Werk A options',
+            'active' => true,
+            'priority' => 10,
+            'productStreams' => [['id' => $streamId]],
+            'groups' => [[
+                'name' => 'Ausführung',
+                'position' => 1,
+                'values' => [$this->fixedValue('factory-value', 'Standard', 1, 0.0, null)],
+            ]],
+        ]], $context);
+
+        $this->indexProducts();
+
+        self::assertSame($templateId, $this->options('sofa')['templateId']);
+        self::assertSame($this->ids->get('factory-template'), $this->options('table')['templateId'], 'Same manufacturer must not imply same production factory.');
+        self::assertSame($this->ids->get('manual-template'), $this->options('bed')['templateId']);
+        self::assertSame($this->ids->get('manual-template'), $this->options('bed-variant')['templateId']);
+
+        static::getContainer()->get('product.repository')->update([[
+            'id' => $this->ids->get('sofa'),
+            'jvFactoryId' => $factoryB,
+        ]], $context);
+        $this->indexProducts();
+        self::assertSame($this->ids->get('factory-template'), $this->options('sofa')['templateId'], 'Changing factory must update stream membership.');
+    }
+
     public function testUnknownProductIsNotFound(): void
     {
         $this->browser->request('GET', '/store-api/jv-product-options/'.Uuid::randomHex());
