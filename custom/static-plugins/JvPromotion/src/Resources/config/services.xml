@@ -50,6 +50,7 @@
 
         <service id="Jv\Promotion\Service\Query\ListPromotionCollectionsService">
             <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="Jv\Import\Service\AfterCool\Contract\AfterCoolProductSourceInterface"/>
         </service>
 
         <service id="Jv\Promotion\Service\Query\ListPromotionFactoriesService">

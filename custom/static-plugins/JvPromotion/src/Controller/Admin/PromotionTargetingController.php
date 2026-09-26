@@ -48,6 +48,7 @@ final class PromotionTargetingController extends AbstractController
     {
         $query = $request->query->getString('q');
         $limit = min(1000, max(1, $request->query->getInt('limit', 50)));
+
         return new JsonResponse([
             'data' => $this->factories->execute('' === $query ? null : $query, $limit),
         ]);
