@@ -160,3 +160,8 @@ ID или сохранить ссылку на отсутствующую фаб
 stream, выбрать «Фабрика → equals» из локального списка, назначить stream
 шаблону опций и проверить Store API товара, корзину и товар другой фабрики.
 После переименования фабрики проверить сохранность условия и membership.
+
+## Потребители
+
+- **JvPromotion** (SPEC-056): список фабрик в AfterCool targeting читает `jv_factory` + `jv_factory_source`; runtime AfterCool API не вызывается.
+- **JvProductOptions** (SPEC-057): product stream filter `jvFactory.id`.
