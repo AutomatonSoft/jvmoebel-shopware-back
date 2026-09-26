@@ -44,8 +44,8 @@
 
 | Плагин            | Роль                                                                               |
 | ----------------- | ---------------------------------------------------------------------------------- |
-| `JvImport`        | AfterCool source link, factory/collection indexing, локальный каталог `jv_factory` (SPEC-058) |
-| `JvPromotion`     | Promotions engine, Admin API/UI — **только чтение из БД**, без runtime AfterCool API |
+| `JvImport`        | AfterCool source link, factory/collection indexing                                 |
+| `JvPromotion`     | Promotions engine, Admin API/UI                                                    |
 | `JvCms` (минорно) | `ProductGridCmsElementResolver`: `previousPrice` при активной акции = base, не UVP |
 
 
@@ -80,7 +80,7 @@ Migration (additive) в `JvImport`:
 
 | Колонка              | Тип               | Правило                                                      |
 | -------------------- | ----------------- | ------------------------------------------------------------ |
-| `factory_name`       | VARCHAR(255) NULL | display name на момент import (`jv_factory.name` / run.factory_name) |
+| `factory_name`       | VARCHAR(255) NULL | name из `/api/import/factories` на момент import             |
 | `stammartikel_id`    | VARCHAR(64) NULL  | `row.I_stammartikel`; пустой → NULL, warning в import report |
 | `collection_name`    | VARCHAR(255) NULL | `name` linked `dataset=product`; cache                       |
 | `source_file`        | VARCHAR(255) NULL | lister `source_file`                                         |
@@ -258,27 +258,7 @@ Response:
 }
 ```
 
-**Источник (v2, после SPEC-058):** только локальная БД. Runtime-запросы к AfterCool API **запрещены**.
-
-```sql
-SELECT
-    CAST(fs.external_id AS UNSIGNED) AS id,
-    f.name AS name,
-    COUNT(DISTINCT src.product_id) AS product_count
-FROM jv_factory f
-INNER JOIN jv_factory_source fs
-    ON fs.factory_id = f.id
-   AND fs.source_namespace = 'aftercool:JV:lister'
-LEFT JOIN jv_aftercool_product_source src
-    ON src.factory_id = CAST(fs.external_id AS UNSIGNED)
-GROUP BY fs.external_id, f.id, f.name
-ORDER BY f.name
-```
-
-- `id` в JSON ответа = AfterCool Lister `factory_id` (для совместимости с сохранёнными targets).
-- Фабрики без импортированных SKU: `productCount = 0`, но строка видна если есть `jv_factory_source`.
-- Пустой список → `data: []` (не HTTP 500). Admin UI показывает hint «сначала импортируйте фабрику».
-- **Удалено:** merge с `AfterCoolProductSourceInterface::getFactories()` и `catalogWarning` про credentials.
+Source: aggregate `jv_aftercool_product_source` GROUP BY `factory_id`, join cached `factory_name`; fallback name from AfterCool API cache if null.
 
 ### GET `/factory-prefixes`
 
@@ -332,18 +312,13 @@ ORDER BY collection_name
 LIMIT :limit OFFSET :offset
 ```
 
-**Источник (v2):** только `jv_aftercool_product_source`. Пустой результат → `data: []`, `total: 0`.
-
-- **Удалено:** fallback `AfterCoolProductSourceInterface::getProductPage()` при пустой индексации.
-- Если `collection_name` NULL — коллекция не показывается; восстановление через import / `jv:import:aftercool-backfill-promotion-index`, не live API.
+Cache miss `collection_name`: optional live AfterCool `GET /api/products?q=<stammartikel_id>&limit=1` (reuse JvImport client).
 
 ### GET `/products`
 
 Query: `q`, optional `factoryId`, `collectionId` (stammartikel), `limit`, `offset`.
 
 Search: EAN exact/prefix, `productNumber`, translated name, `collection_name`.
-
-**Источник (v2):** join `jv_aftercool_product_source` ↔ `product` (+ translations). Без AfterCool API.
 
 Response item:
 
@@ -480,28 +455,9 @@ Snippets: `de-DE`, `en-GB` в `JvPromotion`.
 | **B4** | Admin UI extension + manual QA on stage                                          |
 | **B5** | JvCms `previousPrice` + Store API smoke                                          |
 | **B6** | Promo codes (platform phase 4)                                                   |
-| **B6a** | Promotion Admin catalog: factories/collections/products **только из БД** (SPEC-058 + indexed source); удалить AfterCool API fallback в `JvPromotion` query services |
 
 
 Platform phase 0 (manual promotion smoke) — без кода, QA checklist.
-
----
-
-## Amendment — локальный каталог (SPEC-058)
-
-После merge [SPEC-058](SPEC-058-product-factories.md) promotion Admin **не вызывает** Aftercool HTTP для списков фабрик, коллекций и поиска SKU.
-
-| Область | Было (v1 PR) | Стало (v2) |
-|---|---|---|
-| `ListPromotionFactoriesService` | aggregate source + optional `getFactories()` API | `jv_factory` + `jv_factory_source` + count из source |
-| `ListPromotionCollectionsService` | source SQL + API page fallback | source SQL only |
-| `SearchPromotionProductsService` | source + product join | без изменений контракта; без API |
-| Admin UI warning | «AfterCool login not configured» | убрать; empty state + import hint |
-| `services.xml` | inject `AfterCoolProductSourceInterface` в promotion query | удалить optional catalog dependency |
-
-**Prerequisite:** migration `jv_factory`, backfill `jv:aftercool:backfill-product-factories`, promotion index backfill `jv:import:aftercool-backfill-promotion-index`.
-
-**Acceptance:** при пустых Aftercool credentials Marketing → Promotions → AfterCool targeting показывает factories/collections/products для уже импортированных данных.
 
 ---
 
@@ -575,7 +531,6 @@ composer test
 | ----------------- | ----------------------------- |
 | Platform SPEC-045 | контракт, UX, pricing rules   |
 | Backend SPEC-013  | AfterCool import, source link |
-| Backend SPEC-058  | локальный каталог фабрик `jv_factory` |
 | Backend SPEC-011  | product-grid `previousPrice`  |
 | Platform SPEC-009 | CMS product grid consumer     |
 
